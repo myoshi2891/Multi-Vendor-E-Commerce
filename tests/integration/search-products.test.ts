@@ -21,7 +21,9 @@
  *     config は変更しない）。本ファイルは DOM を使わないため副作用もない。
  *   - 検索対象 Product は name / description を制御する必要があるため、
  *     `seedProductWithVariantAndSize`（name 固定）ではなく `db.product.create` を直接使う。
- *     variant / size は検索 SQL に不要。
+ *   - 応答はサジェスト用の `SearchResult`（name / link / image）+ id（plan 073）。link と image は
+ *     先頭バリアントから作るため、既定でバリアントを 1 件付ける。バリアントの無い商品は
+ *     リンク先が無いので、SQL の WHERE 段で除外される（LIMIT の後で間引くと件数が欠ける）。
  *
  * 関連:
  * - ADR-004: docs/architecture/decisions/004-integration-test-db-strategy.md
@@ -42,8 +44,8 @@ import {
 type SearchRow = {
     id: string;
     name: string;
-    description: string | null;
-    relevance: number;
+    link: string;
+    image: string;
 };
 
 let db: PrismaClient;
@@ -51,11 +53,12 @@ let base: { storeId: string; categoryId: string; subCategoryId: string };
 
 /** `?q=...` 付きの GET。通常ケースはすべてこちらを使う。 */
 async function search(
-    q: string
+    q: string,
+    param: "q" | "search" = "q"
 ): Promise<{ status: number; body: SearchRow[] }> {
     const res = await GET(
         new Request(
-            `http://localhost:3000/api/search-products?q=${encodeURIComponent(q)}`
+            `http://localhost:3000/api/search-products?${param}=${encodeURIComponent(q)}`
         )
     );
     return { status: res.status, body: (await res.json()) as SearchRow[] };
@@ -73,21 +76,40 @@ async function searchWithoutParam(): Promise<{
     return { status: res.status, body: (await res.json()) as SearchRow[] };
 }
 
-/** name / description を呼び出し側が完全に制御できる Product を 1 件作る。 */
+/**
+ * name / description を呼び出し側が完全に制御できる Product を 1 件作る。
+ * `withVariant: false` を渡さない限り、サジェストの link / image の元になるバリアントを 1 件付ける。
+ */
 async function seedSearchableProduct(input: {
     name: string;
     description: string;
     storeId: string;
     categoryId: string;
     subCategoryId: string;
+    withVariant?: boolean;
 }): Promise<Product> {
-    return db.product.create({
+    const { withVariant = true, ...data } = input;
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const product = await db.product.create({
         data: {
-            ...input,
-            slug: `search-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            ...data,
+            slug: `search-${suffix}`,
             brand: "TestBrand",
         },
     });
+    if (withVariant) {
+        await db.productVariant.create({
+            data: {
+                variantName: `Variant ${suffix}`,
+                variantImage: `https://example.test/${suffix}.png`,
+                slug: `variant-${suffix}`,
+                sku: `SKU-${suffix}`,
+                weight: 1,
+                productId: product.id,
+            },
+        });
+    }
+    return product;
 }
 
 /** シナリオ 1〜4・6〜7 が共有する 3 商品（A / B / C）を作る。 */
@@ -163,8 +185,10 @@ describe("GET /api/search-products (tsvector full-text search)", () => {
         expect(body[0].id).toBe(a.id);
     });
 
-    it("シナリオ3: ts_rank による関連度の降順で並ぶ（出現頻度の高い B が先頭）", async () => {
-        // Arrange
+    it("シナリオ3: 重み付き ts_rank で並ぶ（name の 1 回が description の 3 回より上位・ADR-008）", async () => {
+        // Arrange — A は name に "Widget" を 1 回、B は description に "widget" を 3 回持つ。
+        // 重み無しの旧実装では出現頻度の高い B が先頭だった。name(A) > description(D) の
+        // 重み付けでは A が先頭になる（plan 074 で意図的に反転させた期待値）。
         const { a, b } = await seedProductSet();
 
         // Act
@@ -173,10 +197,7 @@ describe("GET /api/search-products (tsvector full-text search)", () => {
         // Assert
         expect(status).toBe(200);
         expect(body).toHaveLength(2);
-        expect(body.map((row) => row.id)).toEqual([b.id, a.id]);
-        // relevance は number で降順
-        expect(typeof body[0].relevance).toBe("number");
-        expect(body[0].relevance).toBeGreaterThan(body[1].relevance);
+        expect(body.map((row) => row.id)).toEqual([a.id, b.id]);
     });
 
     it("シナリオ4: どの商品にも無い語では 200 + 空配列", async () => {
@@ -238,6 +259,176 @@ describe("GET /api/search-products (tsvector full-text search)", () => {
         expect(status).toBe(200);
         expect(body).toHaveLength(1);
         expect(body[0].id).toBe(b.id);
+    });
+});
+
+describe("検索ベクトルの対象列（plan 074 / ADR-008）", () => {
+    it("シナリオ14: brand に含まれる語でヒットする", async () => {
+        // Arrange — seedSearchableProduct の brand は "TestBrand"
+        const { a, b, c } = await seedProductSet();
+
+        // Act
+        const { body } = await search("testbrand");
+
+        // Assert
+        expect(body.map((row) => row.id).sort()).toEqual([a.id, b.id, c.id].sort());
+    });
+
+    it("シナリオ15: バリアントの keywords（searchKeywords 経由）でヒットする", async () => {
+        // Arrange — keywords は name / description / brand のどこにも無い語
+        const { a } = await seedProductSet();
+        await db.productVariant.updateMany({
+            where: { productId: a.id },
+            data: { keywords: "tourmaline,beryl" },
+        });
+        // searchKeywords はアプリ層（upsertProduct の tx）が書く非正規化列。
+        // ここでは直接の DB 更新なので、同じ SQL（backfill と同形）で再計算しておく。
+        await db.$executeRaw`
+            UPDATE "Product" p SET "searchKeywords" = COALESCE((
+                SELECT string_agg(replace(pv."keywords", ',', ' '), ' ')
+                FROM "ProductVariant" pv WHERE pv."productId" = p."id" AND pv."keywords" IS NOT NULL
+            ), '') WHERE p."id" = ${a.id}`;
+
+        // Act
+        const { body } = await search("beryl");
+
+        // Assert
+        expect(body.map((row) => row.id)).toEqual([a.id]);
+    });
+});
+
+describe("入力途中の語での前方一致（plan 075）", () => {
+    it("シナリオ16: 最後の語は前方一致する（'alph' で Alpha Widget）", async () => {
+        // Arrange
+        const { a } = await seedProductSet();
+
+        // Act
+        const { body } = await search("alph");
+
+        // Assert
+        expect(body.map((row) => row.id)).toEqual([a.id]);
+    });
+
+    it("シナリオ17: 最後以外の語は完全一致のまま（'alph widget' は 0 件）", async () => {
+        // Arrange
+        await seedProductSet();
+
+        // Act
+        const { body } = await search("alph widget");
+
+        // Assert
+        expect(body).toEqual([]);
+    });
+
+    it("シナリオ18: tsquery の演算子だけの入力は 200 + 空配列（構文エラーで 500 にしない）", async () => {
+        // Arrange
+        await seedProductSet();
+
+        // Act
+        const { status, body } = await search("&|!():*");
+
+        // Assert
+        expect(status).toBe(200);
+        expect(body).toEqual([]);
+    });
+});
+
+describe("サジェスト応答の形と件数（plan 073）", () => {
+    it("シナリオ9: 応答は SearchResult 形で、link は先頭バリアントの商品ページ・image は variantImage", async () => {
+        // Arrange
+        const { a } = await seedProductSet();
+        const variant = await db.productVariant.findFirstOrThrow({
+            where: { productId: a.id },
+        });
+
+        // Act
+        const { status, body } = await search("alpha");
+
+        // Assert
+        expect(status).toBe(200);
+        expect(body).toEqual([
+            {
+                id: a.id,
+                name: a.name,
+                link: `/product/${a.slug}/${variant.slug}`,
+                image: variant.variantImage,
+            },
+        ]);
+    });
+
+    it("シナリオ10: バリアントの無い商品はリンク先が無いため返さない", async () => {
+        // Arrange
+        await seedSearchableProduct({
+            ...base,
+            name: "Orphan Widget",
+            description: "no variant yet",
+            withVariant: false,
+        });
+
+        // Act
+        const { body } = await search("orphan");
+
+        // Assert
+        expect(body).toEqual([]);
+    });
+
+    it("シナリオ11: 件数は 8 件まで。バリアントの無い商品が上位にあっても 8 件が欠けない", async () => {
+        // Arrange — 名前に語を含む（rank が高い）バリアント無し商品を 3 件、
+        // description にだけ含むバリアント有り商品を 9 件。LIMIT の後で除外する実装だと 5 件に欠ける。
+        for (let i = 0; i < 3; i++) {
+            await seedSearchableProduct({
+                ...base,
+                name: `Zircon Zircon ${i}`,
+                description: "zircon",
+                withVariant: false,
+            });
+        }
+        for (let i = 0; i < 9; i++) {
+            await seedSearchableProduct({
+                ...base,
+                name: `Stone ${i}`,
+                description: "zircon",
+            });
+        }
+
+        // Act
+        const { body } = await search("zircon");
+
+        // Assert
+        expect(body).toHaveLength(8);
+    });
+
+    it("シナリオ12: 同じ関連度の商品は id 昇順で並ぶ（tie-breaker）", async () => {
+        // Arrange — name / description が同一なので ts_rank は完全に同点
+        const seeded: Product[] = [];
+        for (let i = 0; i < 4; i++) {
+            seeded.push(
+                await seedSearchableProduct({
+                    ...base,
+                    name: "Twin Item",
+                    description: "identical",
+                })
+            );
+        }
+
+        // Act
+        const { body } = await search("twin");
+
+        // Assert
+        expect(body.map((row) => row.id)).toEqual(
+            seeded.map((p) => p.id).sort()
+        );
+    });
+
+    it("シナリオ13: 互換のため ?search= でも検索できる", async () => {
+        // Arrange
+        const { a } = await seedProductSet();
+
+        // Act
+        const { body } = await search("alpha", "search");
+
+        // Assert
+        expect(body.map((row) => row.id)).toEqual([a.id]);
     });
 });
 

@@ -54,7 +54,7 @@ export default function Search() {
 
         try {
             const res = await fetch(
-                `/api/search-products?search=${encodeURIComponent(trimmed)}`,
+                `/api/search-products?q=${encodeURIComponent(trimmed)}`,
                 { signal: controller.signal }
             );
 

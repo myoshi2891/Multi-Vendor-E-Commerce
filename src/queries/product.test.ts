@@ -6,6 +6,7 @@ import {
     getAllStoreProducts,
     deleteProduct,
     getProducts,
+    getProductFacets,
     retrieveProductDetails,
     getRatingStatistics,
     getShippingDetails,
@@ -15,6 +16,7 @@ import {
     getProductsByIds,
     getProductPageData,
 } from "./product";
+import type { ProductFilters } from "@/lib/types";
 import { TEST_CONFIG } from "../config/test-config";
 import {
     createMockStore,
@@ -103,6 +105,8 @@ jest.mock("@/lib/db", () => ({
         },
         $transaction: jest.fn(),
         $queryRaw: jest.fn(),
+        // recomputeProductDerivedColumns（searchKeywords の再計算・plan 074）が tx 内で呼ぶ
+        $executeRaw: jest.fn(),
     },
 }));
 
@@ -365,6 +369,30 @@ describe("upsertProduct", () => {
                     callback(mockDb)
             );
             mockLockedCategoryNode(LEAF_NODE);
+        });
+
+        it("新規作成の tx 内で searchKeywords を再計算する（plan 074）", async () => {
+            // Arrange
+            mockDb.product.findUnique.mockResolvedValue(null);
+            mockDb.productVariant.findFirst.mockResolvedValue(null);
+            mockDb.product.create.mockResolvedValue(
+                createMockProduct({ id: "created-product-id" })
+            );
+
+            // Act
+            await upsertProduct(
+                createMockProductWithVariantInput() as never,
+                TEST_CONFIG.TEST_STORE_URL
+            );
+
+            // Assert — 作成した商品の id を対象に、searchKeywords を書く UPDATE が 1 回発行される
+            expect(mockDb.$executeRaw).toHaveBeenCalledTimes(1);
+            const sql = mockDb.$executeRaw.mock.calls[0][0] as {
+                strings: string[];
+                values: unknown[];
+            };
+            expect(sql.strings.join("?")).toContain('"searchKeywords"');
+            expect(sql.values).toContain("created-product-id");
         });
 
         it("商品もバリアントも存在しない場合、新規作成する", async () => {
@@ -1077,99 +1105,112 @@ describe("deleteProduct", () => {
 // getProducts
 // ==================================================
 describe("getProducts", () => {
-    beforeEach(() => {
-        mockDb.product.findMany.mockResolvedValue([]);
+    /**
+     * getProducts は「絞り込み → 並び替え → ページング」を 1 本の生 SQL で行い（ID と件数の 2 クエリ）、
+     * 表示用の列は ID で hydrate する（plan 075 / design.md §2-Q2）。ここでは発行した SQL の
+     * 断片とパラメータを検証する。意味（実際にどの行が返るか）は統合テスト
+     * tests/integration/product-browse.test.ts が実 PostgreSQL で検証する。
+     */
+    type RawSql = { strings: readonly string[]; values: unknown[] };
+
+    /** $queryRaw に渡された SQL のうち、ID 取得クエリ（count 以外）を返す。 */
+    const idQuery = (): RawSql => {
+        const call = mockDb.$queryRaw.mock.calls
+            .map((c: unknown[]) => c[0] as RawSql)
+            .find((q: RawSql) => !q.strings.join("?").includes("count(*)"));
+        if (!call) throw new Error("ID クエリが発行されていない");
+        return call;
+    };
+    const sqlText = (q: RawSql): string => q.strings.join("?");
+
+    /** ID クエリと件数クエリの応答を仕込む。 */
+    const arrangeRows = (ids: string[], total = ids.length) => {
+        mockDb.$queryRaw.mockImplementation(async (q: RawSql) =>
+            sqlText(q).includes("count(*)")
+                ? [{ count: BigInt(total) }]
+                : ids.map((id) => ({ id }))
+        );
+    };
+
+    /** hydrate 用: バリアント 1 件・サイズ 1 件を持つ商品 */
+    const productWithPrice = (id: string, price: number) => ({
+        ...createMockProduct({ id, slug: id }),
+        variants: [
+            {
+                ...createMockProductVariant({ id: `v-${id}` }),
+                images: [createMockVariantImage()],
+                colors: [],
+                sizes: [createMockSize({ price, discount: 0 })],
+            },
+        ],
     });
 
-    describe("検索フィルタ", () => {
-        it("検索語にcase-insensitiveモードが含まれる", async () => {
+    beforeEach(() => {
+        mockDb.product.findMany.mockResolvedValue([]);
+        arrangeRows([]);
+    });
+
+    describe("検索", () => {
+        it("検索語は searchVector と前方一致の tsquery で絞り込む（ILIKE は使わない）", async () => {
+            // Act
             await getProducts({ search: "iphone" });
 
-            expect(mockDb.product.findMany).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    where: expect.objectContaining({
-                        AND: expect.arrayContaining([
-                            expect.objectContaining({
-                                OR: expect.arrayContaining([
-                                    {
-                                        name: {
-                                            contains: "iphone",
-                                            mode: "insensitive",
-                                        },
-                                    },
-                                    {
-                                        description: {
-                                            contains: "iphone",
-                                            mode: "insensitive",
-                                        },
-                                    },
-                                ]),
-                            }),
-                        ]),
-                    }),
-                })
-            );
+            // Assert
+            const q = idQuery();
+            expect(sqlText(q)).toContain(`"searchVector" @@ to_tsquery('simple',`);
+            expect(q.values).toContain("iphone:*");
+            expect(sqlText(q)).not.toMatch(/ILIKE|contains/i);
         });
 
-        it("バリアント名・説明もOR条件で検索する", async () => {
-            await getProducts({ search: "Pro Max" });
+        it("検索語があり sort 未指定なら関連度（ts_rank）→ id の順に並べる", async () => {
+            // Act
+            await getProducts({ search: "iphone" }, "");
 
-            const callArgs = mockDb.product.findMany.mock.calls[0][0];
-            const searchClause = callArgs.where.AND.find(
-                (c: Record<string, unknown>) => "OR" in c
-            );
-            const variantClause = searchClause.OR.find(
-                (c: Record<string, unknown>) => "variants" in c
-            );
-
-            // バリアント検索はsome.OR内にvariantNameとvariantDescriptionが分離されている
-            expect(variantClause.variants.some.OR).toEqual(
-                expect.arrayContaining([
-                    expect.objectContaining({
-                        variantName: {
-                            contains: "Pro Max",
-                            mode: "insensitive",
-                        },
-                    }),
-                    expect.objectContaining({
-                        variantDescription: {
-                            contains: "Pro Max",
-                            mode: "insensitive",
-                        },
-                    }),
-                ])
-            );
+            // Assert
+            expect(sqlText(idQuery())).toMatch(/ORDER BY ts_rank\([\s\S]*\) DESC, p\.id ASC/);
         });
 
-        it("検索フィルタなしの場合はcontainsが呼ばれない", async () => {
+        it("検索語があっても sort 指定があればそのキーで並べる", async () => {
+            await getProducts({ search: "iphone" }, "new-arrivals");
+
+            expect(sqlText(idQuery())).toContain(`ORDER BY p."createdAt" DESC, p.id ASC`);
+        });
+
+        it("文字・数字を含まない検索語は DB を引かずに 0 件を返す", async () => {
+            // Act
+            const result = await getProducts({ search: "&|!" });
+
+            // Assert
+            expect(result.totalCount).toBe(0);
+            expect(mockDb.$queryRaw).not.toHaveBeenCalled();
+        });
+
+        it("検索語なしなら searchVector の条件を付けない", async () => {
             await getProducts({});
 
-            const callArgs = mockDb.product.findMany.mock.calls[0][0];
-            const whereAnd = callArgs.where.AND;
-            const hasContains = whereAnd.some(
-                (clause: Record<string, unknown>) =>
-                    JSON.stringify(clause).includes("contains")
-            );
-
-            expect(hasContains).toBe(false);
+            expect(sqlText(idQuery())).not.toContain("searchVector");
         });
     });
 
     describe("フィルタ適用", () => {
-        it("ストアURLでフィルタする", async () => {
-            mockDb.store.findUnique.mockResolvedValue({
-                id: "store-123",
-            });
+        it("ストアURLを id に解決して storeId で絞り込む", async () => {
+            // Arrange
+            mockDb.store.findUnique.mockResolvedValue({ id: "store-123" });
 
+            // Act
             await getProducts({ store: "my-store" });
 
+            // Assert
             expect(mockDb.store.findUnique).toHaveBeenCalledWith({
                 where: { url: "my-store" },
                 select: { id: true },
             });
+            const q = idQuery();
+            expect(sqlText(q)).toContain(`p."storeId" = `);
+            expect(q.values).toContain("store-123");
         });
 
-        it("カテゴリURLをサブツリー条件へ解決してフィルタする", async () => {
+        it("カテゴリURLを path に解決し、starts_with のサブツリー条件で絞り込む", async () => {
             // Arrange
             mockDb.category.findUnique.mockResolvedValue({
                 id: "cat-123",
@@ -1185,28 +1226,14 @@ describe("getProducts", () => {
                 where: { url: "electronics" },
                 select: { id: true, path: true, url: true },
             });
-
-            // Assert —— 条件は旧 categoryId 完全一致ではなく新 FK のサブツリー。
-            // 旧 category はルートを指すため、そちらに掛けるとリーフの商品へ届かない。
-            expect(mockDb.product.findMany).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    where: expect.objectContaining({
-                        AND: expect.arrayContaining([
-                            {
-                                categoryNode: {
-                                    OR: [
-                                        { path: "electronics" },
-                                        {
-                                            path: {
-                                                startsWith: "electronics/",
-                                            },
-                                        },
-                                    ],
-                                },
-                            },
-                        ]),
-                    }),
-                })
+            // Assert —— 新 FK（categoryNodeId）のサブツリー。LIKE は slug の "_" を
+            // ワイルドカードとして扱うので使わない（design.md §0-13）
+            const q = idQuery();
+            expect(sqlText(q)).toContain(`c.id = p."categoryNodeId"`);
+            expect(sqlText(q)).toContain("starts_with(c.path,");
+            expect(sqlText(q)).not.toContain("LIKE");
+            expect(q.values).toEqual(
+                expect.arrayContaining(["electronics", "electronics/"])
             );
         });
 
@@ -1235,32 +1262,16 @@ describe("getProducts", () => {
                     category: { select: { id: true, path: true, url: true } },
                 },
             });
-            expect(mockDb.product.findMany).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    where: expect.objectContaining({
-                        AND: expect.arrayContaining([
-                            {
-                                categoryNode: {
-                                    OR: [
-                                        { path: "electronics/smartphones" },
-                                        {
-                                            path: {
-                                                startsWith:
-                                                    "electronics/smartphones/",
-                                            },
-                                        },
-                                    ],
-                                },
-                            },
-                        ]),
-                    }),
-                })
+            expect(idQuery().values).toEqual(
+                expect.arrayContaining([
+                    "electronics/smartphones",
+                    "electronics/smartphones/",
+                ])
             );
         });
 
         it("category と subCategory の同時指定は 2 つのサブツリーの積になる", async () => {
-            // Arrange —— ?? で 1 本に畳むと片方が黙って捨てられ絞り込みが緩くなる。
-            // 従来どおり独立に AND へ積むことを固定する。
+            // Arrange —— ?? で 1 本に畳むと片方が黙って捨てられ絞り込みが緩くなる
             mockDb.category.findUnique.mockResolvedValue({
                 id: "cat-1",
                 path: "electronics",
@@ -1281,17 +1292,12 @@ describe("getProducts", () => {
             });
 
             // Assert
-            const call = mockDb.product.findMany.mock.calls[0][0];
-            const subtreeConditions = call.where.AND.filter(
-                (c: Record<string, unknown>) => "categoryNode" in c
-            );
-            expect(subtreeConditions).toHaveLength(2);
+            const subtreeCount = sqlText(idQuery()).split(`FROM "Category" c`).length - 1;
+            expect(subtreeCount).toBe(2);
         });
 
-        it("オファータグURLでフィルタする", async () => {
-            mockDb.offerTag.findUnique.mockResolvedValue({
-                id: "offer-123",
-            });
+        it("オファータグURLを id に解決して offerTagId で絞り込む", async () => {
+            mockDb.offerTag.findUnique.mockResolvedValue({ id: "offer-123" });
 
             await getProducts({ offer: "summer-sale" });
 
@@ -1299,11 +1305,42 @@ describe("getProducts", () => {
                 where: { url: "summer-sale" },
                 select: { id: true },
             });
+            expect(sqlText(idQuery())).toContain(`p."offerTagId" = `);
+            expect(idQuery().values).toContain("offer-123");
         });
 
-        // ==================================================
-        // 未マッチのフィルタ（存在しない URL）
-        // ==================================================
+        it("store / category / offer の slug 解決を並列に行う", async () => {
+            // Arrange —— store の解決を保留にしたまま、category と offer の解決が
+            // 始まっていることを確かめる（逐次 await だと store の完了まで呼ばれない）
+            let resolveStore: (value: { id: string }) => void = () => {};
+            mockDb.store.findUnique.mockReturnValue(
+                new Promise((resolve) => {
+                    resolveStore = resolve;
+                })
+            );
+            mockDb.category.findUnique.mockResolvedValue({
+                id: "cat-1",
+                path: "electronics",
+                url: "electronics",
+            });
+            mockDb.offerTag.findUnique.mockResolvedValue({ id: "offer-1" });
+
+            // Act
+            const pending = getProducts({
+                store: "my-store",
+                category: "electronics",
+                offer: "sale",
+            });
+            await Promise.resolve();
+            await Promise.resolve();
+
+            // Assert
+            expect(mockDb.category.findUnique).toHaveBeenCalled();
+            expect(mockDb.offerTag.findUnique).toHaveBeenCalled();
+            resolveStore({ id: "store-1" });
+            await pending;
+        });
+
         // 見つからないフィルタを黙って捨てると「該当なし」が「全件表示」に化ける。
         // 実際に E2E のシード欠落時、/browse?category=<存在しない URL> が全カタログを描画した。
         describe("存在しない URL を指定した場合は 0 件を返す", () => {
@@ -1320,24 +1357,21 @@ describe("getProducts", () => {
                     const result = await getProducts(filters);
 
                     // Assert — 対象モデルを URL で引いたうえで未マッチと判定している
-                    // （別モデルの解決結果や前ケースのモック実装に依存しない）
                     expect(mockDb[model].findUnique).toHaveBeenCalledWith({
                         where: { url: expectedUrl },
                         select: { id: true },
                     });
-
                     // Assert — フィルタを捨てて全件を返してはならない
                     expect(result.products).toEqual([]);
                     expect(result.totalCount).toBe(0);
                     expect(result.totalPages).toBe(0);
+                    expect(mockDb.$queryRaw).not.toHaveBeenCalled();
                     expect(mockDb.product.findMany).not.toHaveBeenCalled();
-                    expect(mockDb.product.count).not.toHaveBeenCalled();
                 }
             );
 
             // category / subCategory は url 完全一致と別名表の 2 段で解決するため、
-            // **両方が外れて初めて**未マッチになる。片方だけを null にした状態で
-            // 合格にすると、フォールバックが効いていないことを見逃す。
+            // **両方が外れて初めて**未マッチになる。
             it.each([
                 ["category", { category: "missing-category" }, "CATEGORY"],
                 [
@@ -1367,13 +1401,10 @@ describe("getProducts", () => {
                             },
                         })
                     );
-
-                    // Assert —— フィルタを捨てて全件を返してはならない
                     expect(result.products).toEqual([]);
                     expect(result.totalCount).toBe(0);
                     expect(result.totalPages).toBe(0);
-                    expect(mockDb.product.findMany).not.toHaveBeenCalled();
-                    expect(mockDb.product.count).not.toHaveBeenCalled();
+                    expect(mockDb.$queryRaw).not.toHaveBeenCalled();
                 }
             );
 
@@ -1395,941 +1426,394 @@ describe("getProducts", () => {
                 expect(result.pageSize).toBe(20);
             });
 
-            // `?store=a&store=b` のように同名パラメータが複数付くと Next.js は
-            // `string[]` を渡す。`filters` は `any` なので型では止まらず、配列のまま
-            // Prisma の `where: { url }` へ到達して実行時に落ちる。category 側と同じく
-            // fail-closed で 0 件に倒す（曖昧な指定 = 解決できない指定）。
+            // getProducts は "use server" の Server Action なので、型に反する入力
+            // （`?store=a&store=b` が string[] のまま届く等）も実行時に来うる。
+            // 曖昧な指定は解決できない指定と同じ扱いにして fail-closed で 0 件に倒す。
             it.each([
                 ["store", { store: ["a", "b"] }],
                 ["offer", { offer: ["a", "b"] }],
+                ["category", { category: ["a", "b"] }],
+                ["search", { search: ["a", "b"] }],
             ] as const)(
                 "%s に配列が届いたら DB を引かずに 0 件を返す",
                 async (_label, filters) => {
                     // Act
-                    const result = await getProducts(filters);
+                    const result = await getProducts(
+                        filters as unknown as ProductFilters
+                    );
 
-                    // Assert —— 配列を Prisma へ渡さない（実行時エラーにしない）
+                    // Assert
                     expect(mockDb.store.findUnique).not.toHaveBeenCalled();
                     expect(mockDb.offerTag.findUnique).not.toHaveBeenCalled();
-
-                    // Assert —— フィルタを捨てて全件を返してもならない
+                    expect(mockDb.category.findUnique).not.toHaveBeenCalled();
                     expect(result.products).toEqual([]);
                     expect(result.totalCount).toBe(0);
-                    expect(mockDb.product.findMany).not.toHaveBeenCalled();
+                    expect(mockDb.$queryRaw).not.toHaveBeenCalled();
                 }
             );
         });
 
-        it("価格範囲でフィルタする", async () => {
+        it("価格範囲でフィルタする（Decimal のパラメータで比較）", async () => {
             await getProducts({ minPrice: 10, maxPrice: 100 });
 
-            const callArgs = mockDb.product.findMany.mock.calls[0][0];
-            const priceClause = callArgs.where.AND.find(
-                (c: Record<string, unknown>) =>
-                    JSON.stringify(c).includes("price")
+            const q = idQuery();
+            expect(sqlText(q)).toContain("s.price >= ");
+            expect(sqlText(q)).toContain("s.price <= ");
+            expect(q.values).toEqual(
+                expect.arrayContaining([
+                    new Prisma.Decimal(10),
+                    new Prisma.Decimal(100),
+                ])
             );
-
-            expect(priceClause).toEqual({
-                variants: {
-                    some: {
-                        sizes: {
-                            some: {
-                                price: { gte: 10, lte: 100 },
-                            },
-                        },
-                    },
-                },
-            });
         });
 
-        it("maxPrice: 0 を「上限未指定」に化けさせず lte: 0 を載せる", async () => {
+        it("maxPrice: 0 を「上限未指定」に化けさせず上限 0 を載せる", async () => {
             // Arrange: minPrice 100 / maxPrice 0 は空レンジ。truthy 判定だと maxPrice が
-            // 落ちて `gte: 100` だけが残り、全件が通ってしまう（回帰の検知点）。
-            // Act
+            // 落ちて下限だけが残り、全件が通ってしまう（回帰の検知点）。
             await getProducts({ minPrice: 100, maxPrice: 0 });
 
-            // Assert
-            const callArgs = mockDb.product.findMany.mock.calls[0][0];
-            const priceClause = callArgs.where.AND.find(
-                (c: Record<string, unknown>) =>
-                    JSON.stringify(c).includes("price")
+            const q = idQuery();
+            expect(sqlText(q)).toContain("s.price <= ");
+            expect(q.values).toEqual(
+                expect.arrayContaining([new Prisma.Decimal(0)])
             );
-
-            expect(priceClause).toEqual({
-                variants: {
-                    some: {
-                        sizes: {
-                            some: {
-                                price: { gte: 100, lte: 0 },
-                            },
-                        },
-                    },
-                },
-            });
         });
 
-        it("minPrice: 0 単独でも価格フィルタを適用する", async () => {
-            // Arrange / Act: 下限 0 は「未指定」ではなく明示指定
+        it("minPrice: 0 単独でも価格フィルタを適用し、上限は付けない", async () => {
             await getProducts({ minPrice: 0 });
 
-            // Assert
-            const callArgs = mockDb.product.findMany.mock.calls[0][0];
-            const priceClause = callArgs.where.AND.find(
-                (c: Record<string, unknown>) =>
-                    JSON.stringify(c).includes("price")
-            );
-
-            expect(priceClause).toEqual({
-                variants: {
-                    some: {
-                        sizes: {
-                            some: {
-                                price: { gte: 0 },
-                            },
-                        },
-                    },
-                },
-            });
+            const q = idQuery();
+            expect(sqlText(q)).toContain("s.price >= ");
+            expect(sqlText(q)).not.toContain("s.price <= ");
         });
 
         it("サイズ配列でフィルタする", async () => {
             await getProducts({ size: ["S", "M"] });
 
-            const callArgs = mockDb.product.findMany.mock.calls[0][0];
-            const sizeClause = callArgs.where.AND.find(
-                (c: Record<string, unknown>) =>
-                    JSON.stringify(c).includes("size")
-            );
-
-            expect(sizeClause).toEqual({
-                variants: {
-                    some: {
-                        sizes: {
-                            some: {
-                                size: { in: ["S", "M"] },
-                            },
-                        },
-                    },
-                },
-            });
+            const q = idQuery();
+            expect(sqlText(q)).toContain("s.size = ANY(");
+            expect(q.values).toContainEqual(["S", "M"]);
         });
 
         it("サイズが単数指定（string）でも配列へ揃えて適用する", async () => {
-            // Arrange —— `?size=M` が 1 つだけのとき string で届く
-            // Act
-            await getProducts({ size: "M" });
+            // Arrange —— `?size=M` が 1 つだけのとき string で届く（Server Action への直接入力）
+            await getProducts({ size: "M" } as unknown as ProductFilters);
 
-            // Assert —— 黙って捨てず、配列指定と同じ where を組む
-            const callArgs = mockDb.product.findMany.mock.calls[0][0];
-            const sizeClause = callArgs.where.AND.find(
-                (c: Record<string, unknown>) =>
-                    JSON.stringify(c).includes("size")
-            );
-
-            expect(sizeClause).toEqual({
-                variants: {
-                    some: {
-                        sizes: {
-                            some: {
-                                size: { in: ["M"] },
-                            },
-                        },
-                    },
-                },
-            });
+            // Assert —— 黙って捨てず、配列指定と同じ条件を組む
+            expect(idQuery().values).toContainEqual(["M"]);
         });
 
         it("カラーでフィルタする", async () => {
             await getProducts({ color: ["Red", "Blue"] });
 
-            const callArgs = mockDb.product.findMany.mock.calls[0][0];
-            const colorClause = callArgs.where.AND.find(
-                (c: Record<string, unknown>) =>
-                    JSON.stringify(c).includes("colors")
-            );
-
-            expect(colorClause).toEqual({
-                variants: {
-                    some: {
-                        colors: {
-                            some: {
-                                name: { in: ["Red", "Blue"] },
-                            },
-                        },
-                    },
-                },
-            });
+            const q = idQuery();
+            expect(sqlText(q)).toContain(`JOIN "Color"`);
+            expect(q.values).toContainEqual(["Red", "Blue"]);
         });
     });
 
-    describe("ソート", () => {
-        it("デフォルトはviews降順（most-popular）", async () => {
-            await getProducts({}, "");
+    describe("属性フィルタ（plan 076）", () => {
+        it("同じ key の値は 1 つの述語に OR でまとめ、PRODUCT / VARIANT 両スコープを見る", async () => {
+            // Act
+            await getProducts({ attributes: { material: ["wool", "cotton"] } });
 
-            expect(mockDb.product.findMany).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    orderBy: { views: "desc" },
-                })
-            );
+            // Assert
+            const q = idQuery();
+            expect(sqlText(q)).toContain(`FROM "ProductAttributeValue" v`);
+            expect(sqlText(q)).toContain(`FROM "VariantAttributeValue" v`);
+            expect(q.values).toContainEqual("material");
+            expect(q.values).toContainEqual(["wool", "cotton"]);
+        });
+    });
+
+    describe("ソート（末尾は必ず id の tie-breaker）", () => {
+        it.each([
+            ["", `ORDER BY p.views DESC, p.id ASC`],
+            ["most-popular", `ORDER BY p.views DESC, p.id ASC`],
+            ["new-arrivals", `ORDER BY p."createdAt" DESC, p.id ASC`],
+            ["top-rated", `ORDER BY p.rating DESC, p.id ASC`],
+        ])("sort=%p は %s", async (sortBy, expected) => {
+            await getProducts({}, sortBy);
+
+            expect(sqlText(idQuery())).toContain(expected);
         });
 
-        it("new-arrivals: createdAt降順", async () => {
-            await getProducts({}, "new-arrivals");
+        // 価格順は非正規化列 minPrice（割引後の最小価格）で DB が並べる（plan 076）。
+        // 旧実装はページング後にメモリ上で並べ替えており、1 ページ内しか並ばなかった。
+        it.each([
+            ["price-low-to-high", `ORDER BY p."minPrice" ASC NULLS LAST, p.id ASC`],
+            ["price-high-to-low", `ORDER BY p."minPrice" DESC NULLS LAST, p.id ASC`],
+        ])("sort=%p は %s", async (sortBy, expected) => {
+            await getProducts({}, sortBy);
 
-            expect(mockDb.product.findMany).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    orderBy: { createdAt: "desc" },
-                })
-            );
+            expect(sqlText(idQuery())).toContain(expected);
         });
 
-        it("top-rated: rating降順", async () => {
-            await getProducts({}, "top-rated");
+        it("価格順でも hydrate 後に並べ替えない（ID クエリの順を保つ）", async () => {
+            // Arrange — ID クエリは p1($50) → p2($20) の順。メモリ上で再ソートしたら p2 が先になる
+            arrangeRows(["p1", "p2"]);
+            mockDb.product.findMany.mockResolvedValue([
+                productWithPrice("p1", 50),
+                productWithPrice("p2", 20),
+            ]);
 
-            expect(mockDb.product.findMany).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    orderBy: { rating: "desc" },
-                })
-            );
-        });
-
-        it("price-low-to-high: 割引後価格の昇順でソートされる", async () => {
-            const products = [
-                {
-                    ...createMockProduct({ id: "p1", slug: "p1" }),
-                    variants: [
-                        {
-                            ...createMockProductVariant(),
-                            images: [createMockVariantImage()],
-                            colors: [],
-                            sizes: [createMockSize({ price: 50, discount: 0 })],
-                        },
-                    ],
-                },
-                {
-                    ...createMockProduct({ id: "p2", slug: "p2" }),
-                    variants: [
-                        {
-                            ...createMockProductVariant({ id: "v2" }),
-                            images: [createMockVariantImage()],
-                            colors: [],
-                            sizes: [createMockSize({ price: 20, discount: 0 })],
-                        },
-                    ],
-                },
-            ];
-            mockDb.product.findMany.mockResolvedValue(products);
-
+            // Act
             const result = await getProducts({}, "price-low-to-high");
 
-            // p2 ($20) が p1 ($50) より前に来る
-            expect(result.products[0].id).toBe("p2");
-            expect(result.products[1].id).toBe("p1");
+            // Assert
+            expect(result.products.map((p) => p.id)).toEqual(["p1", "p2"]);
         });
     });
 
-    describe("ページネーション", () => {
-        it("skip/takeが正しく計算される", async () => {
+    describe("ページネーションと hydrate", () => {
+        it("LIMIT / OFFSET をパラメータで渡す", async () => {
             await getProducts({}, "", 3, 20);
 
-            expect(mockDb.product.findMany).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    take: 20,
-                    skip: 40, // (3-1) * 20
-                })
-            );
+            const q = idQuery();
+            expect(sqlText(q)).toMatch(/LIMIT \? OFFSET \?/);
+            expect(q.values.slice(-2)).toEqual([20, 40]); // (3-1) * 20
         });
 
-        it("totalPagesが正しく計算される", async () => {
-            const products = Array(5)
-                .fill(null)
-                .map((_, i) => ({
-                    ...createMockProduct({ id: `p${i}`, slug: `p${i}` }),
-                    variants: [
-                        {
-                            ...createMockProductVariant({ id: `v${i}` }),
-                            images: [createMockVariantImage()],
-                            colors: [],
-                            sizes: [createMockSize({ price: 29.99 })],
-                        },
-                    ],
-                }));
-            mockDb.product.findMany.mockResolvedValue(products);
-            mockDb.product.count.mockResolvedValue(5);
+        it("totalPages を件数クエリから計算する", async () => {
+            // Arrange
+            arrangeRows(["p0", "p1"], 5);
+            mockDb.product.findMany.mockResolvedValue([
+                productWithPrice("p0", 10),
+                productWithPrice("p1", 10),
+            ]);
 
+            // Act
             const result = await getProducts({}, "", 1, 2);
 
+            // Assert
             expect(result.totalCount).toBe(5);
             expect(result.totalPages).toBe(3); // ceil(5/2)
             expect(result.currentPage).toBe(1);
             expect(result.pageSize).toBe(2);
         });
-    });
-});
 
-// ==================================================
-// retrieveProductDetails
-// ==================================================
-describe("retrieveProductDetails", () => {
-    it("存在しない商品の場合nullを返す", async () => {
-        mockDb.product.findUnique.mockResolvedValue(null);
+        it("hydrate した商品を ID クエリの順に並べ直す", async () => {
+            // Arrange — findMany は順序を保証しないので、わざと逆順で返す
+            arrangeRows(["p2", "p1"]);
+            mockDb.product.findMany.mockResolvedValue([
+                productWithPrice("p1", 10),
+                productWithPrice("p2", 10),
+            ]);
 
-        const result = await retrieveProductDetails(
-            "nonexistent",
-            "variant-slug"
-        );
+            // Act
+            const result = await getProducts({});
 
-        expect(result).toBeNull();
-    });
-
-    it("商品とバリアント情報を含めて返す", async () => {
-        const product = {
-            ...createMockProduct(),
-            category: createMockCategory(),
-            subCategory: createMockSubCategory(),
-            offerTag: null,
-            store: createMockStore(),
-            specs: [],
-            questions: [],
-            reviews: [],
-            freeShipping: null,
-            variants: [
-                {
-                    ...createMockProductVariant(),
-                    images: [createMockVariantImage()],
-                    colors: [{ name: "Red" }],
-                    sizes: [createMockSize()],
-                    specs: [],
-                },
-            ],
-        };
-        mockDb.product.findUnique.mockResolvedValue(product);
-        mockDb.productVariant.findMany.mockResolvedValue([
-            {
-                ...createMockProductVariant(),
-                variantImage: "https://example.com/v1.jpg",
-                images: [createMockVariantImage()],
-                sizes: [createMockSize()],
-                colors: [{ name: "Red" }],
-                product: { slug: "test-product" },
-            },
-        ]);
-
-        const result = await retrieveProductDetails(
-            "test-product",
-            "red-edition"
-        );
-
-        expect(result).toBeDefined();
-        expect(result!.variantsInfo).toHaveLength(1);
-        expect(result!.variantsInfo[0].variantUrl).toBe(
-            "/product/test-product/red-edition"
-        );
-    });
-
-    it("variantSlugでフィルタしてクエリする", async () => {
-        mockDb.product.findUnique.mockResolvedValue(null);
-
-        await retrieveProductDetails("prod-slug", "var-slug");
-
-        expect(mockDb.product.findUnique).toHaveBeenCalledWith(
-            expect.objectContaining({
-                where: { slug: "prod-slug" },
-                include: expect.objectContaining({
-                    variants: expect.objectContaining({
-                        where: { slug: "var-slug" },
-                    }),
-                }),
-            })
-        );
-    });
-});
-
-// ==================================================
-// getRatingStatistics
-// ==================================================
-describe("getRatingStatistics", () => {
-    it("レビューがない場合、全て0を返す", async () => {
-        mockDb.review.groupBy.mockResolvedValue([]);
-        mockDb.review.count.mockResolvedValue(0);
-
-        const result = await getRatingStatistics("product-001");
-
-        expect(result.totalReviews).toBe(0);
-        expect(result.ratingStatistics).toHaveLength(5);
-        result.ratingStatistics.forEach((stat) => {
-            expect(stat.numReviews).toBe(0);
-            expect(stat.percentage).toBe(0);
+            // Assert
+            expect(result.products.map((p) => p.id)).toEqual(["p2", "p1"]);
+            expect(mockDb.product.findMany).toHaveBeenCalledWith(
+                expect.objectContaining({ where: { id: { in: ["p2", "p1"] } } })
+            );
         });
-    });
 
-    it("レーティング分布を正しく計算する", async () => {
-        mockDb.review.groupBy.mockResolvedValue([
-            { rating: 5, _count: { rating: 8 } },
-            { rating: 4, _count: { rating: 5 } },
-            { rating: 3, _count: { rating: 2 } },
-            { rating: 1, _count: { rating: 5 } },
-        ]);
-        mockDb.review.count.mockResolvedValue(3);
+        it("ID が 0 件なら hydrate しない", async () => {
+            await getProducts({});
 
-        const result = await getRatingStatistics("product-001");
-
-        expect(result.totalReviews).toBe(20);
-        expect(result.ratingStatistics[4]).toEqual({
-            rating: 5,
-            numReviews: 8,
-            percentage: 40, // 8/20*100
-        });
-        expect(result.ratingStatistics[3]).toEqual({
-            rating: 4,
-            numReviews: 5,
-            percentage: 25,
-        });
-        // 星2はデータなし → 0
-        expect(result.ratingStatistics[1]).toEqual({
-            rating: 2,
-            numReviews: 0,
-            percentage: 0,
-        });
-    });
-
-    it("画像付きレビュー数を返す", async () => {
-        mockDb.review.groupBy.mockResolvedValue([
-            { rating: 5, _count: { rating: 3 } },
-        ]);
-        mockDb.review.count.mockResolvedValue(2);
-
-        const result = await getRatingStatistics("product-001");
-
-        expect(result.reviewsWithImagesCount).toBe(2);
-        expect(mockDb.review.count).toHaveBeenCalledWith({
-            where: {
-                productId: "product-001",
-                images: { some: {} },
-            },
+            expect(mockDb.product.findMany).not.toHaveBeenCalled();
         });
     });
 });
 
-// ==================================================
-// getShippingDetails
-// ==================================================
-describe("getShippingDetails", () => {
-    const userCountry = { name: "Japan", code: "JP", city: "Tokyo" };
-    const store = createMockStore({
-        defaultShippingFeePerItem: new Prisma.Decimal("5"),
-        defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2"),
-        defaultShippingFeePerKg: new Prisma.Decimal("1.5"),
-        defaultShippingFeeFixed: new Prisma.Decimal("10"),
+describe("getProductFacets", () => {
+    /**
+     * 集計 SQL の意味（実際の件数）は統合テストが実 PostgreSQL で検証する。ここでは
+     * 早期リターン・disjunctive 集計のクエリ構成・行の組み立てと並び順を検証する。
+     */
+    type RawSql = { strings: readonly string[]; values: unknown[] };
+    const sqlText = (q: RawSql): string => q.strings.join("?");
+    const rawCalls = (): RawSql[] =>
+        mockDb.$queryRaw.mock.calls.map((c: unknown[]) => c[0] as RawSql);
+
+    /** 集計 1 行（FacetCountRow） */
+    const row = (
+        overrides: Partial<{
+            key: string;
+            name: string;
+            unit: string | null;
+            def_order: number;
+            value: string;
+            label: string;
+            option_order: number | null;
+            count: bigint;
+        }> = {}
+    ) => ({
+        key: "material",
+        name: "Material",
+        unit: null,
+        def_order: 0,
+        value: "wool",
+        label: "Wool",
+        option_order: null,
+        count: BigInt(1),
+        ...overrides,
     });
 
-    it("国が見つからない場合falseを返す", async () => {
-        mockDb.country.findUnique.mockResolvedValue(null);
-
-        const result = await getShippingDetails(
-            "ITEM",
-            userCountry,
-            store as never,
-            null
-        );
-
-        expect(result).toBe(false);
+    beforeEach(() => {
+        mockDb.category.findUnique.mockResolvedValue({
+            id: "cat-1",
+            path: "fashion",
+            url: "fashion",
+        });
+        mockDb.$queryRaw.mockResolvedValue([]);
     });
 
-    describe("配送方式別計算", () => {
-        beforeEach(() => {
-            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
+    describe("早期リターン（DB を集計しない）", () => {
+        it.each([
+            ["カテゴリ未指定", {}],
+            ["不正なフィルタ", { category: "fashion", attributes: { "Bad Key": ["x"] } }],
+            ["文字・数字を含まない検索語", { category: "fashion", search: "&|!" }],
+        ])("%s なら空配列を返す", async (_label, filters) => {
+            // Act
+            const result = await getProductFacets(filters as ProductFilters);
+
+            // Assert
+            expect(result).toEqual([]);
+            expect(mockDb.$queryRaw).not.toHaveBeenCalled();
         });
 
-        it("ITEM方式: 配送レートの値を使用する", async () => {
-            mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: new Prisma.Decimal("8"),
-                shippingFeeForAdditionalItem: new Prisma.Decimal("3"),
-                shippingFeePerKg: new Prisma.Decimal("0"),
-                shippingFeeFixed: new Prisma.Decimal("0"),
-                deliveryTimeMin: 5,
-                deliveryTimeMax: 10,
-                shippingService: "Express",
-                returnPolicy: "30 days",
+        it("存在しないカテゴリなら空配列を返す", async () => {
+            // Arrange
+            mockDb.category.findUnique.mockResolvedValue(null);
+
+            // Act
+            const result = await getProductFacets({ category: "missing" });
+
+            // Assert
+            expect(result).toEqual([]);
+            expect(mockDb.$queryRaw).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("選択なし", () => {
+        it("1 クエリで全 key を集計し、検索語の述語を母集合に課す", async () => {
+            // Act
+            await getProductFacets({ category: "fashion", search: "coat" });
+
+            // Assert
+            const calls = rawCalls();
+            expect(calls).toHaveLength(1);
+            expect(sqlText(calls[0])).toContain("WHERE TRUE");
+            expect(sqlText(calls[0])).toContain(`"searchVector" @@ to_tsquery('simple',`);
+            expect(calls[0].values).toContain("coat:*");
+        });
+
+        it("label は GROUP BY に含めず集約する（同じ key × value を 1 行にまとめる）", async () => {
+            // Act
+            await getProductFacets({ category: "fashion" });
+
+            // Assert
+            const text = sqlText(rawCalls()[0]);
+            expect(text).toContain("min(COALESCE(o.label");
+            const groupBy = text.slice(text.lastIndexOf("GROUP BY"));
+            expect(groupBy).toContain("o.value");
+            expect(groupBy).not.toContain("o.label");
+        });
+
+        it("定義順 → key 順、値は option 順 → 件数の多い順 → label 順に並べる", async () => {
+            // Arrange
+            mockDb.$queryRaw.mockResolvedValue([
+                row({ key: "size_cm", name: "Size", unit: "cm", def_order: 1, value: "55", label: "55" }),
+                row({ key: "color", name: "Color", def_order: 0, value: "red", label: "Red", option_order: 1 }),
+                row({ key: "color", name: "Color", def_order: 0, value: "blue", label: "Blue", option_order: 0 }),
+                row({ key: "brand", name: "Brand", def_order: 0, value: "b", label: "B", count: BigInt(2) }),
+                row({ key: "brand", name: "Brand", def_order: 0, value: "a", label: "A", count: BigInt(2) }),
+                row({ key: "brand", name: "Brand", def_order: 0, value: "c", label: "C", count: BigInt(5) }),
+            ]);
+
+            // Act
+            const result = await getProductFacets({ category: "fashion" });
+
+            // Assert
+            expect(result.map((f) => f.key)).toEqual(["brand", "color", "size_cm"]);
+            expect(result[0].values.map((v) => v.value)).toEqual(["c", "a", "b"]);
+            expect(result[1].values.map((v) => v.value)).toEqual(["blue", "red"]);
+            expect(result[2]).toEqual({
+                key: "size_cm",
+                name: "Size",
+                unit: "cm",
+                values: [{ value: "55", label: "55", count: 1, selected: false }],
+            });
+        });
+    });
+
+    describe("選択あり（disjunctive faceting）", () => {
+        it("選択中の key ごとに、その key の選択だけを外した母集合で数える", async () => {
+            // Act
+            await getProductFacets({
+                category: "fashion",
+                attributes: { color: ["red"], material: ["wool"] },
             });
 
-            const result = await getShippingDetails(
-                "ITEM",
-                userCountry,
-                store as never,
-                null
-            );
+            // Assert —— 未選択分 1 + 選択中の key 2
+            const [unselected, colorRun, materialRun] = rawCalls();
+            expect(rawCalls()).toHaveLength(3);
+            expect(sqlText(unselected)).toContain("d.key <> ALL(");
+            expect(unselected.values).toContainEqual(["color", "material"]);
 
-            expect(result).toEqual(
-                expect.objectContaining({
-                    shippingFeeMethod: "ITEM",
-                    shippingFee: 8.0,
-                    extraShippingFee: 3.0,
-                    shippingService: "Express",
-                    deliveryTimeMin: 5,
-                    deliveryTimeMax: 10,
-                })
-            );
+            expect(colorRun.values).not.toContainEqual(["red"]);
+            expect(colorRun.values).toContainEqual(["wool"]);
+            expect(materialRun.values).toContainEqual(["red"]);
+            expect(materialRun.values).not.toContainEqual(["wool"]);
         });
 
-        it("WEIGHT方式: 重量ベースの料金を返す", async () => {
-            mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: new Prisma.Decimal("0"),
-                shippingFeeForAdditionalItem: new Prisma.Decimal("0"),
-                shippingFeePerKg: new Prisma.Decimal("5"),
-                shippingFeeFixed: new Prisma.Decimal("0"),
-                deliveryTimeMin: 7,
-                deliveryTimeMax: 14,
-                shippingService: "Standard",
-                returnPolicy: "14 days",
+        it("選択値に印を付け、母集合に無い選択値・key も件数 0 で残す", async () => {
+            // Arrange
+            mockDb.$queryRaw
+                .mockResolvedValueOnce([
+                    row({ key: "season", name: "Season", def_order: 2, value: "ss", label: "SS" }),
+                ])
+                .mockResolvedValueOnce([
+                    row({ key: "color", name: "Color", value: "red", label: "Red", count: BigInt(3) }),
+                ])
+                .mockResolvedValueOnce([]);
+
+            // Act
+            const result = await getProductFacets({
+                category: "fashion",
+                attributes: { color: ["red", "green"], stale_key: ["x"] },
             });
 
-            const result = await getShippingDetails(
-                "WEIGHT",
-                userCountry,
-                store as never,
-                null
-            );
-
-            expect(result).toEqual(
-                expect.objectContaining({
-                    shippingFeeMethod: "WEIGHT",
-                    shippingFee: 5.0,
-                })
-            );
-        });
-
-        it("FIXED方式: 固定料金を返す", async () => {
-            mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: new Prisma.Decimal("0"),
-                shippingFeeForAdditionalItem: new Prisma.Decimal("0"),
-                shippingFeePerKg: new Prisma.Decimal("0"),
-                shippingFeeFixed: new Prisma.Decimal("15"),
-                deliveryTimeMin: 3,
-                deliveryTimeMax: 7,
-                shippingService: "Economy",
-                returnPolicy: "7 days",
+            // Assert
+            expect(result.map((f) => f.key)).toEqual(["color", "season", "stale_key"]);
+            expect(result[0].values).toEqual([
+                { value: "red", label: "Red", count: 3, selected: true },
+                { value: "green", label: "green", count: 0, selected: true },
+            ]);
+            expect(result[1].values[0].selected).toBe(false);
+            expect(result[2]).toEqual({
+                key: "stale_key",
+                name: "stale_key",
+                unit: null,
+                values: [{ value: "x", label: "x", count: 0, selected: true }],
             });
-
-            const result = await getShippingDetails(
-                "FIXED",
-                userCountry,
-                store as never,
-                null
-            );
-
-            expect(result).toEqual(
-                expect.objectContaining({
-                    shippingFeeMethod: "FIXED",
-                    shippingFee: 15.0,
-                })
-            );
         });
+    });
 
-        it("配送レートがない場合、ストアデフォルトにフォールバックする", async () => {
-            mockDb.shippingRate.findFirst.mockResolvedValue(null);
+    describe("エラー", () => {
+        it.each([
+            ["Error", new Error("db down")],
+            ["Error 以外", "boom"],
+        ])("%s をログに残して再送出する", async (_label, thrown) => {
+            // Arrange
+            const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+            mockDb.$queryRaw.mockRejectedValue(thrown);
 
-            const result = await getShippingDetails(
-                "ITEM",
-                userCountry,
-                store as never,
-                null
+            // Act & Assert
+            await expect(getProductFacets({ category: "fashion" })).rejects.toBe(thrown);
+            expect(spy).toHaveBeenCalledWith(
+                "[product:getProductFacets]",
+                expect.anything(),
+                ...(thrown instanceof Error ? [expect.objectContaining({ stack: expect.any(String) })] : [])
             );
-
-            expect(result).toEqual(
-                expect.objectContaining({
-                    shippingFee: 5,
-                    extraShippingFee: 2,
-                    deliveryTimeMin: store.defaultDeliveryTimeMin,
-                    deliveryTimeMax: store.defaultDeliveryTimeMax,
-                })
-            );
-        });
-
-        it("無料配送対象国の場合、料金が0になる", async () => {
-            mockDb.shippingRate.findFirst.mockResolvedValue({
-                shippingFeePerItem: new Prisma.Decimal("10"),
-                shippingFeeForAdditionalItem: new Prisma.Decimal("5"),
-                shippingFeePerKg: new Prisma.Decimal("0"),
-                shippingFeeFixed: new Prisma.Decimal("0"),
-                deliveryTimeMin: 3,
-                deliveryTimeMax: 7,
-                shippingService: "Standard",
-                returnPolicy: "30 days",
-            });
-
-            const freeShipping = {
-                id: "fs-001",
-                productId: "product-001",
-                eligibleCountries: [
-                    {
-                        id: "fsc-001",
-                        countryId: "country-001",
-                        freeShippingId: "fs-001",
-                    },
-                ],
-            };
-
-            const result = await getShippingDetails(
-                "ITEM",
-                userCountry,
-                store as never,
-                freeShipping as never
-            );
-
-            expect(result).toEqual(
-                expect.objectContaining({
-                    isFreeShipping: true,
-                    shippingFee: 0,
-                    extraShippingFee: 0,
-                })
-            );
-        });
-
-        it("ユーザーの国情報をレスポンスに含める", async () => {
-            mockDb.shippingRate.findFirst.mockResolvedValue(null);
-
-            const result = await getShippingDetails(
-                "ITEM",
-                userCountry,
-                store as never,
-                null
-            );
-
-            expect(result).toEqual(
-                expect.objectContaining({
-                    countryCode: "JP",
-                    countryName: "Japan",
-                    city: "Tokyo",
-                })
-            );
+            spy.mockRestore();
         });
     });
 });
 
-// ==================================================
-// getProductFilteredReviews
-// ==================================================
-describe("getProductFilteredReviews", () => {
-    it("フィルタなしで全レビューを取得する", async () => {
-        const reviews = [
-            { id: "r1", rating: 5, images: [], user: {} },
-            { id: "r2", rating: 3, images: [], user: {} },
-        ];
-        mockDb.review.findMany.mockResolvedValue(reviews);
-
-        const result = await getProductFilteredReviews(
-            "product-001",
-            {},
-            undefined
-        );
-
-        expect(result).toHaveLength(2);
-        expect(mockDb.review.findMany).toHaveBeenCalledWith(
-            expect.objectContaining({
-                where: { productId: "product-001" },
-                orderBy: { rating: "desc" }, // デフォルト
-            })
-        );
-    });
-
-    it("レーティングでフィルタする（±0.5の範囲）", async () => {
-        mockDb.review.findMany.mockResolvedValue([]);
-
-        await getProductFilteredReviews(
-            "product-001",
-            { rating: 4 },
-            undefined
-        );
-
-        expect(mockDb.review.findMany).toHaveBeenCalledWith(
-            expect.objectContaining({
-                where: expect.objectContaining({
-                    rating: { in: [4, 4.5] },
-                }),
-            })
-        );
-    });
-
-    it("画像付きレビューでフィルタする", async () => {
-        mockDb.review.findMany.mockResolvedValue([]);
-
-        await getProductFilteredReviews(
-            "product-001",
-            { hasImages: true },
-            undefined
-        );
-
-        expect(mockDb.review.findMany).toHaveBeenCalledWith(
-            expect.objectContaining({
-                where: expect.objectContaining({
-                    images: { some: {} },
-                }),
-            })
-        );
-    });
-
-    it("latest: createdAt降順でソートする", async () => {
-        mockDb.review.findMany.mockResolvedValue([]);
-
-        await getProductFilteredReviews(
-            "product-001",
-            {},
-            { orderBy: "latest" }
-        );
-
-        expect(mockDb.review.findMany).toHaveBeenCalledWith(
-            expect.objectContaining({
-                orderBy: { createdAt: "desc" },
-            })
-        );
-    });
-
-    it("oldest: createdAt昇順でソートする", async () => {
-        mockDb.review.findMany.mockResolvedValue([]);
-
-        await getProductFilteredReviews(
-            "product-001",
-            {},
-            { orderBy: "oldest" }
-        );
-
-        expect(mockDb.review.findMany).toHaveBeenCalledWith(
-            expect.objectContaining({
-                orderBy: { createdAt: "asc" },
-            })
-        );
-    });
-
-    it("ページネーションが正しく適用される", async () => {
-        mockDb.review.findMany.mockResolvedValue([]);
-
-        await getProductFilteredReviews("product-001", {}, undefined, 3, 10);
-
-        expect(mockDb.review.findMany).toHaveBeenCalledWith(
-            expect.objectContaining({
-                skip: 20, // (3-1) * 10
-                take: 10,
-            })
-        );
-    });
-});
-
-// ==================================================
-// getDeliveryDetailsForStoreByCountry
-// ==================================================
-describe("getDeliveryDetailsForStoreByCountry", () => {
-    it("配送レートがある場合、そのレートの値を返す", async () => {
-        mockDb.shippingRate.findFirst.mockResolvedValue({
-            shippingService: "DHL Express",
-            deliveryTimeMin: 2,
-            deliveryTimeMax: 5,
-        });
-
-        const result = await getDeliveryDetailsForStoreByCountry(
-            TEST_CONFIG.DEFAULT_STORE_ID,
-            "country-001"
-        );
-
-        expect(result).toEqual({
-            shippingService: "DHL Express",
-            deliveryTimeMin: 2,
-            deliveryTimeMax: 5,
-        });
-        // ストア詳細クエリは呼ばれない
-        expect(mockDb.store.findUnique).not.toHaveBeenCalled();
-    });
-
-    it("配送レートがない場合、ストアデフォルトを返す", async () => {
-        mockDb.shippingRate.findFirst.mockResolvedValue(null);
-        mockDb.store.findUnique.mockResolvedValue({
-            defaultShippingService: "Standard Post",
-            defaultDeliveryTimeMin: 7,
-            defaultDeliveryTimeMax: 21,
-        });
-
-        const result = await getDeliveryDetailsForStoreByCountry(
-            TEST_CONFIG.DEFAULT_STORE_ID,
-            "country-001"
-        );
-
-        expect(result).toEqual({
-            shippingService: "Standard Post",
-            deliveryTimeMin: 7,
-            deliveryTimeMax: 21,
-        });
-    });
-
-    it("正しいstoreIdとcountryIdでクエリする", async () => {
-        mockDb.shippingRate.findFirst.mockResolvedValue({
-            shippingService: "Test",
-            deliveryTimeMin: 1,
-            deliveryTimeMax: 3,
-        });
-
-        await getDeliveryDetailsForStoreByCountry("store-X", "country-Y");
-
-        expect(mockDb.shippingRate.findFirst).toHaveBeenCalledWith({
-            where: {
-                storeId: "store-X",
-                countryId: "country-Y",
-            },
-        });
-    });
-});
-
-// ==================================================
-// getProductShippingFee
-// ==================================================
-describe("getProductShippingFee", () => {
-    const userCountry = {
-        name: "Japan",
-        code: "JP",
-        city: "Tokyo",
-        region: "Kanto",
-    };
-    const store = createMockStore();
-
-    it("国が見つからない場合0を返す", async () => {
-        mockDb.country.findUnique.mockResolvedValue(null);
-
-        const result = await getProductShippingFee(
-            "ITEM",
-            userCountry,
-            store as never,
-            null,
-            0.5,
-            1
-        );
-
-        expect(result).toEqual(new Prisma.Decimal("0"));
-    });
-
-    it("無料配送対象国の場合0を返す", async () => {
-        mockDb.country.findUnique.mockResolvedValue(createMockCountry());
-
-        const freeShipping = {
-            eligibleCountries: [{ countryId: "country-001" }],
-        };
-
-        const result = await getProductShippingFee(
-            "ITEM",
-            userCountry,
-            store as never,
-            freeShipping as never,
-            0.5,
-            1
-        );
-
-        expect(result).toEqual(new Prisma.Decimal("0"));
-    });
-
-    describe("配送方式別計算", () => {
-        const mockShippingRate = {
-            shippingFeePerItem: new Prisma.Decimal("5"),
-            shippingFeeForAdditionalItem: new Prisma.Decimal("2"),
-            shippingFeePerKg: new Prisma.Decimal("3"),
-            shippingFeeFixed: new Prisma.Decimal("15"),
-        };
-
-        beforeEach(() => {
-            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
-            mockDb.shippingRate.findFirst.mockResolvedValue(mockShippingRate);
-        });
-
-        it("ITEM方式: 初回+追加アイテム料金を計算する", async () => {
-            const result = await getProductShippingFee(
-                "ITEM",
-                userCountry,
-                store as never,
-                null,
-                0.5,
-                3 // 数量3: 5 + 2 * 2 = 9
-            );
-
-            expect(result).toEqual(new Prisma.Decimal("9"));
-        });
-
-        it("WEIGHT方式: 重量×数量×単価を計算する", async () => {
-            const result = await getProductShippingFee(
-                "WEIGHT",
-                userCountry,
-                store as never,
-                null,
-                2.0, // 2kg
-                3 // 数量3: 3 * 2 * 3 = 18
-            );
-
-            expect(result).toEqual(new Prisma.Decimal("18"));
-        });
-
-        it("FIXED方式: 固定料金を返す（数量に依存しない）", async () => {
-            const result1 = await getProductShippingFee(
-                "FIXED",
-                userCountry,
-                store as never,
-                null,
-                0.5,
-                1
-            );
-            // clearMocksしないので、再度モックを設定
-            mockDb.country.findUnique.mockResolvedValue(createMockCountry());
-            mockDb.shippingRate.findFirst.mockResolvedValue(mockShippingRate);
-
-            const result5 = await getProductShippingFee(
-                "FIXED",
-                userCountry,
-                store as never,
-                null,
-                0.5,
-                5
-            );
-
-            expect(result1).toEqual(new Prisma.Decimal("15"));
-            expect(result5).toEqual(new Prisma.Decimal("15"));
-        });
-
-        it("未知の配送方式の場合0を返す", async () => {
-            const result = await getProductShippingFee(
-                "UNKNOWN_METHOD" as unknown as ShippingFeeMethod,
-                userCountry,
-                store as never,
-                null,
-                0.5,
-                1
-            );
-
-            expect(result).toEqual(new Prisma.Decimal("0"));
-        });
-
-        it("配送レートがない場合、ストアデフォルト値を使用する", async () => {
-            mockDb.shippingRate.findFirst.mockResolvedValue(null);
-
-            // ストアデフォルト値を Decimal で持つモックを使用
-            const storeWithDecimalDefaults = createMockStore({
-                defaultShippingFeePerItem: new Prisma.Decimal("5"),
-                defaultShippingFeeForAdditionalItem: new Prisma.Decimal("2"),
-                defaultShippingFeePerKg: new Prisma.Decimal("1.5"),
-                defaultShippingFeeFixed: new Prisma.Decimal("10"),
-            });
-
-            const result = await getProductShippingFee(
-                "ITEM",
-                userCountry,
-                storeWithDecimalDefaults as never,
-                null,
-                0.5,
-                2 // defaultShippingFeePerItem(5) + defaultShippingFeeForAdditionalItem(2) * 1 = 7
-            );
-
-            expect(result).toEqual(new Prisma.Decimal("7"));
-        });
-    });
-});
-
-// ==================================================
-// getProductsByIds
-// ==================================================
 describe("getProductsByIds", () => {
     it("空のIDリストの場合エラーをスローする", async () => {
         await expect(getProductsByIds([])).rejects.toThrow("Ids are undefined");

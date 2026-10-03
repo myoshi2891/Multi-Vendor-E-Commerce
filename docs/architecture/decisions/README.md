@@ -88,6 +88,7 @@ cp docs/architecture/decisions/template.md docs/architecture/decisions/00X-your-
 | [005](005-sonarqube-static-analysis.md) | 静的解析に SonarCloud (CI) + SonarQube Community (ローカル) を採用 | Accepted | 2026-06-02 |
 | [006](006-category-tree-representation.md) | カテゴリ階層の表現方式 — 隣接リスト + materialized path（ハイブリッド） | Accepted | 2026-08-31 |
 | [007](007-attribute-storage.md) | カテゴリ別属性値の格納方式 — 正規化テーブル（型別カラム） | Accepted | 2026-08-31 |
+| [008](008-product-search-vector.md) | 商品検索ベクトルの持ち方 — 非正規化キーワード列 + 重み付き生成列 | Accepted | 2026-10-03 |
 
 <!--
 ### 将来の ADR 候補

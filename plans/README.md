@@ -26,7 +26,6 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 |------|-------|----------|----------|------------|--------|
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | — | TODO |
-| [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | — | TODO |
 | [016](016-spike-seller-onboarding-catalog-approval.md) | **Spike**: 出品審査ワークフロー（商品公開制御）設計 | direction | P3 | — | TODO |
 | [017](017-spike-recommendation-foundation.md) | **Spike**: ルールベース・レコメンド基盤 v1 設計 | direction | P3 | — | TODO |
 | [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | — | TODO |
@@ -38,13 +37,12 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
 
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
-- **015**（ファセット検索 spike）の土台（069 の `facetable` と値テーブルの索引）は 2026-09-27 に揃った。
 - Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（020・016・017 は独立）。
 
 ## 完了済みのプラン
 
 <details>
-<summary>DONE（57 件）— 実行記録はアーカイブと各プラン本文</summary>
+<summary>DONE（62 件）— 実行記録はアーカイブと各プラン本文</summary>
 
 | Plan | Title | Category | Priority | Depends on | Status |
 |------|-------|----------|----------|------------|--------|
@@ -60,6 +58,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | — | DONE |
 | [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | — | DONE |
 | [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | — | DONE |
+| [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | — | DONE（2026-10-03） |
 | [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | — | DONE |
 | [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | — | DONE |
 | [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | — | DONE |
@@ -105,5 +104,9 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | 013 | DONE |
 | [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | 066 | DONE |
 | [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装）。Step 1 実測: `Spec` 153 行・不正 0・孤児 0 / Step 2: `multiValued` 列 + 部分 UNIQUE（多値は ENUM 限定） | direction | P2 | 014 | DONE |
+| [073](073-fix-search-suggest-and-browse-tiebreaker.md) | ヘッダー検索サジェスト復旧 + ブラウズ並び順の tie-breaker（015 で発見した既存バグ） | bug | P2 | — | DONE（2026-10-03・未コミット） |
+| [074](074-product-search-vector-column.md) | 重み付き検索ベクトル列（brand・keywords）+ GIN（ADR-008・015 の後続実装 1/3） | migration | P2 | 073 | DONE（2026-10-03・未コミット） |
+| [075](075-unify-browse-search-and-type-filters.md) | ブラウズ検索の検索ベクトル統合 + `ProductFilters` 型付け + slug 並列解決（015 の後続実装 2/3） | direction | P2 | 074 | DONE（2026-10-03・未コミット） |
+| [076](076-facet-counts-and-min-price.md) | 属性ファセット件数 + `minPrice` 非正規化で価格ソートを全件に適用（015 の後続実装 3/3） | direction | P2 | 075 | DONE（2026-10-03・未コミット） |
 
 </details>

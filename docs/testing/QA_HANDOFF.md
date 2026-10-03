@@ -1,6 +1,6 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-> **最終更新**: 2026-10-03 / **HEAD**: `42a872c3`（**プロフィール住所の失敗ログ（レビュー対応）** —— HEAD 上の作業ツリー分・コミット前: `user.ts` の `getProfileShippingAddresses` / `saveProfileShippingAddress` / `makeProfileShippingAddressDefault` が `catch {}` で原因を捨てていたため、`[User:<関数名>]` の構造化ログを追加（利用者向けの汎用メッセージは不変）。`profile-addresses.test.ts` +6。前回同期（`632c356e`）以降の Profile 移行コミットで未同期だった件数もあわせて全体実測で更新。以下は 632c356e 時点の記録: **開発時コンソール警告の解消（plan 072）** —— HEAD 上の作業ツリー分・コミット前: Clerk の `createRouteMatcher` 非推奨化に合わせ、`src/proxy.ts` のパスマッチ保護を撤去し `/profile/*` は `profile/layout.tsx` の `auth()` + `redirectToSignIn()` で保護（`/dashboard/*`・`/checkout` は既存のリソース側検証）。`UserButton` のアバター寸法を構造依存 CSS から `appearance.elements` へ、`html { position: relative }` で framer-motion の警告を解消。テスト +3・スイート +1。以下は従前の記録: **商品詳細ページのデザイン刷新（PR#181）のレビュー・SonarCloud 対応** —— HEAD 上の作業ツリー分・コミット前: `d3e87f64` の刷新で CSS Module 化された価格・サイズ選択・配送料の各テストを ARIA / 表示テキスト検証へ移行（`59b97659`）。レビュー指摘でナビ用クエリ失敗時の縮退・グリッドの代表画像フォールバック〔`/no_image` のギャラリー画像も欠落扱い〕・コピー失敗通知と `<output>` の live region（`253c8ccc`）、全サイズ在庫切れ時の選択ヒント差し替え・`maxQty` を現在在庫基準に修正・FIXED 配送の数量行削除。Sonar の New Code 未解決 18 件を解消〔ライトボックスの到達不能な背景クリックを外しネイティブ `<dialog>` 化で Reliability 3 件、認知的複雑度、`role=region` → `<section>`、仕様表 `dt` のコントラスト 4.23 → 4.91:1、index key、props の `Readonly` ほか〕。New Code カバレッジ 66.9% の主因だった `container`・`product-info`・`store-card` を新規テストで、`product-swiper`・`product-navigation` を追加テストで埋めた（ローカル見積もり 87.0%）。以下は 9b68b0ae 時点の記録: **ラグジュアリーホーム（PR#180）の SonarCloud 対応** —— HEAD 上の作業ツリー分・コミット前: Reliability ほか New Code の未解決 45 件を解消。うち 34 件は react-three-fiber の JSX プロパティを DOM 属性表で判定する `S6747` の誤検知で、`sonar-project.properties` の `sonar.issue.ignore.multicriteria` で `scene.tsx` に限定して除外。残り 11 件はコード修正〔props の `Readonly`、入れ子三項の切り出し、`role="status"` → `<output>`（フレーズ内容のみ許容のためリンクは live region の外へ）、`<details>` の JSX `onClick`/`onSubmit` をネイティブリスナーへ移設〕。New Code カバレッジ 25.6% の主因だった `experience.tsx`・`data.ts`・`dismissible-details.tsx` をテスト 23 本で埋め、jsdom で描画できない WebGL の `scene.tsx` は jest `collectCoverageFrom` と `sonar.coverage.exclusions` の両方から除外。直前の `e4c03de4`〜`9b68b0ae` は `make install`〔node_modules named volume の同期〕とラグジュアリーホーム本体。以下は f31416dc 時点の記録: **PR#179 のレビュー指摘・SonarCloud 対応**`173b0075`〜`f31416dc`: 属性同期の読み取り専用行を `FOR SHARE` へ（Product / ProductVariant は `FOR UPDATE` のまま同一商品の同期を直列化）、TEXT 値の trim 後の長さ上限をフォームと共有、Spec の名前・値を一度だけ trim、属性定義・選択肢の再アーカイブを拒否して `archivedAt` の監査時刻を保持。Sonar の Reliability 指摘〔`localeCompare`〕と認知的複雑度 3 件ほか 19 件を解消し、New Code カバレッジ 0% だった admin 属性フォーム 2 本・一覧列 2 本・カテゴリ選択肢ローダをテスト 45 本で埋めた。直前の `b05b9008`〜`2cb0d1e8` はレビューのシードを一括書き込みにしてトランザクションタイムアウトを回避。以下は c27fde9b 時点の記録: **plan 069 フォローアップ**`dd5b6bd8`〜`c27fde9b`: 既存バリアントの編集ページ〔属性の初期値 + そのレコードのアーカイブ済み現在値〕、Spec の `min(1)` 撤去、Spec 名と属性の重複警告、ファッション 12 商品 + パイロット 2 商品の属性値シード。以下は 5d54e5cf 時点の記録: **plan 069 カテゴリ別属性 Step 9〜11**`d33c207b`〜`5d54e5cf`: 商品詳細を「Specifications（構造化属性）/ Other specifications（Spec）」の 2 セクションへ、パイロット 3 部門（家電・ファッション・食品）の属性定義シード〔使い捨て Postgres で 2 回実行して同一を実測〕、統合テスト 40 本。以下は b55f2cf4 時点の記録: **CodeRabbit レビュー指摘の対応（第 2 巡）**`f506eb7c`〜`b55f2cf4`: design.md の店舗スコープ例を実装どおり `nodeProducts` へ修正、Phase A 本番手順に Step 6.5〔最終リコンサイル〕を追加（書き込みゲート案は本書の目的と矛盾するため不採用）、footer のカテゴリ取得失敗時のグレースフルデグレード、ERD パーサのコメント誤検出、E2E teardown の握り潰し解消。**移行済みマイグレーションの ON CONFLICT 変更と、`handleProductAndVariantUpdate` のリーフ検証を常時化する指摘は不採用**（前者は適用済みマイグレーション改変の禁止、後者は Phase B の経過措置として意図的に素通ししている）。以下は fa554bae 時点の記録: **CodeRabbit レビュー指摘の対応**`905082b8`〜`fa554bae`: 親候補の深さ判定にサブツリー高さを含める実バグ修正、`getProducts` の `whereClause: any` 撤廃（`subtreeOf` の readonly タプルが `CategoryWhereInput` に載っていなかった型不整合が露見）、E2E の子孫削除順序とシード update 側のツリー列、統合テストの接続数ガード。以下は 41afbc7f 時点の記録: **カバレッジ作業中に見つかった実バグ**`41afbc7f`: セール終了日が保存できない —— `ProductFormSchema.saleEndDate` は `.datetime({ offset: true })` なのに DateTimePicker の onChange がオフセット無し表記を、クリアが空文字を書いていた（`nullish()` は空文字を許さない）。**FormMessage が無いため画面に理由が出ず、保存だけが黙って止まる**症状。`toISOString()` / `null` へ修正し回帰テスト 2 件を追加。直前は `5015eb07`: **PR#176 の Coverage on New Code 残ギャップ（product-details.tsx / category-details.tsx）を潰し切った**。`bcdf62f5` ProductDetails の外部ウィジェット配線（画像追加/削除・キーワード上限・セール終了日・無料配送国）で line 81.3% → **100%** / branch 88.0% → 90.3%、`5015eb07` CategoryDetails の画像削除分岐で line 96.2% → **100%**。**未カバーは分岐のみ**となり、Sonar の New Code 側は行ベースで解消済み。直前は `3fef0e45`: **SonarCloud PR#176 の Coverage on New Code ギャップをコンポーネントテストで埋めた**。`d2b6cbeb` footer カテゴリリンクの href 形式 / `9efb08be` footer の子ノード優先フォールバックと 7 件上限 / `0be7c434` ProductFilters の storeUrl 伝播 / `03812ca3` CategoryLink の `?category=` 張り替えと旧 `subCategory` 除去 / `46abe694` CategoryDetails の親候補絞り込み・旧 url 正準化・送信 3 分岐 / `3fef0e45` ProductDetails のツリー選択（`isProductAssignableCategory` の 2 条件）とルート categoryId 導出。**Sonar Issue 8 件の修正（sort 比較関数・正規表現のバックトラッキング・認知的複雑度 45/24・`.at(-2)`・未使用 import・Readonly props・optional chaining）は作業ツリーに未コミットで残っている**。plan 068 の不可逆な **Phase C（Step 5 以降）は引き続き未着手**で、オペレーター承認待ち。直前は `9034f300`: `9034f300` E2E 検証（`524ba258` の未検証状態を解消）/ `c653864f`〜`86cef918` upsertCategory のツリー編集（V-7 / V-7b / V-7c / V-7d）/ `7f260c18`〜`ddf6ace1` CategoryFormSchema に parentId・sortOrder / `bfbdb8fd`〜`77e28c24` upsertProduct のリーフ強制（V-5 / V-5b / V-5c）/ `4fcfabd7`〜`1b41dc0f` admin カテゴリ表のツリー表示 / `50c6093b`〜`32c33a00` slug 正準化 + 別名 + 親選択フォーム / `3d776a4f` category-path.ts への分離 / `9571d880` admin/subCategories ルート廃止 / `19c51755`〜`95e72cb0` 商品フォームのツリー選択 1 本化 / `d9fb8f04` 統合テスト V-7d・V-5d / `a15b8850`〜`366a2951` deleteCategory の childCount 修正 / `524ba258` E2E（**未検証**）。直前は `cb551bd0`
+> **最終更新**: 2026-10-03 / **HEAD**: `3277d8a5`（**ファセット検索 plans 073〜076 の実装** —— HEAD 上の作業ツリー分・コミット前: ヘッダー検索サジェストの復旧（`?search=`/`?q=` の食い違い）と並び順の `id` tie-breaker（073）、重み付き検索ベクトル列 `searchVector` + `searchKeywords`（074・ADR-008 Accepted）、`getProducts` の生 SQL 一本化・`filters: any` 撤去・前方一致 tsquery（075）、`minPrice` による全件の価格ソートと属性ファセット（076）。マイグレーション 4 本（ローカル適用済み・リモート未適用）。Jest +34 / スイート +3、Integration +35、E2E +1/browser。以下は 42a872c3 時点の記録: （**プロフィール住所の失敗ログ（レビュー対応）** —— HEAD 上の作業ツリー分・コミット前: `user.ts` の `getProfileShippingAddresses` / `saveProfileShippingAddress` / `makeProfileShippingAddressDefault` が `catch {}` で原因を捨てていたため、`[User:<関数名>]` の構造化ログを追加（利用者向けの汎用メッセージは不変）。`profile-addresses.test.ts` +6。前回同期（`632c356e`）以降の Profile 移行コミットで未同期だった件数もあわせて全体実測で更新。以下は 632c356e 時点の記録: **開発時コンソール警告の解消（plan 072）** —— HEAD 上の作業ツリー分・コミット前: Clerk の `createRouteMatcher` 非推奨化に合わせ、`src/proxy.ts` のパスマッチ保護を撤去し `/profile/*` は `profile/layout.tsx` の `auth()` + `redirectToSignIn()` で保護（`/dashboard/*`・`/checkout` は既存のリソース側検証）。`UserButton` のアバター寸法を構造依存 CSS から `appearance.elements` へ、`html { position: relative }` で framer-motion の警告を解消。テスト +3・スイート +1。以下は従前の記録: **商品詳細ページのデザイン刷新（PR#181）のレビュー・SonarCloud 対応** —— HEAD 上の作業ツリー分・コミット前: `d3e87f64` の刷新で CSS Module 化された価格・サイズ選択・配送料の各テストを ARIA / 表示テキスト検証へ移行（`59b97659`）。レビュー指摘でナビ用クエリ失敗時の縮退・グリッドの代表画像フォールバック〔`/no_image` のギャラリー画像も欠落扱い〕・コピー失敗通知と `<output>` の live region（`253c8ccc`）、全サイズ在庫切れ時の選択ヒント差し替え・`maxQty` を現在在庫基準に修正・FIXED 配送の数量行削除。Sonar の New Code 未解決 18 件を解消〔ライトボックスの到達不能な背景クリックを外しネイティブ `<dialog>` 化で Reliability 3 件、認知的複雑度、`role=region` → `<section>`、仕様表 `dt` のコントラスト 4.23 → 4.91:1、index key、props の `Readonly` ほか〕。New Code カバレッジ 66.9% の主因だった `container`・`product-info`・`store-card` を新規テストで、`product-swiper`・`product-navigation` を追加テストで埋めた（ローカル見積もり 87.0%）。以下は 9b68b0ae 時点の記録: **ラグジュアリーホーム（PR#180）の SonarCloud 対応** —— HEAD 上の作業ツリー分・コミット前: Reliability ほか New Code の未解決 45 件を解消。うち 34 件は react-three-fiber の JSX プロパティを DOM 属性表で判定する `S6747` の誤検知で、`sonar-project.properties` の `sonar.issue.ignore.multicriteria` で `scene.tsx` に限定して除外。残り 11 件はコード修正〔props の `Readonly`、入れ子三項の切り出し、`role="status"` → `<output>`（フレーズ内容のみ許容のためリンクは live region の外へ）、`<details>` の JSX `onClick`/`onSubmit` をネイティブリスナーへ移設〕。New Code カバレッジ 25.6% の主因だった `experience.tsx`・`data.ts`・`dismissible-details.tsx` をテスト 23 本で埋め、jsdom で描画できない WebGL の `scene.tsx` は jest `collectCoverageFrom` と `sonar.coverage.exclusions` の両方から除外。直前の `e4c03de4`〜`9b68b0ae` は `make install`〔node_modules named volume の同期〕とラグジュアリーホーム本体。以下は f31416dc 時点の記録: **PR#179 のレビュー指摘・SonarCloud 対応**`173b0075`〜`f31416dc`: 属性同期の読み取り専用行を `FOR SHARE` へ（Product / ProductVariant は `FOR UPDATE` のまま同一商品の同期を直列化）、TEXT 値の trim 後の長さ上限をフォームと共有、Spec の名前・値を一度だけ trim、属性定義・選択肢の再アーカイブを拒否して `archivedAt` の監査時刻を保持。Sonar の Reliability 指摘〔`localeCompare`〕と認知的複雑度 3 件ほか 19 件を解消し、New Code カバレッジ 0% だった admin 属性フォーム 2 本・一覧列 2 本・カテゴリ選択肢ローダをテスト 45 本で埋めた。直前の `b05b9008`〜`2cb0d1e8` はレビューのシードを一括書き込みにしてトランザクションタイムアウトを回避。以下は c27fde9b 時点の記録: **plan 069 フォローアップ**`dd5b6bd8`〜`c27fde9b`: 既存バリアントの編集ページ〔属性の初期値 + そのレコードのアーカイブ済み現在値〕、Spec の `min(1)` 撤去、Spec 名と属性の重複警告、ファッション 12 商品 + パイロット 2 商品の属性値シード。以下は 5d54e5cf 時点の記録: **plan 069 カテゴリ別属性 Step 9〜11**`d33c207b`〜`5d54e5cf`: 商品詳細を「Specifications（構造化属性）/ Other specifications（Spec）」の 2 セクションへ、パイロット 3 部門（家電・ファッション・食品）の属性定義シード〔使い捨て Postgres で 2 回実行して同一を実測〕、統合テスト 40 本。以下は b55f2cf4 時点の記録: **CodeRabbit レビュー指摘の対応（第 2 巡）**`f506eb7c`〜`b55f2cf4`: design.md の店舗スコープ例を実装どおり `nodeProducts` へ修正、Phase A 本番手順に Step 6.5〔最終リコンサイル〕を追加（書き込みゲート案は本書の目的と矛盾するため不採用）、footer のカテゴリ取得失敗時のグレースフルデグレード、ERD パーサのコメント誤検出、E2E teardown の握り潰し解消。**移行済みマイグレーションの ON CONFLICT 変更と、`handleProductAndVariantUpdate` のリーフ検証を常時化する指摘は不採用**（前者は適用済みマイグレーション改変の禁止、後者は Phase B の経過措置として意図的に素通ししている）。以下は fa554bae 時点の記録: **CodeRabbit レビュー指摘の対応**`905082b8`〜`fa554bae`: 親候補の深さ判定にサブツリー高さを含める実バグ修正、`getProducts` の `whereClause: any` 撤廃（`subtreeOf` の readonly タプルが `CategoryWhereInput` に載っていなかった型不整合が露見）、E2E の子孫削除順序とシード update 側のツリー列、統合テストの接続数ガード。以下は 41afbc7f 時点の記録: **カバレッジ作業中に見つかった実バグ**`41afbc7f`: セール終了日が保存できない —— `ProductFormSchema.saleEndDate` は `.datetime({ offset: true })` なのに DateTimePicker の onChange がオフセット無し表記を、クリアが空文字を書いていた（`nullish()` は空文字を許さない）。**FormMessage が無いため画面に理由が出ず、保存だけが黙って止まる**症状。`toISOString()` / `null` へ修正し回帰テスト 2 件を追加。直前は `5015eb07`: **PR#176 の Coverage on New Code 残ギャップ（product-details.tsx / category-details.tsx）を潰し切った**。`bcdf62f5` ProductDetails の外部ウィジェット配線（画像追加/削除・キーワード上限・セール終了日・無料配送国）で line 81.3% → **100%** / branch 88.0% → 90.3%、`5015eb07` CategoryDetails の画像削除分岐で line 96.2% → **100%**。**未カバーは分岐のみ**となり、Sonar の New Code 側は行ベースで解消済み。直前は `3fef0e45`: **SonarCloud PR#176 の Coverage on New Code ギャップをコンポーネントテストで埋めた**。`d2b6cbeb` footer カテゴリリンクの href 形式 / `9efb08be` footer の子ノード優先フォールバックと 7 件上限 / `0be7c434` ProductFilters の storeUrl 伝播 / `03812ca3` CategoryLink の `?category=` 張り替えと旧 `subCategory` 除去 / `46abe694` CategoryDetails の親候補絞り込み・旧 url 正準化・送信 3 分岐 / `3fef0e45` ProductDetails のツリー選択（`isProductAssignableCategory` の 2 条件）とルート categoryId 導出。**Sonar Issue 8 件の修正（sort 比較関数・正規表現のバックトラッキング・認知的複雑度 45/24・`.at(-2)`・未使用 import・Readonly props・optional chaining）は作業ツリーに未コミットで残っている**。plan 068 の不可逆な **Phase C（Step 5 以降）は引き続き未着手**で、オペレーター承認待ち。直前は `9034f300`: `9034f300` E2E 検証（`524ba258` の未検証状態を解消）/ `c653864f`〜`86cef918` upsertCategory のツリー編集（V-7 / V-7b / V-7c / V-7d）/ `7f260c18`〜`ddf6ace1` CategoryFormSchema に parentId・sortOrder / `bfbdb8fd`〜`77e28c24` upsertProduct のリーフ強制（V-5 / V-5b / V-5c）/ `4fcfabd7`〜`1b41dc0f` admin カテゴリ表のツリー表示 / `50c6093b`〜`32c33a00` slug 正準化 + 別名 + 親選択フォーム / `3d776a4f` category-path.ts への分離 / `9571d880` admin/subCategories ルート廃止 / `19c51755`〜`95e72cb0` 商品フォームのツリー選択 1 本化 / `d9fb8f04` 統合テスト V-7d・V-5d / `a15b8850`〜`366a2951` deleteCategory の childCount 修正 / `524ba258` E2E（**未検証**）。直前は `cb551bd0`
 
 > 2026-10-03追記: 注文履歴の関連81件/支払い履歴の関連93件、住所管理の関連110件、レビュー履歴の関連116件、メッセージ移行の関連94件、各Chromium5件を確認。全体Jest統計は2026-10-03に実測。詳細は本書の各履歴セクション。
 
@@ -8,7 +8,7 @@
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest は 2026-10-03 実測・Integration は 2026-09-27 実測 / E2E の件数は 2026-09-02 実測・フルランは 2026-08-04 実測。lcov カバレッジは 2026-09-30 実測）
+### テスト統計（Jest・Integration・E2E の件数は 2026-10-03 実測 / E2E フルランは 2026-10-03 実測。lcov カバレッジは 2026-09-30 実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -16,11 +16,11 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2675 passed / 2678 total / 251 スイート**（250 passed / 1 skipped suite、3 skipped tests、127 snapshots）。2026-10-03 作業ツリー全体を `bun run test -- --no-coverage` で実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest テスト総数 (unit/component) | **2721 passed / 2724 total / 254 スイート**（253 passed / 1 skipped suite、3 skipped tests、127 snapshots）。2026-10-04 作業ツリー全体を `bun run test` で実測（PR #187 レビュー対応・`getProductFacets` ユニットテスト追加後）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | カバレッジ全体（lcov **2026-09-30 実測**・PR#183 SonarCloud New Code 対応後） | Statements **80.97%** (8268/10211) / Branches **68.02%** (4408/6480) / Functions **74.24%** (1482/1996) / Lines **80.79%** (7497/9279)。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| Jest Integration テスト総数 | **183** / **17 スイート**（**2026-09-27 実測: 183/183 pass**）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest Integration テスト総数 | **218** / **17 スイート**（**2026-10-03 実測: 218/218 pass**・`bun run test:integration`）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
-| Playwright E2E（全プロジェクト集計） | **66 tests/browser**（30 files・3 ブラウザ計 **198**）。2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`）。最新のフルランは 2026-08-04 実測（`bash scripts/e2e/run-local.sh`）: **83 passed / 0 failed / 3 flaky / 37 skipped / 7.4m**。以後に追加した spec を含むフルランは未実施。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**7 spec すべて passed**。2026-08-09 実測（`bash scripts/e2e/run-local.sh tests/e2e/a11y --project=chromium` が 7 passed / 58.3s）。home（`/`）は OI-9（本番ビルドで SSR 500）が未解消のため対象外。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | 型エラー | **0 件** |
@@ -165,7 +165,7 @@
 
 ### 🔴 現在アクティブな残課題（優先度順・2026-07-30 時点） {#active-open-issues}
 
-> 解消済み OI（OI-1〜OI-9）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下 3 件（OI-11 / OI-10 / C2）。**
+> 解消済み OI（OI-1〜OI-9）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下（OI-11 / OI-10 / OI-12 / OI-13 / OI-14 / C2）。**
 
 | 優先 | ID | 課題 | 期限 / 状態 | 次の一手 |
 |---|---|---|---|---|
@@ -173,7 +173,9 @@
 | **1（最優先）** | **OI-11** | `/dashboard/seller` 系ルートが本番 SSR で `ReferenceError: self is not defined`（`next-cloudinary` の `CldUploadWidget` をサーバ評価）。OI-9 と同族の client-only ref 問題。現状テストは落ちていない（ログのみ）が本番でも再現の可能性 | 🟡 未着手 | `image-upload.tsx` の `CldUploadWidget` を `next/dynamic` の `ssr:false` で遅延 import する。発見: 2026-06-19（E2E 本番ビルド化で顕在化） |
 | 2 | **OI-10** | a11y `color-contrast` 負債: `/checkout`・`/profile`・`/seller/apply` でグレー/ブルー系テキストが 4.5:1 未満。E2E では `runA11yScan` の `disabledRules:["color-contrast"]` で抑制中（追跡のため意図的） | 🟢 低 | 配色（テキスト色）を是正して `disabledRules` を解除する。発見: 2026-06-19（a11y readiness 修正で axe 到達後に検出） |
 | 3 | **OI-12** | E2E のローカル Firefox 実行で navigation が hang する（dev サーバの HMR 起因と推定）。`tests/e2e/profile.spec.ts`（住所追加 / 注文履歴）と `tests/e2e/mobile-responsive.spec.ts` の計 3 件を `testInfo.project.name === "firefox" && !process.env.CI` で skip 中。**CI は本番ビルドで実行されるため skip されず**、3 ブラウザのカバレッジは CI 側で維持されている | 🟢 低 / 🟡 未着手（**見直し期限: 2026-10-31**） | **解消条件**: ローカル dev サーバ（`bun run dev`）で当該 3 件が Firefox 連続 2 回 pass すること。**次の一手**: dev の Turbopack HMR クライアントが Firefox で navigation を保留させているかを `PWDEBUG=1` + `--project=firefox` で切り分け、再現したら `webServer` を本番ビルド（`next build && next start`）へ寄せる案を検討する。発見: 2026-08-23（plan 049 / TESTS-37） |
-| 4 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
+| 4 | **OI-13** | VRT `visual/cart.spec.ts`（空 / 商品追加後）・`visual/checkout.spec.ts`・`visual/product.spec.ts` が**新しい空の DB + `seed:e2e`** では高さが一致せず失敗する（1405→1375 / 1841→1811 / 5931→5525px）。2026-10-03 に**変更前の HEAD `3277d8a5` を git worktree で同条件実行して同じ差分を再現**（plans 073〜076 とは無関係）。ベースライン撮影時の DB に他スペック由来のデータ（レビュー・カテゴリ等）が混ざっていたと推定 | 🟡 未着手 | クリーン DB + `seed:e2e` 直後の状態でベースラインを撮り直すか、データ依存部分（フッターのカテゴリ一覧・レビュー）を `mask` する。撮り直す場合は「意図した見た目」であることを差分画像で確認してから。 |
+| 5 | **OI-14** | `tests/e2e/mobile-responsive.spec.ts:119`（タブレットのレイアウト切替）が `h1` に旧ブランド名 `GoShop` を期待して全ブラウザで失敗（現行は `Luxuries`）。リブランド時の取り残し | 🟢 低 | 期待値を現行ブランドへ更新するか、ブランド名に依存しないランドマーク検証へ置き換える。 |
+| 6 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
 
 > ✅ **OI-8 完了（2026-06-14）**: CI flake の真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる実 Prisma 接続リーク（stub DB へ P1001 → jest-circus が別ファイルへ「本文空」失敗を帰属）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ 被害者だった `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`、1272→1281 / skip 12→3）。CI push/pull_request 両 event × 2 サイクル緑・stub DB フルスイート P1001 = 0。詳細: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)。
 >
@@ -264,6 +266,44 @@
 詳細は COVERAGE_REPORT.md §7 履歴 / plans/README.md の 067 行。
 -->
 
+#### FS-COMMIT: plans 073〜076（ファセット検索）の未コミット作業をコミット分割して PR にする
+
+2026-10-03 のセッションで plans 073〜076 を実装・検証したが、**作業ツリーに未コミットで残っている**（HEAD `3277d8a5`）。
+新規マイグレーション 4 本は**ローカル DB にのみ適用済み・リモート（Neon）未適用**。
+
+```text
+plans 073〜076（plan 015 ファセット検索の後続）の未コミット作業を、規約どおりに分割コミットして PR を作ってください。
+
+前提（必ず最初に確認）:
+- git status で作業ツリーが 2026-10-03 セッション終了時の状態か確認する（HEAD 3277d8a5 / 未コミット）。
+  変更内容の全体像は plans/073〜076 の「実施結果」節と docs/design/faceted-search/design.md §5 にある。
+- 着手前に bun run test / bun run test:integration / bunx tsc --noEmit / bun run lint を実行し、
+  2721 passed / 2724 total（254 スイート）・Integration 218/218・型エラー 0・lint 0 errors を再現すること。
+  再現しなければ STOP して報告する。
+
+コミット分割（.claude/rules/02-tdd-step-commit.md・03-data-model-diagram-sync.md に従う）:
+1. docs(plans): 015 の実施結果 + 073〜076 のプラン本文 + design.md + ADR-008（+ decisions/README）
+2. 073: サジェスト復旧（route.ts / search.tsx / suggestions.tsx と各テスト）→ orderBy の tie-breaker
+3. 074: マイグレーション 120000 / 120100 + schema.prisma + data-model.drawio（同一コミット必須）+ product.ts の再計算 + テスト
+4. 075: マイグレーション 120200 + search-query.ts + parseProductFilters + getProducts の生 SQL 化 + browse/page.tsx + テスト
+5. 076: マイグレーション 120300 + product-derived-columns.ts + seed 2 本 + getProductFacets + attribute-key.ts
+   + facet UI（filters/attribute/）+ E2E seed / spec（search-filter・a11y/browse）+ テスト
+6. docs: 仕様書（specs 02〜08）・design-system PROGRESS（DS-COMP-203）
+7. docs: テスト統計同期（QA_HANDOFF / 07-testing / COVERAGE_REPORT / PROGRESS / coverage-dashboard.html / render-html.ts）
+- 各コミット時点で bunx tsc --noEmit が通ること。通らない分割になる場合は隣接コミットとまとめ、理由を PR に書く。
+- 1 コミットが 3 ファイル / 200 行の目安を超える場合は PR 説明に理由とレビュアー承認チェックボックスを付ける。
+
+PR 本文に必ず書くこと:
+- **デプロイ時に bunx prisma migrate deploy でマイグレーション 4 本の適用が必要**（本番 PostgreSQL 17.11 で生成列が使えることは確認済み）。
+  migrate deploy 自体はこのタスクで実行しない（本番操作はオペレーター承認が必要）。
+- ADR-008 D-5: schema.prisma の searchVector は dbgenerated(生成式) + @@index(type: Gin) を宣言しないとドリフト扱いになる。
+- 既存の E2E 失敗（OI-13 / OI-14・Clerk FAPI 通信失敗）は本変更と無関係であること（HEAD で再現済み）。
+
+完了条件:
+1. 分割コミット + PR 作成（push / PR 作成は依頼された場合のみ）。
+2. render-html.ts の NEXT_ACTIONS から FS-COMMIT を削除し、本プロンプトも削除（二重 SSOT 同期）→ bun run coverage:dashboard。
+```
+
 #### 068 の残作業（次セッションの最優先）— カテゴリツリー admin 統合の仕上げ
 
 plan 068 は **Step 1–9（admin ツリー統合・リーフ強制・深さ/循環）まで実装済み**。
@@ -352,10 +392,107 @@ select migration_name, finished_at, rolled_back_at, applied_steps_count
 
 ### 🟡 Next Sprint (medium)
 
+<!-- 073〜076（plan 015 ファセット検索の後続）✅ 実装完了 2026-10-03（未コミット）: サジェスト復旧 + tie-breaker / searchVector（ADR-008）/ getProducts の生 SQL 一本化 / minPrice + 属性ファセット。詳細は plans/073〜076 の「実施結果」と COVERAGE_REPORT.md §7 -->
+
 <!-- NA-NS-01 (B1+ shadcn/ui Snapshot 拡張) ✅ 完了 2026-05-28: 49/49 プリミティブ / 127 snapshot。詳細: B1_SNAPSHOT_EXPANSION_PLAN.md / COVERAGE_REPORT.md §7 -->
 <!-- NA-NS-02 (B2: Stripe/PayPal Webhook Contract テスト) ✅ 完了 2026-05-28: 30+2 ケース。コミット 338ab41 / 1d69f0f / 2321cd8 -->
 <!-- NA-NS-03 (B3: Cart → Checkout Integration テスト) ✅ 完了 2026-05-29: 4 シナリオ / 11 テスト。ADR-004 参照 -->
 <!-- D1 (categorize.ts 改修 / Integration 行実体化) ✅ 完了 2026-06-02: commit b57841a。詳細: COVERAGE_REPORT.md §3 D1 -->
+
+#### OI-13: VRT ベースライン 3 スペック（cart / checkout / product）が空の DB で一致しない
+
+```text
+Playwright VRT の visual/cart.spec.ts（空カート / 商品追加後）・visual/checkout.spec.ts・visual/product.spec.ts が、
+新しい空の DB + bun run seed:e2e の状態で高さ不一致により失敗する問題（OI-13）を解消してください。
+
+事実（2026-10-03 実測）:
+- 差分: 1405→1375px / 1841→1811px / 5931→5525px（いずれも chromium）。
+- 変更前の HEAD 3277d8a5 を git worktree に展開し、同じ条件（空の DB・全マイグレーション適用・seed:e2e）で
+  実行しても同じ差分で失敗する → plans 073〜076 とは無関係。visual/browse.spec.ts は通る。
+- 推定原因: ベースライン撮影時の DB に他スペック由来のデータ（レビュー件数・フッターのカテゴリ一覧等）が混ざっていた。
+  共有の開発 DB（multivendor_dev）はラグジュアリーデータ入りなので、そこで撮り直してはならない。
+
+進め方:
+1. 使い捨て DB を作って再現する（開発 DB は触らない）:
+   docker compose exec -T db createdb -U dev e2e_vrt_check
+   DATABASE_URL / DIRECT_URL / E2E_DATABASE_URL をその DB に向け、E2E_NO_REUSE=1 PORT=3100 E2E_BASE_URL=http://localhost:3100 で
+   bunx prisma migrate deploy → bun run seed:e2e → bunx playwright test tests/e2e/visual --project=chromium
+2. 差分画像（test-results/**/*-diff.png）で、どこがデータ依存かを特定する。
+3. 対策を選ぶ: (a) データ依存部分（レビュー件数・フッターのカテゴリ一覧など）を mask する、
+   (b) クリーン DB + seed:e2e 直後の状態でベースラインを撮り直す（--update-snapshots）。
+   ベースラインは「意図した見た目」の宣言なので、撮り直す前に actual 画像が意図どおりかを目視確認すること。
+   (a) で済むなら (a) を優先（CI と ローカルの両方で決定的になる）。
+4. 終わったら使い捨て DB を dropdb で消す。
+
+完了条件:
+1. 空の DB + seed:e2e で visual 4 スペックが chromium で全 pass。
+2. QA_HANDOFF の OI-13 を取り消し線で解消扱いにし、render-html.ts の NEXT_ACTIONS と本プロンプトを削除 → bun run coverage:dashboard。
+```
+
+#### FS-CHIPS: フィルタ見出しに属性ファセットの選択（`attr.*`）を含める
+
+```text
+/browse のフィルタ見出し（src/components/store/browse-page/filters/header.tsx・DS-COMP-059）が、
+属性ファセットの選択（?attr.<key>=<value>・plan 076）を「Filter (n)」の件数と選択中チップに含めていない問題を直してください。
+
+現状:
+- header.tsx は props の queries（FiltersQueryType の固定キー）だけを Object.entries で数える。attr.* は queries に入っていない。
+- 解除は各ファセットのボタン（aria-pressed）と「Clear All」（全パラメータ削除）で可能なので機能欠落ではないが、
+  選択していることが見出しから分からない。
+- ファセットのデータは browse/page.tsx が getProductFacets で集計し、filters.tsx → AttributeFacetFilter へ props で渡している
+  （facet の name / 値の label を持っている）。
+
+方針:
+1. design-system-workflow（.agent/skills/design-system-workflow/SKILL.md）に従う。計画は plans/ に保存してから着手。
+2. チップは「属性名: 値ラベル」（例: Material: Silk）で表示し、× で attr.<key> の該当値だけを外す（他の条件と page 以外は保持）。
+   ラベルは facets から引く。facets に無い値は値そのものを表示（カテゴリ切替で残った選択も外せるように）。
+3. 「Filter (n)」に attr.* の値の数を加える。
+4. RTL で Red → Green。header.test.tsx（filters/header.test.tsx）を拡張。
+5. 実装後に 1440 / 390px で表示確認、a11y は tests/e2e/a11y/browse.spec.ts（seed カテゴリ URL・ファセットあり）で確認。
+
+完了条件:
+1. RTL / lint / tsc グリーン、a11y browse が pass。
+2. docs/design/design-system/PROGRESS.md の DS-COMP-203 記録の「残課題」を解消済みに更新し、DS-COMP-059 に記録を追加。
+   specs/multi-vendor-ecommerce/05-workflows.md の Browse Collection Flow 6) の「not yet include」記述を更新。
+3. render-html.ts の NEXT_ACTIONS から FS-CHIPS を削除し、本プロンプトも削除 → bun run coverage:dashboard。
+```
+
+#### OI-14: `mobile-responsive.spec.ts` のタブレットテストが旧ブランド名 `GoShop` を期待している
+
+```text
+tests/e2e/mobile-responsive.spec.ts:119（タブレットレスポンシブ › タブレットビューポートでレイアウト切替）が
+locator('h1').filter({ hasText: 'GoShop' }) を待って全ブラウザで失敗する問題（OI-14）を直してください。
+
+- 現行のブランド表記は "Luxuries"（リブランド時の取り残し）。2026-10-03 の E2E フルランで chromium / firefox / webkit すべて失敗。
+- ブランド名の文字列に依存させず、ランドマーク（banner / navigation）やヘッダーの data-testid など、
+  リブランドで壊れない要素で「タブレット幅でレイアウトが切り替わったこと」を検証する形を優先する。
+- 同ファイルの他テスト（:73 モバイルでチェックアウトボタンが機能する）も同じ前提を持っていないか確認する。
+
+完了条件:
+1. bun run test:e2e:local -- tests/e2e/mobile-responsive.spec.ts が 3 ブラウザで pass（OI-12 の firefox ローカル skip は既存どおり）。
+2. QA_HANDOFF の OI-14 を解消扱いにし、render-html.ts の NEXT_ACTIONS と本プロンプトを削除 → bun run coverage:dashboard。
+```
+
+#### E2E-AUTH: E2E フルランの認証系の失敗（Clerk Testing FAPI 通信失敗）を切り分ける
+
+```text
+2026-10-03 の E2E フルラン（使い捨てのクリーン DB・--retries=2）で 283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run だった。
+失敗の大半はサインイン・サインアウト・カート引き継ぎ・チェックアウト・プロフィール系で、
+ログに "[Clerk Testing] FAPI request failed after 4 attempts" が繰り返し出ていた。これを切り分けてください。
+
+確認すること:
+1. 外部要因か（Clerk 開発インスタンスの一時障害・レート制限・ネットワーク）を判定する:
+   時間を置いて bun run test:e2e:local -- tests/e2e/auth-surface.spec.ts --project=chromium を再実行し、同じ FAPI エラーが出るか。
+2. クリーン DB 起因か: run-local.sh（共有の開発 DB）で同じ spec を実行し、結果を比較する。
+   クリーン DB には Clerk のユーザーと DB の User 行の対応が無いため、seed:e2e が作る E2E ユーザーで足りているか確認する。
+3. 再現する場合、失敗箇所（setupClerkTestingToken / signIn ヘルパー / ストア取得 "Store with URL e2e-status-store-... not found"）を
+   ログから特定し、テスト基盤の問題かアプリの問題かを分ける。アプリ側の退行が疑われる場合は git worktree で HEAD と比較する。
+4. 見つかった恒久課題は QA_HANDOFF の残課題表に OI として起票する（推測で直さない）。
+
+完了条件:
+1. 原因の切り分け結果（外部 / 環境 / テスト基盤 / アプリ）を QA_HANDOFF に記録。
+2. render-html.ts の NEXT_ACTIONS から E2E-AUTH を削除し、本プロンプトも削除 → bun run coverage:dashboard。
+```
 
 #### A11y-home: home（`/`）の a11y spec 追加（052 の残り 1 ページ）
 
@@ -430,6 +567,31 @@ tests/e2e/a11y/home.spec.ts を新規作成し、home（/）の WCAG 2.1 AA ス�
 ### 🟢 Mid–Long Term (low)
 
 SaaS ロードマップ範囲 (docs/architecture/saas-roadmap.md) で別ストリーム扱い。
+
+#### PRICE-FILTER: 価格の絞り込みの意味（定価 / 割引後）を決めて揃える
+
+```text
+/browse の価格の絞り込み（minPrice / maxPrice）は定価（Size.price）で判定し、商品カードの表示と価格ソート
+（Product.minPrice）は割引後の価格を使っていて、意味が食い違っている。プロダクト判断を確認したうえで揃えてください。
+
+背景: specs/multi-vendor-ecommerce/08-open-questions.md「価格の絞り込みは定価、表示と価格ソートは割引後」、
+docs/design/faceted-search/design.md §0-9 / §2-Q4。
+
+進め方:
+1. **まず AskUserQuestion で方針を確認する（独断で決めない）**:
+   (a) 割引後の最小価格（Product.minPrice）で絞る — 単純・インデックスが効く。商品単位の判定になる。
+   (b) サイズ単位の割引後価格で「どれか 1 サイズが範囲内」で絞る — 現行の some 意味論を保つ。
+   (c) 現状維持（定価で絞る）とし、UI に「定価で絞り込み」と明示する。
+2. 決定に沿って src/queries/product.ts の buildProductPredicates の価格述語を変更（(a) なら p."minPrice" BETWEEN、
+   (b) なら s.price * (1 - s.discount::numeric / 100) を Decimal で比較。discount は Float なので ::numeric を必ず先に）。
+3. TDD: tests/integration/product-browse.test.ts の Scenario 4（価格境界）に割引付きの Arrange を足して Red → Green。
+   maxPrice: 0 を「上限 0」として扱う既存の回帰ガード（単体・統合）を壊さないこと。
+
+完了条件:
+1. 単体 / 統合 / tsc / lint グリーン。
+2. 08-open-questions.md の当該項目を Resolved Issues へ移し、04-interfaces.md の /browse の説明を更新。
+3. render-html.ts の NEXT_ACTIONS から PRICE-FILTER を削除し、本プロンプトも削除 → bun run coverage:dashboard。
+```
 
 #### OI-10: a11y color-contrast 負債の是正
 

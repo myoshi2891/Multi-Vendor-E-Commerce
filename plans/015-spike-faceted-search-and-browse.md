@@ -314,3 +314,28 @@ ALL を満たすこと:
 - レビュアーが後続実装 PR で最も精査すべき点: 生 SQL とPrisma where の合成部分の
   SQL インジェクション安全性（必ず `Prisma.sql` パラメータ化 — 既存 route の規約）と、
   2段構え hydrate の N+1 化の回避
+
+## 実施結果（2026-10-03・commit `3277d8a5` 時点で調査）
+
+- **成果物**: [`docs/design/faceted-search/design.md`](../docs/design/faceted-search/design.md)、
+  [ADR-008](../docs/architecture/decisions/008-product-search-vector.md)（Proposed）、
+  後続の実装プラン [073](073-fix-search-suggest-and-browse-tiebreaker.md) / [074](074-product-search-vector-column.md) /
+  [075](075-unify-browse-search-and-type-filters.md) / [076](076-facet-counts-and-min-price.md)
+- **ソース・スキーマは未変更**。実測はローカル Docker の PostgreSQL 16.14（Product 80 行）で SELECT / EXPLAIN のみ行い、
+  試作の列とインデックスは `BEGIN … ROLLBACK` の中でだけ作成した
+
+### ドリフトと STOP 条件の扱い
+
+- **STOP 条件「GIN インデックスが既に導入済み」に該当した**。`Product_fulltext_idx`
+  （`prisma/migrations/20260222101357_init_postgresql/migration.sql:503`）が init の時点から存在し、
+  本プランの「Current state」にある「生成列も GIN インデックスも無い式評価」は誤りだった（`schema.prisma` だけを見て判断したと思われる）。
+  **オペレーターの判断で続行**し、Open question 1 を「brand / keywords を検索対象に含めるための列戦略」に再定義した
+- `getProducts` は書き換えではなく拡張（カテゴリツリーのサブツリー絞り込みと fail-closed の型ガード）だったので STOP しなかった。
+  行番号は design doc §0 で現行コードに合わせて書き直した
+
+### 調査で見つかった既存バグ（後続プランで対応）
+
+- **ヘッダー検索のサジェストが常に空**（UI は `?search=`、route は `?q=` を読む。応答の形も `SearchResult` と合っていない）→ 073
+- **ブラウズの並び順に tie-breaker が無い**（ローカルで `views = 0` が 80 件中 73 件）→ 073
+- **価格ソートはページ内でしか効いていない**（ページングの後にメモリ上で並べ替えている）→ 076
+- 価格の絞り込みは定価、表示は割引後で意味が食い違っている → 076 で open question として起票する

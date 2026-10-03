@@ -233,6 +233,20 @@ const withEmailSuffix = (email: string, suffix: string) => {
   return `${local}+${suffix}@${domain}`;
 };
 
+/**
+ * 属性ファセットの E2E 用定義（plan 076）。target ごとのカテゴリに付けるので key に suffix は要らない
+ * （ファセットはカテゴリのサブツリー単位で集計される）。
+ *
+ * 値は **productB にだけ**付ける。seed.product に付けると商品詳細に「Specifications」節が増え、
+ * その商品を撮る `visual/product.spec.ts` のベースラインが変わってしまうため。
+ * 同じカテゴリの seed.product は値を持たないので、Gloss を選ぶと productB だけが残る。
+ */
+export const E2E_FACET = {
+  key: "e2e_finish",
+  name: "E2E Finish",
+  productBOption: { value: "gloss", label: "Gloss" },
+} as const;
+
 export const buildE2ESeed = (options?: E2ESeedOptions) => {
   const suffix = resolveSeedSuffix(options);
   const uppercaseSuffix = suffix ? suffix.toUpperCase() : "";
@@ -295,6 +309,7 @@ export const buildE2ESeed = (options?: E2ESeedOptions) => {
   );
 
   return {
+    facet: E2E_FACET,
     country: {
       name: withSuffix(
         BASE_E2E_SEED.country.name,

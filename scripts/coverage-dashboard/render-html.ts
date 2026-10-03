@@ -243,6 +243,49 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     //  「権限で BLOCKED」と記録したのは一時的な失敗の誤記録だった —— 経緯は
     //  QA_HANDOFF.md の 067-B 節)。いずれもテストタスクではないため
     // NEXT_ACTIONS には載せない。
+    // 2026-10-03 セッション（plans 073〜076）の残作業と、実施中に見つけた既存の問題。
+    // QA_HANDOFF「次回着手用 依頼プロンプト」の FS-COMMIT / OI-13 / FS-CHIPS / OI-14 /
+    // E2E-AUTH / PRICE-FILTER と一対一対応（二重 SSOT）。完了時は両方から同時に削除すること。
+    {
+        priority: "high",
+        title: "FS-COMMIT: plans 073〜076 の未コミット作業をコミット分割して PR にする",
+        target: "作業ツリー全体（HEAD 3277d8a5 上・マイグレーション 4 本はローカルのみ適用）",
+        tool: "git（.claude/rules/02-tdd-step-commit.md の分割規約）",
+        cost: "M",
+        impact: "サジェスト復旧・並び順の決定性・検索ベクトル・全件の価格ソート・属性ファセットを main へ届ける。PR にデプロイ時の migrate deploy 必須を明記",
+    },
+    {
+        priority: "medium",
+        title: "OI-13: VRT ベースライン 3 スペック（cart / checkout / product）が空の DB で一致しない",
+        target: "tests/e2e/visual/{cart,checkout,product}.spec.ts とベースライン画像",
+        tool: "Playwright toHaveScreenshot（mask / 使い捨て DB での撮り直し）",
+        cost: "S",
+        impact: "HEAD でも再現する既存の失敗を解消し、CI とローカルで VRT を決定的にする",
+    },
+    {
+        priority: "medium",
+        title: "FS-CHIPS: フィルタ見出しに属性ファセットの選択（attr.*）を含める",
+        target: "src/components/store/browse-page/filters/header.tsx（DS-COMP-059）",
+        tool: "RTL + design-system-workflow + a11y/browse.spec.ts",
+        cost: "S",
+        impact: "選択中の属性が見出しの件数とチップに表示され、1 つずつ外せるようになる",
+    },
+    {
+        priority: "medium",
+        title: "OI-14: mobile-responsive.spec.ts のタブレットテストが旧ブランド名 GoShop を期待",
+        target: "tests/e2e/mobile-responsive.spec.ts:119",
+        tool: "Playwright（ブランド名に依存しないランドマーク検証へ）",
+        cost: "S",
+        impact: "3 ブラウザで常時失敗している E2E を回復し、フルランのノイズを減らす",
+    },
+    {
+        priority: "medium",
+        title: "E2E-AUTH: E2E フルランの認証系の失敗（Clerk Testing FAPI 通信失敗）を切り分ける",
+        target: "auth-surface / cart-login-handoff / payment-error / profile 系 spec",
+        tool: "bun run test:e2e:local + git worktree での HEAD 比較",
+        cost: "M",
+        impact: "77 failed の大半を外部 / 環境 / テスト基盤 / アプリのどれに起因するか確定し、恒久課題を起票する",
+    },
     {
         priority: "medium",
         title: "home (/) の a11y spec 追加 (052 の残り 1 ページ)",
@@ -268,6 +311,18 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         tool: "next/dynamic ssr:false 遅延 import",
         cost: "S",
         impact: "/dashboard/seller 系の本番 SSR ReferenceError: self を解消",
+    },
+    // 073〜076（plan 015 ファセット検索の後続）は 2026-10-03 に実装完了（未コミット）のため削除した。
+    // QA_HANDOFF「次回着手用 依頼プロンプト」の 073〜076 も同時に削除済み（二重 SSOT）。
+    // 実施中に見つけた既存の問題は OI-13（VRT 3 スペックのベースラインが DB の状態に依存）と
+    // OI-14（mobile-responsive の旧ブランド名）として QA_HANDOFF の残課題表へ起票した。
+    {
+        priority: "low",
+        title: "PRICE-FILTER: 価格の絞り込みの意味（定価 / 割引後）を決めて揃える",
+        target: "src/queries/product.ts の buildProductPredicates（価格述語）",
+        tool: "AskUserQuestion（プロダクト判断）+ Integration（Scenario 4）",
+        cost: "S",
+        impact: "絞り込みと表示・価格ソートの意味を一致させる（08-open-questions の解消）",
     },
     {
         priority: "low",
