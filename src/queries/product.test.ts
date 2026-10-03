@@ -6,6 +6,7 @@ import {
     getAllStoreProducts,
     deleteProduct,
     getProducts,
+    getProductFacets,
     retrieveProductDetails,
     getRatingStatistics,
     getShippingDetails,
@@ -1511,6 +1512,20 @@ describe("getProducts", () => {
         });
     });
 
+    describe("属性フィルタ（plan 076）", () => {
+        it("同じ key の値は 1 つの述語に OR でまとめ、PRODUCT / VARIANT 両スコープを見る", async () => {
+            // Act
+            await getProducts({ attributes: { material: ["wool", "cotton"] } });
+
+            // Assert
+            const q = idQuery();
+            expect(sqlText(q)).toContain(`FROM "ProductAttributeValue" v`);
+            expect(sqlText(q)).toContain(`FROM "VariantAttributeValue" v`);
+            expect(q.values).toContainEqual("material");
+            expect(q.values).toContainEqual(["wool", "cotton"]);
+        });
+    });
+
     describe("ソート（末尾は必ず id の tie-breaker）", () => {
         it.each([
             ["", `ORDER BY p.views DESC, p.id ASC`],
@@ -1599,6 +1614,202 @@ describe("getProducts", () => {
             await getProducts({});
 
             expect(mockDb.product.findMany).not.toHaveBeenCalled();
+        });
+    });
+});
+
+describe("getProductFacets", () => {
+    /**
+     * 集計 SQL の意味（実際の件数）は統合テストが実 PostgreSQL で検証する。ここでは
+     * 早期リターン・disjunctive 集計のクエリ構成・行の組み立てと並び順を検証する。
+     */
+    type RawSql = { strings: readonly string[]; values: unknown[] };
+    const sqlText = (q: RawSql): string => q.strings.join("?");
+    const rawCalls = (): RawSql[] =>
+        mockDb.$queryRaw.mock.calls.map((c: unknown[]) => c[0] as RawSql);
+
+    /** 集計 1 行（FacetCountRow） */
+    const row = (
+        overrides: Partial<{
+            key: string;
+            name: string;
+            unit: string | null;
+            def_order: number;
+            value: string;
+            label: string;
+            option_order: number | null;
+            count: bigint;
+        }> = {}
+    ) => ({
+        key: "material",
+        name: "Material",
+        unit: null,
+        def_order: 0,
+        value: "wool",
+        label: "Wool",
+        option_order: null,
+        count: BigInt(1),
+        ...overrides,
+    });
+
+    beforeEach(() => {
+        mockDb.category.findUnique.mockResolvedValue({
+            id: "cat-1",
+            path: "fashion",
+            url: "fashion",
+        });
+        mockDb.$queryRaw.mockResolvedValue([]);
+    });
+
+    describe("早期リターン（DB を集計しない）", () => {
+        it.each([
+            ["カテゴリ未指定", {}],
+            ["不正なフィルタ", { category: "fashion", attributes: { "Bad Key": ["x"] } }],
+            ["文字・数字を含まない検索語", { category: "fashion", search: "&|!" }],
+        ])("%s なら空配列を返す", async (_label, filters) => {
+            // Act
+            const result = await getProductFacets(filters as ProductFilters);
+
+            // Assert
+            expect(result).toEqual([]);
+            expect(mockDb.$queryRaw).not.toHaveBeenCalled();
+        });
+
+        it("存在しないカテゴリなら空配列を返す", async () => {
+            // Arrange
+            mockDb.category.findUnique.mockResolvedValue(null);
+
+            // Act
+            const result = await getProductFacets({ category: "missing" });
+
+            // Assert
+            expect(result).toEqual([]);
+            expect(mockDb.$queryRaw).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("選択なし", () => {
+        it("1 クエリで全 key を集計し、検索語の述語を母集合に課す", async () => {
+            // Act
+            await getProductFacets({ category: "fashion", search: "coat" });
+
+            // Assert
+            const calls = rawCalls();
+            expect(calls).toHaveLength(1);
+            expect(sqlText(calls[0])).toContain("WHERE TRUE");
+            expect(sqlText(calls[0])).toContain(`"searchVector" @@ to_tsquery('simple',`);
+            expect(calls[0].values).toContain("coat:*");
+        });
+
+        it("label は GROUP BY に含めず集約する（同じ key × value を 1 行にまとめる）", async () => {
+            // Act
+            await getProductFacets({ category: "fashion" });
+
+            // Assert
+            const text = sqlText(rawCalls()[0]);
+            expect(text).toContain("min(COALESCE(o.label");
+            const groupBy = text.slice(text.lastIndexOf("GROUP BY"));
+            expect(groupBy).toContain("o.value");
+            expect(groupBy).not.toContain("o.label");
+        });
+
+        it("定義順 → key 順、値は option 順 → 件数の多い順 → label 順に並べる", async () => {
+            // Arrange
+            mockDb.$queryRaw.mockResolvedValue([
+                row({ key: "size_cm", name: "Size", unit: "cm", def_order: 1, value: "55", label: "55" }),
+                row({ key: "color", name: "Color", def_order: 0, value: "red", label: "Red", option_order: 1 }),
+                row({ key: "color", name: "Color", def_order: 0, value: "blue", label: "Blue", option_order: 0 }),
+                row({ key: "brand", name: "Brand", def_order: 0, value: "b", label: "B", count: BigInt(2) }),
+                row({ key: "brand", name: "Brand", def_order: 0, value: "a", label: "A", count: BigInt(2) }),
+                row({ key: "brand", name: "Brand", def_order: 0, value: "c", label: "C", count: BigInt(5) }),
+            ]);
+
+            // Act
+            const result = await getProductFacets({ category: "fashion" });
+
+            // Assert
+            expect(result.map((f) => f.key)).toEqual(["brand", "color", "size_cm"]);
+            expect(result[0].values.map((v) => v.value)).toEqual(["c", "a", "b"]);
+            expect(result[1].values.map((v) => v.value)).toEqual(["blue", "red"]);
+            expect(result[2]).toEqual({
+                key: "size_cm",
+                name: "Size",
+                unit: "cm",
+                values: [{ value: "55", label: "55", count: 1, selected: false }],
+            });
+        });
+    });
+
+    describe("選択あり（disjunctive faceting）", () => {
+        it("選択中の key ごとに、その key の選択だけを外した母集合で数える", async () => {
+            // Act
+            await getProductFacets({
+                category: "fashion",
+                attributes: { color: ["red"], material: ["wool"] },
+            });
+
+            // Assert —— 未選択分 1 + 選択中の key 2
+            const [unselected, colorRun, materialRun] = rawCalls();
+            expect(rawCalls()).toHaveLength(3);
+            expect(sqlText(unselected)).toContain("d.key <> ALL(");
+            expect(unselected.values).toContainEqual(["color", "material"]);
+
+            expect(colorRun.values).not.toContainEqual(["red"]);
+            expect(colorRun.values).toContainEqual(["wool"]);
+            expect(materialRun.values).toContainEqual(["red"]);
+            expect(materialRun.values).not.toContainEqual(["wool"]);
+        });
+
+        it("選択値に印を付け、母集合に無い選択値・key も件数 0 で残す", async () => {
+            // Arrange
+            mockDb.$queryRaw
+                .mockResolvedValueOnce([
+                    row({ key: "season", name: "Season", def_order: 2, value: "ss", label: "SS" }),
+                ])
+                .mockResolvedValueOnce([
+                    row({ key: "color", name: "Color", value: "red", label: "Red", count: BigInt(3) }),
+                ])
+                .mockResolvedValueOnce([]);
+
+            // Act
+            const result = await getProductFacets({
+                category: "fashion",
+                attributes: { color: ["red", "green"], stale_key: ["x"] },
+            });
+
+            // Assert
+            expect(result.map((f) => f.key)).toEqual(["color", "season", "stale_key"]);
+            expect(result[0].values).toEqual([
+                { value: "red", label: "Red", count: 3, selected: true },
+                { value: "green", label: "green", count: 0, selected: true },
+            ]);
+            expect(result[1].values[0].selected).toBe(false);
+            expect(result[2]).toEqual({
+                key: "stale_key",
+                name: "stale_key",
+                unit: null,
+                values: [{ value: "x", label: "x", count: 0, selected: true }],
+            });
+        });
+    });
+
+    describe("エラー", () => {
+        it.each([
+            ["Error", new Error("db down")],
+            ["Error 以外", "boom"],
+        ])("%s をログに残して再送出する", async (_label, thrown) => {
+            // Arrange
+            const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+            mockDb.$queryRaw.mockRejectedValue(thrown);
+
+            // Act & Assert
+            await expect(getProductFacets({ category: "fashion" })).rejects.toBe(thrown);
+            expect(spy).toHaveBeenCalledWith(
+                "[product:getProductFacets]",
+                expect.anything(),
+                ...(thrown instanceof Error ? [expect.objectContaining({ stack: expect.any(String) })] : [])
+            );
+            spy.mockRestore();
         });
     });
 });
