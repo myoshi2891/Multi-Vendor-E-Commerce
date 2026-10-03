@@ -383,7 +383,7 @@ Multi-Vendor-E-Commerce/
 - **`src/actions/` ディレクトリなし**: 全サーバーアクションは `"use server"` ディレクティブを付けて `src/queries/` に配置
 - **クエリのコロケーション**: ドメインごとに同一ファイルに CRUD と データ取得を配置
 - **パスエイリアス**: `@/*` → `src/*`、`@/store` → `src/components/store`
-- **保護ルート**: ルートレベルのミドルウェアが `/dashboard/*`・`/checkout`・`/profile/*` へのアクセスを制御
+- **保護ルート**: `/dashboard/*`・`/checkout`・`/profile/*` へのアクセスは各 layout / page が検証（`src/proxy.ts` は認証コンテキストの確立のみ）
 
 ---
 
