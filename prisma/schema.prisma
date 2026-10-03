@@ -213,6 +213,21 @@ model Product {
   offerTagId String?
   offerTag   OfferTag? @relation("OfferTagToProduct", fields: [offerTagId], references: [id])
 
+  // 全文検索（plan 074 / ADR-008）。searchKeywords は配下バリアントの keywords を連結した
+  // 非正規化列で、src/queries/product.ts の recomputeProductDerivedColumns が tx 内で書き込む。
+  // searchVector は name(A) / brand(B) / searchKeywords(C) / description(D) の重み付き生成列
+  // （GENERATED ALWAYS AS ... STORED）。式と GIN インデックス Product_searchVector_idx は
+  // マイグレーション SQL にのみ存在する（Prisma は生成式と tsvector の GIN を表現できない）。
+  searchKeywords String                   @default("")
+  searchVector   Unsupported("tsvector")?  @default(dbgenerated("(((setweight(to_tsvector('simple'::regconfig, name), 'A'::\"char\") || setweight(to_tsvector('simple'::regconfig, brand), 'B'::\"char\")) || setweight(to_tsvector('simple'::regconfig, \"searchKeywords\"), 'C'::\"char\")) || setweight(to_tsvector('simple'::regconfig, COALESCE(description, ''::text)), 'D'::\"char\"))"))
+
+  // 割引後の最小価格（plan 076）。全バリアント・全サイズの price * (1 - discount/100) の最小値を
+  // 小数 2 桁に丸めた非正規化列で、価格ソートに使う。サイズが 1 件も無い商品は NULL。
+  // recomputeProductDerivedColumns が searchKeywords と同じ tx・同じ UPDATE で再計算する。
+  minPrice Decimal? @db.Decimal(12, 2)
+
+  @@index([searchVector], type: Gin)
+  @@index([minPrice, id])
   @@index([storeId])
   @@index([categoryId])
   @@index([subCategoryId])
