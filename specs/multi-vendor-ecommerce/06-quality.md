@@ -49,7 +49,7 @@
   only at presentation boundaries.
 
 ## Performance
-- PostgreSQL fulltext search (tsvector/tsquery) with a fallback to `contains` queries.
+- PostgreSQL fulltext search (tsvector/tsquery) on the weighted `Product.searchVector` column (GIN); no `contains` fallback since plan 075.
 - Pagination in search endpoints limits result size.
 - Client-side cart interactions avoid roundtrips.
 - Shipping fee calculations are centralized in `src/lib/shipping-utils.ts`

@@ -24,7 +24,7 @@
 
 ## Data Access
 - Prisma client configured in `src/lib/db.ts`.
-- PostgreSQL fulltext search (tsvector/tsquery) used in product search with a fallback to `contains`.
+- PostgreSQL fulltext search (tsvector/tsquery) on the weighted `Product.searchVector` column for both browse and header suggestions (no `contains` fallback since plan 075; ADR-008).
 
 ## Client State
 - Cart state managed by Zustand with localStorage persistence in

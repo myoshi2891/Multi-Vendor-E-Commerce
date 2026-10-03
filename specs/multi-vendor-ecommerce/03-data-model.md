@@ -133,7 +133,9 @@
     column matching `type` is non-null (D-6); `multiValued` only for `ENUM` (D-7),
     which together keep `optionId` non-null on multi-valued rows so the partial
     unique never treats NULLs as distinct.
-- GIN: Product fulltext search via `to_tsvector('simple', coalesce(name,'') || ' ' || coalesce(description,''))` (replaces removed `@@fulltext([name, brand])`); ProductVariant(variantName, keywords) may use trigram index (pg_trgm) for ILIKE acceleration.
+- Search (plans 074/075, [ADR-008](../../docs/architecture/decisions/008-product-search-vector.md)): `Product.searchVector` is a stored generated `tsvector` — `setweight` of name (A), brand (B), `searchKeywords` (C) and description (D) with the `'simple'` config — indexed by GIN `Product_searchVector_idx`. `Product.searchKeywords` is a denormalized text column holding every variant's `variantName`, `variantDescription` and `keywords`. The old expression index `Product_fulltext_idx` was dropped.
+- `Product.minPrice` `Decimal(12,2)?` (plan 076): lowest discounted size price `round(min(price * (1 - discount::numeric / 100)), 2)`, NULL without sizes; indexed `(minPrice, id)` for price sorting.
+- Both denormalized columns are derived by one SQL in `src/lib/product-derived-columns.ts`: `upsertProduct` runs it for the product inside its transaction, and the E2E / luxury seeds run it for every product (they write rows directly).
 
 ## ER 図 (Diagram)
 
