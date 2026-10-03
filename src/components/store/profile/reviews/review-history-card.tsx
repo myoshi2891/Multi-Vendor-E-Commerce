@@ -63,7 +63,11 @@ export default function ReviewHistoryCard({
                 </div>
             </dl>
             {review.images.length > 0 && (
-                <div className={styles.photos} aria-label="Review photos">
+                <div
+                    className={styles.photos}
+                    role="group"
+                    aria-label="Review photos"
+                >
                     {review.images.map((photo, index) => (
                         <Image
                             key={photo.id}

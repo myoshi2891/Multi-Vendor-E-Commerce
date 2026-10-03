@@ -76,6 +76,9 @@ describe("Profile review design system", () => {
         expect(screen.getByText("One size")).toBeVisible();
         expect(screen.getByRole("img", { name: "Scarf detail" })).toBeVisible();
         expect(
+            screen.getByRole("group", { name: "Review photos" })
+        ).toBeVisible();
+        expect(
             screen.getByRole("button", { name: "View all" })
         ).toHaveAttribute("aria-pressed", "true");
         expect(
