@@ -4,8 +4,13 @@ import ProductFilters from "@/components/store/browse-page/filters";
 import ProductSort from "@/components/store/browse-page/sort";
 import ProductList from "@/components/store/shared/product-list";
 import { FiltersQueryType } from "@/lib/types";
-import { normalizePageParam } from "@/lib/utils";
-import { getProducts } from "@/queries/product";
+import {
+    extractAttributeParams,
+    normalizePageParam,
+    normalizePriceParam,
+    toArrayParam,
+} from "@/lib/utils";
+import { getProductFacets, getProducts } from "@/queries/product";
 import { permanentRedirect, redirect } from "next/navigation";
 import { isWithinSubtree, resolveCategoryNode } from "@/lib/category-tree";
 import styles from "./browse.module.css";
@@ -58,49 +63,6 @@ function buildBrowseHref(query: FiltersQueryType, page: number): string {
 }
 
 /**
- * 単数指定と配列指定が混在するフィルタ（size / color）を配列へ揃える。
- *
- * 未指定・空文字は `undefined`（フィルタ無し）に寄せる。
- */
-const toArrayParam = (
-    value: string | string[] | undefined
-): string[] | undefined => {
-    if (Array.isArray(value)) return value;
-    return value ? [value] : undefined;
-};
-
-/**
- * Renders the store browse page using URL query parameters for filtering, sorting, and pagination.
- *
- * @param searchParams - Query parameters that define the product filters, sort order, and page.
- * @returns The browse page containing filter controls, sorting controls, products, and pagination when applicable.
- */
-/**
- * URL 由来の価格パラメータを数値へ解決する。
- *
- * `Number(x) || fallback` は使わない —— `?maxPrice=0`（上限 0 の空レンジ）は
- * falsy なので fallback の `Number.MAX_SAFE_INTEGER` へ化け、
- * 「上限 0」が「上限なし」に反転して**全件が通ってしまう**。
- * `src/queries/product.ts` の `getProducts` は既に `hasPriceBound` による
- * 明示的な存在判定で 0 を正しい境界として受け付けるため、入口側でも
- * 0 を潰さず `lte: 0` がそのまま届くようにする。
- *
- * 未指定 / 空文字 / 空白のみ / 非有限値 / 負値は fallback に寄せる。Next.js は同名
- * パラメータが複数付くと配列を渡すため、配列は先頭要素を採る
- * （`normalizePageParam` と同じ規約）。
- */
-const normalizePriceParam = (value: unknown, fallback: number): number => {
-    const raw = Array.isArray(value) ? value[0] : value;
-    if (raw === undefined || raw === null) return fallback;
-    // 空白のみの入力（`?maxPrice=%20`）は `Number("   ") === 0` となり、
-    // 「上限 0」の空レンジとして通ってしまう。数値化の前に trim で弾く。
-    if (typeof raw === "string" && raw.trim() === "") return fallback;
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed) || parsed < 0) return fallback;
-    return parsed;
-};
-
-/**
  * 旧 URL（`?subCategory=`）を正準形（`?category=`）へ畳むべきかを判定し、
  * 畳む場合の遷移先 href を返す。畳まない場合は `null`。
  *
@@ -150,10 +112,19 @@ async function resolveCanonicalCategoryHref(
     return `/browse?${params.toString()}`;
 }
 
+/**
+ * Renders the store browse page using URL query parameters for filtering, sorting, and pagination.
+ *
+ * @param searchParams - Query parameters that define the product filters, sort order, and page.
+ * @returns The browse page containing filter controls, sorting controls, products, and pagination when applicable.
+ */
 export default async function BrowsePage({
     searchParams,
 }: {
-    searchParams: Promise<FiltersQueryType>;
+    // 属性ファセットの選択は `?attr.<key>=<value>`（plan 076）
+    searchParams: Promise<
+        FiltersQueryType & { [key: `attr.${string}`]: string | string[] | undefined }
+    >;
 }) {
     const query = await searchParams;
     const {
@@ -183,20 +154,23 @@ export default async function BrowsePage({
     // Infinity / NaN / 小数 / 0 以下は 1 ページ目、MAX_PAGE 超は上限へクランプする。
     const currentPage = normalizePageParam(page);
 
-    const products_data = await getProducts(
-        {
-            search,
-            category,
-            subCategory,
-            offer,
-            size: toArrayParam(size),
-            minPrice: normalizePriceParam(minPrice, 0),
-            maxPrice: normalizePriceParam(maxPrice, Number.MAX_SAFE_INTEGER),
-            color: toArrayParam(color),
-        },
-        sort,
-        currentPage
-    );
+    const filters = {
+        search,
+        category,
+        subCategory,
+        offer,
+        size: toArrayParam(size),
+        minPrice: normalizePriceParam(minPrice, 0),
+        maxPrice: normalizePriceParam(maxPrice, Number.MAX_SAFE_INTEGER),
+        color: toArrayParam(color),
+        attributes: extractAttributeParams(query),
+    };
+    // 一覧とファセット件数は同じフィルタから並列に取る。ファセットは補助的な情報なので、
+    // 集計に失敗しても一覧は表示する（getProductFacets が構造化ログを出してから throw する）。
+    const [products_data, facets] = await Promise.all([
+        getProducts(filters, sort, currentPage),
+        getProductFacets(filters).catch(() => []),
+    ]);
     const { products, totalPages, totalCount } = products_data;
 
     // 範囲外ページ（?page=999）は空リストを描画せず正準 URL へ寄せる。
@@ -244,6 +218,7 @@ export default async function BrowsePage({
                         <FilterPanel>
                             <ProductFilters
                                 queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }}
+                                facets={facets}
                             />
                         </FilterPanel>
                     </section>

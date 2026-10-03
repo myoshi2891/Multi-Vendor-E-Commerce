@@ -12,7 +12,10 @@ const SearchSuggestions: FC<Props> = ({ suggestions, query }) => {
     const router = useRouter();
     const highlightText = (text: string, query: string) => {
         if (!query) return text; // If no query, return the original text
-        const regex = new RegExp(`(${query})`, "gi"); // Create a regex pattern to match the query (case-insensitive)
+        // 入力をそのまま正規表現にすると "(" などで SyntaxError になり描画が落ちる。
+        // メタ文字をエスケープしてリテラルとして一致させる。
+        const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`(${escaped})`, "gi");
         const parts = text.split(regex); // Split the text by the query
 
         return parts.map((part, index) =>
@@ -36,7 +39,7 @@ const SearchSuggestions: FC<Props> = ({ suggestions, query }) => {
                 <ul>
                     {suggestions.map((suggestion) => (
                         <li
-                            key={suggestion.name}
+                            key={suggestion.link}
                             className="flex h-20 w-full cursor-pointer items-center gap-x-2 px-6 hover:bg-[#f5f5f5]"
                             onClick={() => handlePush(suggestion.link)}
                         >

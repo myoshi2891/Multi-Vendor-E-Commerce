@@ -1,18 +1,22 @@
-import { FiltersQueryType } from "@/lib/types";
+import type { FiltersQueryType, ProductFacet } from "@/lib/types";
 import { getAllCategories } from "@/queries/category";
 import { getAllOfferTags } from "@/queries/offer-tag";
 import CategoryFilter from "./filters/category/category-filter";
 import OfferFilter from "./filters/offer/offer-filter";
 import SizeFilter from "./filters/size/size-filter";
+import AttributeFacetFilter from "./filters/attribute/attribute-facet-filter";
 import FiltersHeader from "./filters/header";
 import { StoreIcon } from "lucide-react";
 
 export default async function ProductFilters({
     queries,
     storeUrl,
+    facets = [],
 }: {
     queries: FiltersQueryType;
     storeUrl?: string; // The store URL for which the filters should be applied
+    /** 属性ファセット（plan 076）。呼び出し元の Server Component が getProductFacets で集計して渡す */
+    facets?: ProductFacet[];
 }) {
     const { category, subCategory, offer } = queries; // Extract the search query parameters from the queries object
     const categories = await getAllCategories(storeUrl); // カテゴリツリー（ルート配列。各ノードが children を持つ）
@@ -25,6 +29,7 @@ export default async function ProductFilters({
                 <CategoryFilter categories={categories} />
                 <OfferFilter offers={offers} />
                 <SizeFilter queries={queries} storeUrl={storeUrl} />
+                <AttributeFacetFilter facets={facets} />
             </div>
         </div>
     );
