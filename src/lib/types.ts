@@ -439,6 +439,50 @@ export type FiltersQueryType = {
     page?: string | string[];
 };
 
+/**
+ * `getProducts` のフィルタ（plan 075 / design.md §2-Q5）。
+ *
+ * 単一値のパラメータ（search / store / category / subCategory / offer）は文字列、
+ * 複数指定できるもの（size / color）は配列にそろえる。URL 由来の値は `/browse` で
+ * `toArrayParam` / `normalizePriceParam`（`src/lib/utils.ts`）を通してから渡すこと。
+ * `getProducts` は Server Action なので、型に反する入力も実行時に `parseProductFilters`
+ * で検証する（配列が単一値の位置に来たら fail-closed で 0 件）。
+ */
+export type ProductFilters = {
+    search?: string;
+    store?: string;
+    category?: string;
+    /** 恒久的に受理する旧パラメータ（category-tree design.md §2-Q4） */
+    subCategory?: string;
+    offer?: string;
+    size?: string[];
+    color?: string[];
+    /** 0 は有効な境界（「未指定」ではない） */
+    minPrice?: number;
+    maxPrice?: number;
+    /**
+     * 属性ファセットの選択（plan 076）。属性定義の key → 選択した値（ENUM は option.value）。
+     * 同じ key の中は OR、key 同士は AND。URL では `?attr.<key>=<value>`（`extractAttributeParams`）。
+     */
+    attributes?: Record<string, string[]>;
+};
+
+/** ファセットの値 1 つ（plan 076）。`value` は URL に載せる機械値、`label` は表示名。 */
+export type ProductFacetValue = {
+    value: string;
+    label: string;
+    count: number;
+    selected: boolean;
+};
+
+/** 属性ファセット 1 つ（同じ key の facetable 定義をまとめたもの）。 */
+export type ProductFacet = {
+    key: string;
+    name: string;
+    unit: string | null;
+    values: ProductFacetValue[];
+};
+
 export type CategoryWithSubsType = Category & {
     subCategories: SubCategory[];
 };

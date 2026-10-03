@@ -8,6 +8,10 @@ import {
     getStockStatus,
     normalizePositiveIntParam,
     normalizePageParam,
+    normalizePriceParam,
+    toArrayParam,
+    parseProductFilters,
+    extractAttributeParams,
     MAX_PAGE,
 } from "./utils";
 import { createMockCartProduct } from "@/config/test-fixtures";
@@ -422,5 +426,159 @@ describe("getStockStatus", () => {
         // 在庫切れ判定が過小在庫判定より優先される
         expect(getStockStatus(0, 0)).toBe("out");
         expect(getStockStatus(1, 0)).toBe("ok");
+    });
+});
+
+describe("normalizePriceParam", () => {
+    it("0 は有効な境界として返す（fallback に化けさせない）", () => {
+        expect(normalizePriceParam("0", Number.MAX_SAFE_INTEGER)).toBe(0);
+    });
+
+    it.each([
+        ["未指定", undefined],
+        ["空文字", ""],
+        ["空白のみ", "   "],
+        ["非数値", "abc"],
+        ["負値", "-5"],
+        ["Infinity", "Infinity"],
+    ])("%s は fallback を返す", (_label, value) => {
+        expect(normalizePriceParam(value, 7)).toBe(7);
+    });
+
+    it("配列は先頭要素を採る", () => {
+        expect(normalizePriceParam(["12.5", "99"], 0)).toBe(12.5);
+    });
+});
+
+describe("toArrayParam", () => {
+    it("単数指定を 1 要素の配列へ揃える", () => {
+        expect(toArrayParam("M")).toEqual(["M"]);
+    });
+
+    it("配列はそのまま返し、未指定・空文字は undefined", () => {
+        expect(toArrayParam(["S", "M"])).toEqual(["S", "M"]);
+        expect(toArrayParam(undefined)).toBeUndefined();
+        expect(toArrayParam("")).toBeUndefined();
+    });
+});
+
+describe("parseProductFilters", () => {
+    it("正しい入力を正規化する（search は trim・単数の size は配列へ）", () => {
+        // Arrange
+        const raw = {
+            search: "  coat ",
+            store: "my-store",
+            size: "M",
+            color: ["Red"],
+            minPrice: 0,
+            maxPrice: 100,
+        };
+
+        // Act / Assert
+        expect(parseProductFilters(raw)).toEqual({
+            kind: "ok",
+            filters: {
+                search: "coat",
+                store: "my-store",
+                size: ["M"],
+                color: ["Red"],
+                minPrice: 0,
+                maxPrice: 100,
+            },
+        });
+    });
+
+    it("未指定・空文字・空白だけの search は無視する", () => {
+        expect(parseProductFilters({ store: "", search: "   " })).toEqual({
+            kind: "ok",
+            filters: {},
+        });
+        expect(parseProductFilters(undefined)).toEqual({ kind: "ok", filters: {} });
+    });
+
+    it.each(["search", "store", "category", "subCategory", "offer"])(
+        "単一値の %s に配列が来たら invalid（fail-closed）",
+        (key) => {
+            expect(parseProductFilters({ [key]: ["a", "b"] })).toEqual({
+                kind: "invalid",
+            });
+        }
+    );
+
+    it("size / color に文字列以外の要素があれば invalid", () => {
+        expect(parseProductFilters({ size: ["M", 1] })).toEqual({ kind: "invalid" });
+    });
+
+    it("有限の number 以外の価格は無視する（旧 hasPriceBound と同じ）", () => {
+        expect(
+            parseProductFilters({ minPrice: "10", maxPrice: Number.NaN })
+        ).toEqual({ kind: "ok", filters: {} });
+    });
+
+    it("オブジェクト以外は invalid", () => {
+        expect(parseProductFilters("store")).toEqual({ kind: "invalid" });
+        expect(parseProductFilters(["a"])).toEqual({ kind: "invalid" });
+    });
+});
+
+describe("parseProductFilters の attributes（plan 076）", () => {
+    it("key → 値の配列を受け付け、単数の文字列は配列へ揃える", () => {
+        expect(
+            parseProductFilters({ attributes: { material: "wool", season: ["ss", "aw"] } })
+        ).toEqual({
+            kind: "ok",
+            filters: { attributes: { material: ["wool"], season: ["ss", "aw"] } },
+        });
+    });
+
+    it("値が空の key は捨て、すべて空なら attributes 自体を付けない", () => {
+        expect(parseProductFilters({ attributes: { material: [] } })).toEqual({
+            kind: "ok",
+            filters: {},
+        });
+    });
+
+    it.each([
+        ["snake_case でない key", { "Material!": ["wool"] }],
+        ["文字列以外の値", { material: [1] }],
+        ["オブジェクト以外", "material=wool"],
+    ])("%s は invalid（fail-closed）", (_label, attributes) => {
+        expect(parseProductFilters({ attributes })).toEqual({ kind: "invalid" });
+    });
+
+    it("key 数・値の数に上限を設け、超えたら invalid", () => {
+        // Arrange — 上限は key 10 個・各 20 値
+        const tooManyKeys = Object.fromEntries(
+            Array.from({ length: 11 }, (_, i) => [`k${i}`, ["v"]])
+        );
+        const tooManyValues = {
+            material: Array.from({ length: 21 }, (_, i) => `v${i}`),
+        };
+
+        // Act / Assert
+        expect(parseProductFilters({ attributes: tooManyKeys })).toEqual({ kind: "invalid" });
+        expect(parseProductFilters({ attributes: tooManyValues })).toEqual({ kind: "invalid" });
+    });
+});
+
+describe("extractAttributeParams", () => {
+    it("attr.<key> のパラメータだけを key → 値の配列に集める", () => {
+        // Arrange — Next.js の searchParams（単数は string・複数は string[]）
+        const query = {
+            category: "fashion",
+            "attr.material": ["wool", "silk"],
+            "attr.season": "aw",
+            attr: "ignored",
+        };
+
+        // Act / Assert
+        expect(extractAttributeParams(query)).toEqual({
+            material: ["wool", "silk"],
+            season: ["aw"],
+        });
+    });
+
+    it("attr. のパラメータが無ければ undefined", () => {
+        expect(extractAttributeParams({ category: "fashion" })).toBeUndefined();
     });
 });
