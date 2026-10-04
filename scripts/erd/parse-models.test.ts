@@ -158,12 +158,13 @@ describe("parseModels", () => {
         ]);
     });
 
-    it("リレーションと Decimal 表示型を従来どおり解釈する", () => {
+    it("リレーションと Decimal 表示型を解釈し、optional の Decimal は ? を保つ", () => {
         // Arrange
         const src = `model ProductAttributeValue {
   optionId     String?
   option       AttributeOption? @relation(fields: [optionId, definitionId], references: [id, definitionId], onDelete: Restrict)
   valueNumber  Decimal? @db.Decimal(18, 6)
+  price        Decimal  @db.Decimal(12, 2)
 }`;
 
         // Act
@@ -176,6 +177,9 @@ describe("parseModels", () => {
         expect(option?.relation?.onDelete).toBe("Restrict");
         expect(
             model.fields.find((f) => f.name === "valueNumber")?.displayType
-        ).toBe("Decimal(18,6)");
+        ).toBe("Decimal(18,6)?");
+        expect(
+            model.fields.find((f) => f.name === "price")?.displayType
+        ).toBe("Decimal(12,2)");
     });
 });
