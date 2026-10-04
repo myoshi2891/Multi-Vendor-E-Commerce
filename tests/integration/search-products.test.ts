@@ -417,6 +417,39 @@ describe("サジェスト応答の形と件数（plan 073）", () => {
         );
     });
 
+    it("シナリオ13b: ACTIVE でない店舗の商品は返さず、8 件の枠も欠けない", async () => {
+        // Arrange — 名前に語を含む（rank が高い）非公開店舗の商品を 3 件、
+        // description にだけ含む ACTIVE 店舗の商品を 9 件。LIMIT の後で除外する実装だと 5 件に欠ける。
+        const owner = await seedUser(db);
+        const hidden = await Promise.all(
+            (["PENDING", "BANNED", "DISABLED"] as const).map((status) =>
+                seedStore(db, { userId: owner.id, overrides: { status } })
+            )
+        );
+        for (const [i, store] of hidden.entries()) {
+            await seedSearchableProduct({
+                ...base,
+                storeId: store.id,
+                name: `Quartz Quartz ${i}`,
+                description: "quartz",
+            });
+        }
+        for (let i = 0; i < 9; i++) {
+            await seedSearchableProduct({
+                ...base,
+                name: `Pebble ${i}`,
+                description: "quartz",
+            });
+        }
+
+        // Act
+        const { body } = await search("quartz");
+
+        // Assert
+        expect(body).toHaveLength(8);
+        expect(body.every((row) => row.name.startsWith("Pebble"))).toBe(true);
+    });
+
     it("シナリオ13: 互換のため ?search= でも検索できる", async () => {
         // Arrange
         const { a } = await seedProductSet();

@@ -26,8 +26,9 @@ type RankedIdRow = { id: string };
  * - The query is read from `q`. `search` is also accepted for compatibility with older clients.
  * - The last word is matched as a prefix (`buildPrefixTsQuery`), so a partially typed word still
  *   produces suggestions. Input with no letters or digits returns an empty array.
- * - Products without a variant are excluded **inside the SQL**, before `LIMIT` — dropping them
- *   after `LIMIT` would return fewer than `SUGGESTION_LIMIT` items even when more matches exist.
+ * - Products without a variant, and products of stores that are not `ACTIVE` (the public store
+ *   page shows only `ACTIVE` stores), are excluded **inside the SQL**, before `LIMIT` — dropping
+ *   them after `LIMIT` would return fewer than `SUGGESTION_LIMIT` items even when more matches exist.
  * - Ties in `ts_rank` are broken by `id` so the order is deterministic.
  *
  * @returns Up to `SUGGESTION_LIMIT` suggestions ordered by relevance; an empty array if the query is missing or blank.
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
         FROM "Product" p
         WHERE p."searchVector" @@ to_tsquery('simple', ${tsQuery})
           AND EXISTS (SELECT 1 FROM "ProductVariant" pv WHERE pv."productId" = p.id)
+          AND EXISTS (SELECT 1 FROM "Store" s WHERE s.id = p."storeId" AND s.status = 'ACTIVE')
         ORDER BY ts_rank(p."searchVector", to_tsquery('simple', ${tsQuery})) DESC,
                  p.id ASC
         LIMIT ${SUGGESTION_LIMIT}
