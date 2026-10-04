@@ -67,6 +67,22 @@ describe("OffersPage", () => {
             screen.getByText("現在ご紹介できるオファーはありません。")
         ).toBeInTheDocument();
         // 空状態ではオファーリンクは描画されない
-        expect(screen.queryByRole("link")).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /Summer Sale/ })).not.toBeInTheDocument();
     });
+});
+
+
+it("empty offers retain a collection destination and accessible breadcrumb", async () => {
+    mockGetAllOfferTags.mockResolvedValueOnce([]);
+    render(await OffersPage());
+    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Explore the collection" })).toHaveAttribute("href", "/browse");
+});
+
+it("lookup failure is distinct from empty and offers reload without exposing details", async () => {
+    mockGetAllOfferTags.mockRejectedValueOnce(new Error("private database error"));
+    render(await OffersPage());
+    expect(screen.getByRole("alert")).toHaveTextContent("Offers could not be loaded.");
+    expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute("href", "/offers");
+    expect(screen.queryByText(/private database/)).not.toBeInTheDocument();
 });
