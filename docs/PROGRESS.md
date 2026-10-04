@@ -5148,3 +5148,28 @@ QA_HANDOFFの2026-10-05実測値を同期: Jest2766 passed/2769 total、263 suit
 実装commit: Offers`1069ef25`、Dispute`89f5f198`、Report`3f35e4f1`、Following`e5c54728`、History`31492ef3`。検証commit: `c4724e29`/`c3b7eaa8`/`d04848cb`/`b22ccc44`。残課題は[QA](testing/QA_HANDOFF.md#ds-account-discovery-browser)を正本とする。
 
 本番ビルド `bun run build` exit0。既存metadataBase/OG glyph font警告あり。
+
+---
+
+### UserMenu の Clerk UserButton hydration 不一致修正（2026-10-05）
+
+#### 概要
+
+ストアヘッダーの `UserMenu` で `Hydration failed` が断続的に出ていた。Clerk の `withClerk` が React state ではなくライブな `clerk.loaded` で描画を分岐するため、SSR（常に null）と clerk-js ロード済みの hydration（DOM 出力）とで HTML が食い違っていた。`useSyncExternalStore` の server snapshot で hydration 後にのみ描画するラッパーを新設。`next-themes` の `<script>` 警告は実害がないため `tech.md` の「意図的に未対応の警告」へ記録。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/layout/header/user-menu/client-user-button.tsx` | hydration 後にのみ `UserButton` を描画する Client Component を新設 | 未コミット |
+| `src/components/store/layout/header/user-menu/user-menu.tsx` | `UserButton` をラッパーへ置換 | 未コミット |
+| `tests/component/store/client-user-button.test.tsx` | SSR 非出力・hydration 一致の回帰 +2（Red 確認済み） | 未コミット |
+| `.claude/steering/tech.md` / `plans/079-fix-user-button-hydration-mismatch.md` | 警告表追記 / 計画 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 2766 passed / 2769 total | **2768 passed / 2771 total** |
+| スイート数 | 263 | **264**（failed 0） |
+| 型エラー | 0 件 | **0 件** |

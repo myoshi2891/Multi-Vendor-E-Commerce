@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-05） | **2766 passed / 2769 total、3 skipped、127 snapshots passed、263 スイート（failed 0）**。全体coverage実行の実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| Jestテスト総数（2026-10-05） | **2768 passed / 2771 total、3 skipped、127 snapshots passed、264 スイート（failed 0）**。全体coverage実行の実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | 全体coverage（2026-10-05） | Statements83.16%／Branches69.26%／Functions77.45%／Lines83.24%。Jest全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **329 ファイル**（2026-10-05 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **263 スイート**（262 passed／1 skipped、2026-10-05全体実測）。 |
-| テスト総数 | **2766 unit/component passed**（2769 total / 3 skipped / 263 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
+| テスト総数 | **2768 unit/component passed**（2771 total / 3 skipped / 264 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)**（2026-10-05 dashboard実測、変更なし）。 |
@@ -503,6 +503,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-04 | **PR #187 レビュー対応: サジェストの非 ACTIVE 店舗除外 — Integration +1（218 → 219・17 スイート不変、Jest 2723 / 2726 不変）**（HEAD `86b9c786` 上の作業ツリー分・コミット前）: `/api/search-products` が PENDING / BANNED / DISABLED 店舗の商品も返していたため、順位付け SQL の `LIMIT` 前に Store が `ACTIVE` である条件を追加。`tests/integration/search-products.test.ts` にシナリオ 13b（非 ACTIVE 店舗の商品を返さず 8 件の枠も欠けない）を追加（修正前で Red を確認）。`bun run test:integration` 全体実測で **219/219 pass・17 スイート**。 |
 | 2026-10-04 | **PR #187 レビュー対応: サジェストの画像適格条件と browse の属性チップ — Integration +2（219 → 221・17 スイート不変）、Jest +2（2723 → 2725 passed / 2728 total・254 スイート不変）**（HEAD `86b9c786` 上の作業ツリー分・コミット前）: `/api/search-products` が `variantImage` 空・関連画像も無い商品を返し空の `src` を UI へ渡していたため、`LIMIT` 前に「表示できる画像を持つバリアント」を条件化し、hydrate も同じ条件で選んで `variantImage` が空なら関連画像の url で代替。`search-products.test.ts` にシナリオ 11b / 11c。`/browse` が `attr.*` の選択を `FiltersHeader` に渡しておらず、カテゴリ未選択（ファセット無し）や集計失敗時に絞り込みが表示・解除できなかったため、`page.test.tsx` +2。いずれも修正前で Red を確認。`parse-models.test.ts` は optional Decimal の `?` 欠落を追認していた期待値を修正（件数不変）。全体実測で Jest **2725 / 2728**・Integration **221/221**。 |
 | 2026-10-04 | **PR #187 レビュー対応: 並行バリアント追加のデッドロックと空の属性キー — Integration +1（221 → 222・17 スイート不変）、Jest +1（2725 → 2726 passed / 2729 total・254 スイート不変）**（HEAD `65f9f3c0` 上の作業ツリー分・コミット前）: `recomputeProductDerivedColumns` が Product の `FOR UPDATE` を子行の INSERT（FK の `FOR KEY SHARE`）の後に取っていたため、同一商品への `handleVariantCreate` 並行実行がデッドロックしていた。`lockProductRow` に切り出し、`handleVariantCreate` / `handleProductAndVariantUpdate` の `lockAttributeCategoryPath` 直後へ移動。`product-update.test.ts` に並行追加シナリオ（修正前で 1 件 rejected の Red を確認）。`extractAttributeParams` が `?attr.=x` の空キーを捨て `getProducts` が全件を返していたため、空キーを残して `parseProductFilters` で invalid にさせる（`utils.test.ts` +1・Red 確認）。テストファイル数を 317（ダッシュボード実測）に統一。 |
+| 2026-10-05 | **plan 079: UserMenu の Clerk `UserButton` hydration 不一致修正 — Jest +2（2766 → 2768 passed / 2771 total・263 → 264 スイート）**（HEAD `10f41af4` 上の作業ツリー分・コミット前）: `tests/component/store/client-user-button.test.tsx` 新設（SSR で `UserButton` を出力しない／SSR HTML の `hydrateRoot` で recoverable error 0・hydration 後に描画）。Red は `UserButton` 直描画スタブで SSR アサーション失敗を確認。旧 coverage 83.16/69.26/77.45/83.24% → 83.17/69.27/77.5/83.25%、dashboard 329 → 330 files / lcov 349 → 350。 |
 
 ### 2026-09-30 compareデザイン移行
 
@@ -583,4 +584,4 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 
 </details>
 
-最新値はQA_HANDOFFから同期: 2766 passed / 2769 total、263 suites（262 passed/1 skipped）、3 skipped、127 snapshots。coverage 83.16/69.26/77.45/83.24%。dashboard329 files/lcov349/18 of80 cells。公開11/11、補助6/6。全体テスト+24/スイート+6（既存測定比）、Integrationと全E2E未実行。新規テストは既存のpages/store-uiセル内で、ヒートマップ分類変更なし。戦略: 購入/購入後サポートP2と再訪一覧を先行、認証後実ルートは保留。詳細は[進捗](../design/design-system/PROGRESS.md#p2優先5画面移行記録)。
+最新値はQA_HANDOFFから同期: 2768 passed / 2771 total、264 suites（263 passed/1 skipped）、3 skipped、127 snapshots。coverage 83.17/69.27/77.5/83.25%。dashboard330 files/lcov350/18 of80 cells（plan 079 反映）。公開11/11、補助6/6。全体テスト+24/スイート+6（既存測定比）、Integrationと全E2E未実行。新規テストは既存のpages/store-uiセル内で、ヒートマップ分類変更なし。戦略: 購入/購入後サポートP2と再訪一覧を先行、認証後実ルートは保留。詳細は[進捗](../design/design-system/PROGRESS.md#p2優先5画面移行記録)。

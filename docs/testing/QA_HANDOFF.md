@@ -16,8 +16,8 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2766 passed / 2769 total / 263 スイート**（262 passed / 1 skipped suite、3 skipped tests、127 snapshots、exit 0）。2026-10-05 `bun run test -- --runInBand --coverage --json --outputFile=/tmp/ds-full-jest.json` 全体実測。 |
-| カバレッジ全体（lcov **2026-10-05実測**） | Statements **83.16%** (9191/11052) / Branches **69.26%** (5132/7409) / Functions **77.45%** (1683/2173) / Lines **83.24%** (8335/10013)。履歴は[COVERAGE_REPORT §7](./COVERAGE_REPORT.md#7-履歴)。 |
+| Jest テスト総数 (unit/component) | **2768 passed / 2771 total / 264 スイート**（263 passed / 1 skipped suite、3 skipped tests、127 snapshots、exit 0）。2026-10-05 `bun run test -- --coverage` 全体実測。 |
+| カバレッジ全体（lcov **2026-10-05実測**） | Statements **83.17%** (9203/11064) / Branches **69.27%** (5134/7411) / Functions **77.5%** (1688/2178) / Lines **83.25%** (8345/10023)。履歴は[COVERAGE_REPORT §7](./COVERAGE_REPORT.md#7-履歴)。 |
 | Jest Integration テスト総数 | **222** / **17 スイート**（**2026-10-04 実測: 222/222 pass**・`bun run test:integration`。PR #187 レビュー対応で `product-update.test.ts` に同一商品へのバリアント並行追加 +1）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
@@ -755,7 +755,7 @@ C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了済
 
 ## P2優先5画面（2026-10-05）
 
-Offers実装済み。RTL 4/4（部分実行）、tsc 0、lint errors 0/既存warnings 12。`0195267c` / `1069ef25` / `5fea2f4a`。最終ブラウザー検証と全体Jest測定後に統計同期予定。
+Offers実装済み。RTL 4/4（部分実行）、tsc 0、lint errors 0/既存warnings 12。`0195267c` / `1069ef25` / `5fea2f4a`。
 
 - Dispute実装済み: Red 1、関連Jest9/9、tsc 0、lint errors 0。公開実ルート200、表示確認待ち。`0ab9d890` / `89f5f198` / `a2c7ddb2`。
 
