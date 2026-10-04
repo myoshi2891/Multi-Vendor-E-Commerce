@@ -12,14 +12,14 @@
 | 指標 | 値 |
 |---|---|
 | Jestテスト総数（2026-10-05） | **2768 passed / 2771 total、3 skipped、127 snapshots passed、264 スイート（failed 0）**。全体coverage実行の実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| 全体coverage（2026-10-05） | Statements83.16%／Branches69.26%／Functions77.45%／Lines83.24%。Jest全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テストファイル総数 | **329 ファイル**（2026-10-05 dashboard実測）。 |
-| Jest スイート総数（unit/component のみ） | **263 スイート**（262 passed／1 skipped、2026-10-05全体実測）。 |
+| 全体coverage（2026-10-05） | Statements83.17%／Branches69.27%／Functions77.5%／Lines83.25%。Jest全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| テストファイル総数 | **330 ファイル**（2026-10-05 dashboard実測）。 |
+| Jest スイート総数（unit/component のみ） | **264 スイート**（263 passed／1 skipped、2026-10-05全体実測）。 |
 | テスト総数 | **2768 unit/component passed**（2771 total / 3 skipped / 264 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)**（2026-10-05 dashboard実測、変更なし）。 |
-| lcov エントリ数 | **349**（2026-10-05全体coverage再測定とdashboard実測）。 |
+| lcov エントリ数 | **350**（2026-10-05全体coverage再測定とdashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
 | 型エラー | **0 件**（2026-10-05実測）。 |
 
