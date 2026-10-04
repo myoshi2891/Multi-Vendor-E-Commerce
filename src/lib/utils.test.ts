@@ -581,4 +581,16 @@ describe("extractAttributeParams", () => {
     it("attr. のパラメータが無ければ undefined", () => {
         expect(extractAttributeParams({ category: "fashion" })).toBeUndefined();
     });
+
+    it("空の key（?attr.=x）も捨てずに残し、parseProductFilters で invalid にさせる", () => {
+        // Arrange — 黙って捨てると絞り込みなしに化けて全件が返る
+        const query = { "attr.": "wool" };
+
+        // Act
+        const attributes = extractAttributeParams(query);
+
+        // Assert
+        expect(attributes).toEqual({ "": ["wool"] });
+        expect(parseProductFilters({ attributes })).toEqual({ kind: "invalid" });
+    });
 });

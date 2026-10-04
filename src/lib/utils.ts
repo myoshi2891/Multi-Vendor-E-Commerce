@@ -275,8 +275,9 @@ export const extractAttributeParams = (
     const selections: Record<string, string[]> = {};
     for (const [name, value] of Object.entries(query)) {
         if (!name.startsWith(ATTRIBUTE_PARAM_PREFIX) || value === undefined) continue;
+        // 空の key（`?attr.=x`）も捨てない。捨てると絞り込みなしに化けて全件が返るため、
+        // `parseProductFilters` の key 形式検査で invalid（0 件）にさせる。
         const key = name.slice(ATTRIBUTE_PARAM_PREFIX.length);
-        if (key === "") continue;
         selections[key] = Array.isArray(value) ? value : [value];
     }
     return Object.keys(selections).length > 0 ? selections : undefined;
