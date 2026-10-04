@@ -26,9 +26,12 @@ type RankedIdRow = { id: string };
  * - The query is read from `q`. `search` is also accepted for compatibility with older clients.
  * - The last word is matched as a prefix (`buildPrefixTsQuery`), so a partially typed word still
  *   produces suggestions. Input with no letters or digits returns an empty array.
- * - Products without a variant, and products of stores that are not `ACTIVE` (the public store
- *   page shows only `ACTIVE` stores), are excluded **inside the SQL**, before `LIMIT` — dropping
- *   them after `LIMIT` would return fewer than `SUGGESTION_LIMIT` items even when more matches exist.
+ * - Products without a displayable variant (a variant whose `variantImage` is non-empty, or that has
+ *   a related image with a non-empty `url`), and products of stores that are not `ACTIVE` (the
+ *   public store page shows only `ACTIVE` stores), are excluded **inside the SQL**, before `LIMIT` —
+ *   dropping them after `LIMIT` would return fewer than `SUGGESTION_LIMIT` items even when more
+ *   matches exist. Hydration applies the same rule and falls back to the related image's `url`
+ *   when `variantImage` is empty.
  * - Ties in `ts_rank` are broken by `id` so the order is deterministic.
  *
  * @returns Up to `SUGGESTION_LIMIT` suggestions ordered by relevance; an empty array if the query is missing or blank.
@@ -50,7 +53,13 @@ export async function GET(req: Request) {
         SELECT p.id
         FROM "Product" p
         WHERE p."searchVector" @@ to_tsquery('simple', ${tsQuery})
-          AND EXISTS (SELECT 1 FROM "ProductVariant" pv WHERE pv."productId" = p.id)
+          AND EXISTS (
+            SELECT 1 FROM "ProductVariant" pv
+            WHERE pv."productId" = p.id
+              AND (pv."variantImage" <> ''
+                   OR EXISTS (SELECT 1 FROM "ProductVariantImage" pvi
+                              WHERE pvi."productVariantId" = pv.id AND pvi.url <> ''))
+          )
           AND EXISTS (SELECT 1 FROM "Store" s WHERE s.id = p."storeId" AND s.status = 'ACTIVE')
         ORDER BY ts_rank(p."searchVector", to_tsquery('simple', ${tsQuery})) DESC,
                  p.id ASC
@@ -68,8 +77,24 @@ export async function GET(req: Request) {
                 id: true,
                 name: true,
                 slug: true,
+                // 順位付けクエリと同じ適格条件（表示できる画像を持つバリアント）で先頭を選ぶ
                 variants: {
-                    select: { slug: true, variantImage: true },
+                    where: {
+                        OR: [
+                            { variantImage: { not: "" } },
+                            { images: { some: { url: { not: "" } } } },
+                        ],
+                    },
+                    select: {
+                        slug: true,
+                        variantImage: true,
+                        images: {
+                            where: { url: { not: "" } },
+                            select: { url: true },
+                            orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+                            take: 1,
+                        },
+                    },
                     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
                     take: 1,
                 },
@@ -77,18 +102,21 @@ export async function GET(req: Request) {
         });
 
         // findMany は順序を保証しないので、順位付けクエリの順に並べ直す。
-        // 2 クエリの間にバリアントが消えた商品はリンク先が無いので飛ばす。
+        // 2 クエリの間に適格なバリアントが消えた商品はリンク先・画像が無いので飛ばす。
+        // variantImage が空ならバリアントの画像で代替する（商品カードと同じ扱い）。
         const byId = new Map(products.map((product) => [product.id, product]));
         const suggestions: ProductSuggestion[] = ids.flatMap((id) => {
             const product = byId.get(id);
             const variant = product?.variants[0];
             if (!product || !variant) return [];
+            const image = variant.variantImage || variant.images[0]?.url;
+            if (!image) return [];
             return [
                 {
                     id,
                     name: product.name,
                     link: `/product/${product.slug}/${variant.slug}`,
-                    image: variant.variantImage,
+                    image,
                 },
             ];
         });

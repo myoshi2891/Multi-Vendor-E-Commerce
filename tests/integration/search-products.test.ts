@@ -80,6 +80,7 @@ async function searchWithoutParam(): Promise<{
 /**
  * name / description を呼び出し側が完全に制御できる Product を 1 件作る。
  * `withVariant: false` を渡さない限り、サジェストの link / image の元になるバリアントを 1 件付ける。
+ * `variantImage` / `imageUrls` でバリアントの画像（`variantImage` と関連画像）を差し替えられる。
  */
 async function seedSearchableProduct(input: {
     name: string;
@@ -88,8 +89,10 @@ async function seedSearchableProduct(input: {
     categoryId: string;
     subCategoryId: string;
     withVariant?: boolean;
+    variantImage?: string;
+    imageUrls?: string[];
 }): Promise<Product> {
-    const { withVariant = true, ...data } = input;
+    const { withVariant = true, variantImage, imageUrls = [], ...data } = input;
     const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     const product = await db.product.create({
         data: {
@@ -102,11 +105,13 @@ async function seedSearchableProduct(input: {
         await db.productVariant.create({
             data: {
                 variantName: `Variant ${suffix}`,
-                variantImage: `https://example.test/${suffix}.png`,
+                variantImage:
+                    variantImage ?? `https://example.test/${suffix}.png`,
                 slug: `variant-${suffix}`,
                 sku: `SKU-${suffix}`,
                 weight: 1,
                 productId: product.id,
+                images: { create: imageUrls.map((url) => ({ url })) },
             },
         });
     }
@@ -393,6 +398,56 @@ describe("サジェスト応答の形と件数（plan 073）", () => {
 
         // Assert
         expect(body).toHaveLength(8);
+    });
+
+    it("シナリオ11b: 表示できる画像の無い商品は返さず、8 件の枠も欠けない", async () => {
+        // Arrange — 名前に語を含む（rank が高い）画像無し商品を 2 件（variantImage も関連画像も空）、
+        // description にだけ含む画像有り商品を 9 件。LIMIT の後で除外する実装だと 6 件に欠ける。
+        for (let i = 0; i < 2; i++) {
+            await seedSearchableProduct({
+                ...base,
+                name: `Onyx Onyx ${i}`,
+                description: "onyx",
+                variantImage: "",
+                imageUrls: [""],
+            });
+        }
+        for (let i = 0; i < 9; i++) {
+            await seedSearchableProduct({
+                ...base,
+                name: `Slate ${i}`,
+                description: "onyx",
+            });
+        }
+
+        // Act
+        const { body } = await search("onyx");
+
+        // Assert
+        expect(body).toHaveLength(8);
+        expect(body.every((row) => row.image !== "")).toBe(true);
+        expect(body.every((row) => row.name.startsWith("Slate"))).toBe(true);
+    });
+
+    it("シナリオ11c: variantImage が空なら関連画像の url を image に使う", async () => {
+        // Arrange
+        const product = await seedSearchableProduct({
+            ...base,
+            name: "Garnet Ring",
+            description: "fallback image",
+            variantImage: "",
+            imageUrls: ["https://example.test/garnet-1.png"],
+        });
+
+        // Act
+        const { body } = await search("garnet");
+
+        // Assert
+        expect(body).toHaveLength(1);
+        expect(body[0]).toMatchObject({
+            id: product.id,
+            image: "https://example.test/garnet-1.png",
+        });
     });
 
     it("シナリオ12: 同じ関連度の商品は id 昇順で並ぶ（tie-breaker）", async () => {
