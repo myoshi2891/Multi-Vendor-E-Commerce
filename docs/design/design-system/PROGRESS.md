@@ -57,7 +57,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-013 | `/faq` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/faq/page.tsx](<../../../src/app/(store)/faq/page.tsx>) | 未実施 |
 | DS-PAGE-014 | `/faqs` | 本体適用（2026-09-30移行） | P3 | 検証済み | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | [FAQs実施記録](#faqs移行記録) |
 | DS-PAGE-015 | `/legal` | 未適用 | P3 | TODO | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | 未実施 |
-| DS-PAGE-016 | `/offers` | 未適用 | P2 | 対応中 | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
+| DS-PAGE-016 | `/offers` | 本体適用・周辺確認 | P2 | 実装済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
 | DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | 未実施 |
 | DS-PAGE-018 | `/product-support` | 本体適用（2026-10-01移行） | P3 | 検証済み | [src/app/(store)/product-support/page.tsx](<../../../src/app/(store)/product-support/page.tsx>) | [product-support移行記録](#product-support移行記録) |
 | DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | 未実施 |
@@ -600,3 +600,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - lint **0 errors／既存12 warnings**、`bunx tsc --noEmit` 成功。sandboxでのlisten EPERMは権限付き再実行で解消。fixtureのprocess定義と長文住所のvalidationテスト条件を修正して再検証済み。これらの環境／fixture失敗はRed実績に含めない。
 - [SDD要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[workflows](../../../specs/multi-vendor-ecommerce/05-workflows.md)／[testing](../../../specs/multi-vendor-ecommerce/07-testing.md)と画面要件/設計/task、計画・QA・テスト計画を同期。[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[data-model](../../../specs/multi-vendor-ecommerce/03-data-model.md)／[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)／[quality](../../../specs/multi-vendor-ecommerce/06-quality.md)は変更不要（scope/DB/API/品質基準に変更なし）。旧住所部品と共有Modal、全体tokens、商品詳細保証の全利用先移行は完了扱いにしない。
 - ダッシュボード再生成: **321 test files／lcov328／18/80 cells（23%）**。lcovと全体Jest成功数は再測定せず既存実測値を維持。実認証後route、SDK実描画、Firefox/WebKit、全E2Eと全体coverageは未実行。
+
+## P2優先5画面移行記録
+
+- 2026-10-05。[保存計画](../../../plans/layout-design/priority-five-design-system-plan.md)。
+- Offers: RTL新要件Red 2件、Green/Refactor 4/4、tsc 0、lint 0 errors/12既存warnings。`0195267c`→`1069ef25`→`5fea2f4a`。ブラウザー検証待ち。

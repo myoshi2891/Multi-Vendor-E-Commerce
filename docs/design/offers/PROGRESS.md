@@ -44,3 +44,8 @@
 - [ ] 商品一覧を `/browse?offer=<url>` に委譲しているか。
 - [ ] user-menu の Discounts & Offers の 1 行のみ変更したか。
 - [ ] プラットフォームクーポン掲示を MVP に含めていないか。
+
+
+## P2デザイン移行（2026-10-05）
+
+DS-PAGE-016。共有opt-in DesignPageでパンくずとserif見出し、タグカード、空状態のcollection導線、取得失敗の汎用alertと再読み込み、route loadingを実装。タグ順・商品数・browse URLを維持。Red 2件→Green/Refactor 4/4、tsc 0、lint 0 errors/12既存warnings。実ブラウザー確認は最終検証で記録し、それまでは実装済み。コミット: `0195267c` / `1069ef25` / `5fea2f4a`。[保存計画](../../../plans/layout-design/priority-five-design-system-plan.md)。

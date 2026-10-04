@@ -752,3 +752,7 @@ C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了済
 #### DS-PURCHASE（medium）次回着手用プロンプト
 
 > `plans/layout-design/checkout-order-design-system-plan.md` と `docs/design/design-system/PROGRESS.md` のcheckout-order移行記録を参照し、既存schemaの専用テストDBとアプリ接続先が一致する環境で2画面の認証後検証を完了する。fixtureの作成・後処理は承認済み範囲。購入・外部送信・DB初期化は行わず、完了後に計画・台帳・QA・dashboard Next Actionsを同期する。
+
+## P2優先5画面（2026-10-05）
+
+Offers実装済み。RTL 4/4（部分実行）、tsc 0、lint errors 0/既存warnings 12。`0195267c` / `1069ef25` / `5fea2f4a`。最終ブラウザー検証と全体Jest測定後に統計同期予定。
