@@ -65,7 +65,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-021 | `/profile/addresses` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/addresses/page.tsx](<../../../src/app/(store)/profile/addresses/page.tsx>) | [addresses実施記録](#profile-addresses移行記録) |
 | DS-PAGE-022 | `/profile/following/[page]` | 本体適用・周辺確認 | P2 | 実装済み | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
 | DS-PAGE-023 | `/profile/following` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/following/page.tsx](<../../../src/app/(store)/profile/following/page.tsx>) | 未実施 |
-| DS-PAGE-024 | `/profile/history/[page]` | 未適用 | P2 | 対応中 | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
+| DS-PAGE-024 | `/profile/history/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
 | DS-PAGE-025 | `/profile/history` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/history/page.tsx](<../../../src/app/(store)/profile/history/page.tsx>) | 未実施 |
 | DS-PAGE-026 | `/profile/messages` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/messages/page.tsx](<../../../src/app/(store)/profile/messages/page.tsx>) | [messages実施記録](#profile-messages移行記録) |
 | DS-PAGE-027 | `/profile/orders/[filter]` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../../src/app/(store)/profile/orders/[filter]/page.tsx>) | [orders実施記録](#profile-orders移行記録) |
@@ -611,3 +611,5 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - Report problem: Red 1件→関連10/10、tsc 0、lint 0 errors/12既存warnings。`4bda3231` / `3f35e4f1`。共有部品再利用後のRefactor差分なし。
 
 - Following: Red4件→Green4/4→Refactor関連18/18、tsc0、lint0 errors/12既存warnings。`1ed94eaf` / `e5c54728` / `982f13b5`。旧共有StoreCard/Paginationは未移行を維持。認証後検証待ち。
+
+- History: Red6件→Green6/6→Refactor関連21/21、tsc0、lint0 errors/12既存warnings。`a52ef2f0` / `31492ef3` / `85022b3b`。client routeをServer Action Props境界へ変更。専用test DBなしで認証後実ルートは保留（実装あり）。補助browserは別検証として実施中。
