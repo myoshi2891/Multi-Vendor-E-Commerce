@@ -1,52 +1,49 @@
-import { UserShippingAddressType } from '@/lib/types'
-import Image from 'next/image'
-import React from 'react'
-
+import type { UserShippingAddressType } from "@/lib/types";
+import Image from "next/image";
+import styles from "../../shared/commerce.module.css";
 export default function OrderUserDetailsCard({
     details,
 }: {
-    details: UserShippingAddressType
+    details: UserShippingAddressType;
 }) {
-    const {
-        user,
-        firstName,
-        lastName,
-        address1,
-        address2,
-        city,
-        country,
-        phone,
-        state,
-        zip_code,
-    } = details
-    const { picture, email } = user
     return (
-        <div>
-            <section className="w-full p-2 shadow-sm">
-                <div className="mx-auto w-fit">
-                    <Image
-                        src={picture}
-                        alt="profile pic"
-                        width={100}
-                        height={100}
-                        className="size-28 rounded-full object-cover"
-                        priority
-                    />
-                </div>
-                <div className="mt-2 space-y-2 text-main-primary">
-                    <h2 className="text-center text-2xl font-bold capitalize tracking-wide">
-                        {firstName} {lastName}
-                    </h2>
-                    <h6 className="border-t border-dashed border-neutral-400 py-2 text-center">
-                        {email}
-                    </h6>
-                    <h6 className="text-center">{phone}</h6>
-                    <p className="border-t border-dashed border-neutral-400 py-2">
-                        {address1}, {address2}, {city}, {state}, {zip_code},{" "}
-                        {country.name}
-                    </p>
-                </div>
-            </section>
-        </div>
+        <section className={styles.panel}>
+            <h2>Shipping address</h2>
+            <div className={styles.store}>
+                <Image
+                    src={
+                        details.user.picture ||
+                        "/assets/images/default-user.jpg"
+                    }
+                    alt=""
+                    width={40}
+                    height={40}
+                />
+                <strong>
+                    {details.firstName} {details.lastName}
+                </strong>
+            </div>
+            <p className={styles.note}>
+                {details.user.email}
+                <br />
+                {details.phone}
+            </p>
+            <address
+                className={styles.note}
+                style={{ fontStyle: "normal", marginTop: 16 }}
+            >
+                {details.address1}
+                <br />
+                {details.address2 && (
+                    <>
+                        {details.address2}
+                        <br />
+                    </>
+                )}
+                {details.city}, {details.state} {details.zip_code}
+                <br />
+                {details.country.name}
+            </address>
+        </section>
     );
 }

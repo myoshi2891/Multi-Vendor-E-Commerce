@@ -1,9 +1,20 @@
-import { Check, ChevronRight, Package } from 'lucide-react'
-import { FC } from 'react'
+import { Check, ChevronRight, Package } from "lucide-react";
+import { FC } from "react";
 
-interface FastDeliveryProps {}
+interface FastDeliveryProps {
+    editorial?: boolean;
+}
 
-const FastDelivery: FC<FastDeliveryProps> = () => {
+const FastDelivery: FC<FastDeliveryProps> = ({ editorial = false }) => {
+    if (editorial)
+        return (
+            <div>
+                <h3>Fast Delivery</h3>
+                <p>$5.00 coupon code if delayed</p>
+                <p>Refund if package lost</p>
+                <p>Refund if no delivery in time</p>
+            </div>
+        );
     return (
         <div className="space-y-1">
             <div className="flex items-center justify-between">
@@ -26,7 +37,7 @@ const FastDelivery: FC<FastDeliveryProps> = () => {
                 <span>Refund if no delivery in time</span>
             </span>
         </div>
-    )
-}
+    );
+};
 
-export default FastDelivery
+export default FastDelivery;

@@ -1,46 +1,88 @@
 "use client";
-import { capturePayPalPayment, createPayPalPayment } from "@/queries/paypal";
+import type { PaymentActions } from "@/lib/commerce-actions";
 import { PayPalButtons } from "@paypal/react-paypal-js";
 import { useRouter } from "next/navigation";
-import { useRef } from "react";
-
-/**
- * Renders PayPal checkout buttons and coordinates creating and capturing a PayPal payment for the given order.
- *
- * Creates a PayPal order, persists the PayPal payment id for later capture, and refreshes the page after a successful capture.
- *
- * @param orderId - The identifier of the order to pay with PayPal
- * @returns A React element that displays PayPal buttons and manages the PayPal order/payment lifecycle
- */
-export default function PaypalPayment({ orderId }: { orderId: string }) {
-    // - Step 1 -----> create order ------> paymentId
-    // - Step 2 -----> capture payment (paymentId)
-    // - Step 3 -----> update order status and payment details
+import { useRef, useState } from "react";
+import styles from "../../../shared/commerce.module.css";
+export default function PaypalPayment({
+    orderId,
+    actions,
+    disabled = false,
+    onBusyChange,
+}: {
+    orderId: string;
+    actions: Pick<PaymentActions, "createPaypalAction" | "capturePaypalAction">;
+    disabled?: boolean;
+    onBusyChange?: (busy: boolean) => void;
+}) {
     const router = useRouter();
     const paymentIdRef = useRef("");
-    const createOrder = async (data: any, actions: any) => {
-        const response = await createPayPalPayment(orderId);
-        paymentIdRef.current = response.id;
-
-        return response.id;
-    };
-
-    const onApprove = async () => {
-        const captureResponse = await capturePayPalPayment(
-            orderId,
-            paymentIdRef.current
-        );
-        if (captureResponse.id) router.refresh();
-    };
+    const locked = useRef(false);
+    const capturing = useRef(false);
+    const [error, setError] = useState(false),
+        [pending, setPending] = useState(false);
+    function release() {
+        locked.current = false;
+        capturing.current = false;
+        setPending(false);
+        onBusyChange?.(false);
+    }
+    function fail(err: unknown) {
+        console.error("[PaypalPayment] PayPal Button Error:", err);
+        setError(true);
+        release();
+    }
+    async function createOrder() {
+        if (locked.current || disabled)
+            throw new Error("Payment already in progress.");
+        locked.current = true;
+        setPending(true);
+        onBusyChange?.(true);
+        setError(false);
+        try {
+            const response = await actions.createPaypalAction(orderId);
+            paymentIdRef.current = response.id;
+            return response.id;
+        } catch (err) {
+            fail(err);
+            throw err;
+        }
+    }
+    async function onApprove() {
+        if (capturing.current) return;
+        capturing.current = true;
+        try {
+            const response = await actions.capturePaypalAction(
+                orderId,
+                paymentIdRef.current
+            );
+            if (response.id) router.refresh();
+            else release();
+        } catch (err) {
+            fail(err);
+            throw err;
+        }
+    }
     return (
         <div>
             <PayPalButtons
                 createOrder={createOrder}
                 onApprove={onApprove}
-                onError={(err) =>
-                    console.error("[PaypalPayment] PayPal Button Error:", err)
-                }
+                disabled={disabled}
+                onCancel={release}
+                onError={fail}
+                style={{ layout: "vertical", shape: "rect" }}
             />
+            {pending && (
+                <p role="status" className={styles.status}>
+                    Processing PayPal payment…
+                </p>
+            )}
+            {error && (
+                <p role="alert" className={styles.error}>
+                    PayPal payment failed. Please try again.
+                </p>
+            )}
         </div>
     );
 }

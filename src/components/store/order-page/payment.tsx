@@ -1,34 +1,62 @@
 "use client";
-import { FC } from "react";
+import type { PaymentActions } from "@/lib/commerce-actions";
+import { useState } from "react";
 import PaypalWrapper from "../cards/payment/paypal/paypal-wrapper";
 import StripeWrapper from "../cards/payment/stripe/stripe-wrapper";
 import PaypalPayment from "../cards/payment/paypal/paypal-payment";
 import StripePayment from "../cards/payment/stripe/stripe-payment";
-
-interface Props {
+import styles from "../shared/commerce.module.css";
+export default function OrderPayment({
+    orderId,
+    amount,
+    actions,
+}: {
     orderId: string;
     amount: number;
-}
-
-const OrderPayment: FC<Props> = ({ orderId, amount }) => {
-    // data-testid: E2E から決済プロバイダ非依存に支払い領域を掴むためのアンカー。
-    // 個々の SDK 要素（.StripeElement / PayPal iframe）は遅延ロードとプロバイダ構成の
-    // 変更に弱いため、両者を収容するコンテナ側で固定する。
+    actions: PaymentActions;
+}) {
+    const [busy, setBusy] = useState<"paypal" | "stripe" | null>(null);
     return (
-        <div
-            className="flex h-full flex-col space-y-5"
+        <section
+            className={styles.panel}
             data-testid="order-payment"
+            aria-labelledby="order-payment-title"
         >
-            {/* Paypal */}
+            <h2 id="order-payment-title">Payment</h2>
+            <h3>PayPal</h3>
             <PaypalWrapper>
-                <PaypalPayment orderId={orderId} />
+                <PaypalPayment
+                    orderId={orderId}
+                    actions={actions}
+                    disabled={busy === "stripe"}
+                    onBusyChange={(pending) =>
+                        setBusy((current) =>
+                            pending
+                                ? "paypal"
+                                : current === "paypal"
+                                  ? null
+                                  : current
+                        )
+                    }
+                />
             </PaypalWrapper>
-            {/* Stripe */}
+            <h3 style={{ marginTop: 24 }}>Card payment</h3>
             <StripeWrapper amount={amount}>
-                <StripePayment orderId={orderId} />
+                <StripePayment
+                    orderId={orderId}
+                    actions={actions}
+                    disabled={busy === "paypal"}
+                    onBusyChange={(pending) =>
+                        setBusy((current) =>
+                            pending
+                                ? "stripe"
+                                : current === "stripe"
+                                  ? null
+                                  : current
+                        )
+                    }
+                />
             </StripeWrapper>
-        </div>
+        </section>
     );
-};
-
-export default OrderPayment;
+}

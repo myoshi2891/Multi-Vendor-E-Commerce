@@ -5,11 +5,17 @@ import StoreHeader from "@/components/store/layout/header/header";
 import OrderGroupsContainer from "@/components/store/order-page/groups-container";
 import OrderHeader from "@/components/store/order-page/header";
 import OrderPayment from "@/components/store/order-page/payment";
-import { Separator } from "@/components/ui/separator";
+import styles from "@/components/store/shared/commerce.module.css";
+import { serializeOrderInvoice } from "@/lib/order-invoice";
+import {
+    createStripePaymentIntent,
+    createStripePayment,
+} from "@/queries/stripe";
+import { createPayPalPayment, capturePayPalPayment } from "@/queries/paypal";
 import { getOrder } from "@/queries/order";
 import { redirect } from "next/navigation";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 /**
  * Render the order details page for a given route parameter.
@@ -42,64 +48,50 @@ export default async function OrderPage({
         }
         return total;
     }, 0);
+    const needsPayment =
+        order.paymentStatus === "Pending" || order.orderStatus === "Failed";
     return (
-        <div>
+        <>
             <StoreHeader />
-            <div className="p-2">
-                <OrderHeader order={order} />
-                <div
-                    className="grid w-full"
-                    style={{
-                        gridTemplateColumns:
-                            order.paymentStatus === "Pending" ||
-                            order.orderStatus === "Failed"
-                                ? "400px 3fr 1fr"
-                                : "1fr 4fr",
-                    }}
-                >
-                    {/* Col 1 -> User, Order details */}
-                    <div className="scrollbar flex h-[calc(100vh-137px)] flex-col gap-y-5 overflow-auto">
+            <main className={styles.page} data-order-detail>
+                <OrderHeader order={serializeOrderInvoice(order)} />
+                <div className={styles.layout}>
+                    <div className={styles.column}>
+                        <OrderGroupsContainer groups={order.groups} />
+                    </div>
+                    <aside
+                        className={styles.aside}
+                        aria-label="Order details and payment"
+                    >
                         <OrderUserDetailsCard details={order.shippingAddress} />
                         <OrderInfoCard
                             totalItemsCount={totalItemsCount}
                             deliveredItemsCount={deliveredItemsCount}
                             paymentDetails={order.paymentDetails}
                         />
-                        {(order.paymentStatus !== "Pending" ||
-                            order.orderStatus !== "Failed") && (
-                            <OrderTotalDetailsCard
-                                details={{
-                                    subTotal: order.subTotal.toNumber(),
-                                    shippingFees: order.shippingFees.toNumber(),
-                                    total: order.total.toNumber(),
-                                }}
-                            />
-                        )}
-                    </div>
-                    {/* Col 2 -> Order Groups */}
-                    <div className="scrollbar h-[calc(100vh-137px)] gap-y-5 overflow-auto">
-                        <OrderGroupsContainer groups={order.groups} />
-                    </div>
-                    {/* Col 3 -> Payment Gateways */}
-                    {(order.paymentStatus === "Pending" ||
-                        order.orderStatus === "Failed") && (
-                        <div className="scrollbar h-[calc(100vh-137px)] gap-y-5 space-y-5 overflow-auto border-l p-4 px-2">
-                            <OrderTotalDetailsCard
-                                details={{
-                                    subTotal: order.subTotal.toNumber(),
-                                    shippingFees: order.shippingFees.toNumber(),
-                                    total: order.total.toNumber(),
-                                }}
-                            />
-                            <Separator />
+                        <OrderTotalDetailsCard
+                            details={{
+                                subTotal: order.subTotal.toNumber(),
+                                shippingFees: order.shippingFees.toNumber(),
+                                total: order.total.toNumber(),
+                            }}
+                        />
+                        {needsPayment && (
                             <OrderPayment
                                 orderId={order.id}
                                 amount={order.total.toNumber()}
+                                actions={{
+                                    createIntentAction:
+                                        createStripePaymentIntent,
+                                    recordStripeAction: createStripePayment,
+                                    createPaypalAction: createPayPalPayment,
+                                    capturePaypalAction: capturePayPalPayment,
+                                }}
                             />
-                        </div>
-                    )}
+                        )}
+                    </aside>
                 </div>
-            </div>
-        </div>
+            </main>
+        </>
     );
 }

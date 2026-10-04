@@ -1,7 +1,21 @@
-import { Country } from '@/lib/types'
-import { Info } from 'lucide-react'
+import styles from "./commerce.module.css";
+import { Info } from "lucide-react";
 
-export default function CountryNote({ country }: { country: string }) {
+export default function CountryNote({
+    country,
+    editorial = false,
+}: {
+    country: string;
+    editorial?: boolean;
+}) {
+    if (editorial)
+        return (
+            <p className={styles.note}>
+                Shipping fees are calculated based on your current country (
+                {country}). Shipping fees will automatically update to reflect
+                your delivery destination.
+            </p>
+        );
     return (
         <div className="flex w-full items-center bg-green-100 p-3">
             <div className="flex size-8 shrink-0 items-center justify-center rounded-full border-green-200">
@@ -18,5 +32,5 @@ export default function CountryNote({ country }: { country: string }) {
                 </div>
             </div>
         </div>
-    )
+    );
 }
