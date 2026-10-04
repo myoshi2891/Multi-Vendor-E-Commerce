@@ -56,13 +56,33 @@ const products: ProductType[] = Array.from({ length: 4 }, (_, i) => ({
         { url: `/product/piece-${i}/v${i}`, image: "/assets/brand/star.svg" },
     ],
 }));
+const historyTotalPages = 20;
+// Saved history order; the action must receive exactly these IDs.
+const historyIds = ["v1", "v0", "v3", "v2"];
 let calls = 0;
-const fetchHistoryAction = async () => {
+const fetchHistoryAction = async (ids: string[], requestedPage: number) => {
     calls++;
     await delay(scenario.includes("pending") ? 10000 : 350);
     if (scenario.includes("error") && calls === 1)
         throw new Error("fixture failure");
-    return { products, totalPages: 20 };
+    // The requested page or its canonical clamp is the only valid request.
+    if (
+        requestedPage !== page &&
+        requestedPage !== Math.min(page, historyTotalPages)
+    )
+        throw new Error(`unexpected history page: ${requestedPage}`);
+    if (ids.join() !== historyIds.join())
+        throw new Error(`unexpected history ids: ${ids.join()}`);
+    return {
+        products: ids.map((id) => {
+            const product = products.find(
+                (item) => item.variants[0].variantId === id
+            );
+            if (!product) throw new Error(`unknown history id: ${id}`);
+            return product;
+        }),
+        totalPages: historyTotalPages,
+    };
 };
 let followCalls = 0;
 let following = true;
@@ -75,7 +95,7 @@ const followAction = async () => {
     return following;
 };
 if (!scenario.includes("empty") && scenario.startsWith("history"))
-    localStorage.setItem("productHistory", '["v1","v0"]');
+    localStorage.setItem("productHistory", JSON.stringify(historyIds));
 if (scenario.includes("empty")) localStorage.removeItem("productHistory");
 
 createRoot(document.getElementById("root")!).render(

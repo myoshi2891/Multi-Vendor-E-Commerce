@@ -25,9 +25,14 @@ for (const width of [1440, 768, 390]) {
         await expect(
             main.getByRole("navigation", { name: "Breadcrumb" })
         ).toBeVisible();
-        for (const link of await main
-            .locator('a[href^="/browse?offer="]')
-            .all()) {
+        // loading.tsx shares the heading, so wait for the streamed result before asserting.
+        await expect(main.getByText("Loading offers…")).toHaveCount(0);
+        const offerLinks = main.locator('a[href^="/browse?offer="]');
+        const emptyState = main.getByRole("region", {
+            name: "More discoveries await.",
+        });
+        await expect(offerLinks.first().or(emptyState)).toBeVisible();
+        for (const link of await offerLinks.all()) {
             await expect(link).toContainText("商品");
             await expect(link).toHaveAttribute("href", /\/browse\?offer=.+/);
         }
