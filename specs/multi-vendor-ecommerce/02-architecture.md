@@ -61,3 +61,7 @@ The force-dynamic `/profile/reviews` Server Component loads projected display da
 ## Account message boundary
 
 The force-dynamic buyer messages Server Component passes initial projected data and four action props (list/thread display facades, send and mark read). Buyer clients import no actions. A profile-only conversation hook/thread provides polling, queued post-send refresh and visible failure/retry states. Shared legacy messaging components and seller UI are unchanged. Facades delegate to existing ownership/participant checks and atomic send/read actions without DB model changes. [Design](../../docs/design/profile-messages/design.md).
+
+## Purchase UI server/client boundary
+
+Checkout and order-detail Server Components inject the existing approved query actions via typed props. Checkout uses the existing owner-scoped profile address save/default facades and shared validated AddressForm; legacy address-details/list/card and legacy Modal remain separate migration targets. Shipping refreshes remain serialized because the action writes cart totals. OrderHeader receives a minimal plain invoice projection with boundary number/ISO conversions and dynamically imports the unchanged PDF renderer. Payment clients receive provider actions through OrderPayment; no new backend action, API or schema is introduced. Styling is scoped to purchase surfaces and the two assurance variants. [Checkout design](../../docs/design/checkout/design.md), [order design](../../docs/design/order-detail/design.md).

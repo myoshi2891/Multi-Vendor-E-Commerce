@@ -162,3 +162,7 @@ The branded cart shows persisted items after synchronization, preserves local it
 2. Select a conversation by keyboard/touch. Clear previous messages, fetch the thread and mark counterpart messages read. Show sender labels and UTC times; thread failure offers retry, read-status failure keeps the thread and offers its own retry.
 3. While selected, poll every five seconds when the tab is visible. Prevent overlapping polls and discard responses after switching/unmounting. Queue a post-send refresh after an active poll.
 4. Submit a labeled message using existing trim/1–2000 character validation. Sending locks input/selection/reload and prevents duplicates; failure preserves the draft, success clears it and refetches. No new conversation initiation or attachment UI is added.
+
+## Purchase UI pending and recovery
+
+The checkout UI locks order submission while shipping/cart refresh, address save/reload or coupon submission is active. A refresh failure retains the last displayed data but keeps ordering locked until retry succeeds. Address selection changes remain serialized through the existing cart-write queue. Order success retains the duplicate guard through navigation even if cart cleanup fails. The order page keeps the established payment-visibility condition and mutually locks provider UI during payment. Script/initialization and transaction failures have readable feedback/retry; provider-side authorization, calculation and order state transitions are unchanged.
