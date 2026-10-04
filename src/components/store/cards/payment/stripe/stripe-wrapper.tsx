@@ -17,6 +17,17 @@ export default function StripeWrapper({
         <Elements
             stripe={stripePromise}
             options={{
+                appearance: {
+                    theme: "stripe",
+                    variables: {
+                        colorPrimary: "#75613b",
+                        colorBackground: "#f8f6ef",
+                        colorText: "#17251d",
+                        colorDanger: "#8a3028",
+                        borderRadius: "0px",
+                        fontFamily: "Arial, sans-serif",
+                    },
+                },
                 mode: "payment",
                 amount: Math.round(amount * 100), // Convert to cents
                 currency: "usd", // Replace with your desired currency

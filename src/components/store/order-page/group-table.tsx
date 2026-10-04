@@ -1,15 +1,8 @@
 import OrderStatusTag from "@/components/shared/order-status";
-import { OrderGroupWithItemsType, OrderStatus } from "@/lib/types";
+import { OrderStatus, type OrderGroupWithItemsType } from "@/lib/types";
 import Image from "next/image";
 import ProductRow from "./product-row";
-
-/**
- * Renders a table-like card showing details for a single order group, including store info, items, delivery window, pricing breakdown, and order status.
- *
- * @param group - Order group data with items, store, pricing, and optional coupon information.
- * @param deliveryInfo - Delivery metadata: `shippingService`, `deliveryMinDate`, and `deliveryMaxDate`.
- * @returns The JSX element representing the order group card.
- */
+import styles from "../shared/commerce.module.css";
 export default function OrderGroupTable({
     group,
     deliveryInfo,
@@ -21,114 +14,75 @@ export default function OrderGroupTable({
         deliveryMaxDate: string;
     };
 }) {
-    const { shippingService, deliveryMinDate, deliveryMaxDate } = deliveryInfo;
     const { coupon, couponId, subTotal, total, shippingFees } = group;
-    let discountedAmount = 0;
-    if (couponId && coupon) {
-        discountedAmount = ((subTotal.toNumber() + shippingFees.toNumber()) * coupon.discount) / 100;
-    }
+    const discountedAmount =
+        couponId && coupon
+            ? ((subTotal.toNumber() + shippingFees.toNumber()) *
+                  coupon.discount) /
+              100
+            : 0;
     return (
-        <div className="max-w-xl rounded-xl border border-gray-200 pt-6 max-lg:mx-auto lg:max-w-full">
-            <div className="flex flex-col justify-between border-b border-gray-200 px-6 pb-6 lg:flex-row lg:items-center">
+        <article
+            className={styles.panel}
+            aria-label={`Order group ${group.id}`}
+        >
+            <div className={styles.groupHeader}>
                 <div>
-                    <p className="text-base font-semibold leading-7 text-black">
-                        Order Id:
-                        <span className="ms-2 font-medium text-blue-primary">
-                            #{group.id}
-                        </span>
-                    </p>
-                    <div className="mt-4 flex items-center gap-x-2">
+                    <h3>Order Id: #{group.id}</h3>
+                    <div className={styles.store}>
                         <Image
-                            src={group.store.logo}
-                            alt={group.store.name}
-                            width={100}
-                            height={100}
-                            className="size-10 rounded-full object-cover"
-                            priority
+                            src={
+                                group.store.logo ||
+                                "/assets/images/no_image.png"
+                            }
+                            alt=""
+                            width={40}
+                            height={40}
                         />
-                        <span className="font-medium text-main-secondary">
-                            {group.store.name}
-                        </span>
-                        <div className="mx-2 h-5 w-px bg-border" />
-                        <p>{shippingService}</p>
-                        <div className="mx-2 h-5 w-px bg-border" />
+                        <span>{group.store.name}</span>
                     </div>
                 </div>
                 <OrderStatusTag status={group.status as OrderStatus} />
             </div>
-            <div
-                className="grid w-full px-3 min-[400px]:px-6"
-                style={{ gridTemplateColumns: "4fr 1fr" }}
-            >
-                <div>
-                    {group.items.map((product, index) => (
-                        <ProductRow key={index} product={product} />
-                    ))}
+            <p className={styles.note}>
+                {deliveryInfo.shippingService} · Expected Delivery Time:{" "}
+                {deliveryInfo.deliveryMinDate} – {deliveryInfo.deliveryMaxDate}
+            </p>
+            {group.items.map((product) => (
+                <ProductRow key={product.id} product={product} />
+            ))}
+            <dl>
+                <div className={styles.row}>
+                    <dt>Subtotal</dt>
+                    <dd>${subTotal.toNumber().toFixed(2)}</dd>
                 </div>
-                <div className="flex items-center text-center max-lg:mt-3">
-                    <div className="flex gap-3 lg:block">
-                        <p className="whitespace-nowrap text-sm font-medium leading-6 text-black">
-                            Expected Delivery Time
-                        </p>
-                        <p className="whitespace-nowrap text-base font-medium leading-7 text-emerald-500 lg:mt-3">
-                            {deliveryMinDate} - {deliveryMaxDate}
-                        </p>
+                <div className={styles.row}>
+                    <dt>Shipping Fees</dt>
+                    <dd>${shippingFees.toNumber().toFixed(2)}</dd>
+                </div>
+                {couponId && (
+                    <div className={styles.row}>
+                        <dt>
+                            Coupon ({coupon?.code}) (-{coupon?.discount}%)
+                        </dt>
+                        <dd>-${discountedAmount.toFixed(2)}</dd>
                     </div>
+                )}
+                <div className={`${styles.row} ${styles.total}`}>
+                    <dt>Total price</dt>
+                    <dd>${total.toNumber().toFixed(2)}</dd>
                 </div>
-            </div>
-            {/* Group Info */}
-            <div className="flex w-full flex-col items-center justify-between border-t border-gray-200 px-6 lg:flex-row">
-                <div className="flex flex-col items-center border-gray-200 max-lg:border-b sm:flex-row">
-                    <button className="group flex items-center justify-center gap-2 whitespace-nowrap border-gray-200 bg-white py-6 text-lg font-semibold text-black outline-0 transition-all duration-500 hover:text-blue-primary sm:border-r sm:pr-6">
-                        <svg
-                            className="stroke-black transition-all duration-500 group-hover:stroke-blue-primary"
-                            xmlns="http://www.w3.org/2000/svg"
-                            width={22}
-                            height={22}
-                            viewBox="0 0 22 22"
-                            fill="none"
-                        >
-                            <path
-                                d="M5.5 5.5L16.5 16.5M16.5 5.5L5.5 16.5"
-                                strokeWidth="1.6"
-                                strokeLinecap="round"
-                            />
-                        </svg>
-                        Cancel Order
-                    </button>
-                    <p className="border-r px-6 py-3 text-lg font-medium text-gray-900 max-lg:text-center">
-                        Subtotal:
-                        <span className="ms-1 text-gray-500">
-                            ${subTotal.toNumber().toFixed(2)}
-                        </span>
-                    </p>
-                    <p className="border-r px-6 py-3 text-lg font-medium text-gray-900 max-lg:text-center">
-                        Shipping Fees:
-                        <span className="ms-1 text-gray-500">
-                            ${shippingFees.toNumber().toFixed(2)}
-                        </span>
-                    </p>
-                    {couponId && (
-                        <p className="px-6 py-3 text-lg font-medium text-gray-900 max-lg:text-center">
-                            Coupon ({coupon?.code})
-                            <span className="ms-1 text-gray-500">
-                                (-{coupon?.discount}%)
-                            </span>
-                            <span className="ms-1 text-gray-500">
-                                (-${discountedAmount.toFixed(2)})
-                            </span>
-                        </p>
-                    )}
-                </div>
-                <div>
-                    <p className="py-2 text-xl font-semibold text-black">
-                        Total price:
-                        <span className="ms-1 text-blue-primary">
-                            ${total.toNumber().toFixed(2)}
-                        </span>
-                    </p>
-                </div>
-            </div>
-        </div>
+            </dl>
+            <button
+                className={styles.secondary}
+                disabled
+                aria-describedby={`cancel-${group.id}`}
+            >
+                Cancel Order
+            </button>
+            <p id={`cancel-${group.id}`} className={styles.note}>
+                Cancellation is not available here.
+            </p>
+        </article>
     );
 }

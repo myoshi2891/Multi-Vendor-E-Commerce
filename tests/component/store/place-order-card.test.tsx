@@ -1,143 +1,178 @@
 /** @jest-environment jsdom */
-import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import '@testing-library/jest-dom'
-import PlaceOrderCard from '@/components/store/cards/place-order'
-import { createMockCart, createMockCoupon, createMockShippingAddress, createMockCartItem, createMockStore } from '@/config/test-fixtures'
-import { placeOrder, emptyUserCart } from '@/queries/user'
-import { useCartStore } from '@/cart-store/useCartStore'
-import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
-import { Prisma } from '@prisma/client'
+import type { CheckoutActions } from "@/lib/commerce-actions";
+import React from "react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import PlaceOrderCard from "@/components/store/cards/place-order";
+import {
+    createMockCart,
+    createMockCoupon,
+    createMockShippingAddress,
+    createMockCartItem,
+    createMockStore,
+} from "@/config/test-fixtures";
+import { placeOrder, emptyUserCart } from "@/queries/user";
+import { useCartStore } from "@/cart-store/useCartStore";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { Prisma } from "@prisma/client";
 
 // Mock dependencies
-jest.mock('@/queries/user', () => ({
+jest.mock("@/queries/user", () => ({
     addToWishlist: jest.fn(),
     placeOrder: jest.fn(),
     emptyUserCart: jest.fn(),
     upsertShippingAddress: jest.fn(),
-}))
-jest.mock('@/cart-store/useCartStore')
-jest.mock('next/navigation', () => ({
+}));
+jest.mock("@/cart-store/useCartStore");
+jest.mock("next/navigation", () => ({
     useRouter: jest.fn(),
-}))
-jest.mock('react-hot-toast', () => ({
+}));
+jest.mock("react-hot-toast", () => ({
     __esModule: true,
     default: {
         error: jest.fn(),
         success: jest.fn(),
-    }
-}))
-jest.mock('@/components/store/forms/apply-coupon', () => ({
+    },
+}));
+jest.mock("@/components/store/forms/apply-coupon", () => ({
     __esModule: true,
     default: () => <div data-testid="apply-coupon-form">ApplyCouponForm</div>,
-}))
-jest.mock('@/components/store/cards/fast-delivery', () => ({
+}));
+jest.mock("@/components/store/cards/fast-delivery", () => ({
     __esModule: true,
     default: () => <div>FastDelivery</div>,
-}))
-jest.mock('@/components/store/product-page/returns-security-privacy-card', () => ({
-    SecurityPrivacyCard: () => <div>SecurityPrivacyCard</div>,
-}))
+}));
+jest.mock(
+    "@/components/store/product-page/returns-security-privacy-card",
+    () => ({
+        SecurityPrivacyCard: () => <div>SecurityPrivacyCard</div>,
+    })
+);
 
-describe('PlaceOrderCard', () => {
-    const mockPush = jest.fn()
-    const mockEmptyCart = jest.fn()
-    const mockSetCartData = jest.fn()
+describe("PlaceOrderCard", () => {
+    const mockPush = jest.fn();
+    const mockEmptyCart = jest.fn();
+    const mockSetCartData = jest.fn();
 
     beforeEach(() => {
-        jest.clearAllMocks()
-        ;(useRouter as jest.Mock).mockReturnValue({ push: mockPush })
-        ;(useCartStore as unknown as jest.Mock).mockImplementation(
-            (selector: (state: { emptyCart: typeof mockEmptyCart }) => unknown) => selector({ emptyCart: mockEmptyCart })
-        )
-    })
+        jest.clearAllMocks();
+        (useRouter as jest.Mock).mockReturnValue({ push: mockPush });
+        (useCartStore as unknown as jest.Mock).mockImplementation(
+            (
+                selector: (state: {
+                    emptyCart: typeof mockEmptyCart;
+                }) => unknown
+            ) => selector({ emptyCart: mockEmptyCart })
+        );
+    });
 
     const cartItem = {
         ...createMockCartItem({
-            storeId: 'store-1',
-            price: new Prisma.Decimal('10.00'),
+            storeId: "store-1",
+            price: new Prisma.Decimal("10.00"),
             quantity: 2,
-            shippingFee: new Prisma.Decimal('5.00'),
+            shippingFee: new Prisma.Decimal("5.00"),
         }),
         price: 10.0,
         shippingFee: 5.0,
         totalPrice: 25.0,
-    }
+    };
 
-    const cartData: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
-        ...createMockCart({ id: 'cart-1' }),
+    const cartData: React.ComponentProps<typeof PlaceOrderCard>["cartData"] = {
+        ...createMockCart({ id: "cart-1" }),
         subTotal: 20.0,
         shippingFees: 5.0,
         total: 25.0,
         cartItems: [cartItem],
         coupon: null,
-    }
+    };
 
-    const renderPlaceOrderCard = (overrides?: Partial<React.ComponentProps<typeof PlaceOrderCard>>) => {
+    const renderPlaceOrderCard = (
+        overrides?: Partial<React.ComponentProps<typeof PlaceOrderCard>>
+    ) => {
         return render(
             <PlaceOrderCard
+                actions={
+                    {
+                        placeOrderAction: placeOrder,
+                        emptyCartAction: emptyUserCart,
+                    } as CheckoutActions
+                }
+                onBusyChange={jest.fn()}
                 shippingAddress={null}
                 cartData={cartData}
                 setCartData={mockSetCartData}
                 {...overrides}
             />
-        )
-    }
+        );
+    };
 
-    it('renders summary correctly without coupon', () => {
-        renderPlaceOrderCard()
+    it("renders summary correctly without coupon", () => {
+        renderPlaceOrderCard();
 
-        expect(screen.getByText('Summary')).toBeInTheDocument()
-        expect(screen.getByText('Subtotal')).toBeInTheDocument()
-        expect(screen.getByText('20.00')).toBeInTheDocument()
-        expect(screen.getByText('Shipping Fees')).toBeInTheDocument()
-        expect(screen.getByText('+5.00')).toBeInTheDocument()
-        expect(screen.getByText('Total')).toBeInTheDocument()
-        expect(screen.getByText('25.00')).toBeInTheDocument()
-        expect(screen.getByTestId('apply-coupon-form')).toBeInTheDocument()
-    })
+        expect(screen.getByText("Summary")).toBeInTheDocument();
+        expect(screen.getByText("Subtotal")).toBeInTheDocument();
+        expect(screen.getByText("20.00")).toBeInTheDocument();
+        expect(screen.getByText("Shipping Fees")).toBeInTheDocument();
+        expect(screen.getByText("+5.00")).toBeInTheDocument();
+        expect(screen.getByText("Total")).toBeInTheDocument();
+        expect(screen.getByText("25.00")).toBeInTheDocument();
+        expect(screen.getByTestId("apply-coupon-form")).toBeInTheDocument();
+    });
 
-    it('renders correctly with applied coupon', () => {
-        type CouponPropType = NonNullable<React.ComponentProps<typeof PlaceOrderCard>['cartData']['coupon']>;
+    it("renders correctly with applied coupon", () => {
+        type CouponPropType = NonNullable<
+            React.ComponentProps<typeof PlaceOrderCard>["cartData"]["coupon"]
+        >;
         const couponMock = createMockCoupon({
-            code: 'SAVE10',
+            code: "SAVE10",
             discount: 10,
-            storeId: 'store-1',
+            storeId: "store-1",
         });
-        const store = createMockStore({ name: 'Test Store' })
+        const store = createMockStore({ name: "Test Store" });
         const coupon: CouponPropType = {
             ...couponMock,
             startDate: couponMock.startDate.toISOString(),
             endDate: couponMock.endDate.toISOString(),
             store: {
                 ...store,
-                defaultShippingFeePerItem: store.defaultShippingFeePerItem.toNumber(),
-                defaultShippingFeeForAdditionalItem: store.defaultShippingFeeForAdditionalItem.toNumber(),
-                defaultShippingFeePerKg: store.defaultShippingFeePerKg.toNumber(),
-                defaultShippingFeeFixed: store.defaultShippingFeeFixed.toNumber(),
+                defaultShippingFeePerItem:
+                    store.defaultShippingFeePerItem.toNumber(),
+                defaultShippingFeeForAdditionalItem:
+                    store.defaultShippingFeeForAdditionalItem.toNumber(),
+                defaultShippingFeePerKg:
+                    store.defaultShippingFeePerKg.toNumber(),
+                defaultShippingFeeFixed:
+                    store.defaultShippingFeeFixed.toNumber(),
             },
         };
-        const cartWithCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
+        const cartWithCoupon: React.ComponentProps<
+            typeof PlaceOrderCard
+        >["cartData"] = {
             ...cartData,
             coupon,
-        }
+        };
 
-        renderPlaceOrderCard({ cartData: cartWithCoupon })
+        renderPlaceOrderCard({ cartData: cartWithCoupon });
 
-        expect(screen.getByText(/Coupon \(SAVE10\) \(-10%\)/)).toBeInTheDocument()
+        expect(
+            screen.getByText(/Coupon \(SAVE10\) \(-10%\)/)
+        ).toBeInTheDocument();
         // storeSubTotal = 10 * 2 + 5 = 25. 10% of 25 = 2.50
-        expect(screen.getByText('-$2.50')).toBeInTheDocument()
-        expect(screen.getByText('Coupon applied !')).toBeInTheDocument()
-        expect(screen.getByText(/Test Store/)).toBeInTheDocument()
-    })
+        expect(screen.getByText("-$2.50")).toBeInTheDocument();
+        expect(screen.getByText("Coupon applied !")).toBeInTheDocument();
+        expect(screen.getByText(/Test Store/)).toBeInTheDocument();
+    });
 
-    it('renders correctly with applied PLATFORM coupon across multiple stores', () => {
-        type CouponPropType = NonNullable<React.ComponentProps<typeof PlaceOrderCard>['cartData']['coupon']>;
+    it("renders correctly with applied PLATFORM coupon across multiple stores", () => {
+        type CouponPropType = NonNullable<
+            React.ComponentProps<typeof PlaceOrderCard>["cartData"]["coupon"]
+        >;
         const couponMock = createMockCoupon({
-            code: 'PLATFORM10',
+            code: "PLATFORM10",
             discount: 10,
-            scope: 'PLATFORM',
+            scope: "PLATFORM",
             storeId: null,
         });
         const coupon: CouponPropType = {
@@ -148,69 +183,79 @@ describe('PlaceOrderCard', () => {
         };
         const otherStoreItem = {
             ...createMockCartItem({
-                storeId: 'store-2',
-                price: new Prisma.Decimal('10.00'),
+                storeId: "store-2",
+                price: new Prisma.Decimal("10.00"),
                 quantity: 1,
-                shippingFee: new Prisma.Decimal('0.00'),
+                shippingFee: new Prisma.Decimal("0.00"),
             }),
             price: 10.0,
             shippingFee: 0.0,
             totalPrice: 10.0,
-        }
-        const cartWithPlatformCoupon: React.ComponentProps<typeof PlaceOrderCard>['cartData'] = {
+        };
+        const cartWithPlatformCoupon: React.ComponentProps<
+            typeof PlaceOrderCard
+        >["cartData"] = {
             ...cartData,
             cartItems: [cartItem, otherStoreItem],
             coupon,
-        }
+        };
 
-        renderPlaceOrderCard({ cartData: cartWithPlatformCoupon })
+        renderPlaceOrderCard({ cartData: cartWithPlatformCoupon });
 
-        expect(screen.getByText(/Coupon \(PLATFORM10\) \(-10%\)/)).toBeInTheDocument()
+        expect(
+            screen.getByText(/Coupon \(PLATFORM10\) \(-10%\)/)
+        ).toBeInTheDocument();
         // storeSubTotal across all stores = (10*2 + 5) + (10*1 + 0) = 35. 10% of 35 = 3.50
-        expect(screen.getByText('-$3.50')).toBeInTheDocument()
-        expect(screen.getByText(/全店舗/)).toBeInTheDocument()
-    })
+        expect(screen.getByText("-$3.50")).toBeInTheDocument();
+        expect(screen.getByText(/全店舗/)).toBeInTheDocument();
+    });
 
-    it('shows error if placing order without shipping address', async () => {
-        renderPlaceOrderCard()
+    it("shows error if placing order without shipping address", async () => {
+        renderPlaceOrderCard();
 
-        fireEvent.click(screen.getByRole('button', { name: /Place order/i }))
+        fireEvent.click(screen.getByRole("button", { name: /Place order/i }));
 
-        expect(toast.error).toHaveBeenCalledWith('Select a shipping address before placing your order.')
-        expect(placeOrder).not.toHaveBeenCalled()
-    })
+        expect(toast.error).toHaveBeenCalledWith(
+            "Select a shipping address before placing your order."
+        );
+        expect(placeOrder).not.toHaveBeenCalled();
+    });
 
-    it('successfully places an order', async () => {
-        const address = createMockShippingAddress({ id: 'addr-1' })
-        ;(placeOrder as jest.Mock).mockResolvedValue({ orderId: 'ord-123' })
+    it("successfully places an order", async () => {
+        const address = createMockShippingAddress({ id: "addr-1" });
+        (placeOrder as jest.Mock).mockResolvedValue({ orderId: "ord-123" });
 
-        renderPlaceOrderCard({ shippingAddress: address })
+        renderPlaceOrderCard({ shippingAddress: address });
 
-        fireEvent.click(screen.getByRole('button', { name: /Place order/i }))
-
-        await waitFor(() => {
-            expect(placeOrder).toHaveBeenCalledWith(address, 'cart-1')
-            expect(mockEmptyCart).toHaveBeenCalled()
-            expect(emptyUserCart).toHaveBeenCalled()
-            expect(mockPush).toHaveBeenCalledWith('/order/ord-123')
-        })
-    })
-
-    it('handles API error during place order correctly', async () => {
-        const address = createMockShippingAddress({ id: 'addr-1' })
-        ;(placeOrder as jest.Mock).mockRejectedValue(new Error('Payment failed'))
-
-        renderPlaceOrderCard({ shippingAddress: address })
-
-        fireEvent.click(screen.getByRole('button', { name: /Place order/i }))
+        fireEvent.click(screen.getByRole("button", { name: /Place order/i }));
 
         await waitFor(() => {
-            expect(placeOrder).toHaveBeenCalledWith(address, 'cart-1')
-            expect(mockEmptyCart).not.toHaveBeenCalled()
-            expect(emptyUserCart).not.toHaveBeenCalled()
-            expect(mockPush).not.toHaveBeenCalled()
-            expect(mockSetCartData).not.toHaveBeenCalled()
-            expect(toast.error).toHaveBeenCalledWith('Something went wrong while placing your order.')
-        })
-    })
-})
+            expect(placeOrder).toHaveBeenCalledWith(address, "cart-1");
+            expect(mockEmptyCart).toHaveBeenCalled();
+            expect(emptyUserCart).toHaveBeenCalled();
+            expect(mockPush).toHaveBeenCalledWith("/order/ord-123");
+        });
+    });
+
+    it("handles API error during place order correctly", async () => {
+        const address = createMockShippingAddress({ id: "addr-1" });
+        (placeOrder as jest.Mock).mockRejectedValue(
+            new Error("Payment failed")
+        );
+
+        renderPlaceOrderCard({ shippingAddress: address });
+
+        fireEvent.click(screen.getByRole("button", { name: /Place order/i }));
+
+        await waitFor(() => {
+            expect(placeOrder).toHaveBeenCalledWith(address, "cart-1");
+            expect(mockEmptyCart).not.toHaveBeenCalled();
+            expect(emptyUserCart).not.toHaveBeenCalled();
+            expect(mockPush).not.toHaveBeenCalled();
+            expect(mockSetCartData).not.toHaveBeenCalled();
+            expect(toast.error).toHaveBeenCalledWith(
+                "Something went wrong while placing your order."
+            );
+        });
+    });
+});

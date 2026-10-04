@@ -1,6 +1,6 @@
 # デザインシステム移行 — 進捗ノート
 
-- 更新日: 2026-10-03
+- 更新日: 2026-10-04
 - 状態: 運用文書・ルール整備済み／個別移行は継続
 - 対象・優先度・受け入れ条件: [移行計画](../../../plans/layout-design/design-system-adoption-plan.md)。
 - 実施手順: [design-system-workflow](../../../.agent/skills/design-system-workflow/SKILL.md)。
@@ -9,7 +9,7 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加（現台帳202部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用23・未適用35（仮実装1・転送専用7は不変）。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加（現台帳204部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用25・未適用33（checkout・注文詳細の2画面は実装あり／検証保留）（仮実装1・転送専用7は不変）。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
@@ -44,12 +44,12 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 |---|---|---|---|---|---|---|
 | DS-PAGE-001 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-002 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
-| DS-PAGE-003 | `/order/[orderId]` | 未適用 | P1 | TODO | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | 未実施 |
+| DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 保留 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
 | DS-PAGE-004 | `/seller/apply` | 未適用 | P3 | TODO | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | 未実施 |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | 未実施 |
 | DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録) |
-| DS-PAGE-008 | `/checkout` | 未適用 | P1 | TODO | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | 未実施 |
+| DS-PAGE-008 | `/checkout` | 本体適用・検証保留 | P1 | 保留 | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
 | DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 実装済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録) |
 | DS-PAGE-010 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-011 | `/customer-service` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | [customer-service移行記録](#customer-service移行記録) |
@@ -134,7 +134,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-017 | P1 | 基本操作・フォーム（P1） | [src/components/ui/radio-group.tsx](<../../../src/components/ui/radio-group.tsx>) | TODO | 未実施 |
 | DS-COMP-018 | P1 | 基本操作・フォーム（P1） | [src/components/ui/switch.tsx](<../../../src/components/ui/switch.tsx>) | TODO | 未実施 |
 | DS-COMP-019 | P1 | モーダル・配送先（P1） | [src/components/store/shared/modal.tsx](<../../../src/components/store/shared/modal.tsx>) | TODO | 未実施 |
-| DS-COMP-020 | P1 | モーダル・配送先（P1） | [src/components/store/shared/shipping-addresses/shipping-addresses.tsx](<../../../src/components/store/shared/shipping-addresses/shipping-addresses.tsx>) | TODO | 未実施 |
+| DS-COMP-020 | P1 | モーダル・配送先（P1） | [src/components/store/shared/shipping-addresses/shipping-addresses.tsx](<../../../src/components/store/shared/shipping-addresses/shipping-addresses.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
 | DS-COMP-021 | P1 | モーダル・配送先（P1） | [src/components/store/shared/shipping-addresses/address-details.tsx](<../../../src/components/store/shared/shipping-addresses/address-details.tsx>) | TODO | 未実施 |
 | DS-COMP-022 | P1 | モーダル・配送先（P1） | [src/components/ui/dialog.tsx](<../../../src/components/ui/dialog.tsx>) | TODO | 未実施 |
 | DS-COMP-023 | P1 | モーダル・配送先（P1） | [src/components/ui/alert-dialog.tsx](<../../../src/components/ui/alert-dialog.tsx>) | TODO | 未実施 |
@@ -145,25 +145,25 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-028 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/summary.tsx](<../../../src/components/store/cart-page/summary.tsx>) | 検証済み | [cart移行記録](#cart移行記録) |
 | DS-COMP-029 | P1 | カート・購入手続き（P1） | [src/components/store/cart-page/empty-cart.tsx](<../../../src/components/store/cart-page/empty-cart.tsx>) | 検証済み | [cart移行記録](#cart移行記録) |
 | DS-COMP-030 | P1 | カート・購入手続き（P1） | [src/components/store/cards/cart-product.tsx](<../../../src/components/store/cards/cart-product.tsx>) | 検証済み | [cart移行記録](#cart移行記録) |
-| DS-COMP-031 | P1 | カート・購入手続き（P1） | [src/components/store/checkout-page/container.tsx](<../../../src/components/store/checkout-page/container.tsx>) | TODO | 未実施 |
-| DS-COMP-032 | P1 | カート・購入手続き（P1） | [src/components/store/cards/checkout-product.tsx](<../../../src/components/store/cards/checkout-product.tsx>) | TODO | 未実施 |
-| DS-COMP-033 | P1 | カート・購入手続き（P1） | [src/components/store/cards/place-order.tsx](<../../../src/components/store/cards/place-order.tsx>) | TODO | 未実施 |
-| DS-COMP-034 | P1 | カート・購入手続き（P1） | [src/components/store/forms/apply-coupon.tsx](<../../../src/components/store/forms/apply-coupon.tsx>) | TODO | 未実施 |
-| DS-COMP-035 | P1 | カート・購入手続き（P1） | [src/components/store/cards/fast-delivery.tsx](<../../../src/components/store/cards/fast-delivery.tsx>) | TODO | 未実施 |
-| DS-COMP-036 | P1 | カート・購入手続き（P1） | [src/components/store/product-page/returns-security-privacy-card.tsx](<../../../src/components/store/product-page/returns-security-privacy-card.tsx>) | TODO | 未実施 |
-| DS-COMP-037 | P1 | カート・購入手続き（P1） | [src/components/store/shared/country-note.tsx](<../../../src/components/store/shared/country-note.tsx>) | TODO | 未実施 |
-| DS-COMP-038 | P1 | 注文・支払い（P1） | [src/components/store/order-page/header.tsx](<../../../src/components/store/order-page/header.tsx>) | TODO | 未実施 |
-| DS-COMP-039 | P1 | 注文・支払い（P1） | [src/components/store/order-page/groups-container.tsx](<../../../src/components/store/order-page/groups-container.tsx>) | TODO | 未実施 |
-| DS-COMP-040 | P1 | 注文・支払い（P1） | [src/components/store/order-page/group-table.tsx](<../../../src/components/store/order-page/group-table.tsx>) | TODO | 未実施 |
-| DS-COMP-041 | P1 | 注文・支払い（P1） | [src/components/store/order-page/product-row.tsx](<../../../src/components/store/order-page/product-row.tsx>) | TODO | 未実施 |
-| DS-COMP-042 | P1 | 注文・支払い（P1） | [src/components/store/order-page/payment.tsx](<../../../src/components/store/order-page/payment.tsx>) | TODO | 未実施 |
-| DS-COMP-043 | P1 | 注文・支払い（P1） | [src/components/store/cards/order/info.tsx](<../../../src/components/store/cards/order/info.tsx>) | TODO | 未実施 |
-| DS-COMP-044 | P1 | 注文・支払い（P1） | [src/components/store/cards/order/total.tsx](<../../../src/components/store/cards/order/total.tsx>) | TODO | 未実施 |
-| DS-COMP-045 | P1 | 注文・支払い（P1） | [src/components/store/cards/order/user.tsx](<../../../src/components/store/cards/order/user.tsx>) | TODO | 未実施 |
-| DS-COMP-046 | P1 | 注文・支払い（P1） | [src/components/store/cards/payment/stripe/stripe-wrapper.tsx](<../../../src/components/store/cards/payment/stripe/stripe-wrapper.tsx>) | TODO | 未実施 |
-| DS-COMP-047 | P1 | 注文・支払い（P1） | [src/components/store/cards/payment/stripe/stripe-payment.tsx](<../../../src/components/store/cards/payment/stripe/stripe-payment.tsx>) | TODO | 未実施 |
-| DS-COMP-048 | P1 | 注文・支払い（P1） | [src/components/store/cards/payment/paypal/paypal-wrapper.tsx](<../../../src/components/store/cards/payment/paypal/paypal-wrapper.tsx>) | TODO | 未実施 |
-| DS-COMP-049 | P1 | 注文・支払い（P1） | [src/components/store/cards/payment/paypal/paypal-payment.tsx](<../../../src/components/store/cards/payment/paypal/paypal-payment.tsx>) | TODO | 未実施 |
+| DS-COMP-031 | P1 | カート・購入手続き（P1） | [src/components/store/checkout-page/container.tsx](<../../../src/components/store/checkout-page/container.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-032 | P1 | カート・購入手続き（P1） | [src/components/store/cards/checkout-product.tsx](<../../../src/components/store/cards/checkout-product.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-033 | P1 | カート・購入手続き（P1） | [src/components/store/cards/place-order.tsx](<../../../src/components/store/cards/place-order.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-034 | P1 | カート・購入手続き（P1） | [src/components/store/forms/apply-coupon.tsx](<../../../src/components/store/forms/apply-coupon.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-035 | P1 | カート・購入手続き（P1） | [src/components/store/cards/fast-delivery.tsx](<../../../src/components/store/cards/fast-delivery.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-036 | P1 | カート・購入手続き（P1） | [src/components/store/product-page/returns-security-privacy-card.tsx](<../../../src/components/store/product-page/returns-security-privacy-card.tsx>) | 保留 | 実装あり・[実施記録](#checkout-order移行記録)（036はcheckout opt-inのみ） |
+| DS-COMP-037 | P1 | カート・購入手続き（P1） | [src/components/store/shared/country-note.tsx](<../../../src/components/store/shared/country-note.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-038 | P1 | 注文・支払い（P1） | [src/components/store/order-page/header.tsx](<../../../src/components/store/order-page/header.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-039 | P1 | 注文・支払い（P1） | [src/components/store/order-page/groups-container.tsx](<../../../src/components/store/order-page/groups-container.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-040 | P1 | 注文・支払い（P1） | [src/components/store/order-page/group-table.tsx](<../../../src/components/store/order-page/group-table.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-041 | P1 | 注文・支払い（P1） | [src/components/store/order-page/product-row.tsx](<../../../src/components/store/order-page/product-row.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-042 | P1 | 注文・支払い（P1） | [src/components/store/order-page/payment.tsx](<../../../src/components/store/order-page/payment.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-043 | P1 | 注文・支払い（P1） | [src/components/store/cards/order/info.tsx](<../../../src/components/store/cards/order/info.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-044 | P1 | 注文・支払い（P1） | [src/components/store/cards/order/total.tsx](<../../../src/components/store/cards/order/total.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-045 | P1 | 注文・支払い（P1） | [src/components/store/cards/order/user.tsx](<../../../src/components/store/cards/order/user.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-046 | P1 | 注文・支払い（P1） | [src/components/store/cards/payment/stripe/stripe-wrapper.tsx](<../../../src/components/store/cards/payment/stripe/stripe-wrapper.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-047 | P1 | 注文・支払い（P1） | [src/components/store/cards/payment/stripe/stripe-payment.tsx](<../../../src/components/store/cards/payment/stripe/stripe-payment.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-048 | P1 | 注文・支払い（P1） | [src/components/store/cards/payment/paypal/paypal-wrapper.tsx](<../../../src/components/store/cards/payment/paypal/paypal-wrapper.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-049 | P1 | 注文・支払い（P1） | [src/components/store/cards/payment/paypal/paypal-payment.tsx](<../../../src/components/store/cards/payment/paypal/paypal-payment.tsx>) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
 | DS-COMP-050 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/cards/product/product-card.tsx](<../../../src/components/store/cards/product/product-card.tsx>) | TODO | 未実施 |
 | DS-COMP-051 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/cards/product/swiper.tsx](<../../../src/components/store/cards/product/swiper.tsx>) | TODO | 未実施 |
 | DS-COMP-052 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/cards/product/variant-switcher.tsx](<../../../src/components/store/cards/product/variant-switcher.tsx>) | TODO | 未実施 |
@@ -317,6 +317,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-200 | P4 | 利用確認が必要な旧部品 | [src/components/store/cards/address-card.tsx](<../../../src/components/store/cards/address-card.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
 | DS-COMP-201 | P1 | ストア通知 | [src/components/store/shared/store-toaster.tsx](../../../src/components/store/shared/store-toaster.tsx) | 検証済み | [cart移行記録](#cart移行記録) |
 | DS-COMP-202 | P2 | 購入者メッセージ専用スレッド | [src/components/store/profile/messages/profile-conversation-thread.tsx](<../../../src/components/store/profile/messages/profile-conversation-thread.tsx>) | 検証済み | [messages実施記録](#profile-messages移行記録) |
+| DS-COMP-203 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/filters/attribute/attribute-facet-filter.tsx](<../../../src/components/store/browse-page/filters/attribute/attribute-facet-filter.tsx>) | 検証済み | [属性ファセット実施記録](#属性ファセット移行記録) |
+| DS-COMP-204 | P1 | 購入導線の共通表示 | [src/components/store/shared/commerce.module.css](../../../src/components/store/shared/commerce.module.css) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
 
 ## 前セッションの確認結果
 
@@ -569,3 +571,32 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - 制約: 会話/スレッド/送信/既読はaction応答mock。店舗への実送信/会話DB作成/購入/seedなし。初期サーバー失敗/loadingはRTL、poll/raceはRTL。既存AC-M8実往復E2E/Firefox/WebKit/全E2E/全体coverageは未実行。受け入れ範囲の残課題なし。
 
 - 最終文書整合: 新設/更新部分のローカルリンク33件（アンカー含む）を検証。台帳12本体適用/11検証済み/35未適用/7転送/1仮実装=66、部品202件、新規/対象3IDと計画チェック、旧共有3IDのTODO維持を照合。`git diff --check`成功、対象限定ESLint無警告。
+
+## 属性ファセット移行記録
+
+### 2026-10-03 DS-COMP-203 — /browse 属性ファセット（新規部品）
+
+- 計画: [plans/076](../../../plans/076-facet-counts-and-min-price.md)（Step 5）。設計: [faceted-search design](../faceted-search/design.md) §2-Q3
+- 状態: 検証済み（新規部品。既存 Size フィルタと同じ見出し・行・選択マークの書式）
+- 変更: `filters/attribute/attribute-facet-filter.tsx` を新設し、`filters.tsx` から Size の下に描画。値は `/browse` の Server Component が `getProductFacets` で集計して props で渡す（Server Action を client から呼ばない）。`?attr.<key>=<value>` をトグルし、ページ番号は外す。開閉は `hidden` 属性。ストアページ（`/store/[storeUrl]`）は facets を渡さないため表示変化なし。
+- Red: `attribute-facet-filter.test.tsx` を先に作成し、モジュール不在で失敗（6 件）。Green 後、開閉ケースの失敗はテスト側の取得方法（`hidden` 要素はロール検索から除外）だったため `{ hidden: true }` に修正。
+- Green／Refactor: `bun run test -- src/components/store/browse-page/filters/attribute/attribute-facet-filter.test.tsx` 6/6、`browse/page.test.tsx` 23/23、lint 0 errors（既存 12 warnings）、tsc 成功。
+- 表示確認: 1440px（`/browse?category=lux-women&attr.material=silk`・ラグジュアリーデータ）で Material / Pattern / Season の 3 セクション、Silk 選択時に Material 内の他の値の件数を維持し他 key は 4 件の母集合で再集計、横スクロールなし。390px でフィルタパネルを開き横スクロールなし（scrollWidth 390）、値ボタンは幅 343 × 高さ 32、focus で 2px のアウトライン、Enter で選択でき URL に `attr.material=wool` が追加され 6 件（OR）に。axe: `tests/e2e/a11y/browse.spec.ts` を seed カテゴリ URL（ファセットあり）に変更し chromium で違反 0（color-contrast は既知負債 OI-10 で従来どおり除外）。ストアフロントのためテーマはライトのみ。
+- 文書同期: [04-interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)（/browse の `attr.*`・`getProductFacets`）、[03-data-model](../../../specs/multi-vendor-ecommerce/03-data-model.md)、[08-open-questions](../../../specs/multi-vendor-ecommerce/08-open-questions.md)（価格の絞り込みの意味）、[design.md §5](../faceted-search/design.md)。
+- 残課題／保留: フィルタ見出し（DS-COMP-059 `filters/header.tsx`）の選択中チップが `attr.*` の生の値（例: `silk`）を表示し、属性名と値ラベルを出さない。「Filter (n)」の件数への算入とチップの × による値単位の解除は 2026-10-04 に対応済み（`225e8d76`）。ラベル表示は QA_HANDOFF の FS-CHIPS で追跡する。
+- 変更記録: 未コミット
+
+<a id="checkout-order移行記録"></a>
+
+## Checkout・注文詳細移行記録
+
+- 2026-10-04。DS-PAGE-008／003、DS-COMP-020／031〜049、追加DS-COMP-204。未コミット。[保存計画](../../../plans/layout-design/checkout-order-design-system-plan.md)、[Checkout要件](../checkout/requirements.md)／[設計](../checkout/design.md)、[注文要件](../order-detail/requirements.md)／[設計](../order-detail/design.md)。
+- 状態: **保留（両画面の実装あり）**。承認済みの専用テストDB方式に対し、ローカルDockerに稼働／停止中の専用DBがなく、`.env`は非local・非test、`.env.docker`はlocal開発DB。DB名／用途が確認できない接続先には書き込まず、ルール上のseed／DB初期化も実行しなかった。解除条件: 専用DBとアプリ接続先が一致し既存schemaを利用できる環境で、認証後fixtureの作成・後処理、実ルートとSDK描画、関連既存画面の実ブラウザー回帰を確認する。[QA課題](../../testing/QA_HANDOFF.md#ds-purchase-browser)。
+- CheckoutはPC2カラム／mobile1カラム、住所radio・Radix dialog・既存AddressForm再利用、住所save/default/load action Props。国と保証はopt-in。couponのlabel／validation／pending／error、送料queueと注文成功後の永久ガードを保持し、更新失敗では注文ロック＋retry。
+- 注文詳細は固定幅／固定高scroll撤去、長文・複数店舗・画像fallback、集計1つ、既存payment条件を保持。戻る実リンク／未実装cancel disabled。header/PDFのplain invoice投影、生成準備中／失敗。Stripe appearance、SDK読込／取引失敗、PayPal script retryと両方式ロック。backend/API/認可/金額計算/在庫/状態遷移/PDF装飾に変更なし。
+- Red: `bun run test -- --runInBand --runTestsByPath tests/component/store/commerce-design.test.tsx` 4/4 failed。旧住所にnamed radio／button／dialogがなく、order summary h2もないことを確認。初期Greenは4/4。差分レビューで住所save後のload失敗と次のinvalid入力により前回loadが再実行される追加Red1件（expected1／received2）を確認。保存完了フラグとretry先を分離して修正し最終Green5/5。既存購入・provider・queryテストは回帰として扱う。ブラウザーは実装後の回帰でありRed実績には含めない。
+- 最終Jest: `bun run test -- --runInBand --silent --runTestsByPath` に対象18ファイルを指定し **420/420、18 suites**。Checkout queue・失敗/retry・二重注文・成立後cleanup失敗、coupon store/platform、Stripe/PayPal、住所/profile/cart、owner guardsを確認。order pageのpayment条件4通り／集計1つ／missing redirect／invoice plain値も確認。
+- Supplemental Chromium: `bunx playwright test --config playwright.commerce.config.ts` **11/11**。`tests/browser/commerce-design.spec.ts` とproduction部品/CSSの独立fixture bundleを使用。1440／768／390px、長文・2店舗・空bag/住所なし・pending/失敗/retry・coupon lock・住所保存成功/失敗と既定変更・radio Space・focus outline・dialog trap/Escape/復帰、axe WCAG2.1AA（contrast除外なし）違反0。住所再読込の追加修正後、関連Chromium6/6も再確認。screenshots `test-results/checkout-{1440,768,390}.png`／dialog、order-paid/order-pendingを生成しPC/mobileを目視確認。Nextナビゲーション/SDK/actionはmock、Clerk・DB・購入・外部送信は実行しない。
+- lint **0 errors／既存12 warnings**、`bunx tsc --noEmit` 成功。sandboxでのlisten EPERMは権限付き再実行で解消。fixtureのprocess定義と長文住所のvalidationテスト条件を修正して再検証済み。これらの環境／fixture失敗はRed実績に含めない。
+- [SDD要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[workflows](../../../specs/multi-vendor-ecommerce/05-workflows.md)／[testing](../../../specs/multi-vendor-ecommerce/07-testing.md)と画面要件/設計/task、計画・QA・テスト計画を同期。[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[data-model](../../../specs/multi-vendor-ecommerce/03-data-model.md)／[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)／[quality](../../../specs/multi-vendor-ecommerce/06-quality.md)は変更不要（scope/DB/API/品質基準に変更なし）。旧住所部品と共有Modal、全体tokens、商品詳細保証の全利用先移行は完了扱いにしない。
+- ダッシュボード再生成: **321 test files／lcov328／18/80 cells（23%）**。lcovと全体Jest成功数は再測定せず既存実測値を維持。実認証後route、SDK実描画、Firefox/WebKit、全E2Eと全体coverageは未実行。

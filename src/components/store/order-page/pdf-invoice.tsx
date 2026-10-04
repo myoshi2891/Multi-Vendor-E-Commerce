@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+import type { OrderInvoice } from "@/lib/order-invoice";
 import { OrderFullType } from "@/lib/types";
 import {
     Page,
@@ -10,7 +11,7 @@ import {
 } from "@react-pdf/renderer";
 
 export const generateOrderPDFBlob = async (
-    order: OrderFullType
+    order: OrderFullType | OrderInvoice
 ): Promise<Blob> => {
     if (!order) throw new Error("Order is required to generate the PDF.");
 

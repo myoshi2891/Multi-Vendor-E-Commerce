@@ -1,99 +1,98 @@
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormMessage,
-} from '@/components/ui/form'
-import { ApplyCouponFormSchema } from '@/lib/schemas'
-import { SerializedCartType } from '@/lib/types'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useRouter } from 'next/navigation'
-import { Dispatch, SetStateAction } from 'react'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import { Button } from '../ui/button'
-import toast from 'react-hot-toast'
-import { applyCoupon } from '@/queries/coupon'
-import { logError } from '@/lib/log'
+"use client";
+import { ApplyCouponFormSchema } from "@/lib/schemas";
+import type { SerializedCartType } from "@/lib/types";
+import type { CheckoutActions } from "@/lib/commerce-actions";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useForm } from "react-hook-form";
+import type { z } from "zod";
+import toast from "react-hot-toast";
+import styles from "../shared/commerce.module.css";
 
-/**
- * Renders a form for applying a coupon code to a cart.
- * 
- * Validates the coupon input, submits it to update the cart, and displays
- * success or error notifications.
- */
 export default function ApplyCouponForm({
     cartId,
     setCartData,
+    applyCouponAction,
+    disabled = false,
+    onBusyChange,
 }: {
-    cartId: string
-    setCartData: Dispatch<SetStateAction<SerializedCartType>>
+    cartId: string;
+    setCartData: Dispatch<SetStateAction<SerializedCartType>>;
+    applyCouponAction: CheckoutActions["applyCouponAction"];
+    disabled?: boolean;
+    onBusyChange: (busy: boolean) => void;
 }) {
-    // Form hook for managing form state and validation
     const form = useForm<z.infer<typeof ApplyCouponFormSchema>>({
-        mode: 'onChange', // Form validation mode
-        resolver: zodResolver(ApplyCouponFormSchema), // Resolver for form validation
-        defaultValues: {
-            coupon: '',
-        },
-    })
-
-    // Loading status & errors
-    const { errors, isSubmitting } = form.formState
-
-    // Submit handler for form submission
-    const handleSubmit = async (
-        values: z.infer<typeof ApplyCouponFormSchema>
-    ) => {
+        resolver: zodResolver(ApplyCouponFormSchema),
+        defaultValues: { coupon: "" },
+    });
+    const [error, setError] = useState<string>();
+    const locked = useRef(false);
+    const pending = form.formState.isSubmitting;
+    const submit = form.handleSubmit(async (values) => {
+        setError(undefined);
         try {
-            const res = await applyCoupon(values.coupon, cartId)
-            setCartData(res.cart)
-            toast.success(res.message)
-        } catch (error: unknown) {
-            logError('[ApplyCoupon:handleSubmit] failed to apply coupon', error)
-            toast.error(error instanceof Error ? error.message : 'Failed to apply coupon.')
+            const res = await applyCouponAction(values.coupon, cartId);
+            setCartData(res.cart);
+            toast.success(res.message);
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "Failed to apply coupon.";
+            setError(message);
+            toast.error(message);
         }
-    }
-
+    });
     return (
-        <div className="rounded-xl">
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleSubmit)}>
-                    {/* Form items */}
-                    <div className="relative rounded-2xl bg-gray-100 p-1.5 shadow-sm hover:shadow-md">
-                        <FormField
-                            control={form.control}
-                            name="coupon"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <input
-                                            className="w-full rounded-lg bg-transparent py-3 pl-8 pr-24 text-base text-main-primary focus:outline-none"
-                                            type="text"
-                                            placeholder="Coupon code"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
-                        <Button
-                            variant="outline"
-                            className="absolute right-2 top-1/2 w-20 -translate-y-1/2 rounded-2xl px-6"
-                        >
-                            Apply
-                        </Button>
-                    </div>
-                    <div className="mt-3">
-                        {errors.coupon && (
-                            <FormMessage className="text-xs">
-                                {errors.coupon.message}
-                            </FormMessage>
-                        )}
-                    </div>
-                </form>
-            </Form>
-        </div>
-    )
+        <form
+            aria-label="Apply coupon"
+            className={styles.coupon}
+            noValidate
+            onSubmit={(event) => {
+                event.preventDefault();
+                if (locked.current || disabled) return;
+                locked.current = true;
+                onBusyChange(true);
+                void submit(event).finally(() => {
+                    locked.current = false;
+                    onBusyChange(false);
+                });
+            }}
+        >
+            <div className={styles.field}>
+                <label htmlFor="checkout-coupon">Coupon code</label>
+                <input
+                    id="checkout-coupon"
+                    {...form.register("coupon")}
+                    placeholder="Coupon code"
+                    disabled={disabled || pending}
+                    aria-invalid={Boolean(form.formState.errors.coupon)}
+                    aria-describedby={
+                        form.formState.errors.coupon
+                            ? "coupon-error"
+                            : undefined
+                    }
+                />
+                {form.formState.errors.coupon && (
+                    <p id="coupon-error" className={styles.error} role="alert">
+                        {form.formState.errors.coupon.message}
+                    </p>
+                )}
+            </div>
+            <button
+                type="submit"
+                className={styles.secondary}
+                disabled={disabled || pending}
+            >
+                {pending ? "Applying coupon…" : "Apply"}
+            </button>
+            {pending && <p role="status">Applying coupon…</p>}
+            {error && (
+                <p role="alert" className={styles.error}>
+                    {error}
+                </p>
+            )}
+        </form>
+    );
 }

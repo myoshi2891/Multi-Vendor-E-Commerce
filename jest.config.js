@@ -13,7 +13,13 @@ module.exports = {
     },
     // tests/integration/ は jest.integration.config.js 経由でのみ実行する
     // (jsdom + testcontainers + globalSetup を伴うため別 worker pool が必要)
-    testPathIgnorePatterns: ["/node_modules/", "/tests/e2e/", "/tests/integration/"],
+    // tests/browser/ は playwright.commerce.config.ts 経由の Playwright spec（Jest では実行不可）
+    testPathIgnorePatterns: [
+        "/node_modules/",
+        "/tests/e2e/",
+        "/tests/integration/",
+        "/tests/browser/",
+    ],
     // カバレッジの分母をロジック中心の src 配下に固定する。
     // prisma/seed/ は src 外なので自動的に分母外。純表示物 (icons / RSC ラッパー) と
     // 型・定数・テストインフラは除外し、カバレッジ% を実態に即した値にする。

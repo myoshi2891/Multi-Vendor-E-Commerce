@@ -418,3 +418,213 @@ describe("Scenario 6: category tree FK dual-write", () => {
         expect(updated.categoryNodeId).toBe(moved.childNode.id);
     });
 });
+
+// ============================================================================
+// Scenario: 検索ベクトルの非正規化列 searchKeywords の同期（plan 074 / ADR-008）
+// ============================================================================
+
+/**
+ * `searchVector`（生成列）で `term` に一致する商品 id を返す。
+ * Prisma Client は `Unsupported("tsvector")` 列を扱えないため生 SQL で引く。
+ */
+async function idsMatchingSearchVector(term: string): Promise<string[]> {
+    const rows = await db.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Product"
+        WHERE "searchVector" @@ plainto_tsquery('simple', ${term})
+        ORDER BY id`;
+    return rows.map((row) => row.id);
+}
+
+describe("Scenario: searchKeywords follows every keyword write path", () => {
+    it("fills searchKeywords on product create so variant keywords are searchable", async () => {
+        // Arrange
+        const { store, seeded } = await arrangeSeller();
+        const newProductId = randomUUID();
+        const input = buildUpdateInput(seeded, {
+            productId: newProductId,
+            variantId: randomUUID(),
+            name: "Keyword Create Product",
+            variantName: "Keyword Create Variant",
+            keywords: ["quartzite", "granite"],
+        });
+
+        // Act
+        await upsertProduct(input, store.url);
+
+        // Assert — keywords はどちらも name / description に無い語
+        const created = await db.product.findUniqueOrThrow({
+            where: { id: newProductId },
+        });
+        // バリアント名 → 説明 → keywords の順に連結される（recomputeProductDerivedColumns）
+        expect(created.searchKeywords).toContain("Keyword Create Variant");
+        expect(created.searchKeywords).toContain("quartzite granite");
+        expect(await idsMatchingSearchVector("quartzite")).toEqual([newProductId]);
+    });
+
+    it("appends the new variant's keywords when a variant is added", async () => {
+        // Arrange
+        const { store, seeded } = await arrangeSeller();
+        await upsertProduct(
+            buildUpdateInput(seeded, { keywords: ["obsidian"] }),
+            store.url
+        );
+
+        // Act — 既存商品に新規バリアントを追加（handleVariantCreate 経路）
+        await upsertProduct(
+            buildUpdateInput(seeded, {
+                variantId: randomUUID(),
+                variantName: "Second Variant",
+                sku: "SKU-SECOND",
+                keywords: ["basalt"],
+            }),
+            store.url
+        );
+
+        // Assert — 両バリアントの keywords が残る
+        expect(await idsMatchingSearchVector("obsidian")).toEqual([seeded.product.id]);
+        expect(await idsMatchingSearchVector("basalt")).toEqual([seeded.product.id]);
+    });
+
+    it("keeps both variants' keywords when two variants are added concurrently", async () => {
+        // Arrange — 子行の INSERT は FK で Product に FOR KEY SHARE を取る。Product の行ロックを
+        // 子の書き込みより後に取ると、並行する 2 tx が互いの KEY SHARE を待ってデッドロックする。
+        const { store, seeded } = await arrangeSeller();
+        const addVariant = (variantName: string, sku: string, keyword: string) =>
+            upsertProduct(
+                buildUpdateInput(seeded, {
+                    variantId: randomUUID(),
+                    variantName,
+                    sku,
+                    keywords: [keyword],
+                }),
+                store.url
+            );
+
+        // Act — 同じ商品へ handleVariantCreate を並行実行
+        const results = await Promise.allSettled([
+            addVariant("Concurrent Variant A", "SKU-CONC-A", "andesite"),
+            addVariant("Concurrent Variant B", "SKU-CONC-B", "rhyolite"),
+        ]);
+
+        // Assert — 両方成功し、どちらの keywords も導出列に残る
+        expect(results.map((r) => r.status)).toEqual(["fulfilled", "fulfilled"]);
+        const product = await db.product.findUniqueOrThrow({
+            where: { id: seeded.product.id },
+        });
+        expect(product.searchKeywords).toContain("andesite");
+        expect(product.searchKeywords).toContain("rhyolite");
+    });
+
+    it("makes variant names and descriptions searchable like the former ILIKE path", async () => {
+        // Arrange — 旧 getProducts の検索は variantName / variantDescription も ILIKE で見ていた。
+        // searchKeywords に入れないと、ブラウズ検索を searchVector へ移した時点で退行する（plan 075）。
+        const { store, seeded } = await arrangeSeller();
+
+        // Act
+        await upsertProduct(
+            buildUpdateInput(seeded, {
+                variantName: "Cerulean Edition",
+                variantDescription: "hand stitched lapels",
+            }),
+            store.url
+        );
+
+        // Assert
+        expect(await idsMatchingSearchVector("cerulean")).toEqual([seeded.product.id]);
+        expect(await idsMatchingSearchVector("lapels")).toEqual([seeded.product.id]);
+    });
+
+    it("replaces stale keywords when an existing variant is updated", async () => {
+        // Arrange
+        const { store, seeded } = await arrangeSeller();
+        await upsertProduct(
+            buildUpdateInput(seeded, { keywords: ["marble"] }),
+            store.url
+        );
+
+        // Act — 同じバリアントの keywords を差し替える（handleProductAndVariantUpdate 経路）
+        await upsertProduct(
+            buildUpdateInput(seeded, { keywords: ["slate"] }),
+            store.url
+        );
+
+        // Assert — 古い語では見つからず、新しい語で見つかる
+        expect(await idsMatchingSearchVector("marble")).toEqual([]);
+        expect(await idsMatchingSearchVector("slate")).toEqual([seeded.product.id]);
+    });
+});
+
+// ============================================================================
+// Scenario: 割引後最小価格 minPrice の同期（plan 076）
+// ============================================================================
+
+describe("Scenario: minPrice follows size price and discount writes", () => {
+    it("stores the lowest discounted price, rounded to cents, on update", async () => {
+        // Arrange — 100 の 12.5% 引き = 87.50 / 95 の 0% 引き = 95.00 → 最小は 87.50
+        const { store, seeded } = await arrangeSeller();
+
+        // Act
+        await upsertProduct(
+            buildUpdateInput(seeded, {
+                sizes: [
+                    { size: "M", quantity: 5, price: 100, discount: 12.5 },
+                    { size: "L", quantity: 5, price: 95, discount: 0 },
+                ],
+            }),
+            store.url
+        );
+
+        // Assert
+        const updated = await db.product.findUniqueOrThrow({
+            where: { id: seeded.product.id },
+        });
+        expect(updated.minPrice?.toString()).toBe("87.5");
+    });
+
+    it("fills minPrice on product create", async () => {
+        // Arrange
+        const { store, seeded } = await arrangeSeller();
+        const newProductId = randomUUID();
+
+        // Act
+        await upsertProduct(
+            buildUpdateInput(seeded, {
+                productId: newProductId,
+                variantId: randomUUID(),
+                name: "Min Price Create Product",
+                variantName: "Min Price Create Variant",
+                sizes: [{ size: "S", quantity: 1, price: 40, discount: 25 }],
+            }),
+            store.url
+        );
+
+        // Assert — 40 の 25% 引き = 30.00
+        const created = await db.product.findUniqueOrThrow({
+            where: { id: newProductId },
+        });
+        expect(created.minPrice?.toString()).toBe("30");
+    });
+
+    it("takes the minimum across variants when a cheaper variant is added", async () => {
+        // Arrange — 既存バリアントは 120（buildUpdateInput の既定）
+        const { store, seeded } = await arrangeSeller();
+        await upsertProduct(buildUpdateInput(seeded), store.url);
+
+        // Act — 60 のバリアントを追加
+        await upsertProduct(
+            buildUpdateInput(seeded, {
+                variantId: randomUUID(),
+                variantName: "Cheaper Variant",
+                sku: "SKU-CHEAP",
+                sizes: [{ size: "XS", quantity: 1, price: 60, discount: 0 }],
+            }),
+            store.url
+        );
+
+        // Assert
+        const updated = await db.product.findUniqueOrThrow({
+            where: { id: seeded.product.id },
+        });
+        expect(updated.minPrice?.toString()).toBe("60");
+    });
+});

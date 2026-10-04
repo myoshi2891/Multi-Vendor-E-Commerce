@@ -4,9 +4,14 @@ import { db } from "@/lib/db";
 import {
     PRODUCT_CATEGORY_DEPTH,
     resolveCategoryNode,
-    subtreeOf,
 } from "@/lib/category-tree";
-import { parseUserCountryCookie, toNumberSafe } from "@/lib/utils";
+import { buildPrefixTsQuery } from "@/lib/search-query";
+import { productDerivedColumnsUpdateSql } from "@/lib/product-derived-columns";
+import {
+    parseProductFilters,
+    parseUserCountryCookie,
+    toNumberSafe,
+} from "@/lib/utils";
 // Types
 import {
     Country,
@@ -14,6 +19,8 @@ import {
     ProductPageType,
     ProductShippingDetailsType,
     ProductType,
+    ProductFacet,
+    ProductFilters,
     ProductWithVariantType,
     RatingStatisticsType,
     SortOrder,
@@ -79,6 +86,55 @@ const generateUniqueSlug = async (
 type ProductTransactionClient = Parameters<
     Parameters<typeof db.$transaction>[0]
 >[0];
+
+/**
+ * 商品配下のバリアントから導出する非正規化列（`searchKeywords` / `minPrice`）を、
+ * 同じ tx の中で再計算する（plans 074 / 076・ADR-008）。導出式は
+ * `src/lib/product-derived-columns.ts` に一元化してある（seed も同じ SQL を使う）。
+ *
+ * **バリアントのテキスト、またはサイズの price / discount を書き込むすべての経路**
+ * （`handleProductCreate` / `handleVariantCreate` / `handleProductAndVariantUpdate`）の
+ * tx の末尾で呼ぶこと。呼び忘れてもエラーにはならず、その商品が keywords で検索に出なく
+ * なったり価格ソートの位置がずれたりするだけなので、新しい書き込み経路を足すときは
+ * レビューで必ず確認する。
+ *
+ * 既存商品への書き込み経路では、tx の先頭で `lockProductRow` を取っておくこと
+ * （ロックはここでは取らない）。
+ *
+ * @param tx - 呼び出し元の `db.$transaction` が渡すトランザクションクライアント
+ * @param productId - 再計算する商品の id
+ */
+const recomputeProductDerivedColumns = async (
+    tx: ProductTransactionClient,
+    productId: string
+): Promise<void> => {
+    await tx.$executeRaw(productDerivedColumnsUpdateSql(productId));
+};
+
+/**
+ * 既存商品の Product 行を `FOR UPDATE` で掴み、同じ商品への書き込み tx を直列化する。
+ *
+ * **`lockAttributeCategoryPath` の直後・子テーブルへの書き込みより前に呼ぶこと。**
+ * - 子行（バリアント・サイズ等）の INSERT は FK で Product に `FOR KEY SHARE` を取る。
+ *   子を書いた後で `FOR UPDATE` を要求すると、並行する 2 tx が互いの KEY SHARE を待って
+ *   デッドロックする。
+ * - READ COMMITTED のスナップショットは文の開始時に決まる。先に待ち切っておけば、
+ *   `recomputeProductDerivedColumns` の UPDATE は並行 tx がコミットしたバリアント・サイズを
+ *   読んで再計算できる（古い集計で上書きしない）。
+ *
+ * 新規作成（`handleProductCreate`）では行がまだ他 tx から見えないため呼ばない。
+ *
+ * @param tx - 呼び出し元の `db.$transaction` が渡すトランザクションクライアント
+ * @param productId - 掴む商品の id
+ */
+const lockProductRow = async (
+    tx: ProductTransactionClient,
+    productId: string
+): Promise<void> => {
+    await tx.$queryRaw`
+        SELECT "id" FROM "Product" WHERE "id" = ${productId} FOR UPDATE
+    `;
+};
 
 /** リーフ検証で読む Category ノードの最小形。 */
 interface LockedProductCategoryNode {
@@ -417,6 +473,7 @@ const handleProductCreate = async (
         );
         const created = await tx.product.create({ data: productData });
         await syncAttributeValues(tx, attributes.context, attributes.inputs);
+        await recomputeProductDerivedColumns(tx, created.id);
         return created;
     });
     return new_product;
@@ -480,8 +537,10 @@ const handleVariantCreate = async (
     // 属性の同期（VARIANT スコープの必須を含む）とバリアント作成を 1 tx に入れる
     const new_variant = await db.$transaction(async (tx) => {
         await lockAttributeCategoryPath(tx, attributes.context.categoryNodeId);
+        await lockProductRow(tx, product.productId);
         const created = await tx.productVariant.create({ data: variantData });
         await syncAttributeValues(tx, attributes.context, attributes.inputs);
+        await recomputeProductDerivedColumns(tx, created.productId);
         return created;
     });
 
@@ -528,6 +587,7 @@ const handleProductAndVariantUpdate = async (
     await db.$transaction(async (tx) => {
         // 属性の継承元を id 昇順で先に掴む（handleProductCreate と同じ理由）
         await lockAttributeCategoryPath(tx, attributes.context.categoryNodeId);
+        await lockProductRow(tx, product.productId);
 
         // V-5: 紐づけ先がリーフであることを、書き込みと同じ tx 内で（ロックを
         // 握ったまま）検証する。カテゴリを変えない更新は経過措置として素通しする。
@@ -685,6 +745,7 @@ const handleProductAndVariantUpdate = async (
 
         // 属性値: 商品・バリアントの書き込み後に、掴んだ行で再検証してから同期する
         await syncAttributeValues(tx, attributes.context, attributes.inputs);
+        await recomputeProductDerivedColumns(tx, product.productId);
     });
 };
 
@@ -947,8 +1008,403 @@ export const deleteProduct = async (productId: string) => {
 // - pageSize: Number of products per page. (default = 10)
 // Returns: Array of filtered products, including category, subcategory, variants, and pagination metadata (totalPages, currentPage, pageSize, totalCount).
 
+/** `resolveFilterSlugs` の結果。URL の slug を DB の id / path に解決したもの。 */
+type ResolvedProductFilterRefs = {
+    storeId?: string;
+    /** category / subCategory それぞれのサブツリー根の path（両方指定なら 2 つの積） */
+    categoryPaths: string[];
+    offerTagId?: string;
+};
+
+/**
+ * store / category / subCategory / offer の slug を、**並列に**解決する（plan 075 / design.md §2-Q6）。
+ *
+ * 旧実装は 4 つを逐次 `await` しており、DB 往復が直列に積み上がっていた。互いに独立なので
+ * `Promise.all` で同時に引く。
+ *
+ * **どれか 1 つでも解決できなければ `null`**（呼び出し側は 0 件を返す）。見つからないフィルタを
+ * 黙って捨てると「該当なし」が「全件表示」に化ける（存在しないカテゴリ URL で全カタログが出る）。
+ *
+ * カテゴリツリー Phase B（ADR-006）: category / subCategory は「そのノードを根とするサブツリー」で
+ * 絞る。**2 系統を `??` で 1 本に畳まない**（両方指定時に片方が黙って捨てられる）。
+ * `?subCategory=` は恒久的に受理する（別名表経由の解決は `resolveCategoryNode` の担当）。
+ *
+ * @param filters - `parseProductFilters` 済みのフィルタ
+ * @returns 解決済みの参照、または未解決を表す `null`
+ */
+const resolveFilterSlugs = async (
+    filters: ProductFilters
+): Promise<ResolvedProductFilterRefs | null> => {
+    const [store, categoryNode, subCategoryNode, offer] = await Promise.all([
+        filters.store
+            ? db.store.findUnique({
+                  where: { url: filters.store },
+                  select: { id: true },
+              })
+            : undefined,
+        filters.category
+            ? resolveCategoryNode(filters.category, "CATEGORY")
+            : undefined,
+        filters.subCategory
+            ? resolveCategoryNode(filters.subCategory, "SUB_CATEGORY")
+            : undefined,
+        filters.offer
+            ? db.offerTag.findUnique({
+                  where: { url: filters.offer },
+                  select: { id: true },
+              })
+            : undefined,
+    ]);
+    // undefined = 指定なし / null = 指定したが見つからない
+    if (store === null || categoryNode === null) return null;
+    if (subCategoryNode === null || offer === null) return null;
+    return {
+        storeId: store?.id,
+        categoryPaths: [categoryNode?.path, subCategoryNode?.path].filter(
+            (path): path is string => path !== undefined
+        ),
+        offerTagId: offer?.id,
+    };
+};
+
+/**
+ * 属性値 1 行を「URL に載せる機械値」へ写す式（`v` = 属性値の行、`o` = AttributeOption）。
+ * ENUM は option.value、それ以外は型別カラムの文字列表現。NUMBER は `trim_scale` で
+ * 末尾の 0 を落とす（Decimal(18,6) の `55.000000` を `55` にする）。
+ * 絞り込み（`buildProductPredicates`）と集計（`getProductFacets`）で**同じ式**を使うこと。
+ */
+const FACET_VALUE_SQL = Prisma.sql`COALESCE(o.value, v."valueText", v."valueBool"::text, trim_scale(v."valueNumber")::text)`;
+
+/** 表示名の式。ENUM は option.label、それ以外は値そのもの。 */
+const FACET_LABEL_SQL = Prisma.sql`COALESCE(o.label, v."valueText", v."valueBool"::text, trim_scale(v."valueNumber")::text)`;
+
+/**
+ * 属性 1 key の選択（値の OR）を満たす商品の述語。PRODUCT スコープの値と、バリアントに付いた
+ * VARIANT スコープの値の**両方**を見る（片方だけだと VARIANT スコープのファセットが効かない・ADR-007）。
+ * facetable でない定義やアーカイブ済みの定義では絞り込めない（存在しない key と同じく 0 件）。
+ */
+const attributeSelectionSql = (key: string, values: string[]): Prisma.Sql => Prisma.sql`(
+    EXISTS (
+        SELECT 1 FROM "ProductAttributeValue" v
+        JOIN "AttributeDefinition" d ON d.id = v."definitionId"
+        LEFT JOIN "AttributeOption" o ON o.id = v."optionId"
+        WHERE v."productId" = p.id
+          AND d.key = ${key} AND d.facetable AND d."archivedAt" IS NULL
+          AND ${FACET_VALUE_SQL} = ANY(${values}::text[])
+    )
+    OR EXISTS (
+        SELECT 1 FROM "VariantAttributeValue" v
+        JOIN "ProductVariant" pv ON pv.id = v."variantId"
+        JOIN "AttributeDefinition" d ON d.id = v."definitionId"
+        LEFT JOIN "AttributeOption" o ON o.id = v."optionId"
+        WHERE pv."productId" = p.id
+          AND d.key = ${key} AND d.facetable AND d."archivedAt" IS NULL
+          AND ${FACET_VALUE_SQL} = ANY(${values}::text[])
+    )
+)`;
+
+/**
+ * `getProducts` の絞り込み条件を、生 SQL の述語（`p` = "Product"）の配列として組み立てる。
+ *
+ * **すべての述語を同じ SQL の `WHERE` に入れ、LIMIT は最終段にだけ置く**（design.md §2-Q2）。
+ * 「検索で上位 N 件を確定 → 後段で絞り込み」の順にすると、件数が欠けて適合商品を取りこぼす。
+ *
+ * 値はすべて `Prisma.sql` のパラメータとして渡す（文字列連結しない）。
+ * size / price / color はそれぞれ独立した `EXISTS`（旧 Prisma の `variants.some.sizes.some`
+ * と同じ意味: どれか 1 つのバリアント・サイズが条件を満たせば商品全体がヒットする）。
+ *
+ * @param filters - `parseProductFilters` 済みのフィルタ
+ * @param refs - `resolveFilterSlugs` で解決済みの参照
+ * @param tsQuery - `buildPrefixTsQuery` の結果（検索語なしなら `null`）
+ * @param excludeAttributeKey - この属性 key の選択だけを外す（ファセットの disjunctive 集計用）
+ * @returns `Prisma.join(…, " AND ")` で連結する述語の配列
+ */
+const buildProductPredicates = (
+    filters: ProductFilters,
+    refs: ResolvedProductFilterRefs,
+    tsQuery: string | null,
+    excludeAttributeKey?: string
+): Prisma.Sql[] => {
+    const predicates: Prisma.Sql[] = [];
+
+    if (refs.storeId !== undefined) {
+        predicates.push(Prisma.sql`p."storeId" = ${refs.storeId}`);
+    }
+    // 新 FK（categoryNodeId）のサブツリー。LIKE は slug 中の "_" / "%" をワイルドカードとして
+    // 扱ってしまうので starts_with を使う（design.md §0-13。`subtreeOf` と同じ境界）。
+    for (const path of refs.categoryPaths) {
+        predicates.push(Prisma.sql`EXISTS (
+            SELECT 1 FROM "Category" c
+            WHERE c.id = p."categoryNodeId"
+              AND (c.path = ${path} OR starts_with(c.path, ${`${path}/`}))
+        )`);
+    }
+    if (refs.offerTagId !== undefined) {
+        predicates.push(Prisma.sql`p."offerTagId" = ${refs.offerTagId}`);
+    }
+    if (tsQuery !== null) {
+        predicates.push(
+            Prisma.sql`p."searchVector" @@ to_tsquery('simple', ${tsQuery})`
+        );
+    }
+    if (filters.size !== undefined) {
+        predicates.push(Prisma.sql`EXISTS (
+            SELECT 1 FROM "ProductVariant" pv
+            JOIN "Size" s ON s."productVariantId" = pv.id
+            WHERE pv."productId" = p.id AND s.size = ANY(${filters.size}::text[])
+        )`);
+    }
+    // 「未指定」と「0」を truthy 判定で混同しない（`maxPrice: 0` は上限 0 の空レンジ）。
+    // 上限が無いときは条件を付けない。下限だけ未指定なら 0 を下限にする（旧実装と同じ）。
+    if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+        const lower = new Prisma.Decimal(filters.minPrice ?? 0);
+        const upper =
+            filters.maxPrice !== undefined
+                ? Prisma.sql` AND s.price <= ${new Prisma.Decimal(filters.maxPrice)}`
+                : Prisma.empty;
+        predicates.push(Prisma.sql`EXISTS (
+            SELECT 1 FROM "ProductVariant" pv
+            JOIN "Size" s ON s."productVariantId" = pv.id
+            WHERE pv."productId" = p.id AND s.price >= ${lower}${upper}
+        )`);
+    }
+    if (filters.color !== undefined) {
+        predicates.push(Prisma.sql`EXISTS (
+            SELECT 1 FROM "ProductVariant" pv
+            JOIN "Color" co ON co."productVariantId" = pv.id
+            WHERE pv."productId" = p.id AND co.name = ANY(${filters.color}::text[])
+        )`);
+    }
+    // 属性ファセット: 同じ key の値は OR、key 同士は AND（plan 076）
+    for (const [key, values] of Object.entries(filters.attributes ?? {})) {
+        if (key === excludeAttributeKey) continue;
+        predicates.push(attributeSelectionSql(key, values));
+    }
+    return predicates;
+};
+
+/**
+ * 並び順の `ORDER BY` 句を返す。**末尾に必ず `p.id ASC` の tie-breaker を置く**。
+ *
+ * views / rating は 0 の商品が大半を占めうる（ローカル実測で views=0 が 80 件中 73 件）。
+ * PostgreSQL は同値行の順序を保証しないので、単一キーのままページングすると、ある商品が
+ * 2 ページに出たり、どのページにも出なかったりする（plan 073）。
+ *
+ * 検索語があり sort が未指定なら関連度（ts_rank）順にする。
+ *
+ * price 系は非正規化列 `minPrice`（割引後の最小価格）で並べる（plan 076）。旧実装は
+ * ページング「後」にメモリ上で並べ替えていたため、表示中の 1 ページしか価格順にならなかった。
+ * サイズの無い商品（`minPrice` が NULL）は昇順・降順とも末尾に置く。
+ *
+ * @param sortBy - URL の sort パラメータ
+ * @param tsQuery - 検索語の tsquery（検索なしなら `null`）
+ */
+const productOrderBySql = (
+    sortBy: string,
+    tsQuery: string | null
+): Prisma.Sql => {
+    switch (sortBy) {
+        case "new-arrivals":
+            return Prisma.sql`ORDER BY p."createdAt" DESC, p.id ASC`;
+        case "top-rated":
+            return Prisma.sql`ORDER BY p.rating DESC, p.id ASC`;
+        case "price-low-to-high":
+            return Prisma.sql`ORDER BY p."minPrice" ASC NULLS LAST, p.id ASC`;
+        case "price-high-to-low":
+            return Prisma.sql`ORDER BY p."minPrice" DESC NULLS LAST, p.id ASC`;
+        case "":
+            if (tsQuery !== null) {
+                return Prisma.sql`ORDER BY ts_rank(p."searchVector", to_tsquery('simple', ${tsQuery})) DESC, p.id ASC`;
+            }
+            return Prisma.sql`ORDER BY p.views DESC, p.id ASC`;
+        case "most-popular":
+        default:
+            return Prisma.sql`ORDER BY p.views DESC, p.id ASC`;
+    }
+};
+
+/** `getProductFacets` の集計 1 行 */
+type FacetCountRow = {
+    key: string;
+    name: string;
+    unit: string | null;
+    def_order: number;
+    value: string;
+    label: string;
+    option_order: number | null;
+    count: bigint;
+};
+
+/**
+ * 母集合（`whereSql` を満たす商品）について、facetable な属性の「key × 値 × 商品数」を集計する。
+ * ADR-007 の集計雛形の母集合を `base` CTE に差し替えたもの（design.md §2-Q3）。
+ * 1 商品が同じ値のバリアントを複数持っても重複計上しないよう `count(DISTINCT …)` にする。
+ */
+const queryFacetCounts = (
+    whereSql: Prisma.Sql,
+    keyFilter: Prisma.Sql
+): Promise<FacetCountRow[]> =>
+    db.$queryRaw<FacetCountRow[]>(Prisma.sql`
+        WITH base AS (
+            SELECT p.id FROM "Product" p ${whereSql}
+        ), attr_value AS (
+            SELECT v."productId" AS product_id, v."definitionId", v."optionId",
+                   v."valueText", v."valueBool", v."valueNumber"
+            FROM "ProductAttributeValue" v JOIN base b ON b.id = v."productId"
+            UNION ALL
+            SELECT pv."productId", v."definitionId", v."optionId",
+                   v."valueText", v."valueBool", v."valueNumber"
+            FROM "VariantAttributeValue" v
+            JOIN "ProductVariant" pv ON pv.id = v."variantId"
+            JOIN base b ON b.id = pv."productId"
+        )
+        SELECT d.key,
+               min(d.name) AS name,
+               min(d.unit) AS unit,
+               min(d."sortOrder") AS def_order,
+               ${FACET_VALUE_SQL} AS value,
+               min(${FACET_LABEL_SQL}) AS label,
+               min(o."sortOrder") AS option_order,
+               count(DISTINCT v.product_id) AS count
+        FROM attr_value v
+        JOIN "AttributeDefinition" d ON d.id = v."definitionId"
+             AND d.facetable AND d."archivedAt" IS NULL
+        LEFT JOIN "AttributeOption" o ON o.id = v."optionId"
+        WHERE ${keyFilter}
+        -- 別名（value / label）では GROUP BY しない。GROUP BY の名前解決は入力列が優先されるため、
+        -- "value" は別名ではなく AttributeOption の列 o.value として解釈されてしまう。
+        -- label は GROUP BY に含めず集約する。含めると同じ key × value が label 違いで複数行に割れ、
+        -- 件数が分散する（1 つの値に 1 行・1 件数を保証する）。
+        GROUP BY d.key, ${FACET_VALUE_SQL}
+    `);
+
+/**
+ * ブラウズの属性ファセット（件数つき）を返す（plan 076 / design.md §2-Q3）。
+ *
+ * - **カテゴリ（category / subCategory）が指定されたときだけ**返す。属性定義はカテゴリに属し、
+ *   カタログ全体で集計すると無関係な部門の属性が並ぶため（ADR-007）。
+ * - 件数は検索語・カテゴリ・価格などの他の条件をすべて課した母集合で数える。
+ * - **disjunctive faceting**: 選択中の key の件数は「その key 自身の選択だけを外した」母集合で数える
+ *   （色で赤を選んでも、青の件数が 0 にならない）。クエリ数は「選択中の key の数 + 1」。
+ * - 件数そのものはキャッシュしない（検索語と条件の組み合わせごとに変わり、当たらない）。
+ *   表示名は集計と同じクエリで引くので、定義のための別往復も無い。
+ *
+ * @param filters - `getProducts` と同じフィルタ
+ * @returns ファセットの配列（定義の sortOrder → key 順。値は option の sortOrder → 件数の多い順）
+ */
+export const getProductFacets = async (
+    filters: ProductFilters = {}
+): Promise<ProductFacet[]> => {
+    try {
+        const parsed = parseProductFilters(filters);
+        if (parsed.kind === "invalid") return [];
+        const { filters: parsedFilters } = parsed;
+        if (!parsedFilters.category && !parsedFilters.subCategory) return [];
+
+        let tsQuery: string | null = null;
+        if (parsedFilters.search !== undefined) {
+            tsQuery = buildPrefixTsQuery(parsedFilters.search);
+            if (tsQuery === null) return [];
+        }
+        const refs = await resolveFilterSlugs(parsedFilters);
+        if (refs === null) return [];
+
+        const selections = parsedFilters.attributes ?? {};
+        const selectedKeys = Object.keys(selections);
+        const whereFor = (excludeKey?: string): Prisma.Sql => {
+            const predicates = buildProductPredicates(
+                parsedFilters,
+                refs,
+                tsQuery,
+                excludeKey
+            );
+            return predicates.length > 0
+                ? Prisma.sql`WHERE ${Prisma.join(predicates, " AND ")}`
+                : Prisma.empty;
+        };
+
+        // 未選択の key はすべての選択を課した母集合で、選択中の key は自分の選択を外した母集合で数える
+        const unselectedFilter =
+            selectedKeys.length > 0
+                ? Prisma.sql`d.key <> ALL(${selectedKeys}::text[])`
+                : Prisma.sql`TRUE`;
+        const runs = await Promise.all([
+            queryFacetCounts(whereFor(), unselectedFilter),
+            ...selectedKeys.map((key) =>
+                queryFacetCounts(whereFor(key), Prisma.sql`d.key = ${key}`)
+            ),
+        ]);
+
+        const facetsByKey = new Map<
+            string,
+            ProductFacet & { order: number; optionOrder: Map<string, number> }
+        >();
+        for (const row of runs.flat()) {
+            const facet = facetsByKey.get(row.key) ?? {
+                key: row.key,
+                name: row.name,
+                unit: row.unit,
+                values: [],
+                order: row.def_order,
+                optionOrder: new Map<string, number>(),
+            };
+            facet.values.push({
+                value: row.value,
+                label: row.label,
+                count: Number(row.count),
+                selected: selections[row.key]?.includes(row.value) ?? false,
+            });
+            if (row.option_order !== null) {
+                facet.optionOrder.set(row.value, row.option_order);
+            }
+            facetsByKey.set(row.key, facet);
+        }
+
+        // 選択中なのに母集合に 1 件も無い値も、選択を外せるよう件数 0 で残す。
+        // key ごと見つからない場合（カテゴリを切り替えて前のカテゴリの attr.* が URL に残った等）も
+        // 同じ。ファセットに出さないと、0 件に絞られたまま解除する手段が無くなる。
+        for (const [key, values] of Object.entries(selections)) {
+            const facet = facetsByKey.get(key) ?? {
+                key,
+                name: key,
+                unit: null,
+                values: [],
+                order: Number.MAX_SAFE_INTEGER,
+                optionOrder: new Map<string, number>(),
+            };
+            facetsByKey.set(key, facet);
+            for (const value of values) {
+                if (facet.values.some((v) => v.value === value)) continue;
+                facet.values.push({ value, label: value, count: 0, selected: true });
+            }
+        }
+
+        return [...facetsByKey.values()]
+            .sort((a, b) => a.order - b.order || a.key.localeCompare(b.key))
+            .map(({ order: _order, optionOrder, ...facet }) => ({
+                ...facet,
+                values: [...facet.values].sort(
+                    (a, b) =>
+                        (optionOrder.get(a.value) ?? Number.MAX_SAFE_INTEGER) -
+                            (optionOrder.get(b.value) ?? Number.MAX_SAFE_INTEGER) ||
+                        b.count - a.count ||
+                        a.label.localeCompare(b.label)
+                ),
+            }));
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            console.error("[product:getProductFacets]", error.message, {
+                stack: error.stack,
+            });
+        } else {
+            console.error("[product:getProductFacets]", error);
+        }
+        throw error;
+    }
+};
+
 export const getProducts = async (
-    filters: any = {},
+    filters: ProductFilters = {},
     sortBy = "",
     page: number = 1,
     pageSize: number = 10
@@ -958,17 +1414,6 @@ export const getProducts = async (
         const currentPage = page;
         const limit = pageSize;
         const skip = (currentPage - 1) * limit;
-
-        // Construct the base query
-        //
-        // `AND` は `ProductWhereInput | ProductWhereInput[]` のユニオンなので、
-        // `whereClause.AND` へ直接 `push` すると型の上では呼べない。**条件の配列を
-        // 別に持ち、それを `AND` に載せる**ことで、`any` を挟まずに各条件が
-        // `ProductWhereInput` として検証されるようにする。
-        const andConditions: Prisma.ProductWhereInput[] = [];
-        const whereClause: Prisma.ProductWhereInput = {
-            AND: andConditions,
-        };
 
         // URL 由来のフィルタ（store / category / subCategory / offer）は、対応する行が
         // 存在しないことがある（古いブックマーク・打ち間違い・攻撃的な入力）。
@@ -982,302 +1427,65 @@ export const getProducts = async (
             totalCount: 0,
         };
 
-        // Apply store filter (using store URL)
-        if (filters.store) {
-            // `?store=a&store=b` のように同名パラメータが複数付くと Next.js は
-            // `string[]` を渡す。`filters` は `any` なので型では止まらず、配列のまま
-            // `where: { url }` へ到達して実行時に落ちる。カテゴリ側と同じく、曖昧な
-            // 指定は解決できない指定と同じ扱いにして fail-closed で 0 件を返す。
-            if (typeof filters.store !== "string") return noMatchResult;
-            const store = await db.store.findUnique({
-                where: {
-                    url: filters.store,
-                },
-                select: { id: true },
-            });
-            if (!store) return noMatchResult;
-            andConditions.push({ storeId: store.id });
+        // Server Action なので型に反する入力も届きうる。配列が単一値の位置に来た等の
+        // 曖昧な指定は、解決できない指定と同じ扱いにして fail-closed で 0 件を返す。
+        const parsed = parseProductFilters(filters);
+        if (parsed.kind === "invalid") return noMatchResult;
+
+        // 検索語は「全語 AND + 最後の語だけ前方一致」の tsquery にする。文字・数字を
+        // 1 つも含まない検索語（"&|!" 等）は、何にも一致しない指定として 0 件を返す。
+        let tsQuery: string | null = null;
+        if (parsed.filters.search !== undefined) {
+            tsQuery = buildPrefixTsQuery(parsed.filters.search);
+            if (tsQuery === null) return noMatchResult;
         }
 
-        // Apply category / subCategory filters (using slugs)
-        //
-        // カテゴリツリー Phase B（ADR-006 / design.md §2-Q3）: 条件は「その 1 ノードと
-        // 完全一致」から「そのノードを根とするサブツリー」へ変わる。これにより
-        // 3 階層目以降の商品が祖先カテゴリのフィルタでヒットするようになる。
-        //
-        // **2 系統である点は変えない。** `category` と `subCategory` を `??` で 1 本に
-        // 畳むと、両方指定時に片方が黙って捨てられて絞り込みが緩くなる。従来どおり
-        // 独立に AND へ積み、両方指定は 2 つのサブツリーの積として扱う。
-        //
-        // `?subCategory=` は恒久的に受理する（外部被リンクを切らないため。design.md §2-Q4）。
-        // 正準 URL への 308 は /browse 側の担当で、ここは解決だけを行う。
-        for (const [slug, entityType] of [
-            [filters.category, "CATEGORY"],
-            [filters.subCategory, "SUB_CATEGORY"],
-        ] as const) {
-            if (!slug) continue;
-            // `?category=a&category=b` のように同名パラメータが複数付くと Next.js は
-            // `string[]` を渡す。`filters` は `any` なので型では止まらず、配列のまま
-            // `resolveCategoryNode` → Prisma の `where: { url }` へ到達して実行時に落ちる。
-            // 曖昧な指定は解決できない指定と同じ扱いにして fail-closed で 0 件を返す
-            // （/browse 側も `typeof === "string"` で同じ境界を引いている）。
-            if (typeof slug !== "string") return noMatchResult;
-            const node = await resolveCategoryNode(slug, entityType);
-            // fail-closed を維持する（未解決のフィルタを捨てて全件表示に化けさせない）
-            if (!node) return noMatchResult;
-            // **新 FK（categoryNode）を引くこと。** 旧 `category` はルートを指すので、
-            // そちらにサブツリー条件を掛けてもリーフに紐づく商品へ届かない
-            // （design.md §2-Q3 の擬似コードは Phase A 実装前に書かれており、
-            //  リレーション名が確定していなかった）。categoryNodeId は Phase A の
-            //  backfill と Phase B の dual-write により全商品で埋まっている。
-            andConditions.push({ categoryNode: subtreeOf(node.path) });
-        }
+        const refs = await resolveFilterSlugs(parsed.filters);
+        if (refs === null) return noMatchResult;
 
-        // Apply size filter (using array of sizes)
-        // 単数指定（`?size=M` が 1 つだけ）は string で届くため、color と同じく配列へ
-        // 揃えてから渡す。`Array.isArray` を通過条件にすると単数指定が**黙って捨てられ**、
-        // 絞り込みなしの全件表示に化ける（フィルタは fail-closed 側に倒すのが本関数の方針）。
-        if (filters.size && filters.size.length > 0) {
-            const sizesArray = Array.isArray(filters.size)
-                ? filters.size
-                : [filters.size];
-            andConditions.push({
-                variants: {
-                    some: {
-                        sizes: {
-                            some: {
-                                size: { in: sizesArray },
-                            },
-                        },
-                    },
-                },
-            });
-        }
+        const predicates = buildProductPredicates(parsed.filters, refs, tsQuery);
+        const whereSql =
+            predicates.length > 0
+                ? Prisma.sql`WHERE ${Prisma.join(predicates, " AND ")}`
+                : Prisma.empty;
 
-        // Apply offer filter (using offer URL)
-        if (filters.offer) {
-            // store / category と同じ理由（`?offer=a&offer=b` は `string[]` で届く）。
-            if (typeof filters.offer !== "string") return noMatchResult;
-            const offer = await db.offerTag.findUnique({
-                where: {
-                    url: filters.offer,
-                },
-                select: { id: true },
-            });
-            if (!offer) return noMatchResult;
-            andConditions.push({ offerTagId: offer.id });
-        }
-
-        // Apply search filter (search term in product name or description)
-        // PostgreSQL は case-sensitive のため mode: "insensitive" を指定
-        if (filters.search) {
-            // store / offer / category と同じ理由（`?search=a&search=b` は `string[]`
-            // で届く）。型は `string` を主張するが、値は URL 由来なので信用できない。
-            // 配列のまま `contains` へ渡すと Prisma の実行時バリデーション例外になり、
-            // 外側の catch が「取得失敗」の汎用エラーへ畳んでしまう。fail-closed で
-            // 空結果を返し、他フィルタと挙動を揃える。
-            if (typeof filters.search !== "string") return noMatchResult;
-            andConditions.push({
-                OR: [
-                    {
-                        name: { contains: filters.search, mode: "insensitive" },
-                    },
-                    {
-                        description: {
-                            contains: filters.search,
-                            mode: "insensitive",
-                        },
-                    },
-                    {
-                        variants: {
-                            some: {
-                                OR: [
-                                    {
-                                        variantName: {
-                                            contains: filters.search,
-                                            mode: "insensitive",
-                                        },
-                                    },
-                                    {
-                                        variantDescription: {
-                                            contains: filters.search,
-                                            mode: "insensitive",
-                                        },
-                                    },
-                                ],
-                            },
-                        },
-                    },
-                ],
-            });
-        }
-
-        // Apply price filters (min and max price)
-        // 「未指定」と「0」を **truthy 判定で混同しない**。`filters.minPrice || filters.maxPrice`
-        // だと `maxPrice: 0`（= 上限 0 円の空レンジ）が「上限未指定」に化け、`gte` だけが
-        // 残って **全件が通ってしまう**。境界は明示的な存在判定で分ける。
-        const hasPriceBound = (value: unknown): value is number =>
-            typeof value === "number" && Number.isFinite(value);
-        const hasMinPrice = hasPriceBound(filters.minPrice);
-        const hasMaxPrice = hasPriceBound(filters.maxPrice);
-        if (hasMinPrice || hasMaxPrice) {
-            // 上限が無いときは `lte` を**付けない**。以前は `lte: Infinity` を渡していたが、
-            // Prisma は Decimal カラムのフィルタに Infinity を載せられず、シリアライズ時に
-            // 値が落ちて "Argument `lte` is missing." で throw していた（Prisma 5.22.0 実測）。
-            // つまり「下限だけ指定した絞り込み」が常に失敗する状態だった。
-            // `/browse` は page.tsx 側で maxPrice を Number.MAX_SAFE_INTEGER に既定化して
-            // いるため露見していなかったが、getProducts を直接呼ぶ他の経路では壊れる。
-            const priceFilter: { gte: number; lte?: number } = {
-                gte: hasMinPrice ? filters.minPrice : 0, // Default to 0 if no min price is set
-            };
-            if (hasMaxPrice) {
-                priceFilter.lte = filters.maxPrice;
-            }
-            andConditions.push({
-                variants: {
-                    some: {
-                        sizes: {
-                            some: {
-                                price: priceFilter,
-                            },
-                        },
-                    },
-                },
-            });
-        }
-
-        // Apply color filter
-        if (filters.color && filters.color.length > 0) {
-            const colorsArray = Array.isArray(filters.color)
-                ? filters.color
-                : [filters.color];
-            andConditions.push({
-                variants: {
-                    some: {
-                        colors: {
-                            some: {
-                                name: { in: colorsArray }, // Matching selected color(s)
-                            },
-                        },
-                    },
-                },
-            });
-        }
-        // Define the sort order
-        let orderBy: Record<string, SortOrder> = {};
-        switch (sortBy) {
-            case "most-popular":
-                orderBy = { views: "desc" };
-                break;
-            case "new-arrivals":
-                orderBy = { createdAt: "desc" };
-                break;
-            case "top-rated":
-                orderBy = { rating: "desc" };
-                break;
-            default:
-                orderBy = { views: "desc" };
-        }
-
-        // Get all filtered, sorted products and total count in parallel
-        const [products, totalCount] = await Promise.all([
-            db.product.findMany({
-                where: whereClause,
-                orderBy,
-                take: limit, // Limit to page size
-                skip: skip, // Skip the products of previous pages
-                include: {
-                    variants: {
-                        include: {
-                            sizes: true,
-                            images: true,
-                            colors: true,
-                        },
-                    },
-                },
-            }),
-            db.product.count({
-                where: whereClause,
-            }),
+        // 絞り込み → 並び替え → ページングを 1 本の SQL で行い、ID だけを取る（design.md §2-Q2）。
+        // 件数は同じ WHERE で別に数える（OFFSET が最終ページを越えても正しい総数を返すため）。
+        const [idRows, countRows] = await Promise.all([
+            db.$queryRaw<{ id: string }[]>(Prisma.sql`
+                SELECT p.id FROM "Product" p
+                ${whereSql}
+                ${productOrderBySql(sortBy, tsQuery)}
+                LIMIT ${limit} OFFSET ${skip}
+            `),
+            db.$queryRaw<{ count: bigint }[]>(Prisma.sql`
+                SELECT count(*) AS count FROM "Product" p
+                ${whereSql}
+            `),
         ]);
+        const totalCount = Number(countRows[0]?.count ?? 0);
+        const ids = idRows.map((row) => row.id);
 
-        type VariantWithSizes = ProductVariant & { sizes: Size[] };
-        type ProductWithVariants = (typeof products)[number];
-
-        /**
-         * `Decimal` 列を **Decimal のまま** 扱うための正規化。
-         *
-         * 型は `Decimal` でも、実行時に必ず `Prisma.Decimal` インスタンスとは限らない
-         * （シリアライズを挟む経路では number / string で届く。`toNumberSafe` が
-         * `unknown` を受けているのと同じ前提）。素で `.mul()` を呼ぶと
-         * `is not a function` で落ちるため、非 Decimal は既存ヘルパーを通して包み直す。
-         */
-        const toDecimalSafe = (value: Prisma.Decimal): Prisma.Decimal =>
-            Prisma.Decimal.isDecimal(value)
-                ? value
-                : new Prisma.Decimal(toNumberSafe(value));
-
-        /**
-         * 商品配下の全サイズのうち、割引後価格が最小のものを **Decimal のまま** 返す。
-         *
-         * `toNumberSafe(size.price) * (1 - discount / 100)` としないこと
-         * （`.claude/steering/tech.md`「金額・数値精度」）。`1 - discount / 100` は
-         * 2 進では割り切れず、Decimal(12,2) の正確な値を number に落とした時点で
-         * 誤差が乗る。ソートの比較関数は全順序であることを要求するため、本来同値の
-         * 2 商品が誤差で前後し、同じデータでもページ間で並びが揺れうる。
-         * 100 での乗除は 10 進では桁移動なので Decimal 上では厳密である。
-         *
-         * サイズが 1 件も無い商品は `null`（= 価格なし）を返す。元実装の
-         * `Math.min(..., Infinity)` と同じく、比較時は常に「最大」として扱う。
-         */
-        const minDiscountedPrice = (
-            product: ProductWithVariants
-        ): Prisma.Decimal | null =>
-            product.variants
-                .flatMap((variant: VariantWithSizes) =>
-                    variant.sizes.map((size) =>
-                        toDecimalSafe(size.price)
-                            // discount は Float（百分率）。number のまま引くと
-                            // 100 - 12.3 の段階で誤差が入るので Decimal 側で引く。
-                            .mul(new Prisma.Decimal(100).sub(size.discount))
-                            .div(100)
-                    )
-                )
-                .reduce<Prisma.Decimal | null>(
-                    (min, price) =>
-                        min === null || price.lessThan(min) ? price : min,
-                    null
-                );
-
-        // 比較のたびに再計算しない（sort は同じ商品を何度も比較する）。
-        const minPriceByProductId = new Map<string, Prisma.Decimal | null>(
-            products.map((product) => [product.id, minDiscountedPrice(product)])
-        );
-
-        /** 昇順比較。`null`（価格なし）は常に大きい側へ寄せる。 */
-        const compareMinPrice = (
-            a: Prisma.Decimal | null,
-            b: Prisma.Decimal | null
-        ): number => {
-            if (a === null) return b === null ? 0 : 1;
-            if (b === null) return -1;
-            return a.comparedTo(b);
-        };
-
-        // Product price sorting
-        products.sort((a, b) => {
-            const minPriceA = minPriceByProductId.get(a.id) ?? null;
-            const minPriceB = minPriceByProductId.get(b.id) ?? null;
-
-            // Explicitly check for price sorting conditions
-            if (sortBy === "price-low-to-high") {
-                return compareMinPrice(minPriceA, minPriceB); // Ascending order
-            } else if (sortBy === "price-high-to-low") {
-                return compareMinPrice(minPriceB, minPriceA); // Descending order
-            }
-
-            // If no price sort option is provided, return 0 (no sorting by price)
-            return 0;
+        // 表示用の列は ID で hydrate する。findMany は順序を保証しないので ID の順に並べ直す。
+        const hydrated =
+            ids.length > 0
+                ? await db.product.findMany({
+                      where: { id: { in: ids } },
+                      include: {
+                          variants: {
+                              include: {
+                                  sizes: true,
+                                  images: true,
+                                  colors: true,
+                              },
+                          },
+                      },
+                  })
+                : [];
+        const byId = new Map(hydrated.map((product) => [product.id, product]));
+        const products = ids.flatMap((id) => {
+            const product = byId.get(id);
+            return product ? [product] : [];
         });
 
         // Transform the products with filtered variants into ProductCardType structure

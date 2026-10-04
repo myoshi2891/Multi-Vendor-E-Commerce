@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { productDerivedColumnsUpdateSql } from "../../../src/lib/product-derived-columns";
 import os from "os";
 import playwrightConfig from "../../../playwright.config";
 import { buildE2ESeed } from "./constants";
@@ -504,6 +505,59 @@ const seedOnce = async (seed: ReturnType<typeof buildE2ESeed>) => {
         },
     });
 
+    // 属性ファセット（plan 076）: カテゴリ（ルート）に facetable な ENUM 定義を 1 つ置き、
+    // productB = gloss を付ける（seed.product には付けない —— constants.ts の E2E_FACET 参照）。
+    // /browse?category=<url> でファセットが出る。
+    // AttributeDefinition に (categoryId, key) の Prisma 上の unique は無いので、find → create で冪等にする。
+    const facetDefinition =
+        (await prisma.attributeDefinition.findFirst({
+            where: { categoryId: category.id, key: seed.facet.key },
+        })) ??
+        (await prisma.attributeDefinition.create({
+            data: {
+                categoryId: category.id,
+                key: seed.facet.key,
+                name: seed.facet.name,
+                type: "ENUM",
+                scope: "PRODUCT",
+                facetable: true,
+            },
+        }));
+    const facetOptionId = async (option: { value: string; label: string }) =>
+        (
+            await prisma.attributeOption.upsert({
+                where: {
+                    definitionId_value: {
+                        definitionId: facetDefinition.id,
+                        value: option.value,
+                    },
+                },
+                create: { definitionId: facetDefinition.id, ...option },
+                update: { label: option.label },
+            })
+        ).id;
+    // 過去の seed が seed.product に付けた値は消しておく（冪等性: 定義を変えた後の再投入でも同じ状態）
+    await prisma.productAttributeValue.deleteMany({
+        where: { productId: product.id, definitionId: facetDefinition.id },
+    });
+    for (const [productId, option] of [
+        [productB.id, seed.facet.productBOption],
+    ] as const) {
+        await prisma.productAttributeValue.deleteMany({
+            where: { productId, definitionId: facetDefinition.id },
+        });
+        await prisma.productAttributeValue.create({
+            data: {
+                productId,
+                definitionId: facetDefinition.id,
+                scope: "PRODUCT",
+                type: "ENUM",
+                multiValued: false,
+                optionId: await facetOptionId(option),
+            },
+        });
+    }
+
     // オファータグ（/offers 一覧 → /browse?offer=<url> 導線の E2E 用）。
     // productB に紐付けることで /offers のカードが「1 商品」以上を表示する。
     const offerTag = await prisma.offerTag.upsert({
@@ -769,6 +823,10 @@ async function main() {
             );
         }
     }
+    // 商品を upsertProduct を通さずに作っているので、アプリと同じ導出 SQL で
+    // searchKeywords / minPrice を埋める（plans 074 / 076）。省くと価格ソートや
+    // keywords 検索の E2E が seed 由来の商品で成立しない。
+    await prisma.$executeRaw(productDerivedColumnsUpdateSql());
     console.log(`E2E seed completed (${seedTargets.length} target(s)).`);
 }
 

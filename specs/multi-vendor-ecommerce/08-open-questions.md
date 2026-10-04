@@ -222,6 +222,19 @@ TOCTOU 修正は `couponId` の once-only 保証に焦点を当てており、`c
 **記録日**: 2026-07-30
 **ステータス**: 未対応（起票のみ。コード変更は別プラン）
 
+### 価格の絞り込みは定価、表示と価格ソートは割引後（意味の食い違い）
+
+**影響範囲**: `/browse` の `minPrice` / `maxPrice`（`src/queries/product.ts` の `buildProductPredicates`）。
+
+**現状**（plan 076 時点・2026-10-03）:
+- 絞り込みは**定価**（`Size.price`）で、「どれか 1 つのサイズの定価が範囲内なら商品がヒット」する。
+- 商品カードの表示価格と価格ソート（`Product.minPrice`）は**割引後の価格**（`price * (1 - discount/100)` の最小値）。
+- そのため「$100 以下」で絞っても、割引後 $80 の商品（定価 $120）は出ず、逆に表示 $130 の商品がヒットしうる。
+
+**決めること**: 絞り込みを割引後に揃えるか（`minPrice` で絞る / サイズ単位の割引後価格で絞る）。
+プロダクトとしての判断が必要なため、plan 076 では既存の意味を変えずに起票のみ行った。
+決定後に別プランで実装する（根拠: [`docs/design/faceted-search/design.md`](../../docs/design/faceted-search/design.md) §0-9）。
+
 ## Resolved Issues
 
 - `getUserWishlist` (`src/queries/profile.ts`): `variants[0]` への直接アクセスが

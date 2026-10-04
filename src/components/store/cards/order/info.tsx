@@ -1,5 +1,5 @@
-import { PaymentDetails } from "@prisma/client";
-
+import type { PaymentDetails } from "@prisma/client";
+import styles from "../../shared/commerce.module.css";
 export default function OrderInfoCard({
     totalItemsCount,
     deliveredItemsCount,
@@ -9,53 +9,30 @@ export default function OrderInfoCard({
     deliveredItemsCount: number;
     paymentDetails: PaymentDetails | null;
 }) {
+    const rows = [
+        ["Total Items", totalItemsCount],
+        ["Delivered", deliveredItemsCount],
+        ["Payment Status", paymentDetails?.status ?? "Unpaid"],
+        ["Payment Method", paymentDetails?.paymentMethod ?? "-"],
+        ["Payment Reference", paymentDetails?.paymentIntentId ?? "-"],
+        [
+            "Paid at",
+            paymentDetails?.status === "Completed"
+                ? paymentDetails.updatedAt.toDateString()
+                : "-",
+        ],
+    ];
     return (
-        <div>
-            <div className="w-full p-4 shadow-sm">
-                <div className="flex justify-between">
-                    <div className="space-y-4">
-                        <p className="text-sm text-main-primary">Total Items</p>
-                        <p className="text-sm text-main-primary">Delivered</p>
-                        <p className="text-sm text-main-primary">
-                            Payment Status
-                        </p>
-                        <p className="text-sm text-main-primary">
-                            Payment Method
-                        </p>
-                        <p className="text-sm text-main-primary">
-                            Payment Reference
-                        </p>
-                        <p className="text-sm text-main-primary">Paid at</p>
+        <section className={styles.panel}>
+            <h2>Order information</h2>
+            <dl>
+                {rows.map(([label, value]) => (
+                    <div className={styles.row} key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
                     </div>
-                    <div className="space-y-4 text-right">
-                        <p className="text-sm text-neutral-500">
-                            {totalItemsCount}
-                        </p>
-                        <p className="mt-0.5 text-sm text-neutral-500">
-                            {deliveredItemsCount}
-                        </p>
-                        <p className="mt-0.5 text-sm text-neutral-500">
-                            {paymentDetails ? paymentDetails.status : "Unpaid"}
-                        </p>
-                        <p className="mt-0.5 text-sm text-neutral-500">
-                            {paymentDetails
-                                ? paymentDetails.paymentMethod
-                                : "-"}
-                        </p>
-                        <p className="mt-0.5 text-sm text-neutral-500">
-                            {paymentDetails
-                                ? paymentDetails.paymentIntentId
-                                : "-"}
-                        </p>
-                        <p className="mt-0.5 text-sm text-neutral-500">
-                            {paymentDetails &&
-                            paymentDetails.status === "Completed"
-                                ? paymentDetails.updatedAt.toDateString()
-                                : "-"}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+                ))}
+            </dl>
+        </section>
     );
 }

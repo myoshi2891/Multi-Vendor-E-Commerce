@@ -2,7 +2,8 @@ import { clsx, type ClassValue } from "clsx";
 import ColorThief from "colorthief";
 import { differenceInDays, differenceInHours } from "date-fns";
 import { twMerge } from "tailwind-merge";
-import { CartProductType, Country } from "./types";
+import { ATTRIBUTE_MACHINE_KEY_PATTERN } from "./attribute-key";
+import { CartProductType, Country, ProductFilters } from "./types";
 
 interface HasToNumber {
     toNumber: () => number;
@@ -77,6 +78,210 @@ export const normalizePageParam = (
     raw: unknown,
     max: number = MAX_PAGE
 ): number => normalizePositiveIntParam(raw, { fallback: 1, max });
+
+/**
+ * URL 由来の価格パラメータを数値へ解決する（`/browse` から移設・plan 075）。
+ *
+ * `Number(x) || fallback` は使わない —— `?maxPrice=0`（上限 0 の空レンジ）は
+ * falsy なので fallback へ化け、「上限 0」が「上限なし」に反転して**全件が通ってしまう**。
+ *
+ * 未指定 / 空文字 / 空白のみ / 非有限値 / 負値は fallback に寄せる。Next.js は同名
+ * パラメータが複数付くと配列を渡すため、配列は先頭要素を採る（`normalizePageParam` と同じ規約）。
+ *
+ * @param value - URL から読んだ生の価格値
+ * @param fallback - 解決できないときの値
+ * @returns 0 以上の有限数、または fallback
+ */
+export const normalizePriceParam = (value: unknown, fallback: number): number => {
+    const raw = Array.isArray(value) ? value[0] : value;
+    if (raw === undefined || raw === null) return fallback;
+    // 空白のみの入力（`?maxPrice=%20`）は `Number("   ") === 0` となり、
+    // 「上限 0」の空レンジとして通ってしまう。数値化の前に trim で弾く。
+    if (typeof raw === "string" && raw.trim() === "") return fallback;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+    return parsed;
+};
+
+/**
+ * 単数指定と配列指定が混在するフィルタ（size / color）を配列へ揃える（`/browse` から移設）。
+ *
+ * 未指定・空文字は `undefined`（フィルタ無し）に寄せる。
+ *
+ * @param value - URL から読んだ生の値
+ * @returns 配列、またはフィルタ無しを表す `undefined`
+ */
+export const toArrayParam = (
+    value: string | string[] | undefined
+): string[] | undefined => {
+    if (Array.isArray(value)) return value;
+    return value ? [value] : undefined;
+};
+
+/** `parseProductFilters` の結果。`invalid` は「解決できない指定」で、呼び出し側は 0 件を返す。 */
+export type ParsedProductFilters =
+    | { kind: "ok"; filters: ProductFilters }
+    | { kind: "invalid" };
+
+const SINGLE_VALUE_FILTER_KEYS = [
+    "search",
+    "store",
+    "category",
+    "subCategory",
+    "offer",
+] as const;
+
+/**
+ * `getProducts` に届いたフィルタを実行時に検証して正規化する（plan 075）。
+ *
+ * `getProducts` は `"use server"` の Server Action なので、`ProductFilters` 型に反する入力も
+ * クライアントから届きうる。旧実装（`filters: any`）が値ごとに散らしていた検査をここに集める。
+ *
+ * - 単一値（search / store / category / subCategory / offer）: 未指定・空文字は無視。
+ *   **配列や文字列以外が来たら `invalid`**（`?store=a&store=b` を黙って捨てると全件表示に化ける）。
+ *   search は前後の空白を取り除く。
+ * - size / color: 文字列は 1 要素の配列へ揃える（黙って捨てると絞り込みなしに化ける）。
+ *   文字列以外の要素を含む配列は `invalid`。
+ * - minPrice / maxPrice: 有限の number だけを採る。0 は有効な境界。それ以外は無視する
+ *   （旧実装の `hasPriceBound` と同じ）。
+ *
+ * @param raw - 呼び出し元から届いたフィルタ（型は信用しない）
+ * @returns 正規化済みフィルタ、または `invalid`
+ */
+export const parseProductFilters = (raw: unknown): ParsedProductFilters => {
+    if (raw === undefined || raw === null) return { kind: "ok", filters: {} };
+    if (typeof raw !== "object" || Array.isArray(raw)) return { kind: "invalid" };
+    const input = raw as Record<string, unknown>;
+    const filters: ProductFilters = {};
+
+    if (!applySingleValueFilters(input, filters)) return { kind: "invalid" };
+    if (!applyArrayFilters(input, filters)) return { kind: "invalid" };
+    applyPriceBounds(input, filters);
+
+    const attributes = parseAttributeSelections(input.attributes);
+    if (attributes === "invalid") return { kind: "invalid" };
+    if (attributes !== undefined) filters.attributes = attributes;
+
+    return { kind: "ok", filters };
+};
+
+/**
+ * 単一値フィルタ（search / store / category / subCategory / offer）を `filters` へ写す。
+ *
+ * @returns 文字列以外が来たら `false`（呼び出し側で `invalid` にする）
+ */
+const applySingleValueFilters = (
+    input: Record<string, unknown>,
+    filters: ProductFilters
+): boolean => {
+    for (const key of SINGLE_VALUE_FILTER_KEYS) {
+        const value = input[key];
+        if (value === undefined || value === null || value === "") continue;
+        if (typeof value !== "string") return false;
+        const normalized = key === "search" ? value.trim() : value;
+        if (normalized !== "") filters[key] = normalized;
+    }
+    return true;
+};
+
+/**
+ * size / color を配列へ揃えて `filters` へ写す。
+ *
+ * @returns 文字列以外の要素を含んだら `false`
+ */
+const applyArrayFilters = (
+    input: Record<string, unknown>,
+    filters: ProductFilters
+): boolean => {
+    for (const key of ["size", "color"] as const) {
+        const value = input[key];
+        if (value === undefined || value === null || value === "") continue;
+        const values = toNonEmptyStrings(value);
+        if (values === "invalid") return false;
+        if (values.length > 0) filters[key] = values;
+    }
+    return true;
+};
+
+/** minPrice / maxPrice は有限の number だけを採る（0 は有効な境界）。それ以外は無視する。 */
+const applyPriceBounds = (
+    input: Record<string, unknown>,
+    filters: ProductFilters
+): void => {
+    for (const key of ["minPrice", "maxPrice"] as const) {
+        const value = input[key];
+        if (typeof value === "number" && Number.isFinite(value)) {
+            filters[key] = value;
+        }
+    }
+};
+
+/**
+ * 単数または配列の値を「空文字を除いた文字列の配列」へ揃える。
+ * 文字列以外の要素を含んだら `"invalid"`。
+ */
+const toNonEmptyStrings = (value: unknown): string[] | "invalid" => {
+    const values = Array.isArray(value) ? value : [value];
+    if (!values.every((v): v is string => typeof v === "string")) {
+        return "invalid";
+    }
+    return values.filter((v) => v !== "");
+};
+
+/** 属性ファセットの選択の上限。巨大な入力で EXISTS 句が膨らまないようにする。 */
+const MAX_ATTRIBUTE_KEYS = 10;
+const MAX_VALUES_PER_ATTRIBUTE = 20;
+
+/**
+ * `attributes`（key → 値の配列）を検証する。key は属性定義と同じ snake_case に限る。
+ * 単数の文字列は配列へ揃え、値が空の key は捨てる。形式違反や上限超過は `"invalid"`。
+ */
+const parseAttributeSelections = (
+    raw: unknown
+): Record<string, string[]> | undefined | "invalid" => {
+    if (raw === undefined || raw === null) return undefined;
+    if (typeof raw !== "object" || Array.isArray(raw)) return "invalid";
+    const entries = Object.entries(raw as Record<string, unknown>);
+    if (entries.length > MAX_ATTRIBUTE_KEYS) return "invalid";
+
+    const selections: Record<string, string[]> = {};
+    for (const [key, value] of entries) {
+        if (!ATTRIBUTE_MACHINE_KEY_PATTERN.test(key)) return "invalid";
+        const values = toNonEmptyStrings(value);
+        if (values === "invalid") return "invalid";
+        // 上限は空文字を除く前の件数で見る（従来どおり）
+        if (Array.isArray(value) && value.length > MAX_VALUES_PER_ATTRIBUTE) {
+            return "invalid";
+        }
+        if (values.length > 0) selections[key] = values;
+    }
+    return Object.keys(selections).length > 0 ? selections : undefined;
+};
+
+/** URL で属性ファセットの選択を表すパラメータ名の接頭辞（`?attr.material=wool`）。 */
+export const ATTRIBUTE_PARAM_PREFIX = "attr.";
+
+/**
+ * Next.js の searchParams から `attr.<key>` のパラメータを集め、`ProductFilters.attributes` の形にする。
+ *
+ * 値の検証（key の形式・上限）は `parseProductFilters` が行う。ここでは形をそろえるだけ。
+ *
+ * @param query - ページが受け取った searchParams（単数は string・複数は string[]）
+ * @returns key → 値の配列。該当パラメータが無ければ `undefined`
+ */
+export const extractAttributeParams = (
+    query: Record<string, string | string[] | undefined>
+): Record<string, string[]> | undefined => {
+    const selections: Record<string, string[]> = {};
+    for (const [name, value] of Object.entries(query)) {
+        if (!name.startsWith(ATTRIBUTE_PARAM_PREFIX) || value === undefined) continue;
+        // 空の key（`?attr.=x`）も捨てない。捨てると絞り込みなしに化けて全件が返るため、
+        // `parseProductFilters` の key 形式検査で invalid（0 件）にさせる。
+        const key = name.slice(ATTRIBUTE_PARAM_PREFIX.length);
+        selections[key] = Array.isArray(value) ? value : [value];
+    }
+    return Object.keys(selections).length > 0 ? selections : undefined;
+};
 
 /**
  * Merge multiple class name inputs into a single class string, resolving Tailwind utility conflicts.

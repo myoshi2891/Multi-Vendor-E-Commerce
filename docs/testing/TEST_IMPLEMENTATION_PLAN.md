@@ -1052,3 +1052,8 @@ RTL6件/query2件/mobile h1のRed→Green。初期データ回帰1件は旧実�
 ### Profile Messages デザイン検証 — ✅ Completed (2026-10-03)
 
 RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued refresh5件は実装後回帰。最終94/94（7 suites）、Chromium5/5（3幅/会話と送信・既読・取得失敗/keyboard/axe/未認証）。販売者/旧thread/query/sidebar/reviews回帰を含む。実送信・AC-M8往復は今回未実行。[証跡](../design/design-system/PROGRESS.md#profile-messages移行記録)。全体統計はQA_HANDOFFの前回実測を維持。
+
+### Checkout・注文詳細のデザイン移行検証（2026-10-04）
+
+- RTL先行Red4件、Green/Refactor、関連18 suites420/420、isolated Chromium11/11を確認。[計画](../../plans/layout-design/checkout-order-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#checkout-order移行記録)。
+- Supplemental fixtureは実ルートの認証後検証を代替しない。専用DB不足により全体Step完了は保留。[QA](QA_HANDOFF.md#ds-purchase-browser)。

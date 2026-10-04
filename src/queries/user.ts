@@ -8,7 +8,6 @@ import { retryOnSerializationFailure } from "@/lib/db-retry";
 import { CartItem, Country as CountryDB, Prisma } from "@prisma/client";
 import { CartProductType, SerializedCartType, Country } from "@/lib/types";
 import { requireUser } from "@/lib/auth-guards";
-import { getCookie } from "cookies-next";
 import { cookies } from "next/headers";
 import {
     getDeliveryDetailsForStoreByCountry,
@@ -336,6 +335,9 @@ export const saveUserCart = async (
     try {
         const userId = user.id;
 
+        // Next 16 の cookies() は Promise。cookies-next の同期 getCookie は値を読めない
+        const countryCookie = (await cookies()).get("userCountry")?.value;
+
         // Fetch product, variant, and size data from the database for validation
         const validatedCartItems = await Promise.all(
             cartProducts.map(async (cartProduct) => {
@@ -363,11 +365,6 @@ export const saveUserCart = async (
                     size.price,
                     size.discount
                 );
-
-                // Calculate shipping details
-                const countryCookie = getCookie("userCountry", { cookies }) as
-                    | string
-                    | undefined;
 
                 const shippingFee = await resolveCartShippingFee(
                     product,
@@ -1150,6 +1147,9 @@ export const emptyUserCart = async () => {
 export const updateCartWithLatest = async (
     cartProducts: CartProductType[]
 ): Promise<CartProductType[]> => {
+    // Next 16 の cookies() は Promise。cookies-next の同期 getCookie は値を読めない
+    const countryCookie = (await cookies()).get("userCountry")?.value;
+
     // Fetch product, variant, and size data from the database for validation
     const syncedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
@@ -1164,11 +1164,6 @@ export const updateCartWithLatest = async (
 
             if (!found) return null;
             const { product, variant, size } = found;
-
-            // Calculate Shipping details
-            const countryCookie = getCookie("userCountry", { cookies }) as
-                | string
-                | undefined;
 
             let details = {
                 shippingService: product.store.defaultShippingService,
@@ -1338,6 +1333,9 @@ export const updateCheckoutProductWithLatest = async (
         );
     }
 
+    // Next 16 の cookies() は Promise。cookies-next の同期 getCookie は値を読めない
+    const countryCookie = (await cookies()).get("userCountry")?.value;
+
     // Fetch product, variant, and size data from the database for validation
     const validatedCartItems = await Promise.all(
         cartProducts.map(async (cartProduct) => {
@@ -1358,11 +1356,6 @@ export const updateCheckoutProductWithLatest = async (
             }
 
             const { product, variant, size } = found;
-
-            // Calculate Shipping details
-            const countryCookie = getCookie("userCountry", { cookies }) as
-                | string
-                | undefined;
 
             const country: Country | null = address
                 ? {

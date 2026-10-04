@@ -1,117 +1,152 @@
 "use client";
-import { createStripePayment, createStripePaymentIntent } from "@/queries/stripe";
+import type { PaymentActions } from "@/lib/commerce-actions";
 import {
     useStripe,
     useElements,
     PaymentElement,
 } from "@stripe/react-stripe-js";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import styles from "../../../shared/commerce.module.css";
 
-export default function StripePayment({ orderId }: { orderId: string }) {
-    const router = useRouter();
-    const stripe = useStripe();
-    const elements = useElements();
+type Props = {
+    orderId: string;
+    actions: Pick<PaymentActions, "createIntentAction" | "recordStripeAction">;
+    disabled?: boolean;
+    onBusyChange?: (busy: boolean) => void;
+};
+export default function StripePayment({
+    orderId,
+    actions,
+    disabled = false,
+    onBusyChange,
+}: Props) {
+    const router = useRouter(),
+        stripe = useStripe(),
+        elements = useElements();
     const [errorMessage, setErrorMessage] = useState<string>();
     const [clientSecret, setClientSecret] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
-
+    const [loading, setLoading] = useState(false);
+    const [retry, setRetry] = useState(0);
+    const locked = useRef(false);
     useEffect(() => {
-        getClientSecret();
+        let cancelled = false;
+        setClientSecret(null);
+        setErrorMessage(undefined);
+        void actions
+            .createIntentAction(orderId)
+            .then((res) => {
+                if (!res.clientSecret)
+                    throw new Error("Payment could not be initialized.");
+                if (!cancelled) setClientSecret(res.clientSecret);
+            })
+            .catch((error) => {
+                if (!cancelled)
+                    setErrorMessage(
+                        error instanceof Error
+                            ? error.message
+                            : "Payment could not be initialized."
+                    );
+            });
+        return () => {
+            cancelled = true;
+        };
+        // Only order changes or explicit retry should initialize the payment.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orderId]);
-
-    const getClientSecret = async () => {
-        try {
-            const res = await createStripePaymentIntent(orderId);
-            // clientSecret 欠落は「失敗していない」ではなく **静かな失敗**。
-            // ここで握り潰すと clientSecret は null のままローダーガードに
-            // 捕まり、ユーザーには無限スピナーしか残らない（throw 経路と同じ
-            // 症状だが、エラー状態が立たないぶん検出できない）。
-            if (!res.clientSecret) {
-                throw new Error("Payment could not be initialized.");
-            }
-            setClientSecret(res.clientSecret);
-        } catch (error: unknown) {
-            setErrorMessage(
-                error instanceof Error
-                    ? error.message
-                    : "Payment could not be initialized."
-            );
-        }
-    };
-
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault()
+    }, [orderId, retry]);
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        if (locked.current || disabled || !stripe || !elements || !clientSecret)
+            return;
+        locked.current = true;
         setLoading(true);
-
-        if (!stripe || !elements) {
-            return
-        }
-
-        const { error: submitError } = await elements.submit()
-        if (submitError) {
-            setErrorMessage(submitError.message);
-            setLoading(false);
-            return
-        }
-
-        if (clientSecret) {
-            const {error, paymentIntent } = await stripe.confirmPayment({
+        onBusyChange?.(true);
+        setErrorMessage(undefined);
+        let paid = false;
+        try {
+            const { error: submitError } = await elements.submit();
+            if (submitError) {
+                setErrorMessage(
+                    submitError.message ?? "Please check your payment details."
+                );
+                return;
+            }
+            const { error, paymentIntent } = await stripe.confirmPayment({
                 elements,
                 clientSecret,
-                confirmParams: {
-                    return_url: window.location.origin || "http://localhost:3000",
-                },
-                redirect: "if_required"
-            })
-
-            if (!error && paymentIntent) { 
-                try { 
-                    const res = await createStripePayment(orderId, paymentIntent.id)
-                    if (!res.paymentDetails?.paymentIntentId) throw new Error('Payment details not found');
-                    router.refresh()
-                } catch (error: any) { 
-                    console.error('Error confirming payment:', error);
-                    setErrorMessage("Payment failed");
-                    return
-                }
+                confirmParams: { return_url: window.location.origin },
+                redirect: "if_required",
+            });
+            if (error) {
+                setErrorMessage(error.message ?? "Payment failed");
+                return;
+            }
+            if (paymentIntent) {
+                const res = await actions.recordStripeAction(
+                    orderId,
+                    paymentIntent.id
+                );
+                if (!res.paymentDetails?.paymentIntentId)
+                    throw new Error("Payment failed");
+                paid = true;
+                router.refresh();
+            } else {
+                setErrorMessage("Payment failed");
+            }
+        } catch {
+            setErrorMessage("Payment failed");
+        } finally {
+            if (!paid) {
+                locked.current = false;
+                setLoading(false);
+                onBusyChange?.(false);
             }
         }
-        setLoading(false);
-    };
-
-    // 取得失敗はローダーより先に描画する。intent 取得が失敗すると clientSecret は
-    // null のままなので、下のローダーガードを先に通すと errorMessage を描画する
-    // <form> へ永久に到達できず、ユーザーには無限スピナーしか見えない。
-    // clientSecret 取得後の送信時エラー（カード検証など）は従来どおりフォーム内に出す。
-    if (errorMessage && !clientSecret) {
-        return <div className="text-sm text-destructive">{errorMessage}</div>;
     }
-
-    if (!clientSecret || !stripe || !elements) {
+    if (errorMessage && !clientSecret)
         return (
-            <div className="flex items-center justify-center">
-                <div className="inline-block size-8 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125rem] text-slate-800 motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white">
-                    <span className="!absolute !-m-px !h-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">
-                        Loading...
-                    </span>
-                </div>
+            <div>
+                <p className={styles.error} role="alert">
+                    {errorMessage}
+                </p>
+                <button
+                    className={styles.secondary}
+                    disabled={disabled}
+                    onClick={() => setRetry((value) => value + 1)}
+                >
+                    Retry card payment
+                </button>
             </div>
         );
-    }
+    if (!clientSecret || !stripe || !elements)
+        return (
+            <p role="status" className={styles.status}>
+                Loading card payment…
+            </p>
+        );
     return (
-        <form onSubmit={handleSubmit} className="rounded-md bg-white p-2">
-            {clientSecret && <PaymentElement />}
-            {errorMessage && (
-                <div className="text-sm text-destructive">{errorMessage}</div>
+        <form onSubmit={handleSubmit} aria-label="Card payment">
+            <fieldset disabled={disabled || loading} style={{ minWidth: 0 }}>
+                <legend className="sr-only">Card details</legend>
+                <PaymentElement options={{ readOnly: disabled || loading }} />
+                <button
+                    disabled={disabled || loading}
+                    className={styles.primary}
+                    style={{ width: "100%", marginTop: 18 }}
+                >
+                    {loading ? "Processing..." : "Pay Now"}
+                </button>
+            </fieldset>
+            {loading && (
+                <p role="status" className={styles.status}>
+                    Processing card payment…
+                </p>
             )}
-            <button
-                disabled={!stripe || loading}
-                className="mt-2 w-full rounded-md bg-black p-5 font-bold text-white disabled:animate-pulse disabled:opacity-50"
-            >
-                {loading ? "Processing..." : "Pay Now"}
-            </button>
+            {errorMessage && (
+                <p role="alert" className={styles.error}>
+                    {errorMessage}
+                </p>
+            )}
         </form>
     );
 }

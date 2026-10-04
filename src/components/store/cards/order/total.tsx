@@ -1,47 +1,34 @@
+import styles from "../../shared/commerce.module.css";
 export default function OrderTotalDetailsCard({
     details,
 }: {
-    details: {
-        subTotal: number;
-        shippingFees: number;
-        total: number;
-    };
+    details: { subTotal: number; shippingFees: number; total: number };
 }) {
-    const { subTotal, shippingFees, total } = details;
     return (
-        <div>
-            {/* E2E は金額明細の検算にこのカードを掴む。スタイルクラス（shadow-sm）に
-                依存させないため、`order-payment` と同じ testid 規約で固定する。 */}
-            <div className="w-full p-4 shadow-sm" data-testid="order-total">
-                <div className="flex justify-between">
-                    <div className="space-y-4">
-                        <p className="text-lg font-semibold text-main-primary">
-                            Subtotal
-                        </p>
-                        <p className="text-sm text-main-primary">
-                            Shipping Fee
-                        </p>
-                        <p className="text-sm text-main-primary">Taxes</p>
-                        <p className="text-lg font-semibold text-main-primary">
-                            Total
-                        </p>
-                    </div>
-                    <div className="space-y-4 text-right">
-                        <p className="text-lg font-semibold text-main-primary">
-                            ${subTotal.toFixed(2)}
-                        </p>
-                        <p className="mt-0.5 text-sm text-neutral-500">
-                            +${shippingFees.toFixed(2)}
-                        </p>
-                        <p className="mt-0.5 text-sm text-neutral-500">
-                            +$0.00
-                        </p>
-                        <p className="rounded-lg bg-blue-primary px-3 py-1.5 text-sm font-semibold text-white">
-                            ${total.toFixed(2)}
-                        </p>
-                    </div>
+        <section
+            className={styles.summary}
+            data-testid="order-total"
+            aria-labelledby="order-summary"
+        >
+            <h2 id="order-summary">Order summary</h2>
+            <dl>
+                <div className={styles.row}>
+                    <dt>Subtotal</dt>
+                    <dd>${details.subTotal.toFixed(2)}</dd>
                 </div>
-            </div>
-        </div>
+                <div className={styles.row}>
+                    <dt>Shipping Fee</dt>
+                    <dd>+${details.shippingFees.toFixed(2)}</dd>
+                </div>
+                <div className={styles.row}>
+                    <dt>Taxes</dt>
+                    <dd>+$0.00</dd>
+                </div>
+                <div className={`${styles.row} ${styles.total}`}>
+                    <dt>Total</dt>
+                    <dd>${details.total.toFixed(2)}</dd>
+                </div>
+            </dl>
+        </section>
     );
 }

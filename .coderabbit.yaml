@@ -5,3 +5,4 @@ reviews:
         - "!prisma/seed/**"
         - "!plans/layout-design/**"
         - "!docs/design/**"
+        - "!prisma/migrations/**"

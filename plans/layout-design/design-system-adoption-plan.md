@@ -54,7 +54,7 @@
 
 ### 2.1 件数
 
-2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
+2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
 
 | 区分 | ページ定義 |
 |---|---:|
@@ -68,7 +68,8 @@
 |---|---:|
 | 検証済み（2026-10-03） | 11 |
 | 本体適用・周辺確認 | 12 |
-| 未適用 | 35 |
+| 本体適用・検証保留 | 2 |
+| 未適用 | 33 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
 | **合計** | **66** |
@@ -81,12 +82,12 @@
 |---|---|---|---|
 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) |
 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) |
-| `/order/[orderId]` | 未適用 | P1 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../src/app/(fullscreen)/order/[orderId]/page.tsx>) |
+| `/order/[orderId]` | 本体適用・検証保留（2026-10-04） | P1 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../src/app/(fullscreen)/order/[orderId]/page.tsx>) |
 | `/seller/apply` | 未適用 | P3 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../src/app/(fullscreen)/seller/apply/page.tsx>) |
 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/about/page.tsx](<../../src/app/(store)/about/page.tsx>) |
 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/browse/page.tsx](<../../src/app/(store)/browse/page.tsx>) |
 | `/cart` | 検証済み（2026-10-01） | P1 | [src/app/(store)/cart/page.tsx](<../../src/app/(store)/cart/page.tsx>) |
-| `/checkout` | 未適用 | P1 | [src/app/(store)/checkout/page.tsx](<../../src/app/(store)/checkout/page.tsx>) |
+| `/checkout` | 本体適用・検証保留（2026-10-04） | P1 | [src/app/(store)/checkout/page.tsx](<../../src/app/(store)/checkout/page.tsx>) |
 | `/compare` | 本体適用・周辺確認 | P2 | [src/app/(store)/compare/page.tsx](<../../src/app/(store)/compare/page.tsx>) |
 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/contact/page.tsx](<../../src/app/(store)/contact/page.tsx>) |
 | `/customer-service` | 検証済み（2026-10-01） | P2 | [src/app/(store)/customer-service/page.tsx](<../../src/app/(store)/customer-service/page.tsx>) |
@@ -593,3 +594,16 @@ DS-PAGE-034のalias転送も回帰確認。共有ProductCardの他画面・他�
 - [x] [src/components/store/profile/messages/profile-conversation-thread.tsx](<../../src/components/store/profile/messages/profile-conversation-thread.tsx>)
 
 既存shared layout/hook/threadと販売者部品の移行は別対象。[証跡](../../docs/design/design-system/PROGRESS.md#profile-messages移行記録)。
+
+### Checkout・注文詳細移行チェック（DS-PAGE-008／003）
+
+- [x] [保存計画](checkout-order-design-system-plan.md)、RTL4件のRed、実装とaction Propsの整理。
+- [x] Refactor後の関連Jest420/420、supplemental Chromium11/11（1440／768／390px・axe contrast含む）、lint／tsc／画像目視。
+- [x] Checkout／order-detailの要件・設計・タスク、SDD、QA、[実施記録](../../docs/design/design-system/PROGRESS.md#checkout-order移行記録)を同期。
+- [ ] 専用テストDBの認証後実ルートとSDK実描画を確認。現在は実装あり・検証保留。
+
+DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通CSSのDS-COMP-204。旧住所form/list/card・旧Modalと全体トークンは別対象のまま。実装だけで既存部品チェックを完了にしない。
+
+### 購入導線の共通表示（追加対象 DS-COMP-204）
+
+- [ ] [src/components/store/shared/commerce.module.css](../../src/components/store/shared/commerce.module.css): 2画面の面・文字・focus・responsive・dialogをスコープ。実装あり、実ルート検証保留。

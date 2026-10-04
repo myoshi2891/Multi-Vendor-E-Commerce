@@ -4,6 +4,7 @@ import {
     ShippingFeeMethod,
 } from "@prisma/client";
 import { OrderStatus, PaymentStatus } from "@/lib/types";
+import { ATTRIBUTE_MACHINE_KEY_PATTERN } from "@/lib/attribute-key";
 import * as z from "zod";
 
 // Category form schema
@@ -781,8 +782,7 @@ export type AdminOrderFilter = z.infer<typeof AdminOrderFilterSchema>;
 // カテゴリ別属性（plan 069 / ADR-007）
 // ---------------------------------------------------------------------------
 
-/** 属性・許容値の機械キー。不変（design.md Q7）なので URL 同様に厳格に絞る。 */
-const ATTRIBUTE_MACHINE_KEY_PATTERN = /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/;
+// 属性・許容値の機械キーの形式は src/lib/attribute-key.ts（utils.ts と共有）
 
 // Attribute definition form schema
 export const AttributeDefinitionFormSchema = z

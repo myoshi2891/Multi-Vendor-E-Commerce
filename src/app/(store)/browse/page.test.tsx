@@ -6,11 +6,13 @@ import { permanentRedirect, redirect } from "next/navigation";
 import { resolveCategoryNode } from "@/lib/category-tree";
 import { FiltersQueryType } from "@/lib/types";
 import { MAX_PAGE } from "@/lib/utils";
-import { getProducts } from "@/queries/product";
+import { getProductFacets, getProducts } from "@/queries/product";
 import BrowsePage from "./page";
 
 jest.mock("@/queries/product", () => ({
     getProducts: jest.fn(),
+    // 属性ファセット（plan 076）。既定は空。個別のテストで上書きする
+    getProductFacets: jest.fn().mockResolvedValue([]),
 }));
 
 // 本物の redirect() は NEXT_REDIRECT を throw して以降の描画を止める。
@@ -44,7 +46,19 @@ jest.mock("@/components/store/browse-page/browse-pagination", () => ({
 }));
 jest.mock("@/components/store/browse-page/filters", () => ({
     __esModule: true,
-    default: () => <div data-testid="filters" />,
+    default: ({
+        facets,
+        queries,
+    }: {
+        facets?: { key: string }[];
+        queries?: Record<string, unknown>;
+    }) => (
+        <div
+            data-testid="filters"
+            data-facet-keys={(facets ?? []).map((f) => f.key).join(",")}
+            data-queries={JSON.stringify(queries ?? {})}
+        />
+    ),
 }));
 jest.mock("@/components/store/browse-page/sort", () => ({
     __esModule: true,
@@ -58,6 +72,7 @@ jest.mock("@/components/store/shared/product-list", () => ({
 }));
 
 const mockGetProducts = getProducts as jest.Mock;
+const mockGetProductFacets = getProductFacets as jest.Mock;
 const mockRedirect = redirect as unknown as jest.Mock;
 const mockPermanentRedirect = permanentRedirect as unknown as jest.Mock;
 const mockResolveCategoryNode = resolveCategoryNode as jest.Mock;
@@ -533,5 +548,91 @@ describe("BrowsePage — 旧 ?subCategory= の 308 正準化", () => {
         // Assert
         expect(mockPermanentRedirect).not.toHaveBeenCalled();
         expect(mockGetProducts).toHaveBeenCalled();
+    });
+
+    // ==================================================
+    // 属性ファセット（plan 076）
+    // ==================================================
+    it("attr.<key> を getProducts と getProductFacets の両方へ渡し、ファセットをフィルタへ渡す", async () => {
+        // Arrange
+        mockProductsResult(1, 1);
+        mockGetProductFacets.mockResolvedValueOnce([
+            { key: "material", name: "Material", unit: null, values: [] },
+        ]);
+        const query = {
+            ...makeQuery({ category: "fashion" }),
+            "attr.material": ["wool", "silk"],
+        };
+
+        // Act
+        render(await BrowsePage({ searchParams: Promise.resolve(query) }));
+
+        // Assert
+        const expectedFilters = expect.objectContaining({
+            category: "fashion",
+            attributes: { material: ["wool", "silk"] },
+        });
+        expect(mockGetProducts).toHaveBeenCalledWith(expectedFilters, undefined, 1);
+        expect(mockGetProductFacets).toHaveBeenCalledWith(expectedFilters);
+        expect(screen.getByTestId("filters")).toHaveAttribute("data-facet-keys", "material");
+    });
+
+    it("ファセットの集計に失敗しても一覧は描画する", async () => {
+        // Arrange
+        mockProductsResult(1, 2);
+        mockGetProductFacets.mockRejectedValueOnce(new Error("facet query failed"));
+
+        // Act
+        render(await BrowsePage({ searchParams: Promise.resolve(makeQuery({})) }));
+
+        // Assert
+        expect(screen.getByTestId("product-list")).toHaveTextContent("2");
+        expect(screen.getByTestId("filters")).toHaveAttribute("data-facet-keys", "");
+    });
+
+    it("ファセットが無くても（カテゴリ未選択）attr.<key> の選択をチップ用の queries へ渡す（繰り返し値も保つ）", async () => {
+        // Arrange — getProductFacets はカテゴリ未選択で [] を返す。queries に載せないと
+        // getProducts は絞り込むのに画面に選択が出ず、解除もできない
+        mockProductsResult(1, 1);
+        const query = {
+            ...makeQuery({}),
+            "attr.material": ["wool", "silk"],
+            "attr.fit": "slim",
+        };
+
+        // Act
+        render(await BrowsePage({ searchParams: Promise.resolve(query) }));
+
+        // Assert
+        const queries = JSON.parse(
+            screen.getByTestId("filters").getAttribute("data-queries") ?? "{}"
+        );
+        expect(queries).toMatchObject({
+            "attr.material": ["wool", "silk"],
+            "attr.fit": "slim",
+        });
+        expect(screen.getByTestId("filters")).toHaveAttribute("data-facet-keys", "");
+    });
+
+    it("ファセットの集計に失敗しても、他のフィルタと attr.<key> の選択は queries に残る（Clear All の対象）", async () => {
+        // Arrange
+        mockProductsResult(1, 1);
+        mockGetProductFacets.mockRejectedValueOnce(new Error("facet query failed"));
+        const query = {
+            ...makeQuery({ category: "fashion" }),
+            "attr.material": "wool",
+        };
+
+        // Act
+        render(await BrowsePage({ searchParams: Promise.resolve(query) }));
+
+        // Assert
+        const queries = JSON.parse(
+            screen.getByTestId("filters").getAttribute("data-queries") ?? "{}"
+        );
+        expect(queries).toMatchObject({
+            category: "fashion",
+            "attr.material": "wool",
+        });
     });
 });

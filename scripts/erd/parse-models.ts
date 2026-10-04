@@ -217,7 +217,10 @@ export function parseModels(src: string, modelNames: Set<string>): Model[] {
             let displayType =
                 baseType + (isList ? "[]" : "") + (isOptional ? "?" : "");
             const dec = rest.match(/@db\.Decimal\((\d+),\s*(\d+)\)/);
-            if (dec) displayType = `Decimal(${dec[1]},${dec[2]})`;
+            if (dec) {
+                displayType =
+                    `Decimal(${dec[1]},${dec[2]})` + (isOptional ? "?" : "");
+            }
 
             const relMatch = rest.match(/@relation\(([^)]*)\)/);
             let relation: Field["relation"];

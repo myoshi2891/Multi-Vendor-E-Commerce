@@ -63,3 +63,7 @@ Authenticated customers browse their review history in the branded responsive ac
 ## Profile message presentation
 
 Authenticated buyers read and send existing store conversations in the branded responsive account layout, with native selected-conversation controls, long-name/text wrapping, chronological buyer/store bubbles and UTC dates. Provide empty/unselected/loading/generic list/thread failure and retry; a read-status failure keeps the conversation available and offers its own retry. Preserve trimmed 1–2000 character validation, lock input/selection/reload while sending, prevent duplicates, retain failed drafts and refresh after success. Maintain five-second polling, hidden-tab pause and stale-response protection. See [message requirements](../../docs/design/profile-messages/requirements.md).
+
+## Checkout and order-detail presentation
+
+Checkout and order detail use responsive cream/deep-green/gold purchase surfaces with serif headings, keyboard-operable address selection and labeled address/coupon forms. Keep existing monetary calculations, coupon scope and order/payment conditions. Lock ordering during destination/coupon refresh or submission, announce failures with retry, and keep the established post-order duplicate guard. Order detail shows one total summary and readable payment loading/error states. Unimplemented cancellation stays disabled. See [checkout requirements](../../docs/design/checkout/requirements.md) and [order-detail requirements](../../docs/design/order-detail/requirements.md).
