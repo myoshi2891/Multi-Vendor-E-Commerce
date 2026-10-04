@@ -1,37 +1,25 @@
 import FollowingContainer from "@/components/store/profile/following/container";
+import { DiscoveryHeading } from "@/components/store/profile/shared/discovery";
+import styles from "@/components/store/profile/shared/discovery.module.css";
 import { normalizePageParam } from "@/lib/utils";
 import { getUserFollowedStores } from "@/queries/profile";
+import { followStore } from "@/queries/user";
 import { redirect } from "next/navigation";
 
-export const dynamic = 'force-dynamic';
-
-/**
- * Renders the followed-stores profile page for the requested page.
- *
- * Out-of-range pages redirect to the last available page, or to page 1 when no pages are available.
- *
- * @param params - Route parameters containing the requested page.
- * @returns The followed stores and pagination information.
- */
-export default async function ProfileFollowingPage({
-    params,
-}: {
-    params: Promise<{ page: string }>;
-    }) {
+export const dynamic = "force-dynamic";
+export default async function ProfileFollowingPage({ params }: { params: Promise<{ page: string }> }) {
     const { page: pageParam } = await params;
     const page = normalizePageParam(pageParam);
-    const res = await getUserFollowedStores(page)
-
-    // 範囲外ページは最終ページ（該当 0 件なら 1 ページ目）へ寄せる。
-    // 遷移後は canonicalPage === page になるためループしない。
-    // redirect() は NEXT_REDIRECT を throw するため try/catch の外に置くこと。
-    const canonicalPage = res.totalPages >= 1 ? Math.min(page, res.totalPages) : 1;
-    if (canonicalPage !== page) {
-        redirect(`/profile/following/${canonicalPage}`);
+    let res;
+    try { res = await getUserFollowedStores(page); }
+    catch {
+        return <div className={styles.page}><DiscoveryHeading title="Stores you follow" description="Return to your favourite boutiques." />
+            <section role="alert" className={styles.error}><h2>Followed stores could not be loaded.</h2><p>Please try again.</p><a href={`/profile/following/${page}`}>Try again</a></section>
+        </div>;
     }
-
-    return <div className="bg-white px-6 py-4">
-        <h1 className="mb-3 text-lg font-bold">Stores you follow</h1>
-        <FollowingContainer stores={res.stores} page={page} totalPages={res.totalPages} />
+    const canonicalPage = res.totalPages >= 1 ? Math.min(page, res.totalPages) : 1;
+    if (canonicalPage !== page) redirect(`/profile/following/${canonicalPage}`);
+    return <div className={styles.page}><DiscoveryHeading title="Stores you follow" description="Return to your favourite boutiques." />
+        <FollowingContainer stores={res.stores} page={page} totalPages={res.totalPages} followAction={followStore} />
     </div>;
 }
