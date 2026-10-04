@@ -277,10 +277,10 @@
 plans 073〜076（plan 015 ファセット検索の後続）の未コミット作業を、規約どおりに分割コミットして PR を作ってください。
 
 前提（必ず最初に確認）:
-- git status で作業ツリーが 2026-10-04（PR #187 レビュー対応）時点の状態か確認する（HEAD 86b9c786 / 未コミット）。
+- git status で作業ツリーが 2026-10-04（PR #187 レビュー対応）時点の状態か確認する（HEAD 82627f85 / 未コミット）。
   変更内容の全体像は plans/073〜076 の「実施結果」節と docs/design/faceted-search/design.md §5 にある。
 - 着手前に bun run test / bun run test:integration / bunx tsc --noEmit / bun run lint を実行し、
-  2723 passed / 2726 total（254 スイート）・Integration 218/218・型エラー 0・lint 0 errors を再現すること。
+  2742 passed / 2745 total（257 スイート）・Integration 222/222・型エラー 0・lint 0 errors を再現すること。
   再現しなければ STOP して報告する。
 
 コミット分割（.claude/rules/02-tdd-step-commit.md・03-data-model-diagram-sync.md に従う）:

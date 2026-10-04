@@ -14,7 +14,7 @@
 | Jestテスト総数（2026-10-04） | **2742 passed / 2745 total、3 skipped、127 snapshots passed、257 スイート（failed 0）**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。plan 077 の cookie 回帰 +3 と `bc4be297` の未同期分 +13。以前の記録: 2726 passed / 2729 total（2026-10-04・`extractAttributeParams` 空キー回帰後）。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
 | 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
 | テストファイル総数 | **321 ファイル**（2026-10-04 `bun run coverage:dashboard` 実測。QA_HANDOFF と一致）。以前の記録: **317 ファイル**（2026-10-04 移行前）、**314 ファイル**（2026-10-03 ダッシュボード実測）。 |
-| Jest スイート総数（unit/component のみ） | **254 スイート**（253 passed／1 skipped、2026-10-03 plans 073〜076 後の全体実測）。以前の記録: **251 スイート**（2026-10-03 プロフィール住所の失敗ログ追加後）。 |
+| Jest スイート総数（unit/component のみ） | **257 スイート**（256 passed／1 skipped、2026-10-04 plans 077・078 後の全体実測）。以前の記録: **254 スイート**（2026-10-03 plans 073〜076 後）、**251 スイート**（2026-10-03 プロフィール住所の失敗ログ追加後）。 |
 | テスト総数 | **2742 unit/component passed** (2745 total / 3 skipped・**257 スイート**・2026-10-04 全体実測)。以前の記録: **2726 unit/component passed** (2729 total / 3 skipped・254 スイート・2026-10-04)。Integration **222** / 17 スイート（2026-10-04 実測・以前の記録: 221・2026-10-04）。以前の記録: **2725 unit/component passed** (2728 total・2026-10-04 browse 属性チップ後)、**2709 unit/component passed** (2712 total / 3 skipped・254 スイート・2026-10-03)。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
