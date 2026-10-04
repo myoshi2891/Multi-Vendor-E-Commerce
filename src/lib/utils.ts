@@ -154,37 +154,78 @@ export const parseProductFilters = (raw: unknown): ParsedProductFilters => {
     const input = raw as Record<string, unknown>;
     const filters: ProductFilters = {};
 
-    for (const key of SINGLE_VALUE_FILTER_KEYS) {
-        const value = input[key];
-        if (value === undefined || value === null || value === "") continue;
-        if (typeof value !== "string") return { kind: "invalid" };
-        const normalized = key === "search" ? value.trim() : value;
-        if (normalized !== "") filters[key] = normalized;
-    }
-
-    for (const key of ["size", "color"] as const) {
-        const value = input[key];
-        if (value === undefined || value === null || value === "") continue;
-        const values = Array.isArray(value) ? value : [value];
-        if (!values.every((v): v is string => typeof v === "string")) {
-            return { kind: "invalid" };
-        }
-        const nonEmpty = values.filter((v) => v !== "");
-        if (nonEmpty.length > 0) filters[key] = nonEmpty;
-    }
-
-    for (const key of ["minPrice", "maxPrice"] as const) {
-        const value = input[key];
-        if (typeof value === "number" && Number.isFinite(value)) {
-            filters[key] = value;
-        }
-    }
+    if (!applySingleValueFilters(input, filters)) return { kind: "invalid" };
+    if (!applyArrayFilters(input, filters)) return { kind: "invalid" };
+    applyPriceBounds(input, filters);
 
     const attributes = parseAttributeSelections(input.attributes);
     if (attributes === "invalid") return { kind: "invalid" };
     if (attributes !== undefined) filters.attributes = attributes;
 
     return { kind: "ok", filters };
+};
+
+/**
+ * 単一値フィルタ（search / store / category / subCategory / offer）を `filters` へ写す。
+ *
+ * @returns 文字列以外が来たら `false`（呼び出し側で `invalid` にする）
+ */
+const applySingleValueFilters = (
+    input: Record<string, unknown>,
+    filters: ProductFilters
+): boolean => {
+    for (const key of SINGLE_VALUE_FILTER_KEYS) {
+        const value = input[key];
+        if (value === undefined || value === null || value === "") continue;
+        if (typeof value !== "string") return false;
+        const normalized = key === "search" ? value.trim() : value;
+        if (normalized !== "") filters[key] = normalized;
+    }
+    return true;
+};
+
+/**
+ * size / color を配列へ揃えて `filters` へ写す。
+ *
+ * @returns 文字列以外の要素を含んだら `false`
+ */
+const applyArrayFilters = (
+    input: Record<string, unknown>,
+    filters: ProductFilters
+): boolean => {
+    for (const key of ["size", "color"] as const) {
+        const value = input[key];
+        if (value === undefined || value === null || value === "") continue;
+        const values = toNonEmptyStrings(value);
+        if (values === "invalid") return false;
+        if (values.length > 0) filters[key] = values;
+    }
+    return true;
+};
+
+/** minPrice / maxPrice は有限の number だけを採る（0 は有効な境界）。それ以外は無視する。 */
+const applyPriceBounds = (
+    input: Record<string, unknown>,
+    filters: ProductFilters
+): void => {
+    for (const key of ["minPrice", "maxPrice"] as const) {
+        const value = input[key];
+        if (typeof value === "number" && Number.isFinite(value)) {
+            filters[key] = value;
+        }
+    }
+};
+
+/**
+ * 単数または配列の値を「空文字を除いた文字列の配列」へ揃える。
+ * 文字列以外の要素を含んだら `"invalid"`。
+ */
+const toNonEmptyStrings = (value: unknown): string[] | "invalid" => {
+    const values = Array.isArray(value) ? value : [value];
+    if (!values.every((v): v is string => typeof v === "string")) {
+        return "invalid";
+    }
+    return values.filter((v) => v !== "");
 };
 
 /** 属性ファセットの選択の上限。巨大な入力で EXISTS 句が膨らまないようにする。 */
@@ -206,13 +247,13 @@ const parseAttributeSelections = (
     const selections: Record<string, string[]> = {};
     for (const [key, value] of entries) {
         if (!ATTRIBUTE_MACHINE_KEY_PATTERN.test(key)) return "invalid";
-        const values = Array.isArray(value) ? value : [value];
-        if (!values.every((v): v is string => typeof v === "string")) {
+        const values = toNonEmptyStrings(value);
+        if (values === "invalid") return "invalid";
+        // 上限は空文字を除く前の件数で見る（従来どおり）
+        if (Array.isArray(value) && value.length > MAX_VALUES_PER_ATTRIBUTE) {
             return "invalid";
         }
-        if (values.length > MAX_VALUES_PER_ATTRIBUTE) return "invalid";
-        const nonEmpty = values.filter((v) => v !== "");
-        if (nonEmpty.length > 0) selections[key] = nonEmpty;
+        if (values.length > 0) selections[key] = values;
     }
     return Object.keys(selections).length > 0 ? selections : undefined;
 };
