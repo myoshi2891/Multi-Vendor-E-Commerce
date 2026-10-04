@@ -54,7 +54,7 @@
 
 ### 2.1 件数
 
-2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
+2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。2026-10-05のoffers/dispute/report-problemは検証済み3追加、following/historyは実装済み・認証後実ルート検証保留2追加。現在は検証済み14・検証保留4・未適用28。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
 
 | 区分 | ページ定義 |
 |---|---:|
@@ -66,10 +66,10 @@
 
 | 判定 | 件数 |
 |---|---:|
-| 検証済み（2026-10-03） | 11 |
+| 検証済み（2026-10-05） | 14 |
 | 本体適用・周辺確認 | 12 |
-| 本体適用・検証保留 | 2 |
-| 未適用 | 33 |
+| 本体適用・検証保留 | 4 |
+| 未適用 | 28 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
 | **合計** | **66** |
@@ -91,19 +91,19 @@
 | `/compare` | 本体適用・周辺確認 | P2 | [src/app/(store)/compare/page.tsx](<../../src/app/(store)/compare/page.tsx>) |
 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/contact/page.tsx](<../../src/app/(store)/contact/page.tsx>) |
 | `/customer-service` | 検証済み（2026-10-01） | P2 | [src/app/(store)/customer-service/page.tsx](<../../src/app/(store)/customer-service/page.tsx>) |
-| `/dispute` | 未適用 | P2 | [src/app/(store)/dispute/page.tsx](<../../src/app/(store)/dispute/page.tsx>) |
+| `/dispute` | 検証済み（2026-10-05） | P2 | [src/app/(store)/dispute/page.tsx](<../../src/app/(store)/dispute/page.tsx>) |
 | `/faq` | 転送専用 | 回帰検証 | [src/app/(store)/faq/page.tsx](<../../src/app/(store)/faq/page.tsx>) |
 | `/faqs` | 本体適用・周辺確認 | P3 | [src/app/(store)/faqs/page.tsx](<../../src/app/(store)/faqs/page.tsx>) |
 | `/legal` | 未適用 | P3 | [src/app/(store)/legal/page.tsx](<../../src/app/(store)/legal/page.tsx>) |
-| `/offers` | 未適用 | P2 | [src/app/(store)/offers/page.tsx](<../../src/app/(store)/offers/page.tsx>) |
+| `/offers` | 検証済み（2026-10-05） | P2 | [src/app/(store)/offers/page.tsx](<../../src/app/(store)/offers/page.tsx>) |
 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/page.tsx](<../../src/app/(store)/page.tsx>) |
 | `/product-support` | 検証済み（2026-10-01） | P3 | [src/app/(store)/product-support/page.tsx](<../../src/app/(store)/product-support/page.tsx>) |
 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) |
 | `/product/[productSlug]` | 転送専用 | 回帰検証 | [src/app/(store)/product/[productSlug]/page.tsx](<../../src/app/(store)/product/[productSlug]/page.tsx>) |
 | `/profile/addresses` | 検証済み | P2 | [src/app/(store)/profile/addresses/page.tsx](<../../src/app/(store)/profile/addresses/page.tsx>) |
-| `/profile/following/[page]` | 未適用 | P2 | [src/app/(store)/profile/following/[page]/page.tsx](<../../src/app/(store)/profile/following/[page]/page.tsx>) |
+| `/profile/following/[page]` | 本体適用・検証保留（2026-10-05） | P2 | [src/app/(store)/profile/following/[page]/page.tsx](<../../src/app/(store)/profile/following/[page]/page.tsx>) |
 | `/profile/following` | 転送専用 | 回帰検証 | [src/app/(store)/profile/following/page.tsx](<../../src/app/(store)/profile/following/page.tsx>) |
-| `/profile/history/[page]` | 未適用 | P2 | [src/app/(store)/profile/history/[page]/page.tsx](<../../src/app/(store)/profile/history/[page]/page.tsx>) |
+| `/profile/history/[page]` | 本体適用・検証保留（2026-10-05） | P2 | [src/app/(store)/profile/history/[page]/page.tsx](<../../src/app/(store)/profile/history/[page]/page.tsx>) |
 | `/profile/history` | 転送専用 | 回帰検証 | [src/app/(store)/profile/history/page.tsx](<../../src/app/(store)/profile/history/page.tsx>) |
 | `/profile/messages` | 検証済み | P2 | [src/app/(store)/profile/messages/page.tsx](<../../src/app/(store)/profile/messages/page.tsx>) |
 | `/profile/orders/[filter]` | 検証済み | P2 | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../src/app/(store)/profile/orders/[filter]/page.tsx>) |
@@ -114,7 +114,7 @@
 | `/profile/settings` | 未適用 | P2 | [src/app/(store)/profile/settings/page.tsx](<../../src/app/(store)/profile/settings/page.tsx>) |
 | `/profile/wishlist/[page]` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../src/app/(store)/profile/wishlist/[page]/page.tsx>) |
 | `/profile/wishlist` | 転送専用 | 回帰検証 | [src/app/(store)/profile/wishlist/page.tsx](<../../src/app/(store)/profile/wishlist/page.tsx>) |
-| `/report-problem` | 未適用 | P2 | [src/app/(store)/report-problem/page.tsx](<../../src/app/(store)/report-problem/page.tsx>) |
+| `/report-problem` | 検証済み（2026-10-05） | P2 | [src/app/(store)/report-problem/page.tsx](<../../src/app/(store)/report-problem/page.tsx>) |
 | `/returns-exchange` | 検証済み（2026-10-01） | P2 | [src/app/(store)/returns-exchange/page.tsx](<../../src/app/(store)/returns-exchange/page.tsx>) |
 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/store/[storeUrl]/page.tsx](<../../src/app/(store)/store/[storeUrl]/page.tsx>) |
 | `/track-order` | 検証済み（2026-10-01） | P2 | [src/app/(store)/track-order/page.tsx](<../../src/app/(store)/track-order/page.tsx>) |
@@ -607,3 +607,19 @@ DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通C
 ### 購入導線の共通表示（追加対象 DS-COMP-204）
 
 - [ ] [src/components/store/shared/commerce.module.css](../../src/components/store/shared/commerce.module.css): 2画面の面・文字・focus・responsive・dialogをスコープ。実装あり、実ルート検証保留。
+
+### P2優先5画面移行チェック（2026-10-05）
+
+- [x] [保存計画](priority-five-design-system-plan.md)、14件の新要件Red確認、画面別Green/Refactor/文書同期を分割コミット。
+- [x] DS-PAGE-016/012/035: 実ルートChromium（公開3画面1440/768/390px）、hover/focus/Enter・validation/pending/error/retry/receipt・overflow・axe AAと画像目視。
+- [x] DS-PAGE-022/024: RTL・補助Chromium6/6、URL links/back・長文・follow/compare・loading/error/retry/empty・axe AA。未認証実ルート転送とalias/canonicalの回帰。
+- [x] 最終Jest2766/2769（3 skipped）、263 suites、127 snapshots、tsc/lint、SDD・QA・dashboard・[進捗](../../docs/design/design-system/PROGRESS.md#p2優先5画面移行記録)を同期。
+- [ ] DS-PAGE-022/024の認証後実ルート受け入れ検証。専用test DB不在で保留（実装あり）。補助fixtureを実ルート検証済み扱いにしない。
+
+### P2専用共通表示（追加対象）
+
+- [x] DS-COMP-205: [DesignPage](../../src/components/store/shared/design-page/design-page.tsx)と専用CSS。公開3画面で検証済み。
+- [ ] DS-COMP-206: [Account discovery](../../src/components/store/profile/shared/discovery.tsx)と専用CSS。補助検証済み、認証後実ルート保留。
+- [ ] DS-COMP-207: [HistoryContainer](../../src/components/store/profile/history/container.tsx)。補助検証済み、認証後実ルート保留。
+
+旧StoreCard/ProductCard/汎用Pagination、全体トークンをこの5画面だけで移行完了にしない。

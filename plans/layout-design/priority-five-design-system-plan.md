@@ -38,9 +38,9 @@
 
 ## 実施チェック
 
-- [ ] Step 1 Offers
-- [ ] Step 2 Dispute
-- [ ] Step 3 Report problem
-- [ ] Step 4 Following
-- [ ] Step 5 History
-- [ ] 最終検証・統計・文書同期
+- [x] Step 1 Offers
+- [x] Step 2 Dispute
+- [x] Step 3 Report problem
+- [ ] Step 4 Following（実装・補助検証完了、認証後実ルート保留）
+- [ ] Step 5 History（実装・補助検証完了、認証後実ルート保留）
+- [x] 最終検証・統計・文書同期

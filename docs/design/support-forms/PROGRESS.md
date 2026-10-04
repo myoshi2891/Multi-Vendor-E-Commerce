@@ -58,3 +58,8 @@ DS-PAGE-012。公開DesignPageとSupportForm appearance=brandを使用。DISPUTE
 ## 問題報告デザイン移行（2026-10-05）
 
 DS-PAGE-035。PROBLEM_REPORT、報告ラベル、既存フィールド（注文番号入力なし）とsubmitActionを保持してbrand表示を適用。Red 1件→関連10/10、tsc 0、lint 0 errors/12既存warnings。共有DesignPage再利用後に追加のRefactor差分なし。`4bda3231` / `3f35e4f1`。実ブラウザー最終検証待ち。
+
+
+### 最終受け入れ確認（2026-10-05）
+
+今回のdispute/report-problem本体は検証済み（contact/他サポート画面の移行状態は拡張しない）。公開3画面と2つの未認証転送を実ルートChromium11/11で確認。1440/768/390px、focus/keyboard・横溢れ・axe AA contrast・画像目視。送信はmock応答、実ticket作成なし。Offers空/失敗はRTL、フォームカテゴリーpayload回帰2/2。全体Jest2766/2769（3 skipped）、tsc0、lint0 errors/12既存warnings。[最終証跡](../design-system/PROGRESS.md#p2優先5画面移行記録)。

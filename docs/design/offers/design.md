@@ -51,60 +51,13 @@ src/components/store/layout/header/user-menu/
 
 ### 2.1 ページ `offers/page.tsx`
 
-```tsx
-// src/app/(store)/offers/page.tsx
-import type { Metadata } from "next";
-import Link from "next/link";
-import { getAllOfferTags } from "@/queries/offer-tag";
+実装正本は [OffersPage](<../../../src/app/(store)/offers/page.tsx>) と [DesignPage](../../../src/components/store/shared/design-page/design-page.tsx)。
 
-export const dynamic = "force-dynamic"; // Prisma 依存ページ規約（tech.md）
-
-export const metadata: Metadata = { title: "Discounts & Offers | Marketplace" };
-
-/**
- * プラットフォーム全体のオファー（OfferTag）一覧。
- * 商品グリッドは持たず、各オファーを /browse?offer=<url> へ誘導する（DRY）。
- * getAllOfferTags は src/queries 経由で Prisma を読むため force-dynamic を宣言する。
- */
-export default async function OffersPage() {
-    const offerTags = await getAllOfferTags();
-
-    if (offerTags.length === 0) {
-        return (
-            <main className="mx-auto max-w-5xl px-4 py-10">
-                <h1 className="mb-6 text-2xl font-bold">Discounts & Offers</h1>
-                <p className="text-muted-foreground">
-                    現在ご紹介できるオファーはありません。
-                </p>
-            </main>
-        );
-    }
-
-    return (
-        <main className="mx-auto max-w-5xl px-4 py-10">
-            <h1 className="mb-6 text-2xl font-bold">Discounts & Offers</h1>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {offerTags.map((tag) => (
-                    <Link
-                        key={tag.id}
-                        href={`/browse?offer=${tag.url}`}
-                        className="rounded-xl border p-5 transition hover:shadow-md"
-                    >
-                        <h2 className="font-semibold">{tag.name}</h2>
-                        <p className="text-sm text-muted-foreground">
-                            {tag.products.length} 商品
-                        </p>
-                    </Link>
-                ))}
-            </div>
-        </main>
-    );
-}
-```
-
-> **型安全**: `getAllOfferTags` の戻り値型（`OfferTag` に `products: { id }[]` を含む）をそのまま使い、`any` を導入しない。`tag.products.length` は事実 0-1 の include に基づく。
-
-> **オファーカードは MVP では意図的に軽量**: 上記グリッド内のカードは専用コンポーネントを切らず、インライン `<Link>`（`rounded-xl border p-5 hover:shadow-md`）で十分とする。背景・ホバー効果・余白などの詳細スタイリングは確定値ではなく、最終 UI レビューで**ホーム/ブラウズページのカード**と視覚的整合を取った上で詰める（本設計のクラスはプレースホルダ）。専用 `offer-card` コンポーネントへの抽出は、再利用箇所が増えた段階で follow-up として検討する。
+- async Server Component / force-dynamic / metadataを維持。
+- getAllOfferTagsをtry/catchし、成功はタグ順・商品数・browse URLをそのまま描画する。
+- 共有DesignPageのdeep-green hero/serif h1/パンくずとcream本文、CSS Moduleの1〜3列カードを使用。カードはページ内Linkを維持し、商品グリッドは追加しない。
+- 空は既存メッセージとcollectionリンク、失敗は汎用alertと`/offers`再読み込み。route loadingはstatusを通知。
+- query戻り値から型を推論し、`any`やデータモデル変更を追加しない。
 
 ### 2.2 変更: `user-menu.tsx`（Discounts & Offers 配線）
 
@@ -191,3 +144,8 @@ export default async function OffersPage() {
 ## P2デザイン移行（2026-10-05）
 
 DS-PAGE-016。共有opt-in DesignPageでパンくずとserif見出し、タグカード、空状態のcollection導線、取得失敗の汎用alertと再読み込み、route loadingを実装。タグ順・商品数・browse URLを維持。Red 2件→Green/Refactor 4/4、tsc 0、lint 0 errors/12既存warnings。実ブラウザー確認は最終検証で記録し、それまでは実装済み。コミット: `0195267c` / `1069ef25` / `5fea2f4a`。[保存計画](../../../plans/layout-design/priority-five-design-system-plan.md)。
+
+
+### 最終受け入れ確認（2026-10-05）
+
+対象公開画面は検証済み。公開3画面と2つの未認証転送を実ルートChromium11/11で確認。1440/768/390px、focus/keyboard・横溢れ・axe AA contrast・画像目視。送信はmock応答、実ticket作成なし。Offers空/失敗はRTL、フォームカテゴリーpayload回帰2/2。全体Jest2766/2769（3 skipped）、tsc0、lint0 errors/12既存warnings。[最終証跡](../design-system/PROGRESS.md#p2優先5画面移行記録)。

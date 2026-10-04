@@ -5137,3 +5137,14 @@ P1の `/checkout` と `/order/[orderId]` を深緑・アイボリー・ゴール
 | スイート数 | 254 | **257**（failed 0。plan 078 で Playwright spec を分母から除外） |
 | 型エラー | 0 件 | **0 件** |
 
+
+
+### P2優先5画面デザインシステム適用（2026-10-05）
+
+Offers・紛争申立・問題報告・フォロー店舗・閲覧履歴へ深緑/アイボリー/ゴールドとserif見出しを適用。画面別Red/Green/Refactorと仕様同期を分割コミット。公開3画面は検証済み、マイページ2画面は実装・補助検証済み/認証後実ルート保留。既存機能完了履歴は維持。[移行進捗](design/design-system/PROGRESS.md#p2優先5画面移行記録)、[保存計画](../plans/layout-design/priority-five-design-system-plan.md)。
+
+QA_HANDOFFの2026-10-05実測値を同期: Jest2766 passed/2769 total、263 suites（262 passed/1 skipped）、3 skipped、127 snapshots、tsc0。全体coverage83.16/69.26/77.45/83.24%、dashboard329 files/lcov349/18 of80 cells。公開Chromium11/11・補助Chromium6/6、lint0 errors/12既存warnings。旧値2742/2745・257 suitesはCOVERAGE_REPORT履歴へ保存。Integration/全E2E未実行。
+
+実装commit: Offers`1069ef25`、Dispute`89f5f198`、Report`3f35e4f1`、Following`e5c54728`、History`31492ef3`。検証commit: `c4724e29`/`c3b7eaa8`/`d04848cb`/`b22ccc44`。残課題は[QA](testing/QA_HANDOFF.md#ds-account-discovery-browser)を正本とする。
+
+本番ビルド `bun run build` exit0。既存metadataBase/OG glyph font警告あり。

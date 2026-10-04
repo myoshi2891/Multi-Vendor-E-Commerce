@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21（**最終更新**: 2026-10-03）/ **対応する成果物**: [`docs/coverage-dashboard.html`](./coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-10-05）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-04） | **2742 passed / 2745 total、3 skipped、127 snapshots passed、257 スイート（failed 0）**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。plan 077 の cookie 回帰 +3 と `bc4be297` の未同期分 +13。以前の記録: 2726 passed / 2729 total（2026-10-04・`extractAttributeParams` 空キー回帰後）。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
-| 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
-| テストファイル総数 | **321 ファイル**（2026-10-04 `bun run coverage:dashboard` 実測。QA_HANDOFF と一致）。以前の記録: **317 ファイル**（2026-10-04 移行前）、**314 ファイル**（2026-10-03 ダッシュボード実測）。 |
-| Jest スイート総数（unit/component のみ） | **257 スイート**（256 passed／1 skipped、2026-10-04 plans 077・078 後の全体実測）。以前の記録: **254 スイート**（2026-10-03 plans 073〜076 後）、**251 スイート**（2026-10-03 プロフィール住所の失敗ログ追加後）。 |
-| テスト総数 | **2742 unit/component passed** (2745 total / 3 skipped・**257 スイート**・2026-10-04 全体実測)。以前の記録: **2726 unit/component passed** (2729 total / 3 skipped・254 スイート・2026-10-04)。Integration **222** / 17 スイート（2026-10-04 実測・以前の記録: 221・2026-10-04）。以前の記録: **2725 unit/component passed** (2728 total・2026-10-04 browse 属性チップ後)、**2709 unit/component passed** (2712 total / 3 skipped・254 スイート・2026-10-03)。 |
+| Jestテスト総数（2026-10-05） | **2766 passed / 2769 total、3 skipped、127 snapshots passed、263 スイート（failed 0）**。全体coverage実行の実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| 全体coverage（2026-10-05） | Statements83.16%／Branches69.26%／Functions77.45%／Lines83.24%。Jest全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| テストファイル総数 | **329 ファイル**（2026-10-05 dashboard実測）。 |
+| Jest スイート総数（unit/component のみ） | **263 スイート**（262 passed／1 skipped、2026-10-05全体実測）。 |
+| テスト総数 | **2766 unit/component passed**（2769 total / 3 skipped / 263 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **18 / 80 (23%)** — 2026-09-27 ダッシュボード再生成時点（セル数は不変）。以下は 2026-09-04 の記録: 2026-09-04 ダッシュボード再生成時点（`coverage-dashboard.html` の `generatedAt` は `2026-09-04T10:53:05.804Z`）（`coverage-dashboard.html` の `coveredCells` と一致。値は 2026-06-06 の是正時から変わっていないが、**基準日は現行の生成物に合わせる**）。**直下の「lcov エントリ数」行とは基準日が割れうる**: 本行は生成物の `generatedAt`（＝最後に `bun run coverage:dashboard` を走らせた日）を指すのに対し、lcov 行は `coverage/lcov.info` を最後に**測り直した**日を指す。現在は本行 2026-09-04 / lcov 行 2026-09-03 と割れている（2026-09-03 に lcov を測り直した後、2026-09-04 に再生成のみを行ったための割れ方）。以下は履歴: 2026-09-01 再生成時点は本行 2026-09-01（`generatedAt` は `2026-09-01T03:56:03.888Z`）/ lcov 行 2026-08-11 と割れていた（「再生成しただけで測り直していない」正しい割れ方）。 2026-08-11 は再生成と測り直しが同時（PR #173 対応で lcov を再測定）で両行とも 2026-08-11 に揃っていた。 2026-08-09 の再生成は 2026-08-04 に測り直した lcov をそのまま読んでいたため、本行 2026-08-09 / lcov 行 2026-08-04 と割れていた（「再生成しただけで測り直していない」正しい割れ方。旧 `2026-07-28` の未同期は、生成物そのものを 2 つの日付で語っていた別種の誤り。旧 `17/80 (21%)` も同型） |
-| lcov エントリ数 | **328**（2026-09-30 PR#183 対応の全体coverage再測定後のダッシュボード実測。新規ソースなしのため不変）。以前の記録: **321** (2026-09-27 に `bun run test -- --coverage` で取り直したうえで `bun run coverage:dashboard` が parse した件数。増分は plan 069 と PR#180 の新規ソース。WebGL の `scene.tsx` は `collectCoverageFrom` から除外済みのため含まない)。以下は 303 時点までの記録: **303** (2026-09-03 に `coverage/lcov.info` を取り直したうえで `bun run coverage:dashboard` が parse した件数 —— 068 の新規ソースを含めてもエントリ数は 303 で変わらなかった。以下は 2026-08-11 時点の記録: 2026-08-11 の再測定・再生成時に parse した件数。本行はローカルの `coverage/lcov.info` に依存するため、生成物と同時にしか更新できない。カバレッジ率の SSOT は [`QA_HANDOFF.md`](./QA_HANDOFF.md) の lcov 実測行〔2026-08-11 実測: Statements **68.49%** / Branches **48.46%** / Functions **56.57%** / Lines **67.58%**。[`docs/PROGRESS.md`](../PROGRESS.md) の 2026-08-11 記録と一致〕。以下は履歴: 302（2026-08-04・2026-08-01 の再生成時。カバレッジ率は 67.71 / 48.00 / 55.48 / 66.79）／ 300（2026-07-18 以後の再生成）／ 297（2026-07-18 時点）。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
+| カバー済みセル | **18 / 80 (23%)**（2026-10-05 dashboard実測、変更なし）。 |
+| lcov エントリ数 | **349**（2026-10-05全体coverage再測定とdashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0 件** (2026-05-21 解消済み・2026-09-29 再確認) |
+| 型エラー | **0 件**（2026-10-05実測）。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -339,7 +339,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 
 ## 6. 関連ドキュメント
 
-- [`docs/coverage-dashboard.html`](./coverage-dashboard.html) — 視覚的ダッシュボード本体
+- [`docs/coverage-dashboard.html`](../coverage-dashboard.html) — 視覚的ダッシュボード本体
 - [`docs/testing/TESTING_DESIGN.md`](./TESTING_DESIGN.md) — テスト設計の全体方針
 - [`docs/testing/QA_TEST_PERSPECTIVES.md`](./QA_TEST_PERSPECTIVES.md) — QA 観点リスト
 - [`docs/testing/TEST_IMPLEMENTATION_PLAN.md`](./TEST_IMPLEMENTATION_PLAN.md) — 実装計画
@@ -562,3 +562,25 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 - `src/queries/user.ts` の 3 関数が `cookies-next@4` の同期 `getCookie` を使っており、Next 16 では cookie を読めなかった（住所 0 件の `/checkout` が 500、カート同期の送料が黙って 0）。`await cookies()` へ移行。
 - `user.test.ts`: モックを `cookies-next` から `next/headers` へ移し、回帰 +3（修正前のコードで 5 件が失敗することを確認済み）。全体 Jest 2742 passed / 2745 total / 258 スイート（`bc4be297` の未同期分を含む実測）。コミット前（HEAD `82627f85`）。
 - plan 078: `jest.config.js` の `testPathIgnorePatterns` に `/tests/browser/` を追加し、Playwright spec の Jest 誤収集（OI-15・CI exit 1）を解消。スイート 258 → 257、failed 0。
+
+### P2優先5画面の全体再測定（2026-10-05）
+
+更新前のExecutive Summary値を履歴へ移動（過去の機能履歴は維持）。
+
+<details>
+<summary>更新前の統計</summary>
+
+| 指標 | 過去の値 |
+|---|---|
+| Jestテスト総数（2026-10-04） | **2742 passed / 2745 total、3 skipped、127 snapshots passed、257 スイート（failed 0）**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。plan 077 の cookie 回帰 +3 と `bc4be297` の未同期分 +13。以前の記録: 2726 passed / 2729 total（2026-10-04・`extractAttributeParams` 空キー回帰後）。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
+| 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
+| テストファイル総数 | **321 ファイル**（2026-10-04 `bun run coverage:dashboard` 実測。QA_HANDOFF と一致）。以前の記録: **317 ファイル**（2026-10-04 移行前）、**314 ファイル**（2026-10-03 ダッシュボード実測）。 |
+| Jest スイート総数（unit/component のみ） | **257 スイート**（256 passed／1 skipped、2026-10-04 plans 077・078 後の全体実測）。以前の記録: **254 スイート**（2026-10-03 plans 073〜076 後）、**251 スイート**（2026-10-03 プロフィール住所の失敗ログ追加後）。 |
+| テスト総数 | **2742 unit/component passed** (2745 total / 3 skipped・**257 スイート**・2026-10-04 全体実測)。以前の記録: **2726 unit/component passed** (2729 total / 3 skipped・254 スイート・2026-10-04)。Integration **222** / 17 スイート（2026-10-04 実測・以前の記録: 221・2026-10-04）。以前の記録: **2725 unit/component passed** (2728 total・2026-10-04 browse 属性チップ後)、**2709 unit/component passed** (2712 total / 3 skipped・254 スイート・2026-10-03)。 |
+| カバー済みセル | **18 / 80 (23%)** — 2026-09-27 ダッシュボード再生成時点（セル数は不変）。以下は 2026-09-04 の記録: 2026-09-04 ダッシュボード再生成時点（`coverage-dashboard.html` の `generatedAt` は `2026-09-04T10:53:05.804Z`）（`coverage-dashboard.html` の `coveredCells` と一致。値は 2026-06-06 の是正時から変わっていないが、**基準日は現行の生成物に合わせる**）。**直下の「lcov エントリ数」行とは基準日が割れうる**: 本行は生成物の `generatedAt`（＝最後に `bun run coverage:dashboard` を走らせた日）を指すのに対し、lcov 行は `coverage/lcov.info` を最後に**測り直した**日を指す。現在は本行 2026-09-04 / lcov 行 2026-09-03 と割れている（2026-09-03 に lcov を測り直した後、2026-09-04 に再生成のみを行ったための割れ方）。以下は履歴: 2026-09-01 再生成時点は本行 2026-09-01（`generatedAt` は `2026-09-01T03:56:03.888Z`）/ lcov 行 2026-08-11 と割れていた（「再生成しただけで測り直していない」正しい割れ方）。 2026-08-11 は再生成と測り直しが同時（PR #173 対応で lcov を再測定）で両行とも 2026-08-11 に揃っていた。 2026-08-09 の再生成は 2026-08-04 に測り直した lcov をそのまま読んでいたため、本行 2026-08-09 / lcov 行 2026-08-04 と割れていた（「再生成しただけで測り直していない」正しい割れ方。旧 `2026-07-28` の未同期は、生成物そのものを 2 つの日付で語っていた別種の誤り。旧 `17/80 (21%)` も同型） |
+| lcov エントリ数 | **328**（2026-09-30 PR#183 対応の全体coverage再測定後のダッシュボード実測。新規ソースなしのため不変）。以前の記録: **321** (2026-09-27 に `bun run test -- --coverage` で取り直したうえで `bun run coverage:dashboard` が parse した件数。増分は plan 069 と PR#180 の新規ソース。WebGL の `scene.tsx` は `collectCoverageFrom` から除外済みのため含まない)。以下は 303 時点までの記録: **303** (2026-09-03 に `coverage/lcov.info` を取り直したうえで `bun run coverage:dashboard` が parse した件数 —— 068 の新規ソースを含めてもエントリ数は 303 で変わらなかった。以下は 2026-08-11 時点の記録: 2026-08-11 の再測定・再生成時に parse した件数。本行はローカルの `coverage/lcov.info` に依存するため、生成物と同時にしか更新できない。カバレッジ率の SSOT は [`QA_HANDOFF.md`](./QA_HANDOFF.md) の lcov 実測行〔2026-08-11 実測: Statements **68.49%** / Branches **48.46%** / Functions **56.57%** / Lines **67.58%**。[`docs/PROGRESS.md`](../PROGRESS.md) の 2026-08-11 記録と一致〕。以下は履歴: 302（2026-08-04・2026-08-01 の再生成時。カバレッジ率は 67.71 / 48.00 / 55.48 / 66.79）／ 300（2026-07-18 以後の再生成）／ 297（2026-07-18 時点）。`coverage/lcov.info` は `.gitignore` 対象で git 管理外。再生成は `bun run test -- --coverage`) |
+| 型エラー | **0 件** (2026-05-21 解消済み・2026-09-29 再確認) |
+
+</details>
+
+最新値はQA_HANDOFFから同期: 2766 passed / 2769 total、263 suites（262 passed/1 skipped）、3 skipped、127 snapshots。coverage 83.16/69.26/77.45/83.24%。dashboard329 files/lcov349/18 of80 cells。公開11/11、補助6/6。全体テスト+24/スイート+6（既存測定比）、Integrationと全E2E未実行。新規テストは既存のpages/store-uiセル内で、ヒートマップ分類変更なし。戦略: 購入/購入後サポートP2と再訪一覧を先行、認証後実ルートは保留。詳細は[進捗](../design/design-system/PROGRESS.md#p2優先5画面移行記録)。

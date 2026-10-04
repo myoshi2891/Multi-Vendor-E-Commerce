@@ -166,3 +166,10 @@ The branded cart shows persisted items after synchronization, preserves local it
 ## Purchase UI pending and recovery
 
 The checkout UI locks order submission while shipping/cart refresh, address save/reload or coupon submission is active. A refresh failure retains the last displayed data but keeps ordering locked until retry succeeds. Address selection changes remain serialized through the existing cart-write queue. Order success retains the duplicate guard through navigation even if cart cleanup fails. The order page keeps the established payment-visibility condition and mutually locks provider UI during payment. Script/initialization and transaction failures have readable feedback/retry; provider-side authorization, calculation and order state transitions are unchanged.
+
+## Discovery and public problem support
+
+1. Explore offers and follow the existing `/browse?offer=<url>` destination; empty results offer the collection and lookup failure reloads `/offers`.
+2. Submit a public dispute (UUID order number required) or problem report (no order-number field) with existing validation. Inputs lock while pending, failures retain drafts and allow retry, success announces receipt. No refund or order-state transition is added.
+3. After authentication, revisit followed stores and toggle follow with per-store pending lock and failure/success feedback. Navigate by URL page links or browser back/forward.
+4. Read browser productHistory after hydration, retrieve variant IDs in their saved order, use existing editorial product actions, and page by URL. Malformed storage is empty; unavailable storage/query failures retry. Out-of-range results fetch the last valid page and replace the URL; cleanup discards previous-page responses.

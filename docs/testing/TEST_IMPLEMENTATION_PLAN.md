@@ -1057,3 +1057,16 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 - RTL先行Red4件、Green/Refactor、関連18 suites420/420、isolated Chromium11/11を確認。[計画](../../plans/layout-design/checkout-order-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#checkout-order移行記録)。
 - Supplemental fixtureは実ルートの認証後検証を代替しない。専用DB不足により全体Step完了は保留。[QA](QA_HANDOFF.md#ds-purchase-browser)。
+
+
+## P2優先5画面デザイン移行（2026-10-05）
+
+| Step | TDD・テスト実装 | 画面受け入れ |
+|---|---|---|
+| 1 Offers | ✅ Completed (2026-10-05) | 実ルート検証済み |
+| 2 Dispute | ✅ Completed (2026-10-05) | 実ルート検証済み |
+| 3 Report problem | ✅ Completed (2026-10-05) | 実ルート検証済み |
+| 4 Following | ✅ TDD・補助検証 Completed (2026-10-05) | 認証後実ルート保留 |
+| 5 History | ✅ TDD・補助検証 Completed (2026-10-05) | 認証後実ルート保留 |
+
+既存機能の回帰10件はRed不要の回帰確認。公開11/11・補助6/6・Jest全体2766/2769（3 skipped）。[計画](../../plans/layout-design/priority-five-design-system-plan.md)、[移行証跡](../design/design-system/PROGRESS.md#p2優先5画面移行記録)。保留理由と解除条件は[QA](QA_HANDOFF.md#ds-account-discovery-browser)。
