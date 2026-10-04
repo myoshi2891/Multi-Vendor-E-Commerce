@@ -758,3 +758,5 @@ C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了済
 Offers実装済み。RTL 4/4（部分実行）、tsc 0、lint errors 0/既存warnings 12。`0195267c` / `1069ef25` / `5fea2f4a`。最終ブラウザー検証と全体Jest測定後に統計同期予定。
 
 - Dispute実装済み: Red 1、関連Jest9/9、tsc 0、lint errors 0。公開実ルート200、表示確認待ち。`0ab9d890` / `89f5f198` / `a2c7ddb2`。
+
+- Report problem実装済み: Red 1、関連Jest10/10、tsc 0、lint errors 0。`4bda3231` / `3f35e4f1`。実ブラウザー確認中。

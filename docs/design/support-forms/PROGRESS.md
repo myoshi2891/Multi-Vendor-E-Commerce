@@ -53,3 +53,8 @@ DS-PAGE-036と共通フォームDS-COMP-093のブランド表示を検証済み�
 ## 紛争画面デザイン移行（2026-10-05）
 
 DS-PAGE-012。公開DesignPageとSupportForm appearance=brandを使用。DISPUTE、必須UUID注文番号、申立ラベルと既存submitActionを維持。パンくずとCustomer service導線。Red 1件、Green/Refactor共通フォーム込み9/9、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。ブラウザー確認待ちのため実装済み。[計画](../../../plans/layout-design/priority-five-design-system-plan.md)。
+
+
+## 問題報告デザイン移行（2026-10-05）
+
+DS-PAGE-035。PROBLEM_REPORT、報告ラベル、既存フィールド（注文番号入力なし）とsubmitActionを保持してbrand表示を適用。Red 1件→関連10/10、tsc 0、lint 0 errors/12既存warnings。共有DesignPage再利用後に追加のRefactor差分なし。`4bda3231` / `3f35e4f1`。実ブラウザー最終検証待ち。

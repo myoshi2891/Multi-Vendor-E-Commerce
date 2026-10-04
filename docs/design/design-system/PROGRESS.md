@@ -76,7 +76,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-032 | `/profile/settings` | 未適用 | P2 | TODO | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | 未実施 |
 | DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
-| DS-PAGE-035 | `/report-problem` | 未適用 | P2 | 対応中 | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
+| DS-PAGE-035 | `/report-problem` | 本体適用・周辺確認 | P2 | 実装済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
 | DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録) |
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | 未実施 |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録) |
@@ -607,3 +607,5 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - Offers: RTL新要件Red 2件、Green/Refactor 4/4、tsc 0、lint 0 errors/12既存warnings。`0195267c`→`1069ef25`→`5fea2f4a`。ブラウザー検証待ち。
 
 - Dispute: Red 1件→Green/Refactor 9/9（SupportForm含む）、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。公開実ルートHTTP 200確認、表示・操作検証待ち。
+
+- Report problem: Red 1件→関連10/10、tsc 0、lint 0 errors/12既存warnings。`4bda3231` / `3f35e4f1`。共有部品再利用後のRefactor差分なし。

@@ -10,7 +10,7 @@
 
 1. Offers: 深緑/アイボリー/ゴールド、serif見出し、細い罫線、一覧/空/読込/失敗。既存タグ順・商品数・browseリンク維持。
 2. Dispute: ブランドフォームとパンくず。DISPUTE/必須UUID注文番号/申立ラベルを維持。
-3. Report problem: 同じフォーム表示、PROBLEM_REPORT/任意注文番号/報告ラベルを維持。
+3. Report problem: 同じフォーム表示、PROBLEM_REPORT/注文番号欄なし/報告ラベルを維持。
 4. Following: 専用ブランド店舗カード、店舗リンク、空/読込/失敗、Action Propsによるfollow操作、pending重複防止、成功/失敗通知。URLリンクページングと範囲補正維持。
 5. History: Server→Client Action Props境界、localStorage productHistoryの既存順、editorial商品カード、読込/空/失敗・再試行、URLページング・範囲補正維持。不正保存値は安全な空状態、storageアクセス失敗は再試行可能なエラー。
 
