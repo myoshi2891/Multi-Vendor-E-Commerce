@@ -8,6 +8,7 @@ import type {
     ProductFilters as ProductFilterParams,
 } from "@/lib/types";
 import {
+    ATTRIBUTE_PARAM_PREFIX,
     extractAttributeParams,
     normalizePageParam,
     normalizePriceParam,
@@ -188,6 +189,16 @@ export default async function BrowsePage({
         redirect(buildBrowseHref(query, canonicalPage));
     }
 
+    // フィルタのチップ・Clear All に attr.<key> の選択も載せる。ファセットはカテゴリ選択時しか
+    // 返らない（集計失敗時も空）ため、ファセット側の UI に頼ると、getProducts は絞り込むのに
+    // 選択が画面に出ず解除もできなくなる。繰り返し値（配列）はそのまま渡す。
+    const attributeQueries = Object.fromEntries(
+        Object.entries(query).filter(
+            ([key, value]) =>
+                key.startsWith(ATTRIBUTE_PARAM_PREFIX) && value !== undefined
+        )
+    );
+
     const searchTerm = typeof search === "string" ? search.trim() : "";
     const resultCount = totalCount ?? products.length;
 
@@ -220,7 +231,7 @@ export default async function BrowsePage({
                         <p className={styles.sectionLabel}>REFINE YOUR SEARCH</p>
                         <FilterPanel>
                             <ProductFilters
-                                queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color }}
+                                queries={{ category, offer, search, size, sort, subCategory, maxPrice, minPrice, color, ...attributeQueries }}
                                 facets={facets}
                             />
                         </FilterPanel>

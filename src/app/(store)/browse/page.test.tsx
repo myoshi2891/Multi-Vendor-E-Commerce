@@ -46,8 +46,18 @@ jest.mock("@/components/store/browse-page/browse-pagination", () => ({
 }));
 jest.mock("@/components/store/browse-page/filters", () => ({
     __esModule: true,
-    default: ({ facets }: { facets?: { key: string }[] }) => (
-        <div data-testid="filters" data-facet-keys={(facets ?? []).map((f) => f.key).join(",")} />
+    default: ({
+        facets,
+        queries,
+    }: {
+        facets?: { key: string }[];
+        queries?: Record<string, unknown>;
+    }) => (
+        <div
+            data-testid="filters"
+            data-facet-keys={(facets ?? []).map((f) => f.key).join(",")}
+            data-queries={JSON.stringify(queries ?? {})}
+        />
     ),
 }));
 jest.mock("@/components/store/browse-page/sort", () => ({
@@ -578,5 +588,51 @@ describe("BrowsePage — 旧 ?subCategory= の 308 正準化", () => {
         // Assert
         expect(screen.getByTestId("product-list")).toHaveTextContent("2");
         expect(screen.getByTestId("filters")).toHaveAttribute("data-facet-keys", "");
+    });
+
+    it("ファセットが無くても（カテゴリ未選択）attr.<key> の選択をチップ用の queries へ渡す（繰り返し値も保つ）", async () => {
+        // Arrange — getProductFacets はカテゴリ未選択で [] を返す。queries に載せないと
+        // getProducts は絞り込むのに画面に選択が出ず、解除もできない
+        mockProductsResult(1, 1);
+        const query = {
+            ...makeQuery({}),
+            "attr.material": ["wool", "silk"],
+            "attr.fit": "slim",
+        };
+
+        // Act
+        render(await BrowsePage({ searchParams: Promise.resolve(query) }));
+
+        // Assert
+        const queries = JSON.parse(
+            screen.getByTestId("filters").getAttribute("data-queries") ?? "{}"
+        );
+        expect(queries).toMatchObject({
+            "attr.material": ["wool", "silk"],
+            "attr.fit": "slim",
+        });
+        expect(screen.getByTestId("filters")).toHaveAttribute("data-facet-keys", "");
+    });
+
+    it("ファセットの集計に失敗しても、他のフィルタと attr.<key> の選択は queries に残る（Clear All の対象）", async () => {
+        // Arrange
+        mockProductsResult(1, 1);
+        mockGetProductFacets.mockRejectedValueOnce(new Error("facet query failed"));
+        const query = {
+            ...makeQuery({ category: "fashion" }),
+            "attr.material": "wool",
+        };
+
+        // Act
+        render(await BrowsePage({ searchParams: Promise.resolve(query) }));
+
+        // Assert
+        const queries = JSON.parse(
+            screen.getByTestId("filters").getAttribute("data-queries") ?? "{}"
+        );
+        expect(queries).toMatchObject({
+            category: "fashion",
+            "attr.material": "wool",
+        });
     });
 });
