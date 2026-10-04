@@ -29,6 +29,20 @@ describe("buildPrefixTsQuery", () => {
         expect(buildPrefixTsQuery("café 東京")).toBe("café & 東京:*");
     });
 
+    it("小数・バージョン表記は 1 語として扱う（to_tsvector が 2.5 を 1 つの lexeme にするため）", () => {
+        // "2 & 5:*" に割ると、to_tsvector('simple', 'Size 2.5') の '2.5' に一致しない
+        expect(buildPrefixTsQuery("size 2.5")).toBe("size & 2.5:*");
+        expect(buildPrefixTsQuery("2.5 inch")).toBe("2.5 & inch:*");
+        expect(buildPrefixTsQuery("1.2.3")).toBe("1.2.3:*");
+    });
+
+    it("数字に続かないドットや末尾のドットは区切りとして捨てる", () => {
+        // PostgreSQL のパーサーも "10." は uint の 10、"1.5x" は float 1.5 + "x" に分ける
+        expect(buildPrefixTsQuery("10.")).toBe("10:*");
+        expect(buildPrefixTsQuery("1.5x")).toBe("1.5 & x:*");
+        expect(buildPrefixTsQuery("2.5.")).toBe("2.5:*");
+    });
+
     it("トークンが 1 つも無い入力は null を返す（呼び出し側で空結果にする）", () => {
         expect(buildPrefixTsQuery("")).toBeNull();
         expect(buildPrefixTsQuery("   ")).toBeNull();
