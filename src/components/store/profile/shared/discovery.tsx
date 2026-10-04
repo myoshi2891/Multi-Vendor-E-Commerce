@@ -15,7 +15,7 @@ export function DiscoveryHeading({
             <h1>{title}</h1>
             <p>{description}</p>
             <Link href="/browse" className={styles.collection}>
-                Explore the collection
+                Browse the collection
             </Link>
         </header>
     );
