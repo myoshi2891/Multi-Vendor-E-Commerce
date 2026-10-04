@@ -16,9 +16,9 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2723 passed / 2726 total / 254 スイート**（253 passed / 1 skipped suite、3 skipped tests、127 snapshots）。2026-10-04 作業ツリー全体を `bun run test` で実測（PR #187 レビュー対応・`buildPrefixTsQuery` の小数トークン回帰テスト追加後）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest テスト総数 (unit/component) | **2725 passed / 2728 total / 254 スイート**（253 passed / 1 skipped suite、3 skipped tests、127 snapshots）。2026-10-04 作業ツリー全体を `bun run test` で実測（PR #187 レビュー対応・browse の `attr.*` チップ回帰 +2 後。以前の記録: 2723 / 2726・`buildPrefixTsQuery` の小数トークン回帰テスト追加後）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | カバレッジ全体（lcov **2026-09-30 実測**・PR#183 SonarCloud New Code 対応後） | Statements **80.97%** (8268/10211) / Branches **68.02%** (4408/6480) / Functions **74.24%** (1482/1996) / Lines **80.79%** (7497/9279)。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| Jest Integration テスト総数 | **219** / **17 スイート**（**2026-10-04 実測: 219/219 pass**・`bun run test:integration`。PR #187 レビュー対応で `search-products.test.ts` に非 ACTIVE 店舗の除外シナリオ 13b を +1。以前の記録: 218・2026-10-03）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest Integration テスト総数 | **221** / **17 スイート**（**2026-10-04 実測: 221/221 pass**・`bun run test:integration`。PR #187 レビュー対応で `search-products.test.ts` に非 ACTIVE 店舗の除外 13b・表示できる画像の無い商品の除外 11b・関連画像での代替 11c を +3。以前の記録: 218・2026-10-03）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
@@ -217,7 +217,7 @@
 
 ### 残課題
 
-- 現在、アクティブな残課題は **OI-11 / OI-10 / C2** の 3 件です（優先度・次の一手は[アクティブな残課題テーブル](#active-open-issues)を SSOT として参照）。**OI-9（ホーム `/` の SSR 500）は 2026-06-06 に解消済み**（`c196e3d5`。2026-07-26 に E2E 実測でクローズ確認）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
+- 現在、アクティブな残課題は **OI-11 / OI-10 / OI-12 / OI-13 / OI-14 / C2** の 6 件です（優先度・次の一手は[アクティブな残課題テーブル](#active-open-issues)を SSOT として参照）。**OI-9（ホーム `/` の SSR 500）は 2026-06-06 に解消済み**（`c196e3d5`。2026-07-26 に E2E 実測でクローズ確認）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
