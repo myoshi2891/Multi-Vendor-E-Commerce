@@ -105,11 +105,7 @@ jest.mock("./product", () => ({
     getDeliveryDetailsForStoreByCountry: jest.fn(),
 }));
 
-// cookies-nextのモック化
-jest.mock("cookies-next", () => ({
-    getCookie: jest.fn(),
-}));
-
+// userCountry cookie は next/headers の cookies() 経由で読む（mockCountryCookie 参照）
 jest.mock("next/headers", () => ({
     cookies: jest.fn(),
 }));
@@ -119,10 +115,32 @@ const mockGetShippingDetails = require("./product").getShippingDetails;
 const mockGetDeliveryDetails =
     require("./product").getDeliveryDetailsForStoreByCountry;
 const mockGetProductShippingFee = require("./product").getProductShippingFee;
-const mockGetCookie = require("cookies-next").getCookie;
+const mockCookies = require("next/headers").cookies;
+
+/**
+ * `next/headers` の `cookies()` を、`userCountry` に `value` を持つ cookie ストアとして解決させる。
+ * `value` 省略時は cookie 未設定を表す。
+ */
+const mockCountryCookie = (value?: string): void => {
+    mockCookies.mockResolvedValue({
+        get: jest.fn((name: string) =>
+            name === "userCountry" && value !== undefined
+                ? { name, value }
+                : undefined
+        ),
+    });
+};
+
+const JAPAN_COOKIE = JSON.stringify({
+    name: "Japan",
+    code: "JP",
+    city: "",
+    region: "",
+});
 
 beforeEach(() => {
     jest.clearAllMocks();
+    mockCountryCookie();
 });
 
 // ==================================================
@@ -248,7 +266,7 @@ describe("saveUserCart", () => {
             // 既存カートなし
             mockDb.cart.findFirst.mockResolvedValue(null);
             // Cookie未設定
-            mockGetCookie.mockReturnValue(null);
+            mockCountryCookie();
         });
 
         it("無効な商品/バリアント/サイズの組合せでエラーをスローする", async () => {
@@ -541,9 +559,7 @@ describe("saveUserCart", () => {
 
         it("国Cookieが設定されている場合は配送料を計算する", async () => {
             const cartProducts = [createMockCartProduct({ quantity: 1 })];
-            mockGetCookie.mockReturnValue(
-                JSON.stringify({ name: "Japan", code: "JP" })
-            );
+            mockCountryCookie(JSON.stringify({ name: "Japan", code: "JP" }));
             mockGetShippingDetails.mockResolvedValue({
                 shippingFee: 5.0,
                 extraShippingFee: 2.0,
@@ -559,13 +575,36 @@ describe("saveUserCart", () => {
             expect(mockGetShippingDetails).toHaveBeenCalled();
         });
 
+        it("next/headers の userCountry cookie から国を解決して配送料を計算する", async () => {
+            // Arrange: Next 16 では cookie は await cookies() 経由でしか読めない
+            const cartProducts = [createMockCartProduct({ quantity: 1 })];
+            mockCountryCookie(JAPAN_COOKIE);
+            mockGetShippingDetails.mockResolvedValue({
+                shippingFee: 5.0,
+                extraShippingFee: 2.0,
+                isFreeShipping: false,
+            });
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockDb.cart.create.mockResolvedValue({ id: "cart-new" });
+
+            // Act
+            await saveUserCart(cartProducts as never);
+
+            // Assert: 国が解決され、送料計算に渡っている（0 円に落ちない）
+            expect(mockGetShippingDetails).toHaveBeenCalledTimes(1);
+            // 第 2 引数 = 解決された国
+            expect(mockGetShippingDetails.mock.calls[0][1]).toEqual(
+                expect.objectContaining({ name: "Japan", code: "JP" })
+            );
+        });
+
         it("在庫0で validQuantity が0になっても ITEM 方式の配送料が負にならない", async () => {
             // Arrange: ITEM 方式・在庫 0。追加個数は max(0, 0-1) = 0 個として扱われ、
             // 基本配送料のみが残るべき。追加配送料を「マイナス 1 個分」引いてはならない。
             const cartProducts = [createMockCartProduct({ quantity: 1 })];
-            mockGetCookie.mockReturnValue(
-                JSON.stringify({ name: "Japan", code: "JP" })
-            );
+            mockCountryCookie(JSON.stringify({ name: "Japan", code: "JP" }));
             mockGetShippingDetails.mockResolvedValue({
                 shippingFee: 10,
                 extraShippingFee: 3,
@@ -1810,7 +1849,7 @@ describe("updateCartWithLatest", () => {
         let warnSpy: jest.SpyInstance;
 
         beforeEach(() => {
-            mockGetCookie.mockReturnValue(null);
+            mockCountryCookie();
             warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
         });
 
@@ -1923,7 +1962,7 @@ describe("updateCartWithLatest", () => {
 
     describe("最新データの反映", () => {
         beforeEach(() => {
-            mockGetCookie.mockReturnValue(null);
+            mockCountryCookie();
         });
 
         it("DBから最新の価格・在庫情報を取得して返す", async () => {
@@ -1967,6 +2006,26 @@ describe("updateCartWithLatest", () => {
             const result = await updateCartWithLatest(cartProducts as never);
 
             expect(result[0].price).toBe(75); // 100 - (100 * 25 / 100)
+        });
+
+        it("next/headers の userCountry cookie から国を解決して配送詳細を取得する", async () => {
+            // Arrange
+            const cartProducts = [createMockCartProduct({ quantity: 1 })];
+            mockCountryCookie(JAPAN_COOKIE);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockGetShippingDetails.mockResolvedValue(false);
+
+            // Act
+            await updateCartWithLatest(cartProducts as never);
+
+            // Assert
+            expect(mockGetShippingDetails).toHaveBeenCalledTimes(1);
+            // 第 2 引数 = 解決された国
+            expect(mockGetShippingDetails.mock.calls[0][1]).toEqual(
+                expect.objectContaining({ name: "Japan", code: "JP" })
+            );
         });
     });
 });
@@ -2111,7 +2170,7 @@ describe("updateCheckoutProductWithLatest", () => {
 
     describe("チェックアウト時の再検証", () => {
         beforeEach(() => {
-            mockGetCookie.mockReturnValue(null);
+            mockCountryCookie();
         });
 
         it("DB最新情報で価格・数量・配送料を再計算する", async () => {
@@ -2235,7 +2294,7 @@ describe("updateCheckoutProductWithLatest", () => {
             const dbProduct = createMockFullProduct();
 
             mockDb.product.findUnique.mockResolvedValue(dbProduct);
-            mockGetCookie.mockReturnValue(null); // Cookie なし
+            mockCountryCookie(); // Cookie なし
 
             await expect(
                 updateCheckoutProductWithLatest(
@@ -2243,6 +2302,40 @@ describe("updateCheckoutProductWithLatest", () => {
                     undefined as never // address も undefined
                 )
             ).rejects.toThrow("Couldn't retrieve country data.");
+        });
+
+        it("住所未選択でも next/headers の userCountry cookie から国を解決する", async () => {
+            // Arrange: 住所 0 件のユーザーは address=undefined で呼ばれる（/checkout の 500 回帰）
+            const cartItems = [createMockCartItem({ quantity: 1 })];
+            mockCountryCookie(JAPAN_COOKIE);
+            mockDb.product.findUnique.mockResolvedValue(
+                createMockFullProduct()
+            );
+            mockGetProductShippingFee.mockResolvedValue(
+                new Prisma.Decimal("0")
+            );
+            mockDb.cartItem.update.mockResolvedValue(
+                createMockCartItem({ price: 29.99, quantity: 1 })
+            );
+            mockDb.cart.findUnique.mockResolvedValue({ coupon: null });
+            mockDb.cart.update.mockResolvedValue({
+                ...createMockCart(),
+                cartItems: [createMockCartItem()],
+                coupon: null,
+            });
+
+            // Act
+            await updateCheckoutProductWithLatest(
+                cartItems as never,
+                undefined
+            );
+
+            // Assert
+            expect(mockGetProductShippingFee).toHaveBeenCalledTimes(1);
+            // 第 2 引数 = 解決された国
+            expect(mockGetProductShippingFee.mock.calls[0][1]).toEqual(
+                expect.objectContaining({ name: "Japan", code: "JP" })
+            );
         });
 
         it("PLATFORMスコープでcoupon.store=nullでもTypeErrorにならず全item割引対象になる", async () => {
