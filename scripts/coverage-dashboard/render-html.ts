@@ -264,11 +264,11 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     },
     {
         priority: "medium",
-        title: "FS-CHIPS: フィルタ見出しに属性ファセットの選択（attr.*）を含める",
+        title: "FS-CHIPS: 属性ファセットの選択チップに属性名と値ラベルを表示する",
         target: "src/components/store/browse-page/filters/header.tsx（DS-COMP-059）",
         tool: "RTL + design-system-workflow + a11y/browse.spec.ts",
         cost: "S",
-        impact: "選択中の属性が見出しの件数とチップに表示され、1 つずつ外せるようになる",
+        impact: "attr.* のチップが生の値ではなく「属性名: 値ラベル」で表示され、どの属性で絞り込んでいるかが分かる（件数・解除は実装済み）",
     },
     {
         priority: "medium",

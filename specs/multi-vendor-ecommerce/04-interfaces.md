@@ -52,7 +52,7 @@ Dashboard:
 - `POST /api/setUserCountryInCookies` set user country cookie
 - `GET /api/index-products` paginated search results
 - `POST /api/index-products` search suggestions for autocomplete
-- `GET /api/search-products?q=` header search suggestions (plan 073): up to 8 `SearchResult` items (`id`, `name`, `link` = `/product/<productSlug>/<first variant slug>`, `image` = that variant's `variantImage`) ordered by `ts_rank` on `searchVector` then `id`; products without a variant are excluded inside the SQL (before `LIMIT`). `search` is accepted as a legacy alias. Input without letters or digits returns `[]`.
+- `GET /api/search-products?q=` header search suggestions (plan 073): up to 8 `SearchResult` items (`id`, `name`, `link` = `/product/<productSlug>/<first displayable variant slug>`, `image` = that variant's `variantImage` (primary), or the URL of its oldest related `ProductVariantImage` with a non-empty `url` when `variantImage` is empty) ordered by `ts_rank` on `searchVector` then `id`; products without a displayable variant (non-empty `variantImage` or a related image with a non-empty `url`) are excluded inside the SQL (before `LIMIT`). `search` is accepted as a legacy alias. Input without letters or digits returns `[]`.
 - `POST /api/webhooks` Clerk webhook (user sync); uses Svix SDK-verified
   `evt.data` for payload extraction. User upsert uses immutable Clerk user
   ID as lookup key (not email). Deletion uses `deleteMany` for idempotent
