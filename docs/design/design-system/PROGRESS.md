@@ -63,7 +63,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-020 | `/product/[productSlug]` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/product/[productSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-021 | `/profile/addresses` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/addresses/page.tsx](<../../../src/app/(store)/profile/addresses/page.tsx>) | [addresses実施記録](#profile-addresses移行記録) |
-| DS-PAGE-022 | `/profile/following/[page]` | 未適用 | P2 | 対応中 | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
+| DS-PAGE-022 | `/profile/following/[page]` | 本体適用・周辺確認 | P2 | 実装済み | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
 | DS-PAGE-023 | `/profile/following` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/following/page.tsx](<../../../src/app/(store)/profile/following/page.tsx>) | 未実施 |
 | DS-PAGE-024 | `/profile/history/[page]` | 未適用 | P2 | 対応中 | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
 | DS-PAGE-025 | `/profile/history` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/history/page.tsx](<../../../src/app/(store)/profile/history/page.tsx>) | 未実施 |
@@ -609,3 +609,5 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - Dispute: Red 1件→Green/Refactor 9/9（SupportForm含む）、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。公開実ルートHTTP 200確認、表示・操作検証待ち。
 
 - Report problem: Red 1件→関連10/10、tsc 0、lint 0 errors/12既存warnings。`4bda3231` / `3f35e4f1`。共有部品再利用後のRefactor差分なし。
+
+- Following: Red4件→Green4/4→Refactor関連18/18、tsc0、lint0 errors/12既存warnings。`1ed94eaf` / `e5c54728` / `982f13b5`。旧共有StoreCard/Paginationは未移行を維持。認証後検証待ち。

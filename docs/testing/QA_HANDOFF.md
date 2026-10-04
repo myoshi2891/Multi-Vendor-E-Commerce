@@ -760,3 +760,5 @@ Offers実装済み。RTL 4/4（部分実行）、tsc 0、lint errors 0/既存war
 - Dispute実装済み: Red 1、関連Jest9/9、tsc 0、lint errors 0。公開実ルート200、表示確認待ち。`0ab9d890` / `89f5f198` / `a2c7ddb2`。
 
 - Report problem実装済み: Red 1、関連Jest10/10、tsc 0、lint errors 0。`4bda3231` / `3f35e4f1`。実ブラウザー確認中。
+
+- Following実装済み: Red4、関連18/18、tsc0、lint errors0。`1ed94eaf` / `e5c54728` / `982f13b5`。認証後実ルート検証環境を確認中。
