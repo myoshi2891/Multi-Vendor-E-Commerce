@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-04） | **2726 passed / 2729 total、3 skipped、127 snapshots passed**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
+| Jestテスト総数（2026-10-04） | **2742 passed / 2745 total、3 skipped、127 snapshots passed、257 スイート（failed 0）**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。plan 077 の cookie 回帰 +3 と `bc4be297` の未同期分 +13。以前の記録: 2726 passed / 2729 total（2026-10-04・`extractAttributeParams` 空キー回帰後）。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
 | 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
 | テストファイル総数 | **321 ファイル**（2026-10-04 `bun run coverage:dashboard` 実測。QA_HANDOFF と一致）。以前の記録: **317 ファイル**（2026-10-04 移行前）、**314 ファイル**（2026-10-03 ダッシュボード実測）。 |
 | Jest スイート総数（unit/component のみ） | **254 スイート**（253 passed／1 skipped、2026-10-03 plans 073〜076 後の全体実測）。以前の記録: **251 スイート**（2026-10-03 プロフィール住所の失敗ログ追加後）。 |
-| テスト総数 | **2726 unit/component passed** (2729 total / 3 skipped・**254 スイート**・2026-10-04 全体実測)。Integration **222** / 17 スイート（2026-10-04 実測・以前の記録: 221・2026-10-04）。以前の記録: **2725 unit/component passed** (2728 total・2026-10-04 browse 属性チップ後)、**2709 unit/component passed** (2712 total / 3 skipped・254 スイート・2026-10-03)。 |
+| テスト総数 | **2742 unit/component passed** (2745 total / 3 skipped・**257 スイート**・2026-10-04 全体実測)。以前の記録: **2726 unit/component passed** (2729 total / 3 skipped・254 スイート・2026-10-04)。Integration **222** / 17 スイート（2026-10-04 実測・以前の記録: 221・2026-10-04）。以前の記録: **2725 unit/component passed** (2728 total・2026-10-04 browse 属性チップ後)、**2709 unit/component passed** (2712 total / 3 skipped・254 スイート・2026-10-03)。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)** — 2026-09-27 ダッシュボード再生成時点（セル数は不変）。以下は 2026-09-04 の記録: 2026-09-04 ダッシュボード再生成時点（`coverage-dashboard.html` の `generatedAt` は `2026-09-04T10:53:05.804Z`）（`coverage-dashboard.html` の `coveredCells` と一致。値は 2026-06-06 の是正時から変わっていないが、**基準日は現行の生成物に合わせる**）。**直下の「lcov エントリ数」行とは基準日が割れうる**: 本行は生成物の `generatedAt`（＝最後に `bun run coverage:dashboard` を走らせた日）を指すのに対し、lcov 行は `coverage/lcov.info` を最後に**測り直した**日を指す。現在は本行 2026-09-04 / lcov 行 2026-09-03 と割れている（2026-09-03 に lcov を測り直した後、2026-09-04 に再生成のみを行ったための割れ方）。以下は履歴: 2026-09-01 再生成時点は本行 2026-09-01（`generatedAt` は `2026-09-01T03:56:03.888Z`）/ lcov 行 2026-08-11 と割れていた（「再生成しただけで測り直していない」正しい割れ方）。 2026-08-11 は再生成と測り直しが同時（PR #173 対応で lcov を再測定）で両行とも 2026-08-11 に揃っていた。 2026-08-09 の再生成は 2026-08-04 に測り直した lcov をそのまま読んでいたため、本行 2026-08-09 / lcov 行 2026-08-04 と割れていた（「再生成しただけで測り直していない」正しい割れ方。旧 `2026-07-28` の未同期は、生成物そのものを 2 つの日付で語っていた別種の誤り。旧 `17/80 (21%)` も同型） |
@@ -556,3 +556,9 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 
 - test file走査317→321を実測（RTL3ファイルとsupplemental browser1ファイル）。lcov328／18/80セル（23%）は不変。新コードのcoverage率は未測定、全体Jest統計は前回実測値を維持する。
 - 表示と購入操作の回帰に対して関連Jest420/420、独立fixture Chromium11/11。[証跡](../design/design-system/PROGRESS.md#checkout-order移行記録)。認証後実ルートの完了とは区別し、環境依存の未検証範囲は[QA](QA_HANDOFF.md#ds-purchase-browser)で追跡する。
+
+### 2026-10-04 — plan 077: Server Action の userCountry cookie 読み取り修正
+
+- `src/queries/user.ts` の 3 関数が `cookies-next@4` の同期 `getCookie` を使っており、Next 16 では cookie を読めなかった（住所 0 件の `/checkout` が 500、カート同期の送料が黙って 0）。`await cookies()` へ移行。
+- `user.test.ts`: モックを `cookies-next` から `next/headers` へ移し、回帰 +3（修正前のコードで 5 件が失敗することを確認済み）。全体 Jest 2742 passed / 2745 total / 258 スイート（`bc4be297` の未同期分を含む実測）。コミット前（HEAD `82627f85`）。
+- plan 078: `jest.config.js` の `testPathIgnorePatterns` に `/tests/browser/` を追加し、Playwright spec の Jest 誤収集（OI-15・CI exit 1）を解消。スイート 258 → 257、failed 0。

@@ -5113,3 +5113,27 @@ PR #187 のレビュー指摘 3 件（ADR-008 の D-1/D-2 記述、PROGRESS の 
 P1の `/checkout` と `/order/[orderId]` を深緑・アイボリー・ゴールドのレスポンシブ購入UIへ移行。住所radio／dialog・action Props、購入中ロック／retry、注文集計1つ、plain invoice投影、決済読込・失敗表示を整備。関連Jest420/420、supplemental Chromium11/11、lint0 errors／既存12 warnings、型チェック成功。
 
 専用テストDBがないため認証後実ルートとSDK実描画は保留（実装あり）。[進捗ノート](design/design-system/PROGRESS.md#checkout-order移行記録)と[QA](testing/QA_HANDOFF.md#ds-purchase-browser)に証跡・解除条件を記録。ダッシュボード走査は321 files、lcov328／18/80セル（23%）。このファイル数はQA_HANDOFFの実測値から同期し、全体Jest・coverage率を部分実行から推定しない。
+
+### plan 077: Server Action の userCountry cookie 読み取り修正（2026-10-04、未コミット）
+
+#### 概要
+
+`/checkout` で住所 0 件のとき `updateCheckoutProductWithLatest` が `Couldn't retrieve country data.` で 500 になっていた。原因は `cookies-next@4` の同期 `getCookie` で、Next 16 の `cookies()` は Promise のため常に `undefined` を返す。同じ書き方の `saveUserCart` / `updateCartWithLatest` では、送料が黙って 0 になっていた。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/user.ts` | 3 関数の cookie 読み取りを `(await cookies()).get("userCountry")?.value` に置き換え、ループ外で 1 回だけ読む。`cookies-next` の import を削除 | 未コミット |
+| `src/queries/user.test.ts` | `next/headers` をモックする `mockCountryCookie` を追加し既存モックを移行。回帰 +3（Red 確認済み） | 未コミット |
+| `plans/077-fix-server-action-country-cookie.md` | 計画 | 未コミット |
+| `jest.config.js` / `plans/078-exclude-playwright-browser-specs-from-jest.md` | `testPathIgnorePatterns` に `/tests/browser/` を追加（OI-15: Playwright spec の Jest 誤収集で CI が exit 1） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 2726 passed / 2729 total | **2742 passed / 2745 total**（`bc4be297` 分 +13 を含む） |
+| スイート数 | 254 | **257**（failed 0。plan 078 で Playwright spec を分母から除外） |
+| 型エラー | 0 件 | **0 件** |
+
