@@ -3,7 +3,10 @@ import FilterPanel from "@/components/store/browse-page/filter-panel";
 import ProductFilters from "@/components/store/browse-page/filters";
 import ProductSort from "@/components/store/browse-page/sort";
 import ProductList from "@/components/store/shared/product-list";
-import { FiltersQueryType } from "@/lib/types";
+import type {
+    FiltersQueryType,
+    ProductFilters as ProductFilterParams,
+} from "@/lib/types";
 import {
     extractAttributeParams,
     normalizePageParam,
@@ -154,7 +157,7 @@ export default async function BrowsePage({
     // Infinity / NaN / 小数 / 0 以下は 1 ページ目、MAX_PAGE 超は上限へクランプする。
     const currentPage = normalizePageParam(page);
 
-    const filters = {
+    const filters: ProductFilterParams = {
         search,
         category,
         subCategory,
