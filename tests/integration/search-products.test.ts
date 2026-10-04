@@ -32,6 +32,7 @@
  */
 import type { PrismaClient, Product } from "@prisma/client";
 import { GET } from "@/app/api/search-products/route";
+import { productDerivedColumnsUpdateSql } from "@/lib/product-derived-columns";
 import { getSubcategories } from "@/queries/subCategory";
 import { disconnectTestDb, getTestDb } from "./setup/db";
 import { resetDb } from "./setup/reset-db";
@@ -282,12 +283,8 @@ describe("検索ベクトルの対象列（plan 074 / ADR-008）", () => {
             data: { keywords: "tourmaline,beryl" },
         });
         // searchKeywords はアプリ層（upsertProduct の tx）が書く非正規化列。
-        // ここでは直接の DB 更新なので、同じ SQL（backfill と同形）で再計算しておく。
-        await db.$executeRaw`
-            UPDATE "Product" p SET "searchKeywords" = COALESCE((
-                SELECT string_agg(replace(pv."keywords", ',', ' '), ' ')
-                FROM "ProductVariant" pv WHERE pv."productId" = p."id" AND pv."keywords" IS NOT NULL
-            ), '') WHERE p."id" = ${a.id}`;
+        // ここでは直接の DB 更新なので、アプリと同じ導出 SQL で再計算しておく。
+        await db.$executeRaw(productDerivedColumnsUpdateSql(a.id));
 
         // Act
         const { body } = await search("beryl");

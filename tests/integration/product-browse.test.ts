@@ -36,6 +36,7 @@ jest.mock("@clerk/nextjs/server", () => ({
 // ----------------------------------------------------------------------------
 
 import { Prisma } from "@prisma/client";
+import { productDerivedColumnsUpdateSql } from "@/lib/product-derived-columns";
 import type { ProductFacet, ProductFilters } from "@/lib/types";
 import { getProductFacets, getProducts } from "@/queries/product";
 import { disconnectTestDb, getTestDb } from "./setup/db";
@@ -128,22 +129,16 @@ async function arrangeCatalog() {
     });
 
     // 価格ソートが使う非正規化列 minPrice を埋める。アプリの書き込み経路
-    // （recomputeProductDerivedColumns）を通さずに行を作っているので、マイグレーションの
-    // backfill と同じ SQL で導出する（同期そのものは product-update.test.ts が検証する）。
+    // （recomputeProductDerivedColumns）を通さずに行を作っているので、アプリと同じ
+    // 導出 SQL を流す（同期そのものは product-update.test.ts が検証する）。
     await fillMinPrice();
 
     return { store, cat1, cat2, a, b, c };
 }
 
-/** 全商品の minPrice を、Size の price / discount から導出し直す（backfill と同じ式）。 */
+/** 全商品の非正規化列（minPrice / searchKeywords）を、アプリと同じ導出 SQL で埋め直す。 */
 async function fillMinPrice(): Promise<void> {
-    await db.$executeRaw`
-        UPDATE "Product" p SET "minPrice" = (
-            SELECT round(min(s."price" * (1 - s."discount"::numeric / 100)), 2)
-            FROM "ProductVariant" pv
-            JOIN "Size" s ON s."productVariantId" = pv."id"
-            WHERE pv."productId" = p."id"
-        )`;
+    await db.$executeRaw(productDerivedColumnsUpdateSql());
 }
 
 /** 返却された products の id 配列（並び順を保つ） */
