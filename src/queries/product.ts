@@ -98,10 +98,8 @@ type ProductTransactionClient = Parameters<
  * なったり価格ソートの位置がずれたりするだけなので、新しい書き込み経路を足すときは
  * レビューで必ず確認する。
  *
- * **行ロックは UPDATE とは別の文で先に取る。** READ COMMITTED のスナップショットは文の
- * 開始時に決まるため、UPDATE 自身が行ロック待ちになると、待機中に並行 tx がコミットした
- * バリアント・サイズを導出式のサブクエリが読めず、古い集計で上書きしてしまう。
- * `FOR UPDATE` で待ち切ってから UPDATE を始めれば、新しいスナップショットで再計算される。
+ * 既存商品への書き込み経路では、tx の先頭で `lockProductRow` を取っておくこと
+ * （ロックはここでは取らない）。
  *
  * @param tx - 呼び出し元の `db.$transaction` が渡すトランザクションクライアント
  * @param productId - 再計算する商品の id
@@ -110,10 +108,32 @@ const recomputeProductDerivedColumns = async (
     tx: ProductTransactionClient,
     productId: string
 ): Promise<void> => {
+    await tx.$executeRaw(productDerivedColumnsUpdateSql(productId));
+};
+
+/**
+ * 既存商品の Product 行を `FOR UPDATE` で掴み、同じ商品への書き込み tx を直列化する。
+ *
+ * **`lockAttributeCategoryPath` の直後・子テーブルへの書き込みより前に呼ぶこと。**
+ * - 子行（バリアント・サイズ等）の INSERT は FK で Product に `FOR KEY SHARE` を取る。
+ *   子を書いた後で `FOR UPDATE` を要求すると、並行する 2 tx が互いの KEY SHARE を待って
+ *   デッドロックする。
+ * - READ COMMITTED のスナップショットは文の開始時に決まる。先に待ち切っておけば、
+ *   `recomputeProductDerivedColumns` の UPDATE は並行 tx がコミットしたバリアント・サイズを
+ *   読んで再計算できる（古い集計で上書きしない）。
+ *
+ * 新規作成（`handleProductCreate`）では行がまだ他 tx から見えないため呼ばない。
+ *
+ * @param tx - 呼び出し元の `db.$transaction` が渡すトランザクションクライアント
+ * @param productId - 掴む商品の id
+ */
+const lockProductRow = async (
+    tx: ProductTransactionClient,
+    productId: string
+): Promise<void> => {
     await tx.$queryRaw`
         SELECT "id" FROM "Product" WHERE "id" = ${productId} FOR UPDATE
     `;
-    await tx.$executeRaw(productDerivedColumnsUpdateSql(productId));
 };
 
 /** リーフ検証で読む Category ノードの最小形。 */
@@ -517,6 +537,7 @@ const handleVariantCreate = async (
     // 属性の同期（VARIANT スコープの必須を含む）とバリアント作成を 1 tx に入れる
     const new_variant = await db.$transaction(async (tx) => {
         await lockAttributeCategoryPath(tx, attributes.context.categoryNodeId);
+        await lockProductRow(tx, product.productId);
         const created = await tx.productVariant.create({ data: variantData });
         await syncAttributeValues(tx, attributes.context, attributes.inputs);
         await recomputeProductDerivedColumns(tx, created.productId);
@@ -566,6 +587,7 @@ const handleProductAndVariantUpdate = async (
     await db.$transaction(async (tx) => {
         // 属性の継承元を id 昇順で先に掴む（handleProductCreate と同じ理由）
         await lockAttributeCategoryPath(tx, attributes.context.categoryNodeId);
+        await lockProductRow(tx, product.productId);
 
         // V-5: 紐づけ先がリーフであることを、書き込みと同じ tx 内で（ロックを
         // 握ったまま）検証する。カテゴリを変えない更新は経過措置として素通しする。

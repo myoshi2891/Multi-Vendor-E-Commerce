@@ -485,6 +485,36 @@ describe("Scenario: searchKeywords follows every keyword write path", () => {
         expect(await idsMatchingSearchVector("basalt")).toEqual([seeded.product.id]);
     });
 
+    it("keeps both variants' keywords when two variants are added concurrently", async () => {
+        // Arrange — 子行の INSERT は FK で Product に FOR KEY SHARE を取る。Product の行ロックを
+        // 子の書き込みより後に取ると、並行する 2 tx が互いの KEY SHARE を待ってデッドロックする。
+        const { store, seeded } = await arrangeSeller();
+        const addVariant = (variantName: string, sku: string, keyword: string) =>
+            upsertProduct(
+                buildUpdateInput(seeded, {
+                    variantId: randomUUID(),
+                    variantName,
+                    sku,
+                    keywords: [keyword],
+                }),
+                store.url
+            );
+
+        // Act — 同じ商品へ handleVariantCreate を並行実行
+        const results = await Promise.allSettled([
+            addVariant("Concurrent Variant A", "SKU-CONC-A", "andesite"),
+            addVariant("Concurrent Variant B", "SKU-CONC-B", "rhyolite"),
+        ]);
+
+        // Assert — 両方成功し、どちらの keywords も導出列に残る
+        expect(results.map((r) => r.status)).toEqual(["fulfilled", "fulfilled"]);
+        const product = await db.product.findUniqueOrThrow({
+            where: { id: seeded.product.id },
+        });
+        expect(product.searchKeywords).toContain("andesite");
+        expect(product.searchKeywords).toContain("rhyolite");
+    });
+
     it("makes variant names and descriptions searchable like the former ILIKE path", async () => {
         // Arrange — 旧 getProducts の検索は variantName / variantDescription も ILIKE で見ていた。
         // searchKeywords に入れないと、ブラウズ検索を searchVector へ移した時点で退行する（plan 075）。
