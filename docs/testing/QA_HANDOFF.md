@@ -483,7 +483,12 @@ locator('h1').filter({ hasText: 'GoShop' }) を待って全ブラウザで失敗
 確認すること:
 1. 外部要因か（Clerk 開発インスタンスの一時障害・レート制限・ネットワーク）を判定する:
    時間を置いて bun run test:e2e:local -- tests/e2e/auth-surface.spec.ts --project=chromium を再実行し、同じ FAPI エラーが出るか。
-2. クリーン DB 起因か: run-local.sh（共有の開発 DB）で同じ spec を実行し、結果を比較する。
+2. クリーン DB 起因か: 使い捨て DB で同じ spec を単独実行し、フルランの結果と比較する。
+   run-local.sh は共有の開発 DB（multivendor_dev）へ migrate deploy / seed:e2e を流すため使わない（OI-13 と同じ手順）:
+   docker compose exec -T db createdb -U dev e2e_auth_check
+   DATABASE_URL / DIRECT_URL / E2E_DATABASE_URL をその DB に向け、E2E_NO_REUSE=1 PORT=3100 E2E_BASE_URL=http://localhost:3100 で
+   bunx prisma migrate deploy → bun run seed:e2e → bunx playwright test tests/e2e/auth-surface.spec.ts --project=chromium --retries=2
+   終わったら dropdb で消す。
    クリーン DB には Clerk のユーザーと DB の User 行の対応が無いため、seed:e2e が作る E2E ユーザーで足りているか確認する。
 3. 再現する場合、失敗箇所（setupClerkTestingToken / signIn ヘルパー / ストア取得 "Store with URL e2e-status-store-... not found"）を
    ログから特定し、テスト基盤の問題かアプリの問題かを分ける。アプリ側の退行が疑われる場合は git worktree で HEAD と比較する。
