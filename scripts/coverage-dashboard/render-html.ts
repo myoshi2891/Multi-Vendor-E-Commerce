@@ -249,7 +249,7 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     {
         priority: "high",
         title: "FS-COMMIT: plans 073〜076 の未コミット作業をコミット分割して PR にする",
-        target: "作業ツリー全体（HEAD 3277d8a5 上・マイグレーション 4 本はローカルのみ適用）",
+        target: "作業ツリー全体（HEAD 86b9c786 上・マイグレーション 4 本はローカルのみ適用）",
         tool: "git（.claude/rules/02-tdd-step-commit.md の分割規約）",
         cost: "M",
         impact: "サジェスト復旧・並び順の決定性・検索ベクトル・全件の価格ソート・属性ファセットを main へ届ける。PR にデプロイ時の migrate deploy 必須を明記",
