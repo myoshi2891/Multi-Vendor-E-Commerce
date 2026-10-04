@@ -58,7 +58,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [010](010-unit-test-compute-shipping-total.md) | Unit-test `computeShippingTotal` (shipping-fee SSOT) | tests | P3 | — | DONE |
 | [013](013-spike-category-tree-n-level.md) | **Spike**: カテゴリ体系の N 階層ツリー化設計 | direction | P2 | — | DONE |
 | [014](014-spike-category-attributes-facets.md) | **Spike**: カテゴリ別属性スキーマ（ファセット基盤）設計 | direction | P2 | — | DONE |
-| [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | — | DONE（2026-10-03） |
+| [015](015-spike-faceted-search-and-browse.md) | **Spike**: ファセット検索・ブラウズ統合設計 | direction | P2 | — | DONE（2026-10-03・a83a9837〜28ef76dc） |
 | [023](023-bound-and-validate-public-search-pagination.md) | 公開検索ページングの境界・検証 | security | P2 | — | DONE |
 | [024](024-validate-usercountry-cookie-write.md) | userCountry cookie 書き込みの検証 | security | P3 | — | DONE |
 | [026](026-unit-test-paypal-error-branches.md) | `paypal.ts` エラー経路分岐の unit テスト（B 28.6%→90%+） | tests | P2 | — | DONE |

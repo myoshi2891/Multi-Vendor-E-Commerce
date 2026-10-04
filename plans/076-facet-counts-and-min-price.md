@@ -173,4 +173,4 @@ CREATE INDEX "Product_minPrice_id_idx" ON "Product" ("minPrice", "id");
 - E2E: seed に `e2e_finish`（facetable ENUM）を追加し、`search-filter.spec.ts` にファセット選択のスモークを追加。
   a11y の `/browse` スキャンは seed カテゴリで絞った URL に変更（素の /browse は tie-breaker で seed 商品が 1 ページ目に来る保証が無いため）。
 - 価格の絞り込みの意味（定価か割引後か）は変えず、`specs/multi-vendor-ecommerce/08-open-questions.md` に起票。
-- 残課題: フィルタ見出しの「Filter (n)」件数と選択中チップに属性の選択が含まれない（`FiltersHeader` は既存 `queries` の項目のみを数える）。
+- 残課題: 属性の選択はフィルタ見出しの「Filter (n)」件数と選択中チップに含まれるが（`225e8d76` で `attr.<key>` を `FiltersHeader` の `queries` へ渡すよう修正）、チップのラベルは option の表示名ではなく生の値を表示する。
