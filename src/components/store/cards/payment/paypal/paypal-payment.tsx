@@ -57,7 +57,7 @@ export default function PaypalPayment({
                 paymentIdRef.current
             );
             if (response.id) router.refresh();
-            else release();
+            else fail(new Error("PayPal capture returned no id."));
         } catch (err) {
             fail(err);
             throw err;

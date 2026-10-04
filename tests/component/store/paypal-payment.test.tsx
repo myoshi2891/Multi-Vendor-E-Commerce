@@ -127,10 +127,14 @@ describe("PaypalPayment", () => {
         });
     });
 
-    it("does not refresh when the capture response has no id", async () => {
+    it("does not refresh and shows the failure alert when the capture response has no id", async () => {
         // Arrange: 実装は `if (captureResponse.id) router.refresh()`。
         // この false 側を固定しないと、capture が失敗しても画面を更新して
         // 「支払い済み」に見せてしまう回帰を検出できない。
+        // また無言でボタンを戻すだけだと利用者は失敗に気付けないため、アラートも固定する。
+        const consoleSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
         (createPayPalPayment as jest.Mock).mockResolvedValue({
             id: PAYPAL_PAYMENT_ID,
         });
@@ -156,7 +160,11 @@ describe("PaypalPayment", () => {
         await waitFor(() => {
             expect(capturePayPalPayment).toHaveBeenCalled();
         });
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "PayPal payment failed. Please try again."
+        );
         expect(mockRefresh).not.toHaveBeenCalled();
+        consoleSpy.mockRestore();
     });
 
     it("logs the SDK error through onError", async () => {
