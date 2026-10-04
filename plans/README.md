@@ -104,9 +104,9 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [066](066-implement-category-tree-schema.md) | カテゴリツリー Phase A: スキーマ拡張・SubCategory 統合・互換レイヤー（013 の後続実装 1/3） | direction | P2 | 013 | DONE |
 | [067](067-implement-category-tree-queries.md) | カテゴリツリー Phase B: 読み取りをサブツリー prefix へ切替（013 の後続実装 2/3） | direction | P2 | 066 | DONE |
 | [069](069-implement-category-attributes.md) | カテゴリ別属性の実装（属性定義 CRUD + 動的フォーム + パイロット部門シード・014 の後続実装）。Step 1 実測: `Spec` 153 行・不正 0・孤児 0 / Step 2: `multiValued` 列 + 部分 UNIQUE（多値は ENUM 限定） | direction | P2 | 014 | DONE |
-| [073](073-fix-search-suggest-and-browse-tiebreaker.md) | ヘッダー検索サジェスト復旧 + ブラウズ並び順の tie-breaker（015 で発見した既存バグ） | bug | P2 | — | DONE（2026-10-03・未コミット） |
-| [074](074-product-search-vector-column.md) | 重み付き検索ベクトル列（brand・keywords）+ GIN（ADR-008・015 の後続実装 1/3） | migration | P2 | 073 | DONE（2026-10-03・未コミット） |
-| [075](075-unify-browse-search-and-type-filters.md) | ブラウズ検索の検索ベクトル統合 + `ProductFilters` 型付け + slug 並列解決（015 の後続実装 2/3） | direction | P2 | 074 | DONE（2026-10-03・未コミット） |
-| [076](076-facet-counts-and-min-price.md) | 属性ファセット件数 + `minPrice` 非正規化で価格ソートを全件に適用（015 の後続実装 3/3） | direction | P2 | 075 | DONE（2026-10-03・未コミット） |
+| [073](073-fix-search-suggest-and-browse-tiebreaker.md) | ヘッダー検索サジェスト復旧 + ブラウズ並び順の tie-breaker（015 で発見した既存バグ） | bug | P2 | — | DONE（2026-10-03・43b401d5〜86b9c786） |
+| [074](074-product-search-vector-column.md) | 重み付き検索ベクトル列（brand・keywords）+ GIN（ADR-008・015 の後続実装 1/3） | migration | P2 | 073 | DONE（2026-10-03・43b401d5〜86b9c786） |
+| [075](075-unify-browse-search-and-type-filters.md) | ブラウズ検索の検索ベクトル統合 + `ProductFilters` 型付け + slug 並列解決（015 の後続実装 2/3） | direction | P2 | 074 | DONE（2026-10-03・43b401d5〜86b9c786） |
+| [076](076-facet-counts-and-min-price.md) | 属性ファセット件数 + `minPrice` 非正規化で価格ソートを全件に適用（015 の後続実装 3/3） | direction | P2 | 075 | DONE（2026-10-03・43b401d5〜86b9c786） |
 
 </details>

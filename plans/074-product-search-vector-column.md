@@ -91,8 +91,11 @@
 ```sql
 ALTER TABLE "Product" ADD COLUMN "searchKeywords" TEXT NOT NULL DEFAULT '';
 UPDATE "Product" p SET "searchKeywords" = COALESCE((
-    SELECT string_agg(replace(pv.keywords, ',', ' '), ' ' ORDER BY pv.id)
-    FROM "ProductVariant" pv WHERE pv."productId" = p.id
+    SELECT string_agg(
+        concat_ws(' ', pv."variantName", pv."variantDescription", replace(pv."keywords", ',', ' ')),
+        ' ' ORDER BY pv."createdAt", pv."id"
+    )
+    FROM "ProductVariant" pv WHERE pv."productId" = p."id"
 ), '');
 ALTER TABLE "Product" ADD COLUMN "searchVector" tsvector GENERATED ALWAYS AS (
     setweight(to_tsvector('simple', "name"), 'A') ||
@@ -102,6 +105,10 @@ ALTER TABLE "Product" ADD COLUMN "searchVector" tsvector GENERATED ALWAYS AS (
 ) STORED;
 CREATE INDEX "Product_searchVector_idx" ON "Product" USING GIN ("searchVector");
 ```
+
+バリアントの名前・説明・keywords の 3 つを `createdAt, id` 順に連結する（`concat_ws` は NULL を読み飛ばす）。
+実施時は 074 のマイグレーションが keywords だけを backfill し、名前・説明は 075 の
+`20261003120200_search_keywords_variant_text` で加えた（既存マイグレーションは編集しない）。
 
 schema.prisma の `Product` に `searchKeywords String @default("")` と `searchVector Unsupported("tsvector")?` を追加する。
 **`Product_fulltext_idx` はこのステップでは消さない**（Step 4 で消す）。
@@ -114,7 +121,8 @@ schema.prisma の `Product` に `searchKeywords String @default("")` と `search
    `Product.searchKeywords` がそれを含み、`"searchVector" @@ plainto_tsquery('simple', '<keyword>')` で見つかること
 2. `src/queries/product.ts` に `recomputeProductDerivedColumns(tx: Prisma.TransactionClient, productId: string): Promise<void>` を追加する
    （JSDoc 付き。plan 076 で `minPrice` もここで再計算するので、名前は汎用にしておく）。
-   中身は Step 1 の UPDATE を 1 商品に限定した `tx.$executeRaw(Prisma.sql\`…\`)`
+   中身は Step 1 の UPDATE（名前・説明・keywords の 3 つを含む導出）を 1 商品に限定した `tx.$executeRaw(Prisma.sql\`…\`)`。
+   導出 SQL は `src/lib/product-derived-columns.ts` の `productDerivedColumnsUpdateSql` を唯一の定義として再利用する
 3. keywords を書き込む 3 経路（`:352` / `:448` / `:623` の各 tx）の末尾で呼ぶ
 
 **Verify**: Integration の行 → 追加したテストが pass する。
@@ -180,6 +188,15 @@ ADR-008 の Status を `Accepted` にし、`docs/architecture/decisions/README.m
   空の DB へ全 23 本を通しで適用できることも確認（使い捨て DB `e2e_vrt_check`）。
 - 本番相当（Neon）の PostgreSQL は **17.11**（`SHOW server_version` を読み取りのみで確認）。新マイグレーションはリモート未適用
   （デプロイ時の `migrate deploy` の担当）。
+- **デプロイ時のロック**: `20261003120000` の `STORED` 生成列の追加は `Product` を書き直し、その間
+  `ACCESS EXCLUSIVE` で読み書きとも止まる。同ファイルと `20261003120300` の `CREATE INDEX`
+  （`CONCURRENTLY` なし）は完了まで `Product` への書き込みを止め、`20261003120100` の `DROP INDEX` も
+  短時間 `ACCESS EXCLUSIVE` を取る。`20261003120200` / `20261003120300` の全件 UPDATE は全行をロックする。
+  Prisma はマイグレーションを tx 内で流すため `CONCURRENTLY` は書けない。行数が多い環境では
+  **低トラフィックの時間帯に流す**か、インデックスを先に Prisma の外で
+  `CREATE INDEX CONCURRENTLY`（同名）で作り、マイグレーション側の `CREATE INDEX` を当該環境で
+  実行しない手順（`prisma migrate resolve --applied <name>` で適用済みにする。この場合は同じファイルの
+  列追加・UPDATE も手で流す）を採ること。
 - `recomputeProductDerivedColumns` を 3 経路の tx 末尾から呼ぶ。後に 075/076 で導出 SQL を
   `src/lib/product-derived-columns.ts` へ一元化した（seed も同じ SQL を使う —— 下記 076 参照）。
 - 重み付けにより、既存の統合シナリオ 3 の期待値（description 3 回の B が先頭）は**意図どおり反転**（name 1 回の A が先頭）。
