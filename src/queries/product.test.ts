@@ -568,9 +568,15 @@ describe("upsertProduct", () => {
                 TEST_CONFIG.TEST_STORE_URL
             );
 
-            // Assert —— 検証そのものを走らせない（ロックも引かない）
+            // Assert —— 検証そのものを走らせない（Category のロックも引かない）。
+            // $queryRaw 自体は導出列再計算の Product 行ロックで呼ばれるため、SQL で区別する
             expect(mockDb.product.update).toHaveBeenCalled();
-            expect(mockDb.$queryRaw).not.toHaveBeenCalled();
+            const queriedSql: string[] = mockDb.$queryRaw.mock.calls.map(
+                ([strings]: [TemplateStringsArray]) => strings.join("?")
+            );
+            expect(queriedSql.some((sql) => sql.includes('"Category"'))).toBe(
+                false
+            );
         });
 
         it("V-5c: categoryId 据え置きでリーフ FK だけを非リーフへ差し替える更新を拒否する", async () => {

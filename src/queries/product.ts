@@ -98,6 +98,11 @@ type ProductTransactionClient = Parameters<
  * なったり価格ソートの位置がずれたりするだけなので、新しい書き込み経路を足すときは
  * レビューで必ず確認する。
  *
+ * **行ロックは UPDATE とは別の文で先に取る。** READ COMMITTED のスナップショットは文の
+ * 開始時に決まるため、UPDATE 自身が行ロック待ちになると、待機中に並行 tx がコミットした
+ * バリアント・サイズを導出式のサブクエリが読めず、古い集計で上書きしてしまう。
+ * `FOR UPDATE` で待ち切ってから UPDATE を始めれば、新しいスナップショットで再計算される。
+ *
  * @param tx - 呼び出し元の `db.$transaction` が渡すトランザクションクライアント
  * @param productId - 再計算する商品の id
  */
@@ -105,6 +110,9 @@ const recomputeProductDerivedColumns = async (
     tx: ProductTransactionClient,
     productId: string
 ): Promise<void> => {
+    await tx.$queryRaw`
+        SELECT "id" FROM "Product" WHERE "id" = ${productId} FOR UPDATE
+    `;
     await tx.$executeRaw(productDerivedColumnsUpdateSql(productId));
 };
 
