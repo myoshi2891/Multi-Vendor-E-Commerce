@@ -367,3 +367,8 @@ export async function createSupportTicket(
 3. `bun run dev` → ゲスト状態で `/contact` 送信 → `bunx prisma studio` で `SupportTicket`（category=CONTACT・userId=null）を確認。
 4. ログイン状態で `/returns-exchange`（orderId 必須）送信 → `userId` が入ること・orderId 未入力でエラーになることを確認。
 5. user-menu の Return&Refund / Dispute / Report から各ページに到達できること。
+
+
+## 紛争画面デザイン移行（2026-10-05）
+
+DS-PAGE-012。公開DesignPageとSupportForm appearance=brandを使用。DISPUTE、必須UUID注文番号、申立ラベルと既存submitActionを維持。パンくずとCustomer service導線。Red 1件、Green/Refactor共通フォーム込み9/9、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。ブラウザー確認待ちのため実装済み。[計画](../../../plans/layout-design/priority-five-design-system-plan.md)。

@@ -53,7 +53,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 実装済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録) |
 | DS-PAGE-010 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-011 | `/customer-service` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | [customer-service移行記録](#customer-service移行記録) |
-| DS-PAGE-012 | `/dispute` | 未適用 | P2 | 対応中 | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
+| DS-PAGE-012 | `/dispute` | 本体適用・周辺確認 | P2 | 実装済み | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | [5画面計画](../../../plans/layout-design/priority-five-design-system-plan.md) |
 | DS-PAGE-013 | `/faq` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/faq/page.tsx](<../../../src/app/(store)/faq/page.tsx>) | 未実施 |
 | DS-PAGE-014 | `/faqs` | 本体適用（2026-09-30移行） | P3 | 検証済み | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | [FAQs実施記録](#faqs移行記録) |
 | DS-PAGE-015 | `/legal` | 未適用 | P3 | TODO | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | 未実施 |
@@ -605,3 +605,5 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 - 2026-10-05。[保存計画](../../../plans/layout-design/priority-five-design-system-plan.md)。
 - Offers: RTL新要件Red 2件、Green/Refactor 4/4、tsc 0、lint 0 errors/12既存warnings。`0195267c`→`1069ef25`→`5fea2f4a`。ブラウザー検証待ち。
+
+- Dispute: Red 1件→Green/Refactor 9/9（SupportForm含む）、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。公開実ルートHTTP 200確認、表示・操作検証待ち。

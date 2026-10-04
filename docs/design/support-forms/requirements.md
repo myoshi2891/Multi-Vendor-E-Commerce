@@ -59,3 +59,8 @@
 ## 返品・交換デザイン受け入れ条件（2026-10-01）
 
 `/returns-exchange` は既存RETURNS_POLICY_SUMMARY全文を保持し、深緑・クリーム・ゴールドとセリフ見出し、パンくず、ポリシーとブランド申請フォームを表示する。1440/390/768pxで横溢れなし、focus・Enter操作・WCAG AA。全項目入力案内、既存UUID注文番号検証を維持。送信中は入力とボタンをロックし「送信中…」、失敗は入力保持と再試行、成功は受付output。共通フォームのactionはServer ComponentからsubmitAction Propsで渡し、他画面は既定表示を維持する。返品条件・返金実行・データモデルは変更しない。
+
+
+## 紛争画面デザイン移行（2026-10-05）
+
+DS-PAGE-012。公開DesignPageとSupportForm appearance=brandを使用。DISPUTE、必須UUID注文番号、申立ラベルと既存submitActionを維持。パンくずとCustomer service導線。Red 1件、Green/Refactor共通フォーム込み9/9、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。ブラウザー確認待ちのため実装済み。[計画](../../../plans/layout-design/priority-five-design-system-plan.md)。

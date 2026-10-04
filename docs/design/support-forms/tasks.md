@@ -137,3 +137,8 @@
 - [x] DS-PAGE-036／DS-COMP-093計画保存、送信中RTL1件とChromium3件Red確認後にブランド表示を実装。
 - [x] 関連Jest16/16、Chromium4/4、他3呼び出し元Props移行回帰、3幅・各状態・axe AA・画像確認、lint/tsc。
 - [x] requirements/design/PROGRESS、SDD、台帳、QA、dashboardを同期。未コミット。[検証証跡](../design-system/PROGRESS.md#returns-exchange移行記録)。
+
+
+## 紛争画面デザイン移行（2026-10-05）
+
+DS-PAGE-012。公開DesignPageとSupportForm appearance=brandを使用。DISPUTE、必須UUID注文番号、申立ラベルと既存submitActionを維持。パンくずとCustomer service導線。Red 1件、Green/Refactor共通フォーム込み9/9、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。ブラウザー確認待ちのため実装済み。[計画](../../../plans/layout-design/priority-five-design-system-plan.md)。
