@@ -1,4 +1,5 @@
 /** @jest-environment jsdom */
+import type { CheckoutActions } from "@/lib/commerce-actions";
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -62,8 +63,17 @@ jest.mock("@/components/store/cards/checkout-product", () => ({
 }));
 jest.mock("@/components/store/cards/place-order", () => ({
     __esModule: true,
-    default: ({ cartData }: { cartData: { total: number } }) => (
-        <div data-testid="place-order-card">{cartData.total}</div>
+    default: ({
+        cartData,
+        disabled,
+    }: {
+        cartData: { total: number };
+        disabled?: boolean;
+    }) => (
+        <div data-testid="place-order-card">
+            {cartData.total}
+            <button disabled={disabled}>Place order fixture</button>
+        </div>
     ),
 }));
 jest.mock("@/components/store/shared/country-note", () => ({
@@ -104,7 +114,10 @@ describe("CheckoutContainer", () => {
     const jpCountry = createMockCountry({ id: "country-jp", name: "Japan" });
     const addresses: ContainerProps["addresses"] = [
         {
-            ...createMockShippingAddress({ countryId: "country-jp" }),
+            ...createMockShippingAddress({
+                countryId: "country-jp",
+                default: false,
+            }),
             country: jpCountry,
             user: {
                 id: "user-001",
@@ -128,6 +141,11 @@ describe("CheckoutContainer", () => {
     const renderContainer = (cart: ContainerProps["cart"]) =>
         render(
             <CheckoutContainer
+                actions={
+                    {
+                        refreshCartAction: updateCheckoutProductWithLatest,
+                    } as CheckoutActions
+                }
                 cart={cart}
                 countries={[jpCountry]}
                 addresses={addresses}
@@ -280,6 +298,20 @@ describe("CheckoutContainer", () => {
         });
         // 失敗しても表示は直前の cart を保つ（クラッシュも空表示もしない）
         expect(screen.getByTestId("place-order-card")).toHaveTextContent("25");
+        expect(
+            screen.getByRole("button", { name: "Place order fixture" })
+        ).toBeDisabled();
+        expect(screen.getByRole("alert")).toHaveTextContent(
+            "We couldn’t refresh"
+        );
+        (updateCheckoutProductWithLatest as jest.Mock).mockResolvedValue(cart);
+        fireEvent.click(screen.getByRole("button", { name: "Retry checkout" }));
+        await waitFor(() =>
+            expect(
+                screen.getByRole("button", { name: "Place order fixture" })
+            ).toBeEnabled()
+        );
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
         consoleSpy.mockRestore();
     });
 });

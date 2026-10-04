@@ -70,7 +70,15 @@ describe("PaypalPayment", () => {
         (createPayPalPayment as jest.Mock).mockResolvedValue({
             id: PAYPAL_PAYMENT_ID,
         });
-        render(<PaypalPayment orderId={ORDER_ID} />);
+        render(
+            <PaypalPayment
+                actions={{
+                    createPaypalAction: createPayPalPayment,
+                    capturePaypalAction: capturePayPalPayment,
+                }}
+                orderId={ORDER_ID}
+            />
+        );
 
         // Act
         fireEvent.click(screen.getByText("pp-create"));
@@ -89,7 +97,15 @@ describe("PaypalPayment", () => {
         (capturePayPalPayment as jest.Mock).mockResolvedValue({
             id: "CAPTURE-1",
         });
-        render(<PaypalPayment orderId={ORDER_ID} />);
+        render(
+            <PaypalPayment
+                actions={{
+                    createPaypalAction: createPayPalPayment,
+                    capturePaypalAction: capturePayPalPayment,
+                }}
+                orderId={ORDER_ID}
+            />
+        );
 
         // Act: create → approve の順。この順序が本テストの主題で、
         // approve だけを撃つと ref は空文字のままになる（次のテストで固定する）。
@@ -119,7 +135,15 @@ describe("PaypalPayment", () => {
             id: PAYPAL_PAYMENT_ID,
         });
         (capturePayPalPayment as jest.Mock).mockResolvedValue({});
-        render(<PaypalPayment orderId={ORDER_ID} />);
+        render(
+            <PaypalPayment
+                actions={{
+                    createPaypalAction: createPayPalPayment,
+                    capturePaypalAction: capturePayPalPayment,
+                }}
+                orderId={ORDER_ID}
+            />
+        );
 
         // Act
         fireEvent.click(screen.getByText("pp-create"));
@@ -140,7 +164,15 @@ describe("PaypalPayment", () => {
         const consoleSpy = jest
             .spyOn(console, "error")
             .mockImplementation(() => {});
-        render(<PaypalPayment orderId={ORDER_ID} />);
+        render(
+            <PaypalPayment
+                actions={{
+                    createPaypalAction: createPayPalPayment,
+                    capturePaypalAction: capturePayPalPayment,
+                }}
+                orderId={ORDER_ID}
+            />
+        );
 
         // Act
         fireEvent.click(screen.getByText("pp-error"));

@@ -61,7 +61,15 @@ describe("StripePayment", () => {
 
     /** clientSecret 取得後の描画（フォーム表示）まで進める */
     const renderReady = async () => {
-        render(<StripePayment orderId={ORDER_ID} />);
+        render(
+            <StripePayment
+                actions={{
+                    createIntentAction: createStripePaymentIntent,
+                    recordStripeAction: createStripePayment,
+                }}
+                orderId={ORDER_ID}
+            />
+        );
         await waitFor(() => {
             expect(screen.getByTestId("payment-element")).toBeInTheDocument();
         });
@@ -85,7 +93,15 @@ describe("StripePayment", () => {
         );
 
         // Act
-        render(<StripePayment orderId={ORDER_ID} />);
+        render(
+            <StripePayment
+                actions={{
+                    createIntentAction: createStripePaymentIntent,
+                    recordStripeAction: createStripePayment,
+                }}
+                orderId={ORDER_ID}
+            />
+        );
         await waitFor(() => {
             expect(createStripePaymentIntent).toHaveBeenCalled();
         });
@@ -109,7 +125,15 @@ describe("StripePayment", () => {
         });
 
         // Act
-        render(<StripePayment orderId={ORDER_ID} />);
+        render(
+            <StripePayment
+                actions={{
+                    createIntentAction: createStripePaymentIntent,
+                    recordStripeAction: createStripePayment,
+                }}
+                orderId={ORDER_ID}
+            />
+        );
         await waitFor(() => {
             expect(createStripePaymentIntent).toHaveBeenCalled();
         });
