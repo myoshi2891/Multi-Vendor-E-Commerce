@@ -5107,3 +5107,9 @@ PR #187 のレビュー指摘 3 件（ADR-008 の D-1/D-2 記述、PROGRESS の 
 | Jest テスト総数 | 2721 passed / 2724 total | **2723 passed / 2726 total** |
 | スイート数 | 254 | **254** |
 | 型エラー | 0 件 | **0 件** |
+
+### Checkout・注文詳細のデザイン移行（2026-10-04、未コミット）
+
+P1の `/checkout` と `/order/[orderId]` を深緑・アイボリー・ゴールドのレスポンシブ購入UIへ移行。住所radio／dialog・action Props、購入中ロック／retry、注文集計1つ、plain invoice投影、決済読込・失敗表示を整備。関連Jest420/420、supplemental Chromium11/11、lint0 errors／既存12 warnings、型チェック成功。
+
+専用テストDBがないため認証後実ルートとSDK実描画は保留（実装あり）。[進捗ノート](design/design-system/PROGRESS.md#checkout-order移行記録)と[QA](testing/QA_HANDOFF.md#ds-purchase-browser)に証跡・解除条件を記録。ダッシュボード走査は321 files、lcov328／18/80セル（23%）。このファイル数はQA_HANDOFFの実測値から同期し、全体Jest・coverage率を部分実行から推定しない。

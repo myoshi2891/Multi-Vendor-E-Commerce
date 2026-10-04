@@ -472,3 +472,7 @@ bun run test -- --testPathPatterns="tests/component/ui" -u
 ### 既知違反の抑制ポリシー
 
 修正困難な違反は `AxeBuilder.disableRules([...])` で抑制するが、必ずフォローアップ issue を残し、コード上に TODO コメントで明示する。`tests/e2e/a11y/README.md` の運用ルールに従うこと。
+
+### 購入導線のisolated browser fixture（2026-10-04）
+
+`bunx playwright test --config playwright.commerce.config.ts` は `tests/browser/commerce-design.spec.ts` を独立実行する。`tests/fixtures/commerce/server.mjs` が既存tsx依存のesbuildでproduction表示部品／CSS ModulesとTailwindをbundleし、OS tempへ出力、loopback 3107で配信して終了時に除去する。Next Image/Link/routerとStripe/PayPal SDKだけをadapterへ差し替え、action Propsにfixture応答／遅延／失敗を注入する。productionへテストrouteを追加しない。Clerk／DB／providerへのアクセスはなく、HTML長文・focus・keyboard・modal・axe・responsiveを確認できる。認証後実ルートとSDK実描画の証跡とは必ず区別する。

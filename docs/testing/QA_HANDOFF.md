@@ -26,7 +26,7 @@
 | 型エラー | **0 件** |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（ダッシュボード集計） | **317** / lcovエントリ **328** / マトリクス18/80セル（23%）。2026-10-04 `bun run coverage:dashboard` の走査で 317 を実測（lcov は 2026-09-30 の測定値）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| テストファイル総数（ダッシュボード集計） | **321** / lcovエントリ **328** / マトリクス18/80セル（23%）。2026-10-04 `bun run coverage:dashboard` の走査で 321 を実測（Checkout/注文詳細の検証追加後）（lcov は 2026-09-30 の測定値）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 
 ### `/profile/wishlist/[page]` デザイン移行の検証（2026-09-30、未コミット）
 
@@ -169,6 +169,7 @@
 
 | 優先 | ID | 課題 | 期限 / 状態 | 次の一手 |
 |---|---|---|---|---|
+| P1移行 | **DS-PURCHASE-BROWSER** | Checkout・注文詳細の認証後実ルート／SDK検証 | 実装あり・専用DB環境待ち | [解除条件・次着手](#ds-purchase-browser) |
 | ~~1~~ | ~~**OI-9**~~ | ~~ホーム `/` が SSR で 500（`featured.tsx` の `window` 初期化子参照）~~ | ✅ **解消済み（2026-06-06 / `c196e3d5`）** | 実装は `useState<number>(1200)` の安全な既定値 + `useEffect` での実測反映済み（`featured.tsx:19,30`）。**実測（2026-07-26）**: `security-headers.spec.ts` の `/` が 3 ブラウザとも `status < 400` で pass。**次の一手は D2** — `.lighthouserc.json` / `lhci.yml` の計測 URL へ `/` を追加できる状態になった。 |
 | **1（最優先）** | **OI-11** | `/dashboard/seller` 系ルートが本番 SSR で `ReferenceError: self is not defined`（`next-cloudinary` の `CldUploadWidget` をサーバ評価）。OI-9 と同族の client-only ref 問題。現状テストは落ちていない（ログのみ）が本番でも再現の可能性 | 🟡 未着手 | `image-upload.tsx` の `CldUploadWidget` を `next/dynamic` の `ssr:false` で遅延 import する。発見: 2026-06-19（E2E 本番ビルド化で顕在化） |
 | 2 | **OI-10** | a11y `color-contrast` 負債: `/checkout`・`/profile`・`/seller/apply` でグレー/ブルー系テキストが 4.5:1 未満。E2E では `runA11yScan` の `disabledRules:["color-contrast"]` で抑制中（追跡のため意図的） | 🟢 低 | 配色（テキスト色）を是正して `disabledRules` を解除する。発見: 2026-06-19（a11y readiness 修正で axe 到達後に検出） |
@@ -736,3 +737,17 @@ C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了済
 - 先行RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued refresh5件は実装後回帰。最終94/94、7 suites。Chromium5/5、3幅/keyboard/axe AA/取得・既読・送信失敗とretry。lint 0 errors/既存11 warnings、tsc成功。
 - 初期空は実認証/query。会話データ/送信/既読はaction mockで、実店舗への送信とメッセージDB書き込みなし。AC-M8実往復とFirefox/WebKit/全E2Eは未実行。
 - dashboard実測314ファイル/既存lcov328、18/80。全体Jest/coverageは前回値維持。受け入れ範囲の残課題なし。次着手は既存Open Issuesと共通DS-BASE-001の計画に従う。
+
+<a id="ds-purchase-browser"></a>
+
+### DS-PURCHASE-BROWSER: Checkout・注文詳細の認証後検証（2026-10-04）
+
+- 実装あり／検証保留。[保存計画](../../plans/layout-design/checkout-order-design-system-plan.md)、[証跡](../design/design-system/PROGRESS.md#checkout-order移行記録)。部分検証はJest420/420（18 suites）、supplemental Chromium11/11、lint0 errors／既存12 warnings、tsc成功。
+- **次着手**: 専用テストDB（既存schemaあり）とアプリ接続先の一致を確認し、Clerkテスト顧客の住所・cart・order fixtureのみ作成／後処理して `/checkout` と `/order/[orderId]` の1440／768／390pxを確認する。注文確定・実決済・外部送信はmock。seed・DB初期化・既存データ変更なし。SDK実描画、未認証転送、cart/product/profile住所のブラウザー回帰を確認後に2画面を検証済みへ進める。
+- 現環境には専用test DBがない。通常 `.env` は非local・非test、`.env.docker` は開発DBのためfixtureを書き込まなかった。独立ブラウザーモックの結果を認証後E2Eの実績に合算しない。
+- OI-10のcheckout contrastは新部品のfixture axeで違反0だが、実ルートの既存a11y specは未再実行のため、まだ抑制解除済みと扱わない。第三者SDKの実表示も未検証。
+- ダッシュボード走査321 files／lcov328／18/80セルを実測。全体Jest／Integration／通常E2E／coverageの既存統計は部分実行から更新しない。
+
+#### DS-PURCHASE（medium）次回着手用プロンプト
+
+> `plans/layout-design/checkout-order-design-system-plan.md` と `docs/design/design-system/PROGRESS.md` のcheckout-order移行記録を参照し、既存schemaの専用テストDBとアプリ接続先が一致する環境で2画面の認証後検証を完了する。fixtureの作成・後処理は承認済み範囲。購入・外部送信・DB初期化は行わず、完了後に計画・台帳・QA・dashboard Next Actionsを同期する。

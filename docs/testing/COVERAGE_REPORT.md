@@ -13,7 +13,7 @@
 |---|---|
 | Jestテスト総数（2026-10-04） | **2726 passed / 2729 total、3 skipped、127 snapshots passed**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
 | 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
-| テストファイル総数 | **317 ファイル**（2026-10-04 `bun run coverage:dashboard` 実測。QA_HANDOFF と一致）。以前の記録: **314 ファイル**（2026-10-03 ダッシュボード実測）。 |
+| テストファイル総数 | **321 ファイル**（2026-10-04 `bun run coverage:dashboard` 実測。QA_HANDOFF と一致）。以前の記録: **317 ファイル**（2026-10-04 移行前）、**314 ファイル**（2026-10-03 ダッシュボード実測）。 |
 | Jest スイート総数（unit/component のみ） | **254 スイート**（253 passed／1 skipped、2026-10-03 plans 073〜076 後の全体実測）。以前の記録: **251 スイート**（2026-10-03 プロフィール住所の失敗ログ追加後）。 |
 | テスト総数 | **2726 unit/component passed** (2729 total / 3 skipped・**254 スイート**・2026-10-04 全体実測)。Integration **222** / 17 スイート（2026-10-04 実測・以前の記録: 221・2026-10-04）。以前の記録: **2725 unit/component passed** (2728 total・2026-10-04 browse 属性チップ後)、**2709 unit/component passed** (2712 total / 3 skipped・254 スイート・2026-10-03)。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
@@ -551,3 +551,8 @@ QA_HANDOFF.md の最新値テーブル「Playwright Visual」セルに累積し�
 QA_HANDOFF.md の最新値テーブル「Playwright a11y」セルに累積していた過去の値・実測日・増減内訳を原文のまま移設した。
 
 plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追加。**初回スキャンで critical 3 種 / serious 2 種の実違反を検出**し、`sort.tsx` / `quantity-selector.tsx` / `categories-menu.tsx` を修正して green 化した（`df4d4f7e`）—— 「検出経路が無いだけで違反は潜在している」という plan の仮説が実証された形。home（`/`）は OI-9（本番ビルドで SSR 500）が未解消のため引き続き対象外。直前: **4 スペック**・2026-08-03 実測。**2026-08-04 の 3 ブラウザフルランでも全て passed を再確認**。
+
+### 2026-10-04 — Checkout・注文詳細の表示検証追加
+
+- test file走査317→321を実測（RTL3ファイルとsupplemental browser1ファイル）。lcov328／18/80セル（23%）は不変。新コードのcoverage率は未測定、全体Jest統計は前回実測値を維持する。
+- 表示と購入操作の回帰に対して関連Jest420/420、独立fixture Chromium11/11。[証跡](../design/design-system/PROGRESS.md#checkout-order移行記録)。認証後実ルートの完了とは区別し、環境依存の未検証範囲は[QA](QA_HANDOFF.md#ds-purchase-browser)で追跡する。

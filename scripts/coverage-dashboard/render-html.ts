@@ -84,6 +84,14 @@ interface NextAction {
 }
 
 const NEXT_ACTIONS: readonly NextAction[] = [
+    {
+        priority: "medium",
+        title: "DS-PURCHASE: 購入導線の認証後検証",
+        target: "/checkout /order/[orderId]（既存schemaの専用テストDB）",
+        tool: "Playwright + Clerk",
+        cost: "M",
+        impact: "実装済み2画面の実ルート・SDK検証を完了。fixtureブラウザー確認とは区別する",
+    },
     // A1 / A2 / A3 / B1 (MVP) は 2026-05-21〜23 に完了済み。履歴は
     // docs/testing/COVERAGE_REPORT.md §7 と QA_HANDOFF.md を参照。
     // A4 取りこぼし (getStoreOrders → requireStoreOwner) は 2026-05-26 に
