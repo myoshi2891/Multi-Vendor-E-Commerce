@@ -23,3 +23,7 @@ SellerShellはServer側のsidebar/header/childrenを受け、ナビの開閉だ�
 ## 店舗概要（DS-PAGE-058）
 
 既存の6KPI・売上推移・最近の注文・上位商品を保持。KPI/sectionは見出しとして認識可能。空の売上は説明、商品・注文の空状態を維持。親ルートのloading/statusとerror/再読み込みを共通部品で用意。チャートのブランド色/軸文字はseller opt-inで管理者表示を保持。
+
+## 商品一覧（DS-PAGE-062）
+
+Products見出し、ラベル付き検索、商品名/バリアント/カテゴリ/オファー/ブランド/追加操作を表示。商品色は元の色を保ち、欠画像も操作可能な編集リンクを示す。サイズ価格は表示項目に投影しDecimalを数値化（ドル単位、/100なし）。列定義はClient内でactionを受け取るfactoryから生成。作成モーダル、別ページ作成リンク、既存ProductDetailsのvalidation/payloadを維持し、sellerではラベル付きnative国複数選択を使用。作成/削除dialogのthemeとfocusを維持。削除は確認中のpending lock、失敗時dialogを維持して再試行可能。取得失敗は空と区別して再読み込みを提示。作成/属性/削除はServerから型付きaction Propsを注入し、他フォームルートも配線のみ同期する。

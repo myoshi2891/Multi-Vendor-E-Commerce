@@ -242,3 +242,7 @@ SupportForm receives `submitAction: typeof createSupportTicket` from each Server
 ### Priority P2 display interfaces
 
 Public URLs `/offers`, `/dispute`, `/report-problem` and authenticated `/profile/following/[page]`, `/profile/history/[page]` are unchanged. Aliases redirect to page 1. Following supplies `followAction(storeId): Promise<boolean>` from the existing facade. History supplies `fetchHistoryAction(ids, page): Promise<{ products: ProductType[]; totalPages: number }>` from getProductsByIds, retaining its default page size and ordering. URL links are the page-navigation source of truth; no new HTTP endpoint or server action is added. SupportForm keeps its existing submitAction/category contract and opts into appearance="brand" for DISPUTE and PROBLEM_REPORT.
+
+## 優先7画面のUI内部action Props（2026-10-05）
+
+申請のapplySellerAction、ProductDetailsのupsertProductAction/getAttributeDefinitionsAction、商品一覧のdeleteProductActionをServer Componentから注入する。既存queryの引数・戻り値・認可を維持し、Clientはruntime Server Action importを持たない。StoreProductRow/serializeStoreProductsは商品一覧の表示項目だけを投影し、サイズ価格はドル単位のnumberとする。公開API/DB schema変更なし。[表示要件](../../docs/design/seller-ui-migration/requirements.md)。

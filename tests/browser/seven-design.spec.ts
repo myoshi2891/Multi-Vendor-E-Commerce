@@ -213,3 +213,98 @@ for (const width of [1440, 768, 390])
                 page.getByText("売上データがありません。")
             ).toBeVisible();
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`products ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=products");
+            await page.evaluate(
+                (d) => document.documentElement.classList.toggle("dark", d),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", { name: "Products", exact: true })
+            ).toBeVisible();
+            await expect(page.getByText("M · 3 · $12.50")).toBeVisible();
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations.map((v) => ({
+                    id: v.id,
+                    nodes: v.nodes.map((n) => ({
+                        html: n.html,
+                        failure: n.failureSummary,
+                    })),
+                }))
+            ).toEqual([]);
+            await page.screenshot({
+                path: `test-results/seven-products-${width}-${theme}.png`,
+                fullPage: true,
+            });
+            await page.getByRole("searchbox").fill("unmatched");
+            await expect(page.getByText("No Results.")).toBeVisible();
+            await page.getByRole("searchbox").fill("");
+            await page.getByRole("button", { name: /Actions for/ }).click();
+            await page
+                .getByRole("menuitem", { name: "Delete product" })
+                .click();
+            const dialog = page.getByRole("alertdialog", {
+                name: "Delete product",
+            });
+            await expect(dialog).toBeVisible();
+            await dialog
+                .getByRole("button", { name: "Delete", exact: true })
+                .click();
+            await expect(
+                dialog.getByRole("button", { name: "Deleting…" })
+            ).toBeDisabled();
+            await expect(dialog.getByRole("alert")).toContainText(
+                "Please try again"
+            );
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations.map((v) => ({
+                    id: v.id,
+                    nodes: v.nodes.map((n) => ({
+                        html: n.html,
+                        failure: n.failureSummary,
+                    })),
+                }))
+            ).toEqual([]);
+            await dialog.getByRole("button", { name: "Cancel" }).click();
+            await expect(dialog).toHaveCount(0);
+            const create = page.getByRole("button", {
+                name: "Create New Product",
+            });
+            await create.click();
+            await expect(
+                page.getByRole("dialog", { name: "Create product" })
+            ).toBeVisible();
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations.map((v) => ({
+                    id: v.id,
+                    nodes: v.nodes.map((n) => ({
+                        html: n.html,
+                        failure: n.failureSummary,
+                    })),
+                }))
+            ).toEqual([]);
+            await page.keyboard.press("Escape");
+            await expect(page.getByRole("dialog")).toHaveCount(0);
+            await expect(create).toBeFocused();
+        });

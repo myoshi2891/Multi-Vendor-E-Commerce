@@ -1,3 +1,5 @@
+import { upsertProduct } from "@/queries/product";
+import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
 import ProductDetails from '@/components/dashboard/forms/product-details'
 import { db } from '@/lib/db'
 import { getAllCategories } from '@/queries/category'
@@ -31,6 +33,8 @@ export default async function SellerNewProductPage({
     return (
         <div className="w-full">
             <ProductDetails
+                upsertProductAction={upsertProduct}
+                getAttributeDefinitionsAction={getEffectiveAttributeDefinitions}
                 categories={categories}
                 storeUrl={storeUrl}
                 offerTags={offerTags}

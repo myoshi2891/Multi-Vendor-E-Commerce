@@ -393,6 +393,8 @@ const validData = (
 const renderForm = (data?: ProductFormData) =>
     render(
         <ProductDetails
+            upsertProductAction={upsertProduct}
+            getAttributeDefinitionsAction={getEffectiveAttributeDefinitions}
             data={data}
             categories={categories}
             offerTags={offerTags}

@@ -21,6 +21,7 @@ type Props = {
     defaultOpen?: boolean;
     maxWidth?: string;
     design?: "seller";
+    returnFocusTo?: React.RefObject<HTMLElement | null>;
 };
 
 const CustomModal = ({
@@ -30,11 +31,20 @@ const CustomModal = ({
     heading,
     maxWidth,
     design,
+    returnFocusTo,
 }: Props) => {
     const { isOpen, setClose } = useModal();
     return (
         <Dialog open={isOpen || defaultOpen} onOpenChange={setClose}>
             <DialogContent
+                onCloseAutoFocus={
+                    returnFocusTo
+                        ? (event) => {
+                              event.preventDefault();
+                              returnFocusTo.current?.focus();
+                          }
+                        : undefined
+                }
                 className={cn(
                     "h-screen overflow-y-scroll bg-card md:h-fit md:max-h-[700px]",
                     maxWidth,

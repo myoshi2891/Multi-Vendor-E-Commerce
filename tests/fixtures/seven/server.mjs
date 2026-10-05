@@ -10,6 +10,8 @@ import { join, resolve } from "node:path";
 const root = process.cwd(),
     output = mkdtempSync(join(tmpdir(), "seven-browser-"));
 const mocks = {
+    "jodit-react": `import React from 'react'; export default function Editor({value,onBlur}){return React.createElement('textarea',{'aria-label':'Rich text description',defaultValue:value,onBlur(e){onBlur?.(e.target.value)}})}`,
+
     "next-cloudinary": `export function CldUploadWidget({children,onSuccess}){return children({open(){onSuccess({info:{secure_url:'/assets/images/default-user.jpg'}})}})}`,
 
     "@clerk/nextjs": `import React from 'react'; export function UserButton(){return React.createElement('button',{'aria-label':'User account'},'Account')} export function UserProfile(){return React.createElement('section',{'aria-label':'Clerk fixture'},'Clerk UserProfile adapter (real SDK verification pending)')} export function useUser(){return {user:{firstName:'Test',lastName:'Seller',fullName:'Test Seller',primaryEmailAddress:{emailAddress:'test@example.com'},imageUrl:'/assets/logo.png'},isLoaded:true,isSignedIn:!location.search.includes("guest")}}`,
@@ -39,7 +41,7 @@ await build({
             setup(builder) {
                 builder.onResolve(
                     {
-                        filter: /^(next-cloudinary|@clerk\/nextjs|next-themes|@\/queries\/user|next\/(navigation|image|link))$/,
+                        filter: /^(jodit-react|next-cloudinary|@clerk\/nextjs|next-themes|@\/queries\/user|next\/(navigation|image|link))$/,
                     },
                     (args) => ({ path: args.path, namespace: "fixture" })
                 );

@@ -1,3 +1,5 @@
+import { upsertProduct } from "@/queries/product";
+import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
 // Product Details form
 import ProductDetails from "@/components/dashboard/forms/product-details";
 import { db } from "@/lib/db";
@@ -59,6 +61,8 @@ export default async function SellerEditProductVariantPage({
     return (
         <div>
             <ProductDetails
+                upsertProductAction={upsertProduct}
+                getAttributeDefinitionsAction={getEffectiveAttributeDefinitions}
                 categories={categories}
                 storeUrl={storeUrl}
                 data={product}

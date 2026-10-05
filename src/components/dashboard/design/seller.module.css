@@ -259,3 +259,6 @@
 .chart :global(.recharts-area-area) {
     fill: var(--brand-gold);
 }
+
+.theme :global(.text-main-secondary), .theme :global(.text-gray-400), .theme :global(.text-gray-500), .theme :global(.text-gray-600) { color:hsl(var(--muted-foreground)); }
+@media (prefers-reduced-motion:reduce) { .theme { animation:none!important; transition:none!important; } }

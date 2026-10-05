@@ -1,5 +1,8 @@
+import SellerProducts from "@/components/dashboard/seller/seller-products";
+import type { StoreProductRow } from "@/lib/seller-products";
 import StoreOverview from "@/components/dashboard/seller/store-overview";
 import type { ComponentProps } from "react";
+import applicationStyles from "@/components/store/forms/apply-seller/application.module.css";
 import Apply from "@/components/store/forms/apply-seller/apply-seller";
 import type { applySeller } from "@/queries/store";
 import ProfileSettingsPage from "@/app/(store)/profile/settings/page";
@@ -25,6 +28,42 @@ const sidebar = (
         <Link href="/?screen=messages">Messages</Link>
     </nav>
 );
+const productRows = [
+    {
+        id: "p1",
+        name: "A long product name for testing responsive wrapping in the seller product table",
+        brand: "Example",
+        store: { url: "example" },
+        category: { name: "Accessories" },
+        subCategory: { name: "Watches" },
+        offerTag: null,
+        variants: [
+            {
+                id: "v1",
+                variantName: "Gold variant",
+                colors: [{ name: "gold" }],
+                images: [],
+                sizes: [{ id: "s1", size: "M", quantity: 3, price: 12.5 }],
+            },
+        ],
+    },
+] as StoreProductRow[];
+let productDeleteAttempts = 0;
+const productActions: ComponentProps<typeof SellerProducts>["actions"] = {
+    deleteProductAction: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        if (++productDeleteAttempts === 1) throw new Error("Fixture failure");
+        return productRows[0] as unknown as Awaited<
+            ReturnType<
+                ComponentProps<
+                    typeof SellerProducts
+                >["actions"]["deleteProductAction"]
+            >
+        >;
+    },
+    upsertProductAction: async () => {},
+    getAttributeDefinitionsAction: async () => [],
+};
 let applyAttempts = 0;
 const applyAction: typeof applySeller = async () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -34,7 +73,9 @@ const applyAction: typeof applySeller = async () => {
 const screen = new URLSearchParams(location.search).get("screen");
 createRoot(document.getElementById("root")!).render(
     screen === "apply" ? (
-        <Apply applySellerAction={applyAction} />
+        <div className={applicationStyles.page}>
+            <Apply applySellerAction={applyAction} />
+        </div>
     ) : screen === "settings" ? (
         <main>
             <ProfileSettingsPage />
@@ -42,7 +83,16 @@ createRoot(document.getElementById("root")!).render(
     ) : (
         <ModalProvider>
             <SellerShell sidebar={sidebar} header={<Header design="seller" />}>
-                {screen === "overview" ? (
+                {screen === "products" ? (
+                    <SellerProducts
+                        products={productRows}
+                        categories={[]}
+                        countries={[]}
+                        offerTags={[]}
+                        storeUrl="example"
+                        actions={productActions}
+                    />
+                ) : screen === "overview" ? (
                     <StoreOverview
                         stats={{
                             totalRevenue: 1234.5,
