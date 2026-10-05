@@ -5,6 +5,3 @@ reviews:
         - "!prisma/seed/**"
         - "!plans/layout-design/**"
         - "!docs/design/**"
-        - "!prisma/migrations/**"
-        - "!docs/testing/QA_HANDOFF.md"
-        - "!.coderabbit.yaml"

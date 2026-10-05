@@ -133,3 +133,9 @@
 ### Priority seven UI quality
 
 Scoped seller light/dark themes and explicit Portal styles preserve other consumers. Verify 1440/768/390px, keyboard focus and return focus, local table scrolling, pending/error/retry/success and reduced motion. WCAG AA axe checks keep color contrast enabled. Supplemental component adapters do not verify authenticated routes or third-party SDK internals; unavailable dedicated test DB/Clerk environments require implementation-present hold status with explicit release conditions. [Evidence](../../docs/design/design-system/PROGRESS.md#優先7画面移行記録).
+
+## Seller six-screen presentation quality
+
+Use scoped light/dark themes and explicit portal inheritance, serif headings, readable wrapping and visible keyboard focus. Verify 1440/768/390px with axe WCAG AA including contrast; fixture adapters do not prove authenticated route or SDK rendering.
+
+Seller gallery removal is keyboard accessible with meaningful image/button names. Seller data-table scroll regions remain keyboard accessible when filtering returns no rows. The shared shipping fields retain the caller's validation and numeric units. [Six-screen evidence](../../docs/design/design-system/PROGRESS.md#優先6画面移行記録).

@@ -2,12 +2,13 @@ import { upsertProduct } from "@/queries/product";
 import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
 // Product Details form
 import ProductDetails from "@/components/dashboard/forms/product-details";
-import { db } from '@/lib/db'
+import { db } from "@/lib/db";
 // Queries
 import { getAllCategories } from "@/queries/category";
 import { flattenCategoryTree } from "@/lib/category-tree";
-import { getAllOfferTags } from '@/queries/offer-tag'
-import { getProductMainInfo } from '@/queries/product'
+import { getAllOfferTags } from "@/queries/offer-tag";
+import { getProductMainInfo } from "@/queries/product";
+import SellerPage from "@/components/dashboard/design/seller-page";
 
 /**
  * Loads data for a product details form and renders the ProductDetails page for a specific product.
@@ -18,22 +19,27 @@ import { getProductMainInfo } from '@/queries/product'
 export default async function SellerNewProductVariantPage({
     params,
 }: {
-    params: Promise<{ storeUrl: string; productId: string }>
+    params: Promise<{ storeUrl: string; productId: string }>;
 }) {
     const { storeUrl, productId } = await params;
     // 商品フォームはツリーを 1 本の select で扱う（plan 068）。
     // pre-order で平坦化して渡すと、選択肢の並びがそのまま木の形になる。
-    const categories = flattenCategoryTree(await getAllCategories())
-    const offerTags = await getAllOfferTags()
-    const product = await getProductMainInfo(productId)
-    if (!product) return null
+    const categories = flattenCategoryTree(await getAllCategories());
+    const offerTags = await getAllOfferTags();
+    const product = await getProductMainInfo(productId);
+    if (!product) return null;
     const countries = await db.country.findMany({
-        orderBy: { name: 'asc' },
-    })
+        orderBy: { name: "asc" },
+    });
 
     return (
-        <div>
+        <SellerPage
+            id="add-variant-heading"
+            title="Add variant"
+            description={`Add a new variant to ${product.name}.`}
+        >
             <ProductDetails
+                design="seller"
                 upsertProductAction={upsertProduct}
                 getAttributeDefinitionsAction={getEffectiveAttributeDefinitions}
                 categories={categories}
@@ -42,6 +48,6 @@ export default async function SellerNewProductVariantPage({
                 offerTags={offerTags}
                 countries={countries}
             />
-        </div>
-    )
+        </SellerPage>
+    );
 }

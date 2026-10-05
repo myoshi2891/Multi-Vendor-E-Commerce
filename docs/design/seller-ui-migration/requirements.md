@@ -47,3 +47,20 @@ DS-PAGE-056: 購入者名/画像での識別、最新メッセージが購入者
 ### 申請SSR/reduced-motionの回帰修正（2026-10-05）
 
 実ルート画像確認で、reduced-motionのSSR初期opacity0と初回Client描画の差によるhydration警告/本文非表示を検出。実guest3幅のconsole hydration警告なし・Sign upと親のopacity表示を先行テストでRed確認し、初期表示を両環境でvisibleに統一、reduced-motionではtransition0として修正。実guest5/5、申請補助3/3と全体Jestを再実行。認証SDKの設定画面内部とは別の実ルート検証。
+
+## 優先6画面の表示要件
+
+DS-PAGE-061 商品登録: RTLの見出しRed1件・フォーム保存Red1件、ブラウザーの見出しRedと目視後の追加Redを確認。Green/Refactor後の関連Jest50/50、補助Chromium6/6（1440/768/390px・light/dark・focus・カテゴリPortal・axe contrast含む）、画像目視、lint errors0（既存warnings10）、tsc0、harness成功。ProductDetailsのseller opt-in・見出し階層・保存lock/汎用error/retry/status、画像とキーワードの縦配置・動的行の折り返し・旧青色を整理。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
+
+DS-PAGE-060 バリアント追加: 新要件RTL1件の見出しRedを確認。最小実装・既存フォーム再利用後の関連Jest46/46。商品情報の初期値と既存null応答、action Propsを維持。ブラウザーのカテゴリ操作可否は既存仕様に合わせ、商品名/説明/brand非表示とカテゴリ継承を確認する。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
+
+DS-PAGE-059 バリアント編集: 新要件RTL1件の見出しRed、保存後axeで既存Radix toastのaria-hidden-focus/button-nameをRed確認。seller opt-inではフォーム内status/alertへ統一し、旧scopeのtoastは維持。Refactor後関連Jest69/69（編集ownership/属性/商品一覧含む）、補助Chromium6/6（3幅/light/dark・初期価格12.5・pending lock/error/retry/success/refresh・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
+
+DS-PAGE-064 配送設定: 先行RTL4件で見出し/名前付きform/Action境界不足をRed確認。重複submit再現のRedを同期submit guardで修正。Refactor後Jest90/90（商品dialog/seller shell/store queries含む）、補助Chromium6/6（3幅/light/dark・国別検索・12.5ドル初期値・Portal・pending lock/close防止/error/retry/success・Escape focus復帰・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。表示用数値へserializeし単位を維持。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
+
+DS-PAGE-063 店舗設定: 先行RTL2件でページheading/名前付きform/送信中ロック不足をRed確認。共通StoreDetailsを画像・連絡先のレスポンシブ配置へ整理し、Server注入Actionとinline status/alertを導入。型変更に必要な店舗作成呼び出し元のAction注入だけ先行し、同画面の本体移行は未完了。Refactor後関連Jest91/91（store query認可・配送・商品dialog含む）、補助Chromium6/6（3幅/light/dark・画像upload adapter・featured・pending lock/error/値保持/retry/success/refresh・overflow・axe contrast含む）、画像目視、lint errors0/warnings10・tsc0・harness成功。DBはフォームに必要な列のみselectし、既存redirectと例外伝播を維持。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
+
+DS-PAGE-065 店舗作成: 先行RTL2件でmain/h1/theme control不足と新規IDがAPI更新branchへ誤接続する問題をRed確認。店舗別Shell外に専用テーマ枠とThemeToggleを用意し、既存upsertStoreの作成契約に合わせ新規のみidを省略（query/認可/schemaは変更なし）。更新idは維持。Refactor後関連Jest93/93、補助Chromium6/6（3幅/light/dark・theme Portal・空/画像validation・upload adapter・pending lock/error/値保持/retry/success/返却URL・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
+
+
+最終監査の要件: 商品画像の削除はキーボードで操作でき、番号付きの名前を持つ。配送表のスクロール領域は空状態でもフォーカス可能。店舗URLを変更して保存した場合は返却URLのsettingsへ移動し、同一URLの場合はrefreshする。[設計](design.md)。

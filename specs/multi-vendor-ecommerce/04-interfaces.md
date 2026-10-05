@@ -252,3 +252,18 @@ Public URLs `/offers`, `/dispute`, `/report-problem` and authenticated `/profile
 注文一覧はSellerOrderActions（updateGroupAction/updateItemAction）を注入。既存updateOrderGroupStatus/updateOrderItemStatusの引数・結果・認可/遷移検証を維持。serializeSellerOrdersは配送日範囲と顧客/住所/支払表示、明細の価格/送料/合計を投影し、Decimalをドル単位numberへ変換する。内部のcoupon/注文relationはClientに渡さない。
 
 getSellerConversations(storeUrl)は既存getStoreConversationsの店舗所有権検証を委譲し、id/userId/updatedAt ISO/store(name,logo)/user(name,picture)/messages(content)/unreadLatestを返す。unreadLatestは最新1件が購入者発かつ未読のときtrueで、未読総件数ではない。取得/送信/既読は既存getProfileConversationMessages/sendMessage/markConversationReadをProps注入し参加者検証を維持。Clientでruntime query importしない。
+
+## Seller six-screen form boundaries
+
+ProductDetails keeps its existing ProductFormActions and opts into seller design from the product creation Server Component. No public HTTP API, action signature or data schema changes. See [seller UI design](../../docs/design/seller-ui-migration/design.md).
+
+The variant creation/edit Server Components also opt into seller ProductDetails and preserve getProductMainInfo/getProductVariantForEdit arguments, initial values and missing-record behavior. Seller feedback is inline status/alert; the existing action contract is unchanged.
+
+ShippingCountryRow and StoreDefaultShippingInput are plain numeric display data projected in the Server Component without money-unit changes. Existing shipping query actions are injected as updateDefaultsAction/upsertShippingRateAction; createShippingColumns receives them on the Client. Optional CustomModal locked and DialogContent closeDisabled default to false.
+
+StoreDetails accepts required upsertStoreAction and optional seller design. StoreDetailsData projects only store form fields; the settings Server Component selects that projection, preserving the existing URL lookup and redirect. Both settings and creation callers provide the existing approved-facade action.
+
+upsertStore retains its existing contract: absent id selects creation and present id selects owner-checked update. The UI no longer supplies a generated id for new-store submissions. API/query/schema/authorization are unchanged.
+
+
+Seller presentation adapters additionally accept `Table.scrollLabel` for an opt-in named, keyboard-focusable scroll region and `ImagesPreviewGrid.design="seller"` for named image/removal actions. Default consumers preserve existing markup behavior. `ShippingFields` shares form controls while each caller retains its schema and field names. Store settings replace the route with the returned settings URL after a URL change; an unchanged URL refreshes the current route.

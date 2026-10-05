@@ -1,349 +1,140 @@
 "use client";
-
-// React, Next.js
-import { FC, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-// Form handling utilities
-import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-// Schema
 import { StoreShippingFormSchema } from "@/lib/schemas";
-
-// UI Components
-import {
-	Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-	Form,
-	FormControl,
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import type {
+    StoreDefaultShippingInput,
+    StoreDefaultShippingType,
+} from "@/lib/types";
+import type { ShippingActions } from "@/lib/seller-shipping";
+import { toNumberSafe } from "@/lib/utils";
+import { useSellerSave } from "@/hooks/use-seller-save";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NumberInput } from "@tremor/react";
+import ShippingFields from "./shipping-fields";
+import styles from "../design/seller.module.css";
 
-// Queries
-import { updateStoreDefaultShippingDetails } from "@/queries/store";
-
-// import { useToast } from "@/components/ui/use-toast";
-import { useToast } from "@/hooks/use-toast";
-
-// Types
-import { StoreDefaultShippingType } from "@/lib/types";
-
-const RefinedStoreShippingFormSchema = StoreShippingFormSchema.refine((data) => {
-    return data.defaultDeliveryTimeMax >= data.defaultDeliveryTimeMin;
-}, {
-    message: "Maximum delivery time must be greater than or equal to minimum delivery time",
-    path: ["defaultDeliveryTimeMax"]
+const schema = StoreShippingFormSchema.refine(
+    (data) => data.defaultDeliveryTimeMax >= data.defaultDeliveryTimeMin,
+    {
+        message:
+            "Maximum delivery time must be greater than or equal to minimum delivery time",
+        path: ["defaultDeliveryTimeMax"],
+    }
+);
+const fields = [
+    ["defaultShippingFeePerItem", "Shipping fee per item", 0, 0.1],
+    [
+        "defaultShippingFeeForAdditionalItem",
+        "Shipping fee for additional item",
+        0,
+        0.1,
+    ],
+    ["defaultShippingFeePerKg", "Shipping fee per kg", 0, 0.1],
+    ["defaultShippingFeeFixed", "Fixed shipping fee", 0, 0.1],
+    ["defaultDeliveryTimeMin", "Delivery time min", 1, 1],
+    ["defaultDeliveryTimeMax", "Delivery time max", 1, 1],
+] as const;
+const valuesFor = (
+    data?: StoreDefaultShippingInput | NonNullable<StoreDefaultShippingType>
+): StoreDefaultShippingInput => ({
+    defaultShippingService: data?.defaultShippingService ?? "",
+    defaultShippingFeePerItem: toNumberSafe(
+        data?.defaultShippingFeePerItem ?? 0
+    ),
+    defaultShippingFeeForAdditionalItem: toNumberSafe(
+        data?.defaultShippingFeeForAdditionalItem ?? 0
+    ),
+    defaultShippingFeePerKg: toNumberSafe(data?.defaultShippingFeePerKg ?? 0),
+    defaultShippingFeeFixed: toNumberSafe(data?.defaultShippingFeeFixed ?? 0),
+    defaultDeliveryTimeMin: data?.defaultDeliveryTimeMin ?? 0,
+    defaultDeliveryTimeMax: data?.defaultDeliveryTimeMax ?? 0,
+    returnPolicy: data?.returnPolicy ?? "",
 });
-
-interface StoreDefaultShippingDetailsProps {
-	data?: StoreDefaultShippingType;
-	storeUrl: string;
+export default function StoreDefaultShippingDetails({
+    data,
+    storeUrl,
+    updateDefaultsAction,
+}: {
+    data?: StoreDefaultShippingInput | NonNullable<StoreDefaultShippingType>;
+    storeUrl: string;
+    updateDefaultsAction: ShippingActions["updateDefaultsAction"];
+    design?: "seller";
+}) {
+    const router = useRouter();
+    const feedback = useSellerSave();
+    const form = useForm<StoreDefaultShippingInput>({
+        mode: "onChange",
+        resolver: zodResolver(schema),
+        defaultValues: valuesFor(data),
+    });
+    useEffect(() => {
+        if (data) form.reset(valuesFor(data));
+    }, [data, form]);
+    return (
+        <Card className={styles.editor}>
+            <CardHeader>
+                <CardTitle role="heading" aria-level={2}>
+                    Default shipping details
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form
+                        aria-label="Default shipping details"
+                        onSubmit={(event) =>
+                            feedback.submit(
+                                event,
+                                form.handleSubmit((values) =>
+                                    feedback.save(
+                                        () =>
+                                            updateDefaultsAction(
+                                                storeUrl,
+                                                values
+                                            ),
+                                        () => router.refresh()
+                                    )
+                                )
+                            )
+                        }
+                    >
+                        <fieldset
+                            disabled={feedback.pending}
+                            className="min-w-0 space-y-4"
+                            aria-label="Default shipping fields"
+                        >
+                            <ShippingFields
+                                control={form.control}
+                                serviceName="defaultShippingService"
+                                numberFields={fields}
+                                returnPolicyName="returnPolicy"
+                            />
+                            <Button type="submit">
+                                {feedback.pending
+                                    ? "Saving shipping details…"
+                                    : "Save changes"}
+                            </Button>
+                        </fieldset>
+                        {feedback.state === "error" ? (
+                            <p role="alert" className={styles.alert}>
+                                Could not save shipping details. Please try
+                                again.
+                            </p>
+                        ) : (
+                            <p role="status" aria-live="polite">
+                                {feedback.pending
+                                    ? "Saving shipping details…"
+                                    : feedback.state === "success"
+                                      ? "Shipping details saved."
+                                      : ""}
+                            </p>
+                        )}
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+    );
 }
-
-const StoreDefaultShippingDetails: FC<StoreDefaultShippingDetailsProps> = ({
-	data,
-	storeUrl,
-}) => {
-	// Initializing necessary hooks
-	const { toast } = useToast(); // Hook for displaying toast messages
-	const router = useRouter(); // Hook for routing
-
-	// Form hook for managing form state and validation
-	const form = useForm<z.infer<typeof RefinedStoreShippingFormSchema>>({
-		mode: "onChange", // Form validation mode
-		resolver: zodResolver(RefinedStoreShippingFormSchema), // Resolver for form validation
-		defaultValues: {
-			// Setting default form values from data (if available)
-			defaultShippingService: data?.defaultShippingService ?? "",
-			defaultShippingFeePerItem: data?.defaultShippingFeePerItem?.toNumber() ?? 0,
-			defaultShippingFeeForAdditionalItem:
-				data?.defaultShippingFeeForAdditionalItem?.toNumber() ?? 0,
-			defaultShippingFeePerKg: data?.defaultShippingFeePerKg?.toNumber() ?? 0,
-			defaultShippingFeeFixed: data?.defaultShippingFeeFixed?.toNumber() ?? 0,
-			defaultDeliveryTimeMin: data?.defaultDeliveryTimeMin ?? 0,
-			defaultDeliveryTimeMax: data?.defaultDeliveryTimeMax ?? 0,
-			returnPolicy: data?.returnPolicy ?? "",
-		},
-	});
-
-	// Loading status based on form submission
-	const isLoading = form.formState.isSubmitting;
-
-	// Reset form values when data changes
-	useEffect(() => {
-		if (data) {
-			form.reset({
-				defaultShippingService: data.defaultShippingService,
-				defaultShippingFeePerItem: data.defaultShippingFeePerItem.toNumber(),
-				defaultShippingFeeForAdditionalItem: data.defaultShippingFeeForAdditionalItem.toNumber(),
-				defaultShippingFeePerKg: data.defaultShippingFeePerKg.toNumber(),
-				defaultShippingFeeFixed: data.defaultShippingFeeFixed.toNumber(),
-				defaultDeliveryTimeMin: data.defaultDeliveryTimeMin,
-				defaultDeliveryTimeMax: data.defaultDeliveryTimeMax,
-				returnPolicy: data.returnPolicy,
-			});
-		}
-	}, [data, form]);
-
-	// Submit handler for form submission
-	const handleSubmit = async (
-		values: z.infer<typeof RefinedStoreShippingFormSchema>
-	) => {
-		try {
-			// Upserting category data
-			const response = await updateStoreDefaultShippingDetails(storeUrl, {
-				defaultShippingService: values.defaultShippingService,
-				defaultShippingFeePerItem: values.defaultShippingFeePerItem,
-				defaultShippingFeeForAdditionalItem:
-					values.defaultShippingFeeForAdditionalItem,
-				defaultShippingFeePerKg: values.defaultShippingFeePerKg,
-				defaultShippingFeeFixed: values.defaultShippingFeeFixed,
-				defaultDeliveryTimeMin: values.defaultDeliveryTimeMin,
-				defaultDeliveryTimeMax: values.defaultDeliveryTimeMax,
-				returnPolicy: values.returnPolicy,
-			});
-
-			if (response.id) {
-				// Displaying success message
-				toast({
-					title: `Store Default Shipping Details have been updated.`,
-				});
-
-				// Redirect or Refresh data
-				router.refresh();
-			}
-		} catch (error: unknown) {
-			// Handling form submission errors
-			if (error instanceof Error) {
-				console.error("Error submitting shipping details form:", error.message, error.stack);
-			} else {
-				console.error("Error submitting shipping details form:", error);
-			}
-			toast({
-				variant: "destructive",
-				title: "Oops!",
-				description: error instanceof Error ? error.message : String(error),
-			});
-		}
-	};
-
-	return (
-		<Card className="w-full">
-			<CardHeader>
-					<CardTitle>Store Default Shipping Details</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<Form {...form}>
-						<form
-							onSubmit={form.handleSubmit(handleSubmit)}
-							className="space-y-4"
-						>
-							<FormField
-								// disabled={isLoading}
-								control={form.control}
-								name="defaultShippingService"
-								render={({ field }) => (
-									<FormItem className="flex-1">
-										<FormLabel>
-											Shipping Service Name
-										</FormLabel>
-										<FormControl>
-											<Input
-												placeholder="Name"
-												{...field}
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-							<div className="flex flex-wrap gap-4">
-								<FormField
-									// disabled={isLoading}
-									control={form.control}
-									name="defaultShippingFeePerItem"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>
-												Shipping fee per Item
-											</FormLabel>
-											<FormControl>
-												<NumberInput
-													defaultValue={field.value}
-													onValueChange={
-														field.onChange
-													}
-													min={0}
-													step={0.1}
-													className="rounded-md !pl-1 !shadow-none"
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									// disabled={isLoading}
-									control={form.control}
-									name="defaultShippingFeeForAdditionalItem"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>
-												Shipping fee for additional item
-											</FormLabel>
-											<FormControl>
-												<NumberInput
-													defaultValue={field.value}
-													onValueChange={
-														field.onChange
-													}
-													min={0}
-													step={0.1}
-													className="rounded-md !pl-1 !shadow-none"
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-
-							<div className="flex flex-wrap gap-4">
-								<FormField
-									// disabled={isLoading}
-									control={form.control}
-									name="defaultShippingFeePerKg"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>
-												Shipping fee per kg
-											</FormLabel>
-											<FormControl>
-												<NumberInput
-													defaultValue={field.value}
-													onValueChange={
-														field.onChange
-													}
-													min={0}
-													step={0.1}
-													className="rounded-md !pl-1 !shadow-none"
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									// disabled={isLoading}
-									control={form.control}
-									name="defaultShippingFeeFixed"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>
-												Fixed Shipping fee
-											</FormLabel>
-											<FormControl>
-												<NumberInput
-													defaultValue={field.value}
-													onValueChange={
-														field.onChange
-													}
-													min={0}
-													step={0.1}
-													className="rounded-md !pl-1 !shadow-none"
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-
-							<div className="flex flex-wrap gap-4">
-								<FormField
-									// disabled={isLoading}
-									control={form.control}
-									name="defaultDeliveryTimeMin"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>
-												Minimum Delivery time (days)
-											</FormLabel>
-											<FormControl>
-												<NumberInput
-													defaultValue={field.value}
-													onValueChange={
-														field.onChange
-													}
-													min={0}
-													className="rounded-md !pl-1 !shadow-none"
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-								<FormField
-									// disabled={isLoading}
-									control={form.control}
-									name="defaultDeliveryTimeMax"
-									render={({ field }) => (
-										<FormItem className="flex-1">
-											<FormLabel>
-												Maximum Delivery time (days)
-											</FormLabel>
-											<FormControl>
-												<NumberInput
-													defaultValue={field.value}
-													onValueChange={
-														field.onChange
-													}
-													min={1}
-													className="rounded-md !pl-1 !shadow-none"
-												/>
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
-							</div>
-
-							<FormField
-								// disabled={isLoading}
-								control={form.control}
-								name="returnPolicy"
-								render={({ field }) => (
-									<FormItem className="flex-1">
-										<FormLabel>Return Policy</FormLabel>
-										<FormControl>
-											<Textarea
-												placeholder="What's the return policy for your store?"
-												{...field}
-												className="p-4"
-											/>
-										</FormControl>
-										<FormMessage />
-									</FormItem>
-								)}
-							/>
-
-							<Button type="submit" disabled={isLoading}>
-								{isLoading ? "loading..." : "Save changes"}
-							</Button>
-						</form>
-					</Form>
-				</CardContent>
-			</Card>
-	);
-};
-
-export default StoreDefaultShippingDetails;

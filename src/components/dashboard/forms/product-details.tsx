@@ -354,6 +354,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
     // Loading status based on form submission
     const isLoading = form.formState.isSubmitting;
+    const savingRef = useRef(false);
+    const [saveState, setSaveState] = useState<
+        "idle" | "saving" | "error" | "success"
+    >("idle");
 
     // Reset form values when data changes
     useEffect(() => {
@@ -386,6 +390,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
 
     // Submit handler for form submission
     const handleSubmit = async (values: ProductFormWithAttributes) => {
+        if (savingRef.current) return;
+        savingRef.current = true;
+        setSaveState("saving");
         try {
             const variantId = data?.variantId ? data.variantId : v4();
             // colors から空プレースホルダーを除外
@@ -434,8 +441,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 },
                 storeUrl
             );
-            // Displaying success message
-            toast({
+            setSaveState("success");
+            // Seller forms announce feedback inline in their scoped theme.
+            if (design !== "seller") toast({
                 title:
                     data?.productId && data?.variantId
                         ? "Product has been updated."
@@ -449,10 +457,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             }
         } catch (error: unknown) {
             // Handling form submission errors
+            setSaveState("error");
             const message =
-                error instanceof Error
-                    ? error.message
-                    : "An unknown error occurred";
+                design === "seller"
+                    ? "Could not save the product. Please try again."
+                    : error instanceof Error
+                      ? error.message
+                      : "An unknown error occurred";
             if (error instanceof Error) {
                 console.error(
                     "ProductDetails submit error:",
@@ -462,11 +473,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             } else {
                 console.error("ProductDetails submit error:", error);
             }
-            toast({
+            if (design !== "seller") toast({
                 variant: "destructive",
                 title: "Oops!",
                 description: message,
             });
+        } finally {
+            savingRef.current = false;
         }
     };
 
@@ -515,14 +528,19 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     };
 
     return (
-        <Card className="w-full">
+        <Card className={design === "seller" ? sellerStyles.editor : "w-full"}>
             <CardHeader>
-                <CardTitle>
-                    {data?.productId && data?.variantId
-                        ? `Edit ${data.name} Product Information`
-                        : isNewVariantPage
-                          ? `Add a new variant to ${data.name}`
-                          : "Create a new Product Information"}
+                <CardTitle
+                    role={design === "seller" ? "heading" : undefined}
+                    aria-level={design === "seller" ? 2 : undefined}
+                >
+                    {design === "seller"
+                        ? "Product information"
+                        : data?.productId && data?.variantId
+                          ? `Edit ${data.name} Product Information`
+                          : isNewVariantPage
+                            ? `Add a new variant to ${data.name}`
+                            : "Create a new Product Information"}
                 </CardTitle>
                 <CardDescription>
                     {data?.productId && data?.variantId
@@ -536,104 +554,130 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                         onSubmit={form.handleSubmit(handleSubmit)}
                         className="space-y-4"
                     >
-                        {/* Images - colors */}
-                        <div className="flex flex-col gap-y-6 xl:flex-row">
-                            {/* Images */}
-                            <FormField
-                                control={form.control}
-                                name="images"
-                                render={({ field }) => (
-                                    <FormItem className="w-full xl:border-r">
-                                        <FormControl>
-                                            <>
-                                                <ImagesPreviewGrid
-                                                    images={
-                                                        form.getValues().images
-                                                    }
-                                                    onRemove={(url) => {
-                                                        const updatedImages =
-                                                            images.filter(
-                                                                (img) =>
-                                                                    img.url !==
-                                                                    url
-                                                            );
-                                                        setImages(
-                                                            updatedImages
-                                                        );
-                                                        field.onChange(
-                                                            updatedImages
-                                                        );
-                                                    }}
-                                                    colors={colors}
-                                                    setColors={setColors}
-                                                />
-                                                <FormMessage className="!mt-4" />
-                                                <ImageUpload
-                                                    dontShowPreview
-                                                    type="standard"
-                                                    value={field.value.map(
-                                                        (image) => image.url
-                                                    )}
-                                                    onChange={(url) => {
-                                                        setImages(
-                                                            (prevImages) => {
-                                                                const updatedImages =
-                                                                    [
-                                                                        ...prevImages,
-                                                                        {
-                                                                            url,
-                                                                        },
-                                                                    ];
-                                                                field.onChange(
-                                                                    updatedImages
+                        <fieldset
+                            disabled={isLoading}
+                            className="min-w-0 space-y-4"
+                            aria-label="Product fields"
+                        >
+                            {/* Images - colors */}
+                            <div className="flex flex-col gap-y-6 xl:flex-row">
+                                {/* Images */}
+                                <FormField
+                                    control={form.control}
+                                    name="images"
+                                    render={({ field }) => (
+                                        <FormItem className="w-full xl:border-r">
+                                            <FormControl>
+                                                <>
+                                                    <ImagesPreviewGrid
+                                                        design={design}
+                                                        images={
+                                                            form.getValues()
+                                                                .images
+                                                        }
+                                                        onRemove={(url) => {
+                                                            const updatedImages =
+                                                                images.filter(
+                                                                    (img) =>
+                                                                        img.url !==
+                                                                        url
                                                                 );
-                                                                return updatedImages;
-                                                            }
-                                                        );
-                                                    }}
-                                                    onRemove={(url) =>
-                                                        field.onChange([
-                                                            ...field.value.filter(
-                                                                (current) =>
-                                                                    current.url !==
-                                                                    url
-                                                            ),
-                                                        ])
-                                                    }
-                                                />
-                                            </>
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                            {/* Colors */}
-                            <div className="flex w-full flex-col gap-y-3 xl:pl-5">
-                                <ClickToAddInputs
-                                    details={colors}
-                                    setDetails={setColors}
-                                    initialDetail={{ color: "" }}
-                                    header="Colors"
-                                    colorPicker
+                                                            setImages(
+                                                                updatedImages
+                                                            );
+                                                            field.onChange(
+                                                                updatedImages
+                                                            );
+                                                        }}
+                                                        colors={colors}
+                                                        setColors={setColors}
+                                                    />
+                                                    <FormMessage className="!mt-4" />
+                                                    <ImageUpload
+                                                        dontShowPreview
+                                                        type="standard"
+                                                        value={field.value.map(
+                                                            (image) => image.url
+                                                        )}
+                                                        onChange={(url) => {
+                                                            setImages(
+                                                                (
+                                                                    prevImages
+                                                                ) => {
+                                                                    const updatedImages =
+                                                                        [
+                                                                            ...prevImages,
+                                                                            {
+                                                                                url,
+                                                                            },
+                                                                        ];
+                                                                    field.onChange(
+                                                                        updatedImages
+                                                                    );
+                                                                    return updatedImages;
+                                                                }
+                                                            );
+                                                        }}
+                                                        onRemove={(url) =>
+                                                            field.onChange([
+                                                                ...field.value.filter(
+                                                                    (current) =>
+                                                                        current.url !==
+                                                                        url
+                                                                ),
+                                                            ])
+                                                        }
+                                                    />
+                                                </>
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
                                 />
-                                {errors.colors && (
-                                    <span className="text-sm font-medium text-destructive">
-                                        {errors.colors.message}
-                                    </span>
-                                )}
+                                {/* Colors */}
+                                <div className="flex w-full flex-col gap-y-3 xl:pl-5">
+                                    <ClickToAddInputs
+                                        design={design}
+                                        details={colors}
+                                        setDetails={setColors}
+                                        initialDetail={{ color: "" }}
+                                        header="Colors"
+                                        colorPicker
+                                    />
+                                    {errors.colors && (
+                                        <span className="text-sm font-medium text-destructive">
+                                            {errors.colors.message}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                        {/* Name */}
-                        <InputFieldset label="Name">
-                            <div className="flex flex-col gap-4 lg:flex-row">
-                                {!isNewVariantPage && (
+                            {/* Name */}
+                            <InputFieldset label="Name">
+                                <div className="flex flex-col gap-4 lg:flex-row">
+                                    {!isNewVariantPage && (
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="Product Name"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
                                     <FormField
                                         control={form.control}
-                                        name="name"
+                                        name="variantName"
                                         render={({ field }) => (
                                             <FormItem className="flex-1">
                                                 <FormControl>
                                                     <Input
-                                                        placeholder="Product Name"
+                                                        placeholder="Variant Name"
                                                         {...field}
                                                     />
                                                 </FormControl>
@@ -641,285 +685,303 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                             </FormItem>
                                         )}
                                     />
-                                )}
-                                <FormField
-                                    control={form.control}
-                                    name="variantName"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Variant Name"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </InputFieldset>
-                        {/* Product and variant description editors (tabs) */}
-                        {!isNewVariantPage && (
-                            <InputFieldset
-                                label="Description Editors"
-                                description={
-                                    isNewVariantPage
-                                        ? ""
-                                        : " Note: The product description is the main description for the product (Will display in every variant page). You can add an extra description specific to this variant using Variant description tab"
-                                }
-                            >
-                                <Tabs
-                                    defaultValue={
-                                        isNewVariantPage ? "variant" : "product"
-                                    }
-                                    className="w-full"
-                                >
-                                    {!isNewVariantPage && (
-                                        <TabsList className="grid w-full grid-cols-2">
-                                            <TabsTrigger value="product">
-                                                Product description
-                                            </TabsTrigger>
-                                            <TabsTrigger value="variant">
-                                                Variant description
-                                            </TabsTrigger>
-                                        </TabsList>
-                                    )}
-                                    <TabsContent value="product">
-                                        <FormField
-                                            control={form.control}
-                                            name="description"
-                                            render={({ field }) => (
-                                                <FormItem className="flex-1">
-                                                    <FormControl>
-                                                        <JoditEditor
-                                                            ref={
-                                                                productDescEditor
-                                                            }
-                                                            config={config}
-                                                            value={
-                                                                form.getValues()
-                                                                    .description
-                                                            }
-                                                            onChange={(
-                                                                content
-                                                            ) => {
-                                                                form.setValue(
-                                                                    "description",
-                                                                    content
-                                                                );
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </TabsContent>
-                                    <TabsContent value="variant">
-                                        <FormField
-                                            control={form.control}
-                                            name="variantDescription"
-                                            render={({ field }) => (
-                                                <FormItem className="flex-1">
-                                                    <FormControl>
-                                                        <JoditEditor
-                                                            ref={
-                                                                variantDescEditor
-                                                            }
-                                                            config={config}
-                                                            value={
-                                                                form.getValues()
-                                                                    .variantDescription ||
-                                                                ""
-                                                            }
-                                                            onChange={(
-                                                                content
-                                                            ) => {
-                                                                form.setValue(
-                                                                    "variantDescription",
-                                                                    content
-                                                                );
-                                                            }}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </TabsContent>
-                                </Tabs>
+                                </div>
                             </InputFieldset>
-                        )}
-                        {/* Category - SubCategory - offer */}
-                        <InputFieldset label="Category">
-                            <div className="flex flex-col gap-4 lg:flex-row">
-                                <FormField
-                                    control={form.control}
-                                    name="subCategoryId"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <Select
-                                                disabled={
-                                                    isLoading ||
-                                                    categories.length === 0
-                                                }
-                                                onValueChange={field.onChange}
-                                                value={field.value}
-                                                defaultValue={field.value}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger aria-label="Category">
-                                                        <SelectValue
-                                                            defaultValue={
-                                                                field.value
-                                                            }
-                                                            placeholder="Select a category"
-                                                        />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent
-                                                    className={
-                                                        design === "seller"
-                                                            ? sellerStyles.theme
-                                                            : undefined
-                                                    }
-                                                >
-                                                    {categories.map(
-                                                        (category) => (
-                                                            <SelectItem
-                                                                key={
-                                                                    category.id
+                            {/* Product and variant description editors (tabs) */}
+                            {!isNewVariantPage && (
+                                <InputFieldset
+                                    label="Description Editors"
+                                    description={
+                                        isNewVariantPage
+                                            ? ""
+                                            : " Note: The product description is the main description for the product (Will display in every variant page). You can add an extra description specific to this variant using Variant description tab"
+                                    }
+                                >
+                                    <Tabs
+                                        defaultValue={
+                                            isNewVariantPage
+                                                ? "variant"
+                                                : "product"
+                                        }
+                                        className="w-full"
+                                    >
+                                        {!isNewVariantPage && (
+                                            <TabsList className="grid w-full grid-cols-2">
+                                                <TabsTrigger value="product">
+                                                    Product description
+                                                </TabsTrigger>
+                                                <TabsTrigger value="variant">
+                                                    Variant description
+                                                </TabsTrigger>
+                                            </TabsList>
+                                        )}
+                                        <TabsContent value="product">
+                                            <FormField
+                                                control={form.control}
+                                                name="description"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex-1">
+                                                        <FormControl>
+                                                            <JoditEditor
+                                                                ref={
+                                                                    productDescEditor
                                                                 }
+                                                                config={{
+                                                                    ...config,
+                                                                    readonly:
+                                                                        isLoading,
+                                                                }}
                                                                 value={
-                                                                    category.id
+                                                                    form.getValues()
+                                                                        .description
                                                                 }
-                                                                disabled={
-                                                                    !isProductAssignableCategory(
-                                                                        category
-                                                                    )
+                                                                onChange={(
+                                                                    content
+                                                                ) => {
+                                                                    form.setValue(
+                                                                        "description",
+                                                                        content
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </TabsContent>
+                                        <TabsContent value="variant">
+                                            <FormField
+                                                control={form.control}
+                                                name="variantDescription"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex-1">
+                                                        <FormControl>
+                                                            <JoditEditor
+                                                                ref={
+                                                                    variantDescEditor
                                                                 }
-                                                            >
-                                                                {"\u00A0".repeat(
-                                                                    category.depth *
-                                                                        4
-                                                                )}
-                                                                {category.name}
-                                                            </SelectItem>
-                                                        )
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />{" "}
-                                {/* Offer Tag */}
-                                <FormField
-                                    disabled={isLoading}
-                                    control={form.control}
-                                    name="offerTagId"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <Select
-                                                disabled={
-                                                    isLoading ||
-                                                    categories.length == 0
-                                                }
-                                                onValueChange={field.onChange}
-                                                value={field.value}
-                                                defaultValue={field.value}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger aria-label="Offer">
-                                                        <SelectValue
-                                                            defaultValue={
-                                                                field.value
-                                                            }
-                                                            placeholder="Select an offer"
-                                                        />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent
-                                                    className={
-                                                        design === "seller"
-                                                            ? sellerStyles.theme
-                                                            : undefined
+                                                                config={{
+                                                                    ...config,
+                                                                    readonly:
+                                                                        isLoading,
+                                                                }}
+                                                                value={
+                                                                    form.getValues()
+                                                                        .variantDescription ||
+                                                                    ""
+                                                                }
+                                                                onChange={(
+                                                                    content
+                                                                ) => {
+                                                                    form.setValue(
+                                                                        "variantDescription",
+                                                                        content
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </TabsContent>
+                                    </Tabs>
+                                </InputFieldset>
+                            )}
+                            {/* Category - SubCategory - offer */}
+                            <InputFieldset label="Category">
+                                <div className="flex flex-col gap-4 lg:flex-row">
+                                    <FormField
+                                        control={form.control}
+                                        name="subCategoryId"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <Select
+                                                    disabled={
+                                                        isLoading ||
+                                                        categories.length === 0
                                                     }
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                    value={field.value}
+                                                    defaultValue={field.value}
                                                 >
-                                                    {offerTags &&
-                                                        offerTags.map(
-                                                            (offer) => (
+                                                    <FormControl>
+                                                        <SelectTrigger aria-label="Category">
+                                                            <SelectValue
+                                                                defaultValue={
+                                                                    field.value
+                                                                }
+                                                                placeholder="Select a category"
+                                                            />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent
+                                                        className={
+                                                            design === "seller"
+                                                                ? sellerStyles.theme
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {categories.map(
+                                                            (category) => (
                                                                 <SelectItem
                                                                     key={
-                                                                        offer.id
+                                                                        category.id
                                                                     }
                                                                     value={
-                                                                        offer.id
+                                                                        category.id
+                                                                    }
+                                                                    disabled={
+                                                                        !isProductAssignableCategory(
+                                                                            category
+                                                                        )
                                                                     }
                                                                 >
-                                                                    {offer.name}
+                                                                    {"\u00A0".repeat(
+                                                                        category.depth *
+                                                                            4
+                                                                    )}
+                                                                    {
+                                                                        category.name
+                                                                    }
                                                                 </SelectItem>
                                                             )
                                                         )}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </InputFieldset>
-                        {/* カテゴリ別属性（plan 069）: 商品レベルは 1 度だけ、バリアント属性はこのバリアントに */}
-                        {attributeLoadError && (
-                            <p
-                                role="alert"
-                                className="rounded-md border border-destructive/50 p-3 text-sm font-medium text-destructive"
-                            >
-                                {attributeLoadError}
-                            </p>
-                        )}
-                        {includeProductScope &&
-                            productAttributeDefs.length > 0 && (
-                                <InputFieldset label="Product attributes">
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />{" "}
+                                    {/* Offer Tag */}
+                                    <FormField
+                                        disabled={isLoading}
+                                        control={form.control}
+                                        name="offerTagId"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <Select
+                                                    disabled={
+                                                        isLoading ||
+                                                        categories.length == 0
+                                                    }
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                    value={field.value}
+                                                    defaultValue={field.value}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger aria-label="Offer">
+                                                            <SelectValue
+                                                                defaultValue={
+                                                                    field.value
+                                                                }
+                                                                placeholder="Select an offer"
+                                                            />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent
+                                                        className={
+                                                            design === "seller"
+                                                                ? sellerStyles.theme
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {offerTags &&
+                                                            offerTags.map(
+                                                                (offer) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            offer.id
+                                                                        }
+                                                                        value={
+                                                                            offer.id
+                                                                        }
+                                                                    >
+                                                                        {
+                                                                            offer.name
+                                                                        }
+                                                                    </SelectItem>
+                                                                )
+                                                            )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </InputFieldset>
+                            {/* カテゴリ別属性（plan 069）: 商品レベルは 1 度だけ、バリアント属性はこのバリアントに */}
+                            {attributeLoadError && (
+                                <p
+                                    role="alert"
+                                    className="rounded-md border border-destructive/50 p-3 text-sm font-medium text-destructive"
+                                >
+                                    {attributeLoadError}
+                                </p>
+                            )}
+                            {includeProductScope &&
+                                productAttributeDefs.length > 0 && (
+                                    <InputFieldset label="Product attributes">
+                                        <AttributeFields
+                                            control={form.control}
+                                            prefix="productAttributes"
+                                            definitions={productAttributeDefs}
+                                            archivedCurrent={archivedCurrent}
+                                            disabled={isLoading}
+                                        />
+                                    </InputFieldset>
+                                )}
+                            {variantAttributeDefs.length > 0 && (
+                                <InputFieldset label="Variant attributes">
                                     <AttributeFields
                                         control={form.control}
-                                        prefix="productAttributes"
-                                        definitions={productAttributeDefs}
+                                        prefix="variantAttributes"
+                                        definitions={variantAttributeDefs}
                                         archivedCurrent={archivedCurrent}
                                         disabled={isLoading}
                                     />
                                 </InputFieldset>
                             )}
-                        {variantAttributeDefs.length > 0 && (
-                            <InputFieldset label="Variant attributes">
-                                <AttributeFields
-                                    control={form.control}
-                                    prefix="variantAttributes"
-                                    definitions={variantAttributeDefs}
-                                    archivedCurrent={archivedCurrent}
-                                    disabled={isLoading}
-                                />
-                            </InputFieldset>
-                        )}
-                        {/* Brand, Sku, weight */}
-                        <InputFieldset
-                            label={
-                                isNewVariantPage
-                                    ? "Sku, Weight"
-                                    : "Brand, Sku, Weight"
-                            }
-                        >
-                            <div className="flex flex-col gap-4 lg:flex-row">
-                                {!isNewVariantPage && (
+                            {/* Brand, Sku, weight */}
+                            <InputFieldset
+                                label={
+                                    isNewVariantPage
+                                        ? "Sku, Weight"
+                                        : "Brand, Sku, Weight"
+                                }
+                            >
+                                <div className="flex flex-col gap-4 lg:flex-row">
+                                    {!isNewVariantPage && (
+                                        <FormField
+                                            control={form.control}
+                                            name="brand"
+                                            render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="Product Brand"
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
                                     <FormField
                                         control={form.control}
-                                        name="brand"
+                                        name="sku"
                                         render={({ field }) => (
                                             <FormItem className="flex-1">
                                                 <FormControl>
                                                     <Input
-                                                        placeholder="Product Brand"
+                                                        placeholder="Product Sku"
                                                         {...field}
                                                     />
                                                 </FormControl>
@@ -927,441 +989,300 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                             </FormItem>
                                         )}
                                     />
-                                )}
-                                <FormField
-                                    control={form.control}
-                                    name="sku"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Product Sku"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="weight"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormControl>
-                                                <NumberInput
-                                                    defaultValue={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    placeholder="Product Weight"
-                                                    min={0.01}
-                                                    step={0.01}
-                                                    className="rounded-md !text-sm !shadow-none"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                        </InputFieldset>
-
-                        {/* Variant image - Keywords */}
-                        <div className="flex items-center gap-10 py-14">
-                            {/* Variant image */}
-                            <div className="border-r pr-10">
-                                <FormField
-                                    control={form.control}
-                                    name="variantImage"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="ml-14">
-                                                Variant Image
-                                            </FormLabel>
-                                            <FormControl>
-                                                <ImageUpload
-                                                    dontShowPreview
-                                                    type="profile"
-                                                    value={field.value.map(
-                                                        (image) => image.url
-                                                    )}
-                                                    onChange={(url) =>
-                                                        field.onChange([
-                                                            { url },
-                                                        ])
-                                                    }
-                                                    onRemove={(url) =>
-                                                        field.onChange([
-                                                            ...field.value.filter(
-                                                                (current) =>
-                                                                    current.url !==
-                                                                    url
-                                                            ),
-                                                        ])
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormMessage className="!mt-4" />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            {/* Keywords */}
-                            <div className="w-full flex-1 space-y-3">
-                                <FormField
-                                    control={form.control}
-                                    name="keywords"
-                                    render={({ field }) => (
-                                        <FormItem className="relative flex-1">
-                                            <FormLabel>Product Label</FormLabel>
-                                            <FormControl>
-                                                <ReactTags
-                                                    handleAddition={
-                                                        handleAddition
-                                                    }
-                                                    handleDelete={
-                                                        handleDeleteKeyword
-                                                    }
-                                                    placeholder="Keywords (e.g., size, color, material)"
-                                                    classNames={{
-                                                        tagInputField:
-                                                            "bg-background border rounded-md p-2 w-full focus:outline-none",
-                                                    }}
-                                                />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                                <div className="flex flex-wrap gap-1">
-                                    {keywords.map((k, i) => (
-                                        <div
-                                            key={i}
-                                            className="inline-flex items-center gap-x-2 rounded-full bg-blue-200 px-3 py-1 text-xs text-blue-700"
-                                        >
-                                            <span>{k}</span>
-                                            <span
-                                                className="cursor-pointer"
-                                                onClick={() =>
-                                                    handleDeleteKeyword(i)
-                                                }
-                                            >
-                                                x
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                        {/* Sizes */}
-                        <InputFieldset label="Sizes, Quantities, Prices, Discounts">
-                            <div className="flex w-full flex-col gap-y-3">
-                                <ClickToAddInputs
-                                    details={sizes}
-                                    setDetails={setSizes}
-                                    initialDetail={{
-                                        size: "",
-                                        quantity: 1,
-                                        price: 0.01,
-                                        discount: 0,
-                                    }}
-                                    containerClassName="flex-1"
-                                    inputClassName="w-full"
-                                />
-                                {errors.sizes && (
-                                    <span className="text-sm font-medium text-destructive">
-                                        {errors.sizes.message}
-                                    </span>
-                                )}
-                            </div>
-                        </InputFieldset>
-
-                        {/* Product and variant specs */}
-                        <InputFieldset
-                            label="Specifications"
-                            description={
-                                isNewVariantPage
-                                    ? ""
-                                    : "Note: The product specifications are the main specs for the product (Will display in every variant page). You can add extra specs specific to this variant using 'Variant Specifications' tab."
-                            }
-                        >
-                            <Tabs
-                                defaultValue={
-                                    isNewVariantPage
-                                        ? "variantSpecs"
-                                        : "productSpecs"
-                                }
-                                className="w-full"
-                            >
-                                {!isNewVariantPage && (
-                                    <TabsList className="grid w-full grid-cols-2">
-                                        <TabsTrigger value="productSpecs">
-                                            Product Specifications
-                                        </TabsTrigger>
-                                        <TabsTrigger value="variantSpecs">
-                                            Variant Specifications
-                                        </TabsTrigger>
-                                    </TabsList>
-                                )}
-                                <TabsContent value="productSpecs">
-                                    <div className="flex w-full flex-col gap-y-3">
-                                        <ClickToAddInputs
-                                            details={productSpecs}
-                                            setDetails={setProductSpecs}
-                                            initialDetail={{
-                                                name: "",
-                                                value: "",
-                                            }}
-                                            containerClassName="flex-1"
-                                            inputClassName="w-full"
-                                        />
-                                        {errors.product_specs && (
-                                            <span className="text-sm font-medium text-destructive">
-                                                {errors.product_specs.message}
-                                            </span>
+                                    <FormField
+                                        control={form.control}
+                                        name="weight"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormControl>
+                                                    <NumberInput
+                                                        defaultValue={
+                                                            field.value
+                                                        }
+                                                        onValueChange={
+                                                            field.onChange
+                                                        }
+                                                        placeholder="Product Weight"
+                                                        min={0.01}
+                                                        step={0.01}
+                                                        className="rounded-md !text-sm !shadow-none"
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
                                         )}
-                                    </div>
-                                </TabsContent>
-                                <TabsContent value="variantSpecs">
-                                    <div className="flex w-full flex-col gap-y-3">
-                                        <ClickToAddInputs
-                                            details={variantSpecs}
-                                            setDetails={setVariantSpecs}
-                                            initialDetail={{
-                                                name: "",
-                                                value: "",
-                                            }}
-                                            containerClassName="flex-1"
-                                            inputClassName="w-full"
-                                        />
-                                        {errors.variant_specs && (
-                                            <span className="text-sm font-medium text-destructive">
-                                                {errors.variant_specs.message}
-                                            </span>
-                                        )}
-                                    </div>
-                                </TabsContent>
-                            </Tabs>
-                            {specOverlaps.length > 0 && (
-                                <output className="mt-3 block rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                                    <p>
-                                        These specifications duplicate
-                                        attributes of this category. Enter the
-                                        values in the attribute fields and keep
-                                        specifications for supplementary notes.
-                                    </p>
-                                    <ul className="mt-1 list-disc pl-5">
-                                        {specOverlaps.map((overlap) => (
-                                            <li key={overlap.specName}>
-                                                {overlap.specName} →{" "}
-                                                {overlap.attributeName}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </output>
-                            )}
-                        </InputFieldset>
-
-                        {/* Questions */}
-                        {!isNewVariantPage && (
-                            <InputFieldset label="Questions & Answers">
-                                <div className="flex w-full flex-col gap-y-3">
-                                    <ClickToAddInputs
-                                        details={questions}
-                                        setDetails={setQuestions}
-                                        initialDetail={{
-                                            question: "",
-                                            answer: "",
-                                        }}
-                                        containerClassName="flex-1"
-                                        inputClassName="w-full"
                                     />
-                                    {errors.questions && (
-                                        <span className="text-sm font-medium text-destructive">
-                                            {errors.questions.message}
-                                        </span>
-                                    )}
                                 </div>
                             </InputFieldset>
-                        )}
-                        {/* Is On Sale */}
-                        <InputFieldset
-                            label="Sales"
-                            description="Is your product on sale ?"
-                        >
-                            <div>
-                                <label
-                                    htmlFor="yes"
-                                    className="ml-5 flex cursor-pointer items-center gap-x-2"
+
+                            {/* Variant image - Keywords */}
+                            <div
+                                className={
+                                    design === "seller"
+                                        ? sellerStyles.mediaEditor
+                                        : "flex items-center gap-10 py-14"
+                                }
+                            >
+                                {/* Variant image */}
+                                <div
+                                    className={
+                                        design === "seller"
+                                            ? "min-w-0"
+                                            : "border-r pr-10"
+                                    }
                                 >
                                     <FormField
                                         control={form.control}
-                                        name="isSale"
+                                        name="variantImage"
                                         render={({ field }) => (
                                             <FormItem>
+                                                <FormLabel
+                                                    className={
+                                                        design === "seller"
+                                                            ? "block"
+                                                            : "ml-14"
+                                                    }
+                                                >
+                                                    Variant Image
+                                                </FormLabel>
                                                 <FormControl>
-                                                    <>
-                                                        <input
-                                                            type="checkbox"
-                                                            id="yes"
-                                                            checked={
-                                                                field.value
-                                                            }
-                                                            onChange={
-                                                                field.onChange
-                                                            }
-                                                            hidden
-                                                        />
-                                                        <Checkbox
-                                                            checked={
-                                                                field.value
-                                                            }
-                                                            // @ts-ignore
-                                                            onCheckedChange={
-                                                                field.onChange
-                                                            }
-                                                        />
-                                                    </>
+                                                    <ImageUpload
+                                                        dontShowPreview
+                                                        type="profile"
+                                                        value={field.value.map(
+                                                            (image) => image.url
+                                                        )}
+                                                        onChange={(url) =>
+                                                            field.onChange([
+                                                                { url },
+                                                            ])
+                                                        }
+                                                        onRemove={(url) =>
+                                                            field.onChange([
+                                                                ...field.value.filter(
+                                                                    (current) =>
+                                                                        current.url !==
+                                                                        url
+                                                                ),
+                                                            ])
+                                                        }
+                                                    />
+                                                </FormControl>
+                                                <FormMessage className="!mt-4" />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                {/* Keywords */}
+                                <div className="w-full flex-1 space-y-3">
+                                    <FormField
+                                        control={form.control}
+                                        name="keywords"
+                                        render={({ field }) => (
+                                            <FormItem className="relative flex-1">
+                                                <FormLabel>
+                                                    Product Label
+                                                </FormLabel>
+                                                <FormControl>
+                                                    <ReactTags
+                                                        handleAddition={
+                                                            handleAddition
+                                                        }
+                                                        handleDelete={
+                                                            handleDeleteKeyword
+                                                        }
+                                                        placeholder="Keywords (e.g., size, color, material)"
+                                                        classNames={{
+                                                            tagInputField:
+                                                                "bg-background border rounded-md p-2 w-full focus:outline-none",
+                                                        }}
+                                                    />
                                                 </FormControl>
                                             </FormItem>
                                         )}
                                     />
-                                    <span>Yes</span>
-                                </label>
-                                {form.getValues().isSale && (
-                                    <div className="mt-5">
-                                        <p className="flex pb-3 text-sm text-main-secondary dark:text-gray-400">
-                                            <Dot className="-me-1" />
-                                            When sale does end ?
-                                        </p>
-                                        <div className="flex items-center gap-x-5">
-                                            <FormField
-                                                control={form.control}
-                                                name="saleEndDate"
-                                                render={({ field }) => (
-                                                    <FormItem className="ml-4">
-                                                        <FormControl>
-                                                            <DateTimePicker
-                                                                className="inline-flex items-center gap-2 rounded-md border p-2 shadow-sm"
-                                                                calendarIcon={
-                                                                    <span className="text-gray-500 hover:text-gray-600">
-                                                                        🗓️
-                                                                    </span>
-                                                                }
-                                                                clearIcon={
-                                                                    <span className="text-gray-500 hover:text-gray-600">
-                                                                        ❌
-                                                                    </span>
-                                                                }
-                                                                onChange={(
-                                                                    date
-                                                                ) => {
-                                                                    // ProductFormSchema は
-                                                                    // `.datetime({ offset: true })`。
-                                                                    // タイムゾーンを落とした表記も空文字も
-                                                                    // 通らないため、絶対時刻 (UTC) か
-                                                                    // null のどちらかを書く。
-                                                                    field.onChange(
-                                                                        date
-                                                                            ? date.toISOString()
-                                                                            : null
-                                                                    );
-                                                                }}
-                                                                value={
-                                                                    field.value
-                                                                        ? new Date(
-                                                                              field.value
-                                                                          )
-                                                                        : null
-                                                                }
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <ArrowRight className="w-4 text-[#1087ff]" />
-                                            <span>{formattedDate}</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </InputFieldset>
-                        {/* Shipping fee method */}
-                        {!isNewVariantPage && (
-                            <InputFieldset label="Product shipping fee method">
-                                <FormField
-                                    control={form.control}
-                                    name="shippingFeeMethod"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <Select
-                                                disabled={isLoading}
-                                                onValueChange={field.onChange}
-                                                value={field.value}
-                                                defaultValue={field.value}
+                                    <div className="flex flex-wrap gap-1">
+                                        {keywords.map((k, i) => (
+                                            <div
+                                                key={i}
+                                                className="inline-flex items-center gap-x-2 rounded-full bg-blue-200 px-3 py-1 text-xs text-blue-700"
                                             >
-                                                <FormControl>
-                                                    <SelectTrigger aria-label="Shipping fee method">
-                                                        <SelectValue
-                                                            defaultValue={
-                                                                field.value
-                                                            }
-                                                            placeholder="Select Shipping Fee Calculation method"
-                                                        />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent
-                                                    className={
-                                                        design === "seller"
-                                                            ? sellerStyles.theme
-                                                            : undefined
+                                                <span>{k}</span>
+                                                <span
+                                                    className="cursor-pointer"
+                                                    onClick={() =>
+                                                        handleDeleteKeyword(i)
                                                     }
                                                 >
-                                                    {shippingFeeMethods.map(
-                                                        (method) => (
-                                                            <SelectItem
-                                                                key={
-                                                                    method.value
-                                                                }
-                                                                value={
-                                                                    method.value
-                                                                }
-                                                            >
-                                                                {
-                                                                    method.description
-                                                                }
-                                                            </SelectItem>
-                                                        )
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
+                                                    x
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Sizes */}
+                            <InputFieldset label="Sizes, Quantities, Prices, Discounts">
+                                <div className="flex w-full flex-col gap-y-3">
+                                    <ClickToAddInputs
+                                        design={design}
+                                        details={sizes}
+                                        setDetails={setSizes}
+                                        initialDetail={{
+                                            size: "",
+                                            quantity: 1,
+                                            price: 0.01,
+                                            discount: 0,
+                                        }}
+                                        containerClassName="flex-1"
+                                        inputClassName="w-full"
+                                    />
+                                    {errors.sizes && (
+                                        <span className="text-sm font-medium text-destructive">
+                                            {errors.sizes.message}
+                                        </span>
                                     )}
-                                />
+                                </div>
                             </InputFieldset>
-                        )}
-                        {/* Free Shipping */}
-                        {!isNewVariantPage && (
+
+                            {/* Product and variant specs */}
                             <InputFieldset
-                                label="Free Shipping (Optional)"
-                                description="Free Shipping Worldwide?"
+                                label="Specifications"
+                                description={
+                                    isNewVariantPage
+                                        ? ""
+                                        : "Note: The product specifications are the main specs for the product (Will display in every variant page). You can add extra specs specific to this variant using 'Variant Specifications' tab."
+                                }
+                            >
+                                <Tabs
+                                    defaultValue={
+                                        isNewVariantPage
+                                            ? "variantSpecs"
+                                            : "productSpecs"
+                                    }
+                                    className="w-full"
+                                >
+                                    {!isNewVariantPage && (
+                                        <TabsList className="grid w-full grid-cols-2">
+                                            <TabsTrigger value="productSpecs">
+                                                Product Specifications
+                                            </TabsTrigger>
+                                            <TabsTrigger value="variantSpecs">
+                                                Variant Specifications
+                                            </TabsTrigger>
+                                        </TabsList>
+                                    )}
+                                    <TabsContent value="productSpecs">
+                                        <div className="flex w-full flex-col gap-y-3">
+                                            <ClickToAddInputs
+                                                design={design}
+                                                details={productSpecs}
+                                                setDetails={setProductSpecs}
+                                                initialDetail={{
+                                                    name: "",
+                                                    value: "",
+                                                }}
+                                                containerClassName="flex-1"
+                                                inputClassName="w-full"
+                                            />
+                                            {errors.product_specs && (
+                                                <span className="text-sm font-medium text-destructive">
+                                                    {
+                                                        errors.product_specs
+                                                            .message
+                                                    }
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TabsContent>
+                                    <TabsContent value="variantSpecs">
+                                        <div className="flex w-full flex-col gap-y-3">
+                                            <ClickToAddInputs
+                                                design={design}
+                                                details={variantSpecs}
+                                                setDetails={setVariantSpecs}
+                                                initialDetail={{
+                                                    name: "",
+                                                    value: "",
+                                                }}
+                                                containerClassName="flex-1"
+                                                inputClassName="w-full"
+                                            />
+                                            {errors.variant_specs && (
+                                                <span className="text-sm font-medium text-destructive">
+                                                    {
+                                                        errors.variant_specs
+                                                            .message
+                                                    }
+                                                </span>
+                                            )}
+                                        </div>
+                                    </TabsContent>
+                                </Tabs>
+                                {specOverlaps.length > 0 && (
+                                    <output className="mt-3 block rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                                        <p>
+                                            These specifications duplicate
+                                            attributes of this category. Enter
+                                            the values in the attribute fields
+                                            and keep specifications for
+                                            supplementary notes.
+                                        </p>
+                                        <ul className="mt-1 list-disc pl-5">
+                                            {specOverlaps.map((overlap) => (
+                                                <li key={overlap.specName}>
+                                                    {overlap.specName} →{" "}
+                                                    {overlap.attributeName}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </output>
+                                )}
+                            </InputFieldset>
+
+                            {/* Questions */}
+                            {!isNewVariantPage && (
+                                <InputFieldset label="Questions & Answers">
+                                    <div className="flex w-full flex-col gap-y-3">
+                                        <ClickToAddInputs
+                                            design={design}
+                                            details={questions}
+                                            setDetails={setQuestions}
+                                            initialDetail={{
+                                                question: "",
+                                                answer: "",
+                                            }}
+                                            containerClassName="flex-1"
+                                            inputClassName="w-full"
+                                        />
+                                        {errors.questions && (
+                                            <span className="text-sm font-medium text-destructive">
+                                                {errors.questions.message}
+                                            </span>
+                                        )}
+                                    </div>
+                                </InputFieldset>
+                            )}
+                            {/* Is On Sale */}
+                            <InputFieldset
+                                label="Sales"
+                                description="Is your product on sale ?"
                             >
                                 <div>
                                     <label
-                                        htmlFor="freeShippingForAll"
+                                        htmlFor="yes"
                                         className="ml-5 flex cursor-pointer items-center gap-x-2"
                                     >
                                         <FormField
                                             control={form.control}
-                                            name="freeShippingForAllCountries"
+                                            name="isSale"
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormControl>
                                                         <>
                                                             <input
                                                                 type="checkbox"
-                                                                id="freeShippingForAll"
+                                                                id="yes"
                                                                 checked={
                                                                     field.value
                                                                 }
@@ -1386,154 +1307,334 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                         />
                                         <span>Yes</span>
                                     </label>
-                                </div>
-                                <div>
-                                    <p className="mt-4 flex pb-3 text-sm text-main-secondary dark:text-gray-400">
-                                        <Dot className="-me-1" />
-                                        If selected, customers will not need to
-                                        pay shipping fees when purchasing from
-                                        this product in any country.
-                                    </p>
-                                </div>
-                                <div>
-                                    {!form.getValues()
-                                        .freeShippingForAllCountries && (
-                                        <div>
-                                            <FormField
-                                                control={form.control}
-                                                name="freeShippingCountriesIds"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormControl>
-                                                            {design ===
-                                                            "seller" ? (
-                                                                <select
-                                                                    multiple
-                                                                    aria-label="Countries eligible for free shipping"
-                                                                    value={field.value.map(
-                                                                        (
-                                                                            country
-                                                                        ) =>
-                                                                            country.value
-                                                                    )}
-                                                                    onChange={(
-                                                                        event
-                                                                    ) =>
-                                                                        field.onChange(
-                                                                            countryOptions.filter(
-                                                                                (
-                                                                                    country
-                                                                                ) =>
-                                                                                    Array.from(
-                                                                                        event
-                                                                                            .target
-                                                                                            .selectedOptions
-                                                                                    ).some(
-                                                                                        (
-                                                                                            option
-                                                                                        ) =>
-                                                                                            option.value ===
-                                                                                            country.value
-                                                                                    )
-                                                                            )
-                                                                        )
+                                    {form.getValues().isSale && (
+                                        <div className="mt-5">
+                                            <p className="flex pb-3 text-sm text-main-secondary dark:text-gray-400">
+                                                <Dot className="-me-1" />
+                                                When sale does end ?
+                                            </p>
+                                            <div className="flex items-center gap-x-5">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="saleEndDate"
+                                                    render={({ field }) => (
+                                                        <FormItem className="ml-4">
+                                                            <FormControl>
+                                                                <DateTimePicker
+                                                                    className="inline-flex items-center gap-2 rounded-md border p-2 shadow-sm"
+                                                                    calendarIcon={
+                                                                        <span className="text-gray-500 hover:text-gray-600">
+                                                                            🗓️
+                                                                        </span>
                                                                     }
-                                                                >
-                                                                    {countryOptions.map(
-                                                                        (
-                                                                            country
-                                                                        ) => (
-                                                                            <option
-                                                                                key={
-                                                                                    country.value
-                                                                                }
-                                                                                value={
-                                                                                    country.value
-                                                                                }
-                                                                            >
-                                                                                {
-                                                                                    country.label
-                                                                                }
-                                                                            </option>
-                                                                        )
-                                                                    )}
-                                                                </select>
-                                                            ) : (
-                                                                <MultiSelect
-                                                                    className="!max-w-[800px]"
-                                                                    options={
-                                                                        countryOptions
-                                                                    } // Array of options, each with `label` and `value`
-                                                                    value={
-                                                                        field.value
-                                                                    } // Pass the array of objects directly
+                                                                    clearIcon={
+                                                                        <span className="text-gray-500 hover:text-gray-600">
+                                                                            ❌
+                                                                        </span>
+                                                                    }
                                                                     onChange={(
-                                                                        selected: CountryOption[]
+                                                                        date
                                                                     ) => {
+                                                                        // ProductFormSchema は
+                                                                        // `.datetime({ offset: true })`。
+                                                                        // タイムゾーンを落とした表記も空文字も
+                                                                        // 通らないため、絶対時刻 (UTC) か
+                                                                        // null のどちらかを書く。
                                                                         field.onChange(
-                                                                            selected
+                                                                            date
+                                                                                ? date.toISOString()
+                                                                                : null
                                                                         );
                                                                     }}
-                                                                    labelledBy="Select"
+                                                                    value={
+                                                                        field.value
+                                                                            ? new Date(
+                                                                                  field.value
+                                                                              )
+                                                                            : null
+                                                                    }
                                                                 />
-                                                            )}
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <p className="mt-4 flex pb-3 text-sm text-main-secondary dark:text-gray-400">
-                                                <Dot className="-me-1" />
-                                                List of countries you offer
-                                                shipping for this product
-                                                :&nbsp;
-                                                {form.getValues()
-                                                    .freeShippingCountriesIds &&
-                                                    form.getValues()
-                                                        .freeShippingCountriesIds
-                                                        .length === 0 &&
-                                                    "None"}
-                                            </p>
-                                            {/* Free shipping countries */}
-                                            <div className="flex flex-wrap gap-1">
-                                                {form
-                                                    .getValues()
-                                                    .freeShippingCountriesIds?.map(
-                                                        (country, index) => (
-                                                            <div
-                                                                key={country.id}
-                                                                className="inline-flex items-center rounded-md bg-blue-200 px-3 py-1 text-xs text-blue-primary"
-                                                            >
-                                                                <span>
-                                                                    {
-                                                                        country.label
-                                                                    }
-                                                                </span>
-                                                                <span
-                                                                    className="ml-2 cursor-pointer hover:text-red-500"
-                                                                    onClick={() =>
-                                                                        handleDeleteCountryFreeShipping(
-                                                                            index
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    x
-                                                                </span>
-                                                            </div>
-                                                        )
+                                                            </FormControl>
+                                                        </FormItem>
                                                     )}
+                                                />
+                                                <ArrowRight className="w-4 text-[#1087ff]" />
+                                                <span>{formattedDate}</span>
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             </InputFieldset>
+                            {/* Shipping fee method */}
+                            {!isNewVariantPage && (
+                                <InputFieldset label="Product shipping fee method">
+                                    <FormField
+                                        control={form.control}
+                                        name="shippingFeeMethod"
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <Select
+                                                    disabled={isLoading}
+                                                    onValueChange={
+                                                        field.onChange
+                                                    }
+                                                    value={field.value}
+                                                    defaultValue={field.value}
+                                                >
+                                                    <FormControl>
+                                                        <SelectTrigger aria-label="Shipping fee method">
+                                                            <SelectValue
+                                                                defaultValue={
+                                                                    field.value
+                                                                }
+                                                                placeholder="Select Shipping Fee Calculation method"
+                                                            />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent
+                                                        className={
+                                                            design === "seller"
+                                                                ? sellerStyles.theme
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {shippingFeeMethods.map(
+                                                            (method) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        method.value
+                                                                    }
+                                                                    value={
+                                                                        method.value
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        method.description
+                                                                    }
+                                                                </SelectItem>
+                                                            )
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </InputFieldset>
+                            )}
+                            {/* Free Shipping */}
+                            {!isNewVariantPage && (
+                                <InputFieldset
+                                    label="Free Shipping (Optional)"
+                                    description="Free Shipping Worldwide?"
+                                >
+                                    <div>
+                                        <label
+                                            htmlFor="freeShippingForAll"
+                                            className="ml-5 flex cursor-pointer items-center gap-x-2"
+                                        >
+                                            <FormField
+                                                control={form.control}
+                                                name="freeShippingForAllCountries"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormControl>
+                                                            <>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id="freeShippingForAll"
+                                                                    checked={
+                                                                        field.value
+                                                                    }
+                                                                    onChange={
+                                                                        field.onChange
+                                                                    }
+                                                                    hidden
+                                                                />
+                                                                <Checkbox
+                                                                    checked={
+                                                                        field.value
+                                                                    }
+                                                                    // @ts-ignore
+                                                                    onCheckedChange={
+                                                                        field.onChange
+                                                                    }
+                                                                />
+                                                            </>
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <span>Yes</span>
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <p className="mt-4 flex pb-3 text-sm text-main-secondary dark:text-gray-400">
+                                            <Dot className="-me-1" />
+                                            If selected, customers will not need
+                                            to pay shipping fees when purchasing
+                                            from this product in any country.
+                                        </p>
+                                    </div>
+                                    <div>
+                                        {!form.getValues()
+                                            .freeShippingForAllCountries && (
+                                            <div>
+                                                <FormField
+                                                    control={form.control}
+                                                    name="freeShippingCountriesIds"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormControl>
+                                                                {design ===
+                                                                "seller" ? (
+                                                                    <select
+                                                                        multiple
+                                                                        aria-label="Countries eligible for free shipping"
+                                                                        value={field.value.map(
+                                                                            (
+                                                                                country
+                                                                            ) =>
+                                                                                country.value
+                                                                        )}
+                                                                        onChange={(
+                                                                            event
+                                                                        ) =>
+                                                                            field.onChange(
+                                                                                countryOptions.filter(
+                                                                                    (
+                                                                                        country
+                                                                                    ) =>
+                                                                                        Array.from(
+                                                                                            event
+                                                                                                .target
+                                                                                                .selectedOptions
+                                                                                        ).some(
+                                                                                            (
+                                                                                                option
+                                                                                            ) =>
+                                                                                                option.value ===
+                                                                                                country.value
+                                                                                        )
+                                                                                )
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        {countryOptions.map(
+                                                                            (
+                                                                                country
+                                                                            ) => (
+                                                                                <option
+                                                                                    key={
+                                                                                        country.value
+                                                                                    }
+                                                                                    value={
+                                                                                        country.value
+                                                                                    }
+                                                                                >
+                                                                                    {
+                                                                                        country.label
+                                                                                    }
+                                                                                </option>
+                                                                            )
+                                                                        )}
+                                                                    </select>
+                                                                ) : (
+                                                                    <MultiSelect
+                                                                        className="!max-w-[800px]"
+                                                                        options={
+                                                                            countryOptions
+                                                                        } // Array of options, each with `label` and `value`
+                                                                        value={
+                                                                            field.value
+                                                                        } // Pass the array of objects directly
+                                                                        onChange={(
+                                                                            selected: CountryOption[]
+                                                                        ) => {
+                                                                            field.onChange(
+                                                                                selected
+                                                                            );
+                                                                        }}
+                                                                        labelledBy="Select"
+                                                                    />
+                                                                )}
+                                                            </FormControl>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <p className="mt-4 flex pb-3 text-sm text-main-secondary dark:text-gray-400">
+                                                    <Dot className="-me-1" />
+                                                    List of countries you offer
+                                                    shipping for this product
+                                                    :&nbsp;
+                                                    {form.getValues()
+                                                        .freeShippingCountriesIds &&
+                                                        form.getValues()
+                                                            .freeShippingCountriesIds
+                                                            .length === 0 &&
+                                                        "None"}
+                                                </p>
+                                                {/* Free shipping countries */}
+                                                <div className="flex flex-wrap gap-1">
+                                                    {form
+                                                        .getValues()
+                                                        .freeShippingCountriesIds?.map(
+                                                            (
+                                                                country,
+                                                                index
+                                                            ) => (
+                                                                <div
+                                                                    key={
+                                                                        country.id
+                                                                    }
+                                                                    className="inline-flex items-center rounded-md bg-blue-200 px-3 py-1 text-xs text-blue-primary"
+                                                                >
+                                                                    <span>
+                                                                        {
+                                                                            country.label
+                                                                        }
+                                                                    </span>
+                                                                    <span
+                                                                        className="ml-2 cursor-pointer hover:text-red-500"
+                                                                        onClick={() =>
+                                                                            handleDeleteCountryFreeShipping(
+                                                                                index
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        x
+                                                                    </span>
+                                                                </div>
+                                                            )
+                                                        )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </InputFieldset>
+                            )}
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading
+                                    ? "loading..."
+                                    : data?.productId && data?.variantId
+                                      ? "Save product"
+                                      : "Create product"}
+                            </Button>
+                        </fieldset>
+                        {design === "seller" && saveState === "error" && (
+                            <p role="alert" className={sellerStyles.alert}>
+                                Could not save the product. Please try again.
+                            </p>
                         )}
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading
-                                ? "loading..."
-                                : data?.productId && data?.variantId
-                                  ? "Save product"
-                                  : "Create product"}
-                        </Button>
+                        {design === "seller" && saveState !== "error" && (
+                            <p role="status" aria-live="polite">
+                                {saveState === "saving"
+                                    ? "Saving product…"
+                                    : saveState === "success"
+                                      ? "Product saved."
+                                      : ""}
+                            </p>
+                        )}
                     </form>
                 </Form>
             </CardContent>

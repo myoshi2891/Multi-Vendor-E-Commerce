@@ -181,3 +181,11 @@ The checkout UI locks order submission while shipping/cart refresh, address save
 ### Seller workspace presentation workflows
 
 Server pages load existing store-scoped data and inject typed actions into the opted-in seller views. Products distinguish empty/search results from load failure; creation uses the existing form and deletion requires confirmation. Inventory validates integers, announces pending and restores the committed value after failure; explicit retry resubmits the attempted value. Order group/item status edits use existing enum choices and authorized update actions, retain proposed values after failure and announce success. Details use responsive panels and return focus on close. Seller message list loading/read/thread/send errors have explicit retry, send locks switching/refresh/back, failure retains the draft, success clears and reloads the thread. Five-second polling skips hidden tabs, discards stale selections, avoids overlap and cancels on unmount. Mobile Back clears selection and restores focus. Latest-message unread indication clears only after successful read marking; it does not represent total unread count. [UI contract](../../docs/design/seller-ui-migration/requirements.md).
+
+## Seller six-screen editing flow
+
+The branded product editor keeps the existing category/attribute/image/size workflow. Saving locks fields, guards duplicate requests, announces completion and retains inputs after failure for another submission. Existing list navigation and edit refresh remain unchanged.
+
+Shipping defaults and country overrides retain their existing save actions and store refresh. Country search scopes the table; a labeled editing dialog locks fields and dismissal during pending save, retains inputs for retry and returns focus after dismissal.
+
+New-store users complete validated profile/contact/logo/cover fields in the standalone theme. Pending locks all controls; failure retains drafts; a successful no-id create submission navigates to the returned store URL. Existing-store saves include id. If the returned store URL changed, replace the route with its settings URL; otherwise refresh.

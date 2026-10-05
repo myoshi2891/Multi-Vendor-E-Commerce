@@ -1,31 +1,34 @@
 // React, Next.js
-import React, { FC, useState } from 'react'
+import React, { FC, useState } from "react";
 // UI components
-import { Input } from '@/components/ui/input'
+import { Input } from "@/components/ui/input";
 // Icons
-import { PaintBucket } from 'lucide-react'
+import { PaintBucket } from "lucide-react";
 // Color picker
-import { SketchPicker } from 'react-color'
-import { cn } from '@/lib/utils'
+import { SketchPicker } from "react-color";
+import { cn } from "@/lib/utils";
+import sellerStyles from "../design/seller.module.css";
 
 // Define the interface for each detail object
 export interface Detail<T = { [key: string]: string | number | undefined }> {
-    [key: string]: T[keyof T]
+    [key: string]: T[keyof T];
 }
 
 // Define the interface for the ClickToAddInputs component
 interface ClickToAddInputsProps<T extends Detail> {
-    details: T[] // Array of detail objects1
-    setDetails: React.Dispatch<React.SetStateAction<T[]>> // Setter function for detail objects
-    initialDetail?: T // Optional initial detail objects
-    header?: string // Header for the component
-    colorPicker?: boolean // if color picker is needed
-    containerClassName?: string // Additional class name for the container
-    inputClassName?: string // Additional class name for the input
+    design?: "seller";
+    details: T[]; // Array of detail objects1
+    setDetails: React.Dispatch<React.SetStateAction<T[]>>; // Setter function for detail objects
+    initialDetail?: T; // Optional initial detail objects
+    header?: string; // Header for the component
+    colorPicker?: boolean; // if color picker is needed
+    containerClassName?: string; // Additional class name for the container
+    inputClassName?: string; // Additional class name for the input
 }
 
 // ClickToAddInputs component definition
 const ClickToAddInputs = <T extends Detail>({
+    design,
     details,
     setDetails,
     initialDetail = {} as T, // Default value for initial detail is an empty object
@@ -37,7 +40,7 @@ const ClickToAddInputs = <T extends Detail>({
     // State to manage toggling color picker
     const [colorPickerIndex, setColorPickerIndex] = useState<number | null>(
         null
-    )
+    );
 
     // Function to handle changes in detail properties
     const handleDetailsChange = (
@@ -48,10 +51,10 @@ const ClickToAddInputs = <T extends Detail>({
         // Update the details array with the new property value
         const updatedDetails = details.map((detail, i) =>
             i === index ? { ...detail, [property]: value } : detail
-        )
+        );
 
-        setDetails(updatedDetails)
-    }
+        setDetails(updatedDetails);
+    };
 
     // Function to add a new detail object
     const handleAddDetail = () => {
@@ -61,20 +64,20 @@ const ClickToAddInputs = <T extends Detail>({
             {
                 ...initialDetail, //Spread the initial detail object to create a new one
             },
-        ])
-    }
+        ]);
+    };
 
     // Function to remove a detail object
     const handleRemove = (index: number) => {
         // We must at least keep one detail we can delete if it's the only detail available
-        if (details.length === 1) return
+        if (details.length === 1) return;
         if (details.length > 1) {
             // Remove the detail object at the specified index
             // setDetails(details.filter((_, i) => i !== index));
-            const updatedDetails = details.filter((_, i) => i !== index)
-            setDetails(updatedDetails) // Update the state with the filtered details
+            const updatedDetails = details.filter((_, i) => i !== index);
+            setDetails(updatedDetails); // Update the state with the filtered details
         }
-    }
+    };
 
     // PlusButton component for adding new detail objects
     const PlusButton = ({ onClick }: { onClick: () => void }) => {
@@ -101,8 +104,8 @@ const ClickToAddInputs = <T extends Detail>({
                     <path d="M12 16V8" strokeWidth="1.5" />
                 </svg>
             </button>
-        )
-    }
+        );
+    };
 
     // MinusButton component for removing details
     const MinusButton = ({ onClick }: { onClick: () => void }) => {
@@ -128,8 +131,8 @@ const ClickToAddInputs = <T extends Detail>({
                     <path d="M8 12H16" strokeWidth="1.5" />
                 </svg>
             </button>
-        )
-    }
+        );
+    };
 
     return (
         <div className="flex flex-col gap-y-4">
@@ -139,17 +142,23 @@ const ClickToAddInputs = <T extends Detail>({
             {details?.length === 0 && <PlusButton onClick={handleAddDetail} />}
             {/* Map through details and render input fields */}
             {details?.map((detail, index) => (
-                <div key={index} className="flex items-center gap-x-4">
+                <div
+                    key={index}
+                    className={
+                        design === "seller"
+                            ? sellerStyles.detailRow
+                            : "flex items-center gap-x-4"
+                    }
+                >
                     {Object.keys(detail).map((property, propIndex) => (
                         <div
                             key={propIndex}
-                            className={
-                                (cn('flex items-center gap-x-4'),
-                                containerClassName)
-                            }
+                            className={design === "seller"
+                                ? cn(sellerStyles.detailField, containerClassName)
+                                : containerClassName}
                         >
                             {/* Color picker toggle */}
-                            {property === 'color' && colorPicker && (
+                            {property === "color" && colorPicker && (
                                 <div className="flex gap-x-4">
                                     <button
                                         aria-label="Choose color"
@@ -178,7 +187,7 @@ const ClickToAddInputs = <T extends Detail>({
 
                             {/* Color Picker */}
                             {colorPickerIndex === index &&
-                                property === 'color' && (
+                                property === "color" && (
                                     <SketchPicker
                                         color={detail[property] as string}
                                         onChange={(e) =>
@@ -193,20 +202,24 @@ const ClickToAddInputs = <T extends Detail>({
 
                             {/* Input field for each property */}
                             <Input
-                                className={
-                                    (cn('w-28 placeholder:capitalize'),
-                                    inputClassName)
-                                }
+                                className={design === "seller"
+                                    ? cn("w-full placeholder:capitalize", inputClassName)
+                                    : inputClassName}
                                 type={
-                                    typeof detail[property] === 'number'
-                                        ? 'number'
-                                        : 'text'
+                                    typeof detail[property] === "number"
+                                        ? "number"
+                                        : "text"
+                                }
+                                aria-label={
+                                    design === "seller"
+                                        ? `${property} ${index + 1}`
+                                        : undefined
                                 }
                                 name={property}
                                 placeholder={property}
                                 value={detail[property] as string}
                                 min={
-                                    typeof detail[property] === 'number'
+                                    typeof detail[property] === "number"
                                         ? 0
                                         : undefined
                                 }
@@ -215,7 +228,7 @@ const ClickToAddInputs = <T extends Detail>({
                                     handleDetailsChange(
                                         index,
                                         property,
-                                        e.target.type === 'number'
+                                        e.target.type === "number"
                                             ? parseFloat(e.target.value)
                                             : e.target.value
                                     )
@@ -229,7 +242,7 @@ const ClickToAddInputs = <T extends Detail>({
                 </div>
             ))}
         </div>
-    )
-}
+    );
+};
 
-export default ClickToAddInputs
+export default ClickToAddInputs;

@@ -21,6 +21,7 @@ type Props = {
     defaultOpen?: boolean;
     maxWidth?: string;
     design?: "seller";
+    locked?: boolean;
     returnFocusTo?: React.RefObject<HTMLElement | null>;
 };
 
@@ -31,12 +32,25 @@ const CustomModal = ({
     heading,
     maxWidth,
     design,
+    locked = false,
     returnFocusTo,
 }: Props) => {
     const { isOpen, setClose } = useModal();
     return (
-        <Dialog open={isOpen || defaultOpen} onOpenChange={setClose}>
+        <Dialog
+            open={isOpen || defaultOpen}
+            onOpenChange={() => {
+                if (!locked) setClose();
+            }}
+        >
             <DialogContent
+                closeDisabled={locked}
+                onEscapeKeyDown={(event) => {
+                    if (locked) event.preventDefault();
+                }}
+                onInteractOutside={(event) => {
+                    if (locked) event.preventDefault();
+                }}
                 onCloseAutoFocus={
                     returnFocusTo
                         ? (event) => {

@@ -30,6 +30,12 @@ type DesignSuite = {
 };
 
 const DESIGN_SUITES = {
+    six: {
+        testMatch: "six-design.spec.ts",
+        port: 3123,
+        kind: "fixture",
+        command: "node tests/fixtures/six/server.mjs",
+    },
     commerce: {
         testMatch: "commerce-design.spec.ts",
         port: 3107,

@@ -1,376 +1,160 @@
 "use client";
-
-// React
-import { FC, useEffect } from "react";
-
-// Form handling utilities
-import * as z from "zod";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-// Schema
-import { ShippingRateFormSchema } from "@/lib/schemas";
-
-// UI Components
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-
-// Queries
-import { upsertShippingRate } from "@/queries/store";
-
-// Utils
 import { v4 } from "uuid";
-// import { useToast } from "@/components/ui/use-toast";
-import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+import { ShippingRateFormSchema } from "@/lib/schemas";
+import type { z } from "zod";
+import type { CountryWithShippingRatesType } from "@/lib/types";
+import type {
+    ShippingCountryRow,
+    ShippingActions,
+} from "@/lib/seller-shipping";
+import { toNumberSafe } from "@/lib/utils";
+import { useSellerSave } from "@/hooks/use-seller-save";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import ShippingFields from "./shipping-fields";
+import styles from "../design/seller.module.css";
 
-// Types
-import { CountryWithShippingRatesType } from "@/lib/types";
-import { NumberInput } from "@tremor/react";
-import { Textarea } from "@/components/ui/textarea";
-
-interface ShippingRateDetailsProps {
-    data?: CountryWithShippingRatesType;
-    storeUrl: string;
+type Values = z.infer<typeof ShippingRateFormSchema>;
+const fields = [
+    ["shippingFeePerItem", "Shipping fee per item", 0, 0.1],
+    [
+        "shippingFeeForAdditionalItem",
+        "Shipping fee for additional item",
+        0,
+        0.1,
+    ],
+    ["shippingFeePerKg", "Shipping fee per kg", 0, 0.1],
+    ["shippingFeeFixed", "Fixed shipping fee", 0, 0.1],
+    ["deliveryTimeMin", "Delivery time min", 1, 1],
+    ["deliveryTimeMax", "Delivery time max", 1, 1],
+] as const;
+function valuesFor(
+    data?: ShippingCountryRow | CountryWithShippingRatesType
+): Values {
+    const rate = data?.shippingRate;
+    return {
+        countryId: data?.countryId,
+        countryName: data?.countryName,
+        shippingService: rate?.shippingService ?? "",
+        shippingFeePerItem: toNumberSafe(rate?.shippingFeePerItem ?? 0),
+        shippingFeeForAdditionalItem: toNumberSafe(
+            rate?.shippingFeeForAdditionalItem ?? 0
+        ),
+        shippingFeePerKg: toNumberSafe(rate?.shippingFeePerKg ?? 0),
+        shippingFeeFixed: toNumberSafe(rate?.shippingFeeFixed ?? 0),
+        deliveryTimeMin: rate?.deliveryTimeMin ?? 1,
+        deliveryTimeMax: rate?.deliveryTimeMax ?? 1,
+        returnPolicy: rate?.returnPolicy ?? "",
+    };
 }
-
-const mapShippingRateToFormValues = (data?: CountryWithShippingRatesType) => ({
-    countryId: data?.countryId ?? "",
-    countryName: data?.countryName ?? "",
-    shippingService: data?.shippingRate?.shippingService ?? "",
-    shippingFeePerItem: data?.shippingRate
-        ? data.shippingRate.shippingFeePerItem.toNumber()
-        : 0,
-    shippingFeeForAdditionalItem: data?.shippingRate
-        ? data.shippingRate.shippingFeeForAdditionalItem.toNumber()
-        : 0,
-    shippingFeePerKg: data?.shippingRate
-        ? data.shippingRate.shippingFeePerKg.toNumber()
-        : 0,
-    shippingFeeFixed: data?.shippingRate
-        ? data.shippingRate.shippingFeeFixed.toNumber()
-        : 0,
-    deliveryTimeMin: data?.shippingRate?.deliveryTimeMin ?? 1,
-    deliveryTimeMax: data?.shippingRate?.deliveryTimeMax ?? 1,
-    returnPolicy: data?.shippingRate?.returnPolicy ?? "",
-});
-
-const ShippingRateDetails: FC<ShippingRateDetailsProps> = ({
+export default function ShippingRateDetails({
     data,
     storeUrl,
-}) => {
-    // Initializing necessary hooks
-    const { toast } = useToast(); // Hook for displaying toast messages
-    const router = useRouter(); // Hook for routing
-
-    // Form hook for managing form state and validation
-    const form = useForm<z.infer<typeof ShippingRateFormSchema>>({
-        mode: "onChange", // Form validation mode
-        resolver: zodResolver(ShippingRateFormSchema), // Resolver for form validation
-        defaultValues: mapShippingRateToFormValues(data),
+    upsertShippingRateAction,
+    onBusyChange,
+}: {
+    data?: ShippingCountryRow | CountryWithShippingRatesType;
+    storeUrl: string;
+    upsertShippingRateAction: ShippingActions["upsertShippingRateAction"];
+    onBusyChange?: (busy: boolean) => void;
+    design?: "seller";
+}) {
+    const router = useRouter();
+    const feedback = useSellerSave(onBusyChange);
+    const form = useForm<Values>({
+        mode: "onChange",
+        resolver: zodResolver(ShippingRateFormSchema),
+        defaultValues: valuesFor(data),
     });
-
-    // Loading status based on form submission
-    const isLoading = form.formState.isSubmitting;
-
-    // Reset form values when data changes
     useEffect(() => {
-        form.reset(mapShippingRateToFormValues(data));
+        form.reset(valuesFor(data));
     }, [data, form]);
-
-    // Submit handler for form submission
-    const handleSubmit = async (
-        values: z.infer<typeof ShippingRateFormSchema>
-    ) => {
-        try {
-            // Upserting category data
-            const response = await upsertShippingRate(storeUrl, {
-                id: data?.shippingRate ? data.shippingRate.id : v4(),
-                countryId: data?.countryId ? data.countryId : "",
-                shippingService: values.shippingService,
-                shippingFeePerItem: values.shippingFeePerItem,
-                shippingFeeForAdditionalItem:
-                    values.shippingFeeForAdditionalItem,
-                shippingFeePerKg: values.shippingFeePerKg,
-                shippingFeeFixed: values.shippingFeeFixed,
-                deliveryTimeMin: values.deliveryTimeMin,
-                deliveryTimeMax: values.deliveryTimeMax,
-                returnPolicy: values.returnPolicy,
-            });
-
-            if (response.id) {
-                // Displaying success message
-                toast({
-                    title: "Shipping rate has been updated.",
-                });
-
-                // Redirect or Refresh data
-                router.refresh();
-            }
-        } catch (error: unknown) {
-            // Handling form submission errors
-            if (error instanceof Error) {
-                console.error(
-                    "Error submitting shipping rate form:",
-                    error.message,
-                    error.stack
-                );
-            } else {
-                console.error("Error submitting shipping rate form:", error);
-            }
-            toast({
-                variant: "destructive",
-                title: "Oops!",
-                description:
-                    error instanceof Error ? error.message : String(error),
-            });
-        }
-    };
-
     return (
-        <Card className="w-full">
+        <Card className={styles.editor}>
             <CardHeader>
-                    <CardTitle>Shipping Rate</CardTitle>
-                    <CardDescription>
-                        Update Shipping rate information for {data?.countryName}
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(handleSubmit)}>
-                            <div className="hidden">
-                                <FormField
-                                    // disabled={isLoading}
-                                    disabled
-                                    control={form.control}
-                                    name="countryId"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Country ID</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <div className="space-y-4">
-                                <FormField
-                                    disabled
-                                    control={form.control}
-                                    name="countryName"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Country name</FormLabel>
-                                            <FormControl>
-                                                <Input {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="shippingService"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormControl>
-                                                <Input
-                                                    {...field}
-                                                    placeholder="Shipping service"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="shippingFeePerItem"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>
-                                                Shipping fee per item
-                                            </FormLabel>
-                                            <FormControl>
-                                                <NumberInput
-                                                    value={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    step={0.1}
-                                                    min={0}
-                                                    className="rounded-md pl-1 !shadow-none"
-                                                    placeholder="Shipping fees per item"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="shippingFeeForAdditionalItem"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>
-                                                Shipping fee for additional item
-                                            </FormLabel>
-                                            <FormControl>
-                                                <NumberInput
-                                                    value={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    step={0.1}
-                                                    min={0}
-                                                    className="rounded-md pl-1 !shadow-none"
-                                                    placeholder="Shipping fees for additional item"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="shippingFeePerKg"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>
-                                                Shipping fee per kg
-                                            </FormLabel>
-                                            <FormControl>
-                                                <NumberInput
-                                                    value={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    step={0.1}
-                                                    min={0}
-                                                    className="rounded-md pl-1 !shadow-none"
-                                                    placeholder="Shipping fees per kg"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="shippingFeeFixed"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>
-                                                Fixed Shipping fee
-                                            </FormLabel>
-                                            <FormControl>
-                                                <NumberInput
-                                                    value={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    step={0.1}
-                                                    min={0}
-                                                    className="rounded-md pl-1 !shadow-none"
-                                                    placeholder="Fixed Shipping Fee"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="deliveryTimeMin"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>
-                                                Delivery Time Min
-                                            </FormLabel>
-                                            <FormControl>
-                                                <NumberInput
-                                                    value={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    min={1}
-                                                    className="rounded-md pl-1 !shadow-none"
-                                                    placeholder="Minimum Delivery Time (days)"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="deliveryTimeMax"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>
-                                                Delivery Time Max
-                                            </FormLabel>
-                                            <FormControl>
-                                                <NumberInput
-                                                    value={field.value}
-                                                    onValueChange={
-                                                        field.onChange
-                                                    }
-                                                    min={1}
-                                                    className="rounded-md pl-1 !shadow-none"
-                                                    placeholder="Maximum Delivery Time (days)"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="returnPolicy"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Return Policy</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                    placeholder="What's the return policy for your store?"
-                                                    {...field}
-                                                    className="p-4"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-                            <div className="mt-4">
-                                <Button type="submit" disabled={isLoading}>
-                                    {isLoading ? "loading..." : "Save changes"}
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
+                <CardTitle role="heading" aria-level={2}>
+                    Shipping rate
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Form {...form}>
+                    <form
+                        aria-label={`Shipping rate for ${data?.countryName ?? "country"}`}
+                        onSubmit={(event) =>
+                            feedback.submit(
+                                event,
+                                form.handleSubmit((values) =>
+                                    feedback.save(
+                                        () =>
+                                            upsertShippingRateAction(storeUrl, {
+                                                id:
+                                                    data?.shippingRate?.id ??
+                                                    v4(),
+                                                countryId:
+                                                    data?.countryId ?? "",
+                                                shippingService:
+                                                    values.shippingService,
+                                                shippingFeePerItem:
+                                                    values.shippingFeePerItem,
+                                                shippingFeeForAdditionalItem:
+                                                    values.shippingFeeForAdditionalItem,
+                                                shippingFeePerKg:
+                                                    values.shippingFeePerKg,
+                                                shippingFeeFixed:
+                                                    values.shippingFeeFixed,
+                                                deliveryTimeMin:
+                                                    values.deliveryTimeMin,
+                                                deliveryTimeMax:
+                                                    values.deliveryTimeMax,
+                                                returnPolicy:
+                                                    values.returnPolicy,
+                                            }),
+                                        () => router.refresh()
+                                    )
+                                )
+                            )
+                        }
+                    >
+                        <fieldset
+                            disabled={feedback.pending}
+                            className="min-w-0 space-y-4"
+                            aria-label="Country shipping fields"
+                        >
+                            <p>Country: {data?.countryName}</p>
+                            <ShippingFields
+                                control={form.control}
+                                serviceName="shippingService"
+                                numberFields={fields}
+                                returnPolicyName="returnPolicy"
+                            />
+                            <Button type="submit">
+                                {feedback.pending
+                                    ? "Saving shipping rate…"
+                                    : "Save changes"}
+                            </Button>
+                        </fieldset>
+                        {feedback.state === "error" ? (
+                            <p role="alert" className={styles.alert}>
+                                Could not save the shipping rate. Please try
+                                again.
+                            </p>
+                        ) : (
+                            <p role="status" aria-live="polite">
+                                {feedback.pending
+                                    ? "Saving shipping rate…"
+                                    : feedback.state === "success"
+                                      ? "Shipping rate saved."
+                                      : ""}
+                            </p>
+                        )}
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
     );
-};
-
-export default ShippingRateDetails;
+}

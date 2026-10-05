@@ -75,3 +75,15 @@ Offers retain tag order, product counts and browse-filter destinations in brande
 ### Priority seven screen presentation
 
 Account settings uses Clerk hash routing with typed brand appearance and a labeled account section. Seller application retains four steps and validated values, exposes progress, pending/error/retry/success, supports reduced motion and uses readable branded guest links. Seller overview/products/inventory/orders/messages share scoped light/dark tokens, serif headings, responsive navigation and local table scrolling. Inventory and order status saves lock pending requests and expose generic failure/retry and success feedback. Seller messages identify the buyer, show latest-message unread state, retain failed drafts, use existing five-second polling with stale/unmount/hidden cancellation, and switch between list/thread on small screens. Existing authorization, schema, money units/calculation and transaction/state-transition rules remain unchanged. [Saved plan](../../plans/layout-design/priority-seven-design-system-plan.md), [seller UI requirements](../../docs/design/seller-ui-migration/requirements.md).
+
+## Seller product and store form presentation
+
+Seller product creation uses the existing responsive branded light/dark workspace, a labeled page and form heading, readable dynamic fields and themed portal controls. Lock fields during save, retain failed input with generic retry feedback, announce pending/success, and preserve existing product/variant payloads and navigation.
+
+Variant creation uses the same branded editor and an Add variant page heading naming the inherited product. Preserve product-scope field visibility, category defaults, variant-only attribute payload and existing missing-product behavior.
+
+Shipping settings uses a branded responsive defaults form and searchable country-rate table. Preserve amounts, Default/Free labels, country identities and validation; lock saves and pending-dialog dismissal, retain failed input, announce results and return focus to the editing trigger.
+
+Store settings uses responsive logo/cover and labeled profile/contact fields in the seller light/dark theme. Preserve validation, featured value and update payload/navigation; lock saves and retain failed values with generic retry and status feedback.
+
+Store creation has a standalone branded light/dark workspace with a main landmark, theme toggle and the shared labeled store form. Preserve validation/images/featured and navigate to the returned store URL. Creation omits id to use the existing create branch; updates retain id and owner guards.

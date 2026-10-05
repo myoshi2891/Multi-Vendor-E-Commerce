@@ -1086,3 +1086,20 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-05): DS-PAGE-056 販売者メッセージの先行RTL/補助ブラウザ。認証後実ルート確認は保留。[証跡](../design/design-system/PROGRESS.md#優先7画面移行記録)。
 
 - ✅ Completed (2026-10-05): 優先7画面の先行TDD/回帰、補助42/42、実guest5/5、最終全体Jest2802/2805（既存skip3）、275suites/127snapshots、lint0errors・11既存warnings/tsc0。認証後7画面/SDK受け入れは[DS-SEVEN-BROWSER](./QA_HANDOFF.md#ds-seven-browser)として保留。
+
+## 優先6画面デザイン移行
+
+- DS-PAGE-061 商品登録: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
+
+- DS-PAGE-060 バリアント追加: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
+
+- DS-PAGE-059 バリアント編集: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
+
+- DS-PAGE-064 配送設定: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
+
+- DS-PAGE-063 店舗設定: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
+
+- DS-PAGE-065 店舗作成: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
+
+
+最終回帰: six37/37（画像キーボード・配送空表含む）、seven42/42、全体Jest2842/2845（3既存skip）・280suites・127snapshots、型0/lint0errors（既存warnings10）・harness成功。文書リンクと66画面/218部品のID/件数を検証。認証後6画面の解除条件は[DS-SIX-BROWSER](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)を参照。
