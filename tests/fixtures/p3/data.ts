@@ -56,3 +56,25 @@ export async function save(...args: unknown[]) {
         throw Error("fixture failure");
     return args[args.length - 1];
 }
+export const stores = [
+    {
+        id: "store-1",
+        name: "Example store",
+        description: "Existing description ".repeat(15),
+        url: "example",
+        logo: "",
+        cover: "",
+        status: "PENDING",
+        featured: true,
+        email: "seller@example.test",
+        phone: "1234567890",
+        defaultShippingService: "Standard",
+        defaultShippingFeePerItem: amount(12.5),
+        defaultShippingFeeForAdditionalItem: amount(2),
+        defaultShippingFeePerKg: amount(3),
+        defaultShippingFeeFixed: amount(4),
+        defaultDeliveryTimeMin: 2,
+        defaultDeliveryTimeMax: 5,
+        returnPolicy: "Existing return policy",
+    },
+];

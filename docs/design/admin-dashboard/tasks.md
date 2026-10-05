@@ -240,3 +240,10 @@ Phase 5: F3-第2段 platform-wide [safe-migration・破壊的・決済波及] �
 - [ ] 認証後実ルートと必要なSDKの受け入れ確認（補助検証と区別）。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+## 管理者店舗 デザイン移行（2026-10-05）
+
+- [x] DS-PAGE-050: Red→Green→Refactor・関連検証・仕様同期。
+- [ ] 認証後実ルートと必要なSDKの受け入れ確認（補助検証と区別）。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
