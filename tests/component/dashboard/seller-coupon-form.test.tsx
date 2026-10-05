@@ -113,3 +113,28 @@ it("normalizes edited local minute precision to existing second precision", asyn
         )
     );
 });
+
+it("renders a cleared discount as empty instead of passing NaN to React", () => {
+    const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+    render(
+        <Form
+            data={coupons[0] as never}
+            storeUrl="example"
+            saveAction={jest.fn()}
+        />
+    );
+    const discount = screen.getByRole("spinbutton", {
+        name: "Coupon discount",
+    });
+    fireEvent.change(discount, { target: { value: "" } });
+    expect(discount).toHaveValue(null);
+    // React は value に NaN を受け取ると "Received NaN for the `%s` attribute" を出す
+    expect(
+        consoleError.mock.calls.some((args) =>
+            args.some((arg) => String(arg).includes("NaN"))
+        )
+    ).toBe(false);
+    consoleError.mockRestore();
+});

@@ -63,7 +63,11 @@ export function CouponFormFields<T extends FieldValues & CouponBaseValues>({
                                         type={type}
                                         value={
                                             type === "number"
-                                                ? Number(field.value)
+                                                ? Number.isFinite(
+                                                      Number(field.value)
+                                                  )
+                                                    ? Number(field.value)
+                                                    : ""
                                                 : String(field.value ?? "")
                                         }
                                         min={type === "number" ? 1 : undefined}
