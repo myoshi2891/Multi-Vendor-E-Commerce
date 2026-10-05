@@ -4,10 +4,7 @@ import {
     getStoreRecentOrders,
     getStoreTopProducts,
 } from "@/queries/store-dashboard";
-import { StoreStatsCards } from "@/components/dashboard/seller/store-stats-cards";
-import { SalesChart } from "@/components/dashboard/admin/sales-chart";
-import { StoreRecentOrders } from "@/components/dashboard/seller/store-recent-orders";
-import { StoreTopProducts } from "@/components/dashboard/seller/store-top-products";
+import StoreOverview from "@/components/dashboard/seller/store-overview";
 
 export const dynamic = "force-dynamic";
 
@@ -33,17 +30,11 @@ export default async function SellerStorePage({
     ]);
 
     return (
-        <div className="flex flex-col gap-6 p-6">
-            <h1 className="text-2xl font-bold">店舗ダッシュボード</h1>
-
-            <StoreStatsCards stats={stats} />
-
-            <SalesChart data={salesData} period="monthly" />
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <StoreRecentOrders orders={recentOrders} />
-                <StoreTopProducts products={topProducts} />
-            </div>
-        </div>
+        <StoreOverview
+            stats={stats}
+            salesData={salesData}
+            recentOrders={recentOrders}
+            topProducts={topProducts}
+        />
     );
 }

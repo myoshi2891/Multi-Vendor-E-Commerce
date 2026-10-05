@@ -1074,3 +1074,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-05): DS-PAGE-032 アカウント設定の先行RTL/補助ブラウザ。認証後実ルート確認は保留。[証跡](../design/design-system/PROGRESS.md#優先7画面移行記録)。
 
 - ✅ Completed (2026-10-05): DS-PAGE-004 出店申請の先行RTL/補助ブラウザ。認証後実ルート確認は保留。[証跡](../design/design-system/PROGRESS.md#優先7画面移行記録)。
+
+- ✅ Completed (2026-10-05): DS-PAGE-058 店舗概要の先行RTL/補助ブラウザ。認証後実ルート確認は保留。[証跡](../design/design-system/PROGRESS.md#優先7画面移行記録)。

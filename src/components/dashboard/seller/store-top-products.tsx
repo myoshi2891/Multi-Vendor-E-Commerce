@@ -1,14 +1,7 @@
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { getStoreTopProducts } from "@/queries/store-dashboard";
 
-type StoreTopProduct = Awaited<
-    ReturnType<typeof getStoreTopProducts>
->[number];
+type StoreTopProduct = Awaited<ReturnType<typeof getStoreTopProducts>>[number];
 
 interface Props {
     products: StoreTopProduct[];
@@ -24,11 +17,13 @@ export function StoreTopProducts({ products }: Props) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>販売上位商品</CardTitle>
+                <h2>販売上位商品</h2>
             </CardHeader>
             <CardContent>
                 {products.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">商品がありません。</p>
+                    <p className="text-sm text-muted-foreground">
+                        商品がありません。
+                    </p>
                 ) : (
                     <ul className="space-y-3">
                         {products.map((product) => (
@@ -40,7 +35,8 @@ export function StoreTopProducts({ products }: Props) {
                                     {product.name}
                                 </span>
                                 <span className="shrink-0 text-xs text-muted-foreground">
-                                    {product.sales.toLocaleString("en-US")} 件販売
+                                    {product.sales.toLocaleString("en-US")}{" "}
+                                    件販売
                                 </span>
                             </li>
                         ))}

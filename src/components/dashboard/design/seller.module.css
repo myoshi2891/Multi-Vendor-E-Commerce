@@ -243,3 +243,19 @@
         scroll-behavior: auto !important;
     }
 }
+
+.theme :global(.rounded-lg) {
+    border-radius: 3px;
+}
+.theme :global(.shadow-sm) {
+    box-shadow: none;
+}
+.chart :global(.recharts-text) {
+    fill: hsl(var(--muted-foreground));
+}
+.chart :global(.recharts-area-curve) {
+    stroke: var(--brand-gold);
+}
+.chart :global(.recharts-area-area) {
+    fill: var(--brand-gold);
+}

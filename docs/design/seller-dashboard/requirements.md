@@ -151,3 +151,7 @@
 | F3-* | [§5.2 placeOrder 在庫減算 影響箇所マトリクス](./design.md#52-placeorder-在庫減算の影響箇所マトリクス) | Phase 4 |
 | スキーマ拡張 | [§5.1 スキーマ変更 lowStockThreshold](./design.md#51-スキーマ変更-storelowstockthreshold) | Phase 1 |
 | NFR-*, C-* | [§4 判断 / §5 スキーマ・影響箇所](./design.md#4-設計の核心判断詳細) | 全フェーズ横断 |
+
+## 店舗概要のデザイン移行（2026-10-05）
+
+DS-PAGE-058: 専用SellerPage/StoreOverview、KPIと各sectionの見出し、ゴールドの売上チャート、売上なしの説明、狭い幅の配置を導入。集計/通貨/店舗scope/cacheは変更なし。共通SalesChartはopt-inで管理者の既定表示を維持。RTL11/11、補助Chromium6/6。認証後実ルートは保留。[表示要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。

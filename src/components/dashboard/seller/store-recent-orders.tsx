@@ -1,9 +1,4 @@
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { toNumberSafe } from "@/lib/utils";
 import type { getStoreRecentOrders } from "@/queries/store-dashboard";
 
@@ -27,11 +22,13 @@ export function StoreRecentOrders({ orders }: Props) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>最近の注文</CardTitle>
+                <h2>最近の注文</h2>
             </CardHeader>
             <CardContent>
                 {orders.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">注文がありません。</p>
+                    <p className="text-sm text-muted-foreground">
+                        注文がありません。
+                    </p>
                 ) : (
                     <ul className="space-y-3">
                         {orders.map((order) => (
@@ -44,15 +41,20 @@ export function StoreRecentOrders({ orders }: Props) {
                                         #{order.id.slice(0, 8)}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
-                                        {order.updatedAt.toLocaleDateString("ja-JP")}
+                                        {order.updatedAt.toLocaleDateString(
+                                            "ja-JP"
+                                        )}
                                     </span>
                                 </div>
                                 <span className="font-semibold">
                                     $
-                                    {toNumberSafe(order.total).toLocaleString("en-US", {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                    })}
+                                    {toNumberSafe(order.total).toLocaleString(
+                                        "en-US",
+                                        {
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2,
+                                        }
+                                    )}
                                 </span>
                             </li>
                         ))}

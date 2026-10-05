@@ -1,3 +1,5 @@
+import StoreOverview from "@/components/dashboard/seller/store-overview";
+import type { ComponentProps } from "react";
 import Apply from "@/components/store/forms/apply-seller/apply-seller";
 import type { applySeller } from "@/queries/store";
 import ProfileSettingsPage from "@/app/(store)/profile/settings/page";
@@ -40,16 +42,52 @@ createRoot(document.getElementById("root")!).render(
     ) : (
         <ModalProvider>
             <SellerShell sidebar={sidebar} header={<Header design="seller" />}>
-                <section className={styles.page}>
-                    <header className={styles.heading}>
-                        <p className={styles.eyebrow}>Seller workspace</p>
-                        <h1>Store overview</h1>
-                        <p className={styles.description}>Manage your store.</p>
-                    </header>
-                    <div className={styles.panel}>
-                        Responsive brand foundation
-                    </div>
-                </section>
+                {screen === "overview" ? (
+                    <StoreOverview
+                        stats={{
+                            totalRevenue: 1234.5,
+                            totalOrders: 2,
+                            totalViews: 500,
+                            totalSales: 3,
+                            totalProducts: 1,
+                            lowStockCount: 0,
+                        }}
+                        salesData={
+                            new URLSearchParams(location.search).has("empty")
+                                ? []
+                                : [
+                                      { label: "Jan", revenue: 10 },
+                                      { label: "Feb", revenue: 30 },
+                                      { label: "Mar", revenue: 20 },
+                                  ]
+                        }
+                        recentOrders={[]}
+                        topProducts={
+                            [
+                                {
+                                    id: "p1",
+                                    name: "A very long product name that should wrap inside the store overview without horizontal overflow",
+                                    sales: 3,
+                                },
+                            ] as ComponentProps<
+                                typeof StoreOverview
+                            >["topProducts"]
+                        }
+                    />
+                ) : (
+                    <section className={styles.page}>
+                        <header className={styles.heading}>
+                            <p className={styles.eyebrow}>Seller workspace</p>
+                            <h1>Store overview</h1>
+                            <p className={styles.description}>
+                                Manage your store.
+                            </p>
+                        </header>
+                        <div className={styles.panel}>
+                            Responsive brand foundation
+                        </div>
+                    </section>
+                )}
             </SellerShell>
         </ModalProvider>
     )

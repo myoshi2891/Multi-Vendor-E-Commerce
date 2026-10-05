@@ -99,7 +99,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
 | DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
 | DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
-| DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
+| DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-059 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) | 未実施 |
 | DS-PAGE-060 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx>) | 未実施 |
 | DS-PAGE-061 | `/dashboard/seller/stores/[storeUrl]/products/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) | 未実施 |
@@ -654,5 +654,11 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ### 出店申請（DS-PAGE-004）
 
 2026-10-05。Red2件: heading/進捗role欠落。Green/Refactor新規RTL3/3(1件は実装後回帰)、設定を含む関連5/5。Supplemental Chromium3/3: 4step、validation、画像SDK adapter、値保持、pending lock、failure/retry/receipt、1440/768/390px・axe AA違反0・overflowなし・画像目視。actionはServer Propsへ変更、実店舗作成/画像アップロードなし。tsc0、lintエラー0/警告11。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 店舗概要（DS-PAGE-058）
+
+2026-10-05。Red1件: ラベル付きoverview region欠落。Green/Refactor関連Jest11/11、Supplemental Chromium6/6(1440/768/390px・light/dark・実Tremorチャート・金額/空・axe AA違反0・overflowなし)。KPI/sectionを見出しにし、チャートはopt-inでゴールドとemptyを導入。tsc0、lintエラー0/警告11。
 
 実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。

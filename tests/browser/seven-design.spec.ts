@@ -176,3 +176,40 @@ for (const width of [1440, 768, 390])
             ).violations
         ).toEqual([]);
     });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`overview ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=overview");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", { name: "店舗ダッシュボード" })
+            ).toBeVisible();
+            await expect(page.getByText("$1,234.50")).toBeVisible();
+            await expect(page.locator(".recharts-surface")).toBeVisible();
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: `test-results/seven-overview-${width}-${theme}.png`,
+                fullPage: true,
+            });
+            await page.goto("/?screen=overview&empty=1");
+            await expect(
+                page.getByText("売上データがありません。")
+            ).toBeVisible();
+        });

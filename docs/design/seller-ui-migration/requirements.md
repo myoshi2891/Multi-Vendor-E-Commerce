@@ -19,3 +19,7 @@ SellerShellはServer側のsidebar/header/childrenを受け、ナビの開閉だ�
 ## 出店申請（DS-PAGE-004）
 
 4ステップ、既存StoreFormSchema/StoreShippingSchema、画像・申請payload・Pending店舗の機能を維持。説明は開閉可能、進捗はラベル付きprogressbar。フォームはnative label/validation、送信中fieldsetと前後操作をロック、二重送信防止、失敗時は値を維持し汎用エラーと再送操作を提示。applySellerActionはpageから注入。完了はstatusとHomeリンク。レイアウトは自然スクロール、768px未満は縦配置、reduced-motionを尊重。Clerk/Cloudinary実描画・認証後実ルートは保留。
+
+## 店舗概要（DS-PAGE-058）
+
+既存の6KPI・売上推移・最近の注文・上位商品を保持。KPI/sectionは見出しとして認識可能。空の売上は説明、商品・注文の空状態を維持。親ルートのloading/statusとerror/再読み込みを共通部品で用意。チャートのブランド色/軸文字はseller opt-inで管理者表示を保持。
