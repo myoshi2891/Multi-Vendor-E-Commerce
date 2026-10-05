@@ -39,3 +39,11 @@ STORE_ORDERS_MAXの上限、ID検索、金額、商品画像と名称、支払�
 ## メッセージ（DS-PAGE-056）
 
 DS-PAGE-056: 購入者名/画像での識別、最新メッセージが購入者発かつ未読の場合の表示、選択時の既読更新、取得/既読errorとretry、送信draft保持・成功後クリア/再取得、5秒poll/hidden/unmount/staleを維持。PC2ペイン、1000px以下で一覧/スレッド切替と戻りfocus復帰。共通thread/CSSをopt-in拡張し購入者の既定表示を維持、左右の購入者発判定を維持し販売者のsenderラベルをBuyer/Youにする。関連RTL40/40、補助Chromium6/6。認証後の実送受信/SDK実描画は保留。[販売者要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。
+
+## 最終guest検証と表示整理（2026-10-05）
+
+実Next.jsの申請guest表示でロゴと旧Sign in buttonのコントラスト不足を検出し、申請内のBrand CSS変数とMinimalHeader opt-in、Sign in/Sign upの単一anchorで修正。実guest3幅の全document axe AAと6保護ルートのguest redirectを計5ケースで検証。検索input/iconは同一行、表見出し/商品列は可読幅を確保し、上位商品名は折り返す。旧色/管理者など他scopeを維持。認証後とSDK内部の保留は継続。
+
+### 申請SSR/reduced-motionの回帰修正（2026-10-05）
+
+実ルート画像確認で、reduced-motionのSSR初期opacity0と初回Client描画の差によるhydration警告/本文非表示を検出。実guest3幅のconsole hydration警告なし・Sign upと親のopacity表示を先行テストでRed確認し、初期表示を両環境でvisibleに統一、reduced-motionではtransition0として修正。実guest5/5、申請補助3/3と全体Jestを再実行。認証SDKの設定画面内部とは別の実ルート検証。

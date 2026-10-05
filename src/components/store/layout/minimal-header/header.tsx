@@ -1,3 +1,4 @@
+import applicationStyles from "@/components/store/forms/apply-seller/application.module.css";
 import { UserButton } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { ChevronDown, Globe } from "lucide-react";
@@ -5,7 +6,9 @@ import Link from "next/link";
 import Brand from "@/components/shared/brand";
 import { Button } from "../../ui/button";
 
-export default async function MinimalHeader() {
+export default async function MinimalHeader({
+    design,
+}: { design?: "seller-application" } = {}) {
     const user = await currentUser();
     return (
         <div className="h-16 w-full border-b bg-transparent">
@@ -24,6 +27,13 @@ export default async function MinimalHeader() {
                         </div>
                         {user ? (
                             <UserButton />
+                        ) : design === "seller-application" ? (
+                            <Link
+                                href="/sign-in"
+                                className={applicationStyles.secondary}
+                            >
+                                Sign in
+                            </Link>
                         ) : (
                             <Link href="/sign-in">
                                 <Button variant="outline">Sign in</Button>

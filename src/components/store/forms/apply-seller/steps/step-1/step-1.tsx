@@ -5,7 +5,6 @@ import AnimatedContainer from "../../animated-container";
 import DefaultUserImg from "@/public/assets/images/default-user.jpg";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/store/ui/button";
 import UserDetails from "./user-details";
 
 export default function Step1({
@@ -41,11 +40,17 @@ export default function Step1({
                                 />
                             </div>
                             <div className="flex flex-col gap-y-3">
-                                <Link href="/sign-in">
-                                    <Button>Sign in</Button>
+                                <Link
+                                    href="/sign-in"
+                                    className={styles.primary}
+                                >
+                                    Sign in
                                 </Link>
-                                <Link href="/sign-up">
-                                    <Button variant="pink">Sign up</Button>
+                                <Link
+                                    href="/sign-up"
+                                    className={styles.secondary}
+                                >
+                                    Sign up
                                 </Link>
                             </div>
                         </div>

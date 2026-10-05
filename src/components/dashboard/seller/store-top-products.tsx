@@ -29,9 +29,9 @@ export function StoreTopProducts({ products }: Props) {
                         {products.map((product) => (
                             <li
                                 key={product.id}
-                                className="flex items-center justify-between text-sm"
+                                className="flex items-start justify-between gap-3 text-sm"
                             >
-                                <span className="truncate font-medium">
+                                <span className="min-w-0 break-words font-medium">
                                     {product.name}
                                 </span>
                                 <span className="shrink-0 text-xs text-muted-foreground">

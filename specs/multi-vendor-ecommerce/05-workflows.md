@@ -177,3 +177,7 @@ The checkout UI locks order submission while shipping/cart refresh, address save
 ## 優先7画面の表示移行（2026-10-05）
 
 出店申請の4ステップ・payload・承認待ち状態は保持。説明開閉、読み上げ可能な進捗、native label、送信中ロックと失敗時の入力保持/再試行を整備。設定のClerk hash routingを維持。販売者shellはモバイル開閉ナビとlight/darkに対応。[表示要件](../../docs/design/seller-ui-migration/requirements.md)／[証跡](../../docs/design/design-system/PROGRESS.md#優先7画面移行記録)。DB/認可/状態遷移は変更なし。
+
+### Seller workspace presentation workflows
+
+Server pages load existing store-scoped data and inject typed actions into the opted-in seller views. Products distinguish empty/search results from load failure; creation uses the existing form and deletion requires confirmation. Inventory validates integers, announces pending and restores the committed value after failure; explicit retry resubmits the attempted value. Order group/item status edits use existing enum choices and authorized update actions, retain proposed values after failure and announce success. Details use responsive panels and return focus on close. Seller message list loading/read/thread/send errors have explicit retry, send locks switching/refresh/back, failure retains the draft, success clears and reloads the thread. Five-second polling skips hidden tabs, discards stale selections, avoids overlap and cancels on unmount. Mobile Back clears selection and restores focus. Latest-message unread indication clears only after successful read marking; it does not represent total unread count. [UI contract](../../docs/design/seller-ui-migration/requirements.md).

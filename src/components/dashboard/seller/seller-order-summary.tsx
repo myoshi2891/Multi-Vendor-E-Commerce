@@ -55,7 +55,7 @@ export default function SellerOrderSummary({
                                     alt={item.name}
                                     width={96}
                                     height={96}
-                                    className="h-24 w-24 object-cover"
+                                    className="size-24 object-cover"
                                 />
                             ) : (
                                 <span>No image</span>

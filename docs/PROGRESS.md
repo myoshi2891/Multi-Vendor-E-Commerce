@@ -5173,3 +5173,9 @@ QA_HANDOFFの2026-10-05実測値を同期: Jest2766 passed/2769 total、263 suit
 | Jest テスト総数 | 2766 passed / 2769 total | **2768 passed / 2771 total** |
 | スイート数 | 263 | **264**（failed 0） |
 | 型エラー | 0 件 | **0 件** |
+
+### 優先7画面のデザインシステム適用（2026-10-05）
+
+設定・出店申請・店舗概要・商品・在庫・注文・メッセージを計画保存→TDD→画面単位Greenコミットで実装。関連要件/設計/tasks/進捗とSDDを更新。[画面/部品の証跡](design/design-system/PROGRESS.md#優先7画面移行記録)／[計画](../plans/layout-design/priority-seven-design-system-plan.md)。販売者light/dark・Portal・レスポンシブ表示、処理中/失敗/再試行・下書き保持を適用。認可・schema・金額/在庫・注文遷移の契約を維持。
+
+全体Jest 2802 passed / 2805 total、3 skipped、127 snapshots passed、275 スイート（274 passed／1 skipped、failed 0）、coverage Statements84.12%（9459/11244）／Branches69.87%（5329/7626）／Functions78.23%（1754/2242）／Lines84.3%（8596/10196）。補助Chromium42/42・実guest5/5、axe AA/目視/キーボード確認、tsc0/lint0errors・既存11warnings。dashboard343files/363lcov/18 of 80cells。全体統計の正本は[QA_HANDOFF](testing/QA_HANDOFF.md)。認証後7実ルート/第三者SDKは専用test DBと認証環境不足で保留。次の作業は[DS-SEVEN-BROWSER](testing/QA_HANDOFF.md#ds-seven-browser)の専用環境での受け入れ確認。

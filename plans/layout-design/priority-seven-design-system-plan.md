@@ -53,3 +53,12 @@ profile-settingsとseller-dashboard要件/設計/tasks/進捗、販売者UI移�
 10. test(design): verify seven screens and sync final evidence
 
 各画面コミットにテスト/仕様/進捗を同梱。必須検証と文書同期が揃った対象のみ検証済みとする。
+
+## 実施結果（2026-10-05）
+
+- [x] 計画保存と共通販売者基盤。
+- [x] 032設定・004申請・058概要・062商品・055在庫・057注文・056メッセージのTDD/実装/関連検証/仕様同期と画面単位Greenコミット。
+- [x] 補助Chromium42ケース、実guestルート5ケース、最終全体Jest/coverage/lint/tscと文書検証。
+- [ ] 認証後7実ルート・Clerk/画像SDKの受け入れ確認（専用test DB/認証環境不足につき実装あり・保留）。
+
+目視で見つかった検索欄・表・商品名の折り返し、実guestで見つかったロゴ/Sign inのコントラストを最終証跡コミットに含める。[実績と制約](../../docs/design/design-system/PROGRESS.md#優先7画面移行記録)。既存QA未コミット差分は本コミットから除外して維持する。

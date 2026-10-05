@@ -62,6 +62,12 @@ for (const width of [1440, 768, 390])
                     .analyze()
             ).violations;
             expect(violations).toEqual([]);
+            await page.evaluate(() => {
+                window.scrollTo(0, 0);
+                document.querySelectorAll('[role="dialog"]').forEach((node) => {
+                    node.scrollTop = 0;
+                });
+            });
             await page.screenshot({
                 path: `test-results/seven-shell-${width}-${theme}.png`,
                 fullPage: true,
@@ -204,6 +210,12 @@ for (const width of [1440, 768, 390])
                         .analyze()
                 ).violations
             ).toEqual([]);
+            await page.evaluate(() => {
+                window.scrollTo(0, 0);
+                document.querySelectorAll('[role="dialog"]').forEach((node) => {
+                    node.scrollTop = 0;
+                });
+            });
             await page.screenshot({
                 path: `test-results/seven-overview-${width}-${theme}.png`,
                 fullPage: true,
@@ -245,6 +257,12 @@ for (const width of [1440, 768, 390])
                     })),
                 }))
             ).toEqual([]);
+            await page.evaluate(() => {
+                window.scrollTo(0, 0);
+                document.querySelectorAll('[role="dialog"]').forEach((node) => {
+                    node.scrollTop = 0;
+                });
+            });
             await page.screenshot({
                 path: `test-results/seven-products-${width}-${theme}.png`,
                 fullPage: true,
@@ -333,6 +351,12 @@ for (const width of [1440, 768, 390])
                         .analyze()
                 ).violations
             ).toEqual([]);
+            await page.evaluate(() => {
+                window.scrollTo(0, 0);
+                document.querySelectorAll('[role="dialog"]').forEach((node) => {
+                    node.scrollTop = 0;
+                });
+            });
             await page.screenshot({
                 path: `test-results/seven-inventory-${width}-${theme}.png`,
                 fullPage: true,
@@ -400,6 +424,12 @@ for (const width of [1440, 768, 390])
                         .analyze()
                 ).violations
             ).toEqual([]);
+            await page.evaluate(() => {
+                window.scrollTo(0, 0);
+                document.querySelectorAll('[role="dialog"]').forEach((node) => {
+                    node.scrollTop = 0;
+                });
+            });
             await page.screenshot({
                 path: `test-results/seven-orders-${width}-${theme}.png`,
                 fullPage: true,
@@ -447,6 +477,12 @@ for (const width of [1440, 768, 390])
                         .analyze()
                 ).violations
             ).toEqual([]);
+            await page.evaluate(() => {
+                window.scrollTo(0, 0);
+                document.querySelectorAll('[role="dialog"]').forEach((node) => {
+                    node.scrollTop = 0;
+                });
+            });
             await page.screenshot({
                 path: `test-results/seven-order-details-${width}-${theme}.png`,
                 fullPage: true,
@@ -522,6 +558,12 @@ for (const width of [1440, 768, 390])
                         .analyze()
                 ).violations
             ).toEqual([]);
+            await page.evaluate(() => {
+                window.scrollTo(0, 0);
+                document.querySelectorAll('[role="dialog"]').forEach((node) => {
+                    node.scrollTop = 0;
+                });
+            });
             await page.screenshot({
                 path: `test-results/seven-messages-${width}-${theme}.png`,
                 fullPage: true,

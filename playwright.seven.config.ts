@@ -2,6 +2,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
     testDir: "./tests/browser",
     testMatch: "seven-design.spec.ts",
+    outputDir: "test-results/seven-components",
     workers: 1,
     retries: 0,
     use: {

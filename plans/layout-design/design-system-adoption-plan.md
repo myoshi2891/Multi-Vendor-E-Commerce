@@ -648,3 +648,5 @@ DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通C
 
 - [x] DS-PAGE-056 販売者メッセージ: TDD・実装・関連検証・仕様同期。
 - [ ] DS-PAGE-056: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+
+新設部品DS-COMP-208〜216は販売者/申請scopeの本体適用・補助検証済み・認証後受け入れ保留。[台帳](../../docs/design/design-system/PROGRESS.md#部品台帳)。共通部品の他scopeを一括完了にしない。

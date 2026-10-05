@@ -9,10 +9,17 @@ export default function AnimatedContainer({
     children: ReactNode;
 }) {
     const reduced = useReducedMotion();
+    // Start visible on both server and client; media preferences must not change hydration styles.
+    const variants = reduced
+        ? {
+              visible: { opacity: 1, scale: 1, transition: { duration: 0 } },
+              exit: { opacity: 1, scale: 1, transition: { duration: 0 } },
+          }
+        : poppingTransition;
     return (
         <motion.div
-            variants={reduced ? undefined : poppingTransition}
-            initial={reduced ? false : "hidden"}
+            variants={variants}
+            initial={false}
             animate="visible"
             exit="exit"
             className={styles.step}
