@@ -5199,3 +5199,30 @@ PR#189 のレビュー指摘 7 件（在庫セル/しきい値フォームの re
 
 統計の正本は [QA_HANDOFF](testing/QA_HANDOFF.md)。lint 0 errors / 既存 11 warnings。Integration/E2E 未実行。
 
+---
+
+### seller messages / inventory ページの取得失敗ログ (2026-10-05)
+
+#### 概要
+
+レビュー指摘に対応し、seller の messages / inventory ページで捨てられていた取得失敗（店舗検索・所有権拒否・在庫取得失敗）を、products ページと同じ形式で構造化ログに残すようにした。UI の汎用エラー表示は変えていない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx` | catch で `[SellerMessagesPage]` 構造化ログ | 未コミット |
+| `src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx` | catch で `[SellerInventoryPage]` 構造化ログ | 未コミット |
+| `tests/component/dashboard/seller-{messages,inventory}-design.test.tsx` | ログ検証を各 +1（Red 確認済み） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 2820 passed / 2823 total | **2822 passed / 2825 total** |
+| スイート数 | 277 | **277** |
+| coverage | Statements85.07%（9579/11259）／Branches70.82%（5407/7634）／Functions80.75%（1813/2245）／Lines85.31%（8706/10204） | **Statements85.06%（9577/11259）／Branches70.8%（5405/7634）／Functions80.71%（1812/2245）／Lines85.3%（8705/10204）** |
+| 型エラー | 0 件 | **0 件** |
+
+統計の正本は [QA_HANDOFF](testing/QA_HANDOFF.md)。coverage の微減は、集計対象外のページ変更とは無関係な計測の揺らぎ。Integration / E2E 未実行。
+

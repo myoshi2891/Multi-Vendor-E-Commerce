@@ -473,6 +473,12 @@ bun run test -- --testPathPatterns="tests/component/ui" -u
 
 修正困難な違反は `AxeBuilder.disableRules([...])` で抑制するが、必ずフォローアップ issue を残し、コード上に TODO コメントで明示する。`tests/e2e/a11y/README.md` の運用ルールに従うこと。
 
-### 購入導線のisolated browser fixture（2026-10-04）
+### デザイン検証ハーネス（`playwright.design.config.ts`、2026-10-05 統合）
 
-`bunx playwright test --config playwright.commerce.config.ts` は `tests/browser/commerce-design.spec.ts` を独立実行する。`tests/fixtures/commerce/server.mjs` が既存tsx依存のesbuildでproduction表示部品／CSS ModulesとTailwindをbundleし、OS tempへ出力、loopback 3107で配信して終了時に除去する。Next Image/Link/routerとStripe/PayPal SDKだけをadapterへ差し替え、action Propsにfixture応答／遅延／失敗を注入する。productionへテストrouteを追加しない。Clerk／DB／providerへのアクセスはなく、HTML長文・focus・keyboard・modal・axe・responsiveを確認できる。認証後実ルートとSDK実描画の証跡とは必ず区別する。
+デザイン移行のブラウザー検証は `tests/browser/` に置き、`DESIGN_SUITE=<suite> bun run test:design` で 1 suite ずつ Chromium 実行する。suite は `playwright.design.config.ts` の `DESIGN_SUITES`（commerce / priority / seven = fixture、priority-public / seven-public = dev 実ルート）に登録する。`webServer` は config 単位でしか指定できないため本体 E2E（`playwright.config.ts`、`tests/e2e/`）とは config を分けるが、suite ごとに config を増やさない。出力は `test-results/design/<suite>/`、スクリーンショットは `testInfo.outputPath()`。構成は `bun run check:playwright`（CI Lint）で検査する。手順は [playwright-browser-verification](../../.agent/skills/playwright-browser-verification/SKILL.md)、不変条件は [05-playwright-harness](../../.claude/rules/05-playwright-harness.md)、経緯は [plans/080](../../plans/080-consolidate-playwright-design-harness.md)。
+
+> 2026-10-04〜05 の証跡（PROGRESS.md / QA_HANDOFF.md）に残る `--config playwright.<suite>.config.ts` は統合前のコマンド。現在は `DESIGN_SUITE=<suite> bun run test:design` に対応する（`priority-components` → `priority`、`tests/e2e/*-public-design.spec.ts` → `tests/browser/`）。
+
+#### 購入導線のisolated browser fixture（2026-10-04）
+
+`DESIGN_SUITE=commerce bun run test:design` は `tests/browser/commerce-design.spec.ts` を独立実行する。`tests/fixtures/commerce/server.mjs` は共通の `tests/fixtures/shared/fixture-server.mjs`（`startFixtureServer`）に固有 adapter を渡し、既存tsx依存のesbuildでproduction表示部品／CSS ModulesとTailwindをbundleし、OS tempへ出力、loopback 3107で配信して終了時に除去する（`gracefulShutdown: SIGTERM` が前提。SIGKILL では tmp が残る）。Next Image/Link/routerとStripe/PayPal SDKだけをadapterへ差し替え、action Propsにfixture応答／遅延／失敗を注入する。productionへテストrouteを追加しない。Clerk／DB／providerへのアクセスはなく、HTML長文・focus・keyboard・modal・axe・responsiveを確認できる。認証後実ルートとSDK実描画の証跡とは必ず区別する。

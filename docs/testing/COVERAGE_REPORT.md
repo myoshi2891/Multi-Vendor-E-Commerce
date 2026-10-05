@@ -12,10 +12,10 @@
 | 指標 | 値 |
 |---|---|
 | Jestテスト総数（2026-10-05） | **2802 passed / 2805 total、3 skipped、127 snapshots passed、275 スイート（274 passed／1 skipped、failed 0）**。全体coverage実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| 全体coverage（2026-10-05） | Statements85.07%（9579/11259）／Branches70.82%（5407/7634）／Functions80.75%（1813/2245）／Lines85.31%（8706/10204）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| 全体coverage（2026-10-05） | Statements85.06%（9577/11259）／Branches70.8%（5405/7634）／Functions80.71%（1812/2245）／Lines85.3%（8705/10204）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **345 ファイル**（2026-10-05 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **277 スイート**（276 passed／1 skipped、2026-10-05全体実測）。 |
-| テスト総数 | **2820 unit/component passed**（2823 total / 3 skipped / 277 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
+| テスト総数 | **2822 unit/component passed**（2825 total / 3 skipped / 277 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)**（2026-10-05 dashboard実測、変更なし）。 |
@@ -594,4 +594,10 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 
 - 更新前（優先7画面同期時）: 2802 passed / 2805 total、275 suites（274 passed/1 skipped）、343 files / lcov363、coverage Statements84.12%（9459/11244）／Branches69.87%（5329/7626）／Functions78.23%（1754/2242）／Lines84.3%（8596/10196）。
 - 更新後: 2820 passed / 2823 total、277 suites、345 files / lcov363 / 18 of 80 cells、coverage Statements85.07%（9579/11259）／Branches70.82%（5407/7634）／Functions80.75%（1813/2245）／Lines85.31%（8706/10204）。`image-upload.test.tsx`・`store-switcher.test.tsx` を新規、products/orders/inventory/shell/apply-seller の既存 suite に回帰を追加。PR差分の New Code 見積もり（lcov × `git diff origin/main`）68.4% → 86.2%。ヒートマップ分類変更なし。Integration/E2E 未実行。
+
+### seller messages / inventory ページの取得失敗ログ（2026-10-05）
+
+- レビュー指摘対応。`messages/page.tsx` は `requireStoreOwner`（店舗検索・所有権拒否）由来の失敗を、`inventory/page.tsx` は在庫取得失敗を、それぞれ `.catch(() => null)` で記録せずに捨てていた。products ページと同じ構造化ログを追加し、UI は従来どおりの汎用エラー表示のまま。`seller-messages-design.test.tsx` / `seller-inventory-design.test.tsx` に各 +1（修正前でログ呼び出し 0 回の Red を確認）。
+- 更新前: 2820 passed / 2823 total、coverage Statements85.07%（9579/11259）／Branches70.82%（5407/7634）／Functions80.75%（1813/2245）／Lines85.31%（8706/10204）。
+- 更新後: 2822 passed / 2825 total、277 suites、345 files / lcov363 / 18 of 80 cells、coverage Statements85.06%（9577/11259）／Branches70.8%（5405/7634）／Functions80.71%（1812/2245）／Lines85.3%（8705/10204）。対象ページは `collectCoverageFrom` の除外対象（`page.tsx`）のため、coverage の微減（Statements −2 / Branches −2 / Functions −1 / Lines −1）は今回の変更ではなく、計測ごとの揺らぎ。
 
