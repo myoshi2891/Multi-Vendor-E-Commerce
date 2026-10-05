@@ -8,3 +8,5 @@ reviews:
         - "!prisma/migrations/**"
         - "!docs/testing/QA_HANDOFF.md"
         - "!.coderabbit.yaml"
+        - "!playwright.seven-public.config.ts"
+        - "!playwright.seven.config.ts"
