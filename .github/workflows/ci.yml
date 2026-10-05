@@ -48,6 +48,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Run ESLint
         run: bun run lint
+      - name: Check Playwright harness layout
+        run: bun run check:playwright
 
   test:
     name: Unit Tests (Jest)

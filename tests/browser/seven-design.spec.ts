@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"]) {
-        test(`shell ${width} ${theme}`, async ({ page }) => {
+        test(`shell ${width} ${theme}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 900 });
             await page.goto("/");
             await page.evaluate(
@@ -69,14 +69,14 @@ for (const width of [1440, 768, 390])
                 });
             });
             await page.screenshot({
-                path: `test-results/seven-shell-${width}-${theme}.png`,
+                path: info.outputPath(`seven-shell-${width}-${theme}.png`),
                 fullPage: true,
             });
         });
     }
 
 for (const width of [1440, 768, 390])
-    test(`settings ${width}`, async ({ page }) => {
+    test(`settings ${width}`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto("/?screen=settings");
         await expect(
@@ -98,13 +98,13 @@ for (const width of [1440, 768, 390])
             ).violations
         ).toEqual([]);
         await page.screenshot({
-            path: `test-results/seven-settings-${width}.png`,
+            path: info.outputPath(`seven-settings-${width}.png`),
             fullPage: true,
         });
     });
 
 for (const width of [1440, 768, 390])
-    test(`apply ${width}`, async ({ page }) => {
+    test(`apply ${width}`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 900 });
         await page.goto("/?screen=apply");
         await expect(
@@ -164,7 +164,7 @@ for (const width of [1440, 768, 390])
             ).violations
         ).toEqual([]);
         await page.screenshot({
-            path: `test-results/seven-apply-${width}.png`,
+            path: info.outputPath(`seven-apply-${width}.png`),
             fullPage: true,
         });
         await page.getByRole("button", { name: "Submit", exact: true }).click();
@@ -185,7 +185,7 @@ for (const width of [1440, 768, 390])
 
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"])
-        test(`overview ${width} ${theme}`, async ({ page }) => {
+        test(`overview ${width} ${theme}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 900 });
             await page.goto("/?screen=overview");
             await page.evaluate(
@@ -217,7 +217,7 @@ for (const width of [1440, 768, 390])
                 });
             });
             await page.screenshot({
-                path: `test-results/seven-overview-${width}-${theme}.png`,
+                path: info.outputPath(`seven-overview-${width}-${theme}.png`),
                 fullPage: true,
             });
             await page.goto("/?screen=overview&empty=1");
@@ -228,7 +228,7 @@ for (const width of [1440, 768, 390])
 
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"])
-        test(`products ${width} ${theme}`, async ({ page }) => {
+        test(`products ${width} ${theme}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 900 });
             await page.goto("/?screen=products");
             await page.evaluate(
@@ -264,7 +264,7 @@ for (const width of [1440, 768, 390])
                 });
             });
             await page.screenshot({
-                path: `test-results/seven-products-${width}-${theme}.png`,
+                path: info.outputPath(`seven-products-${width}-${theme}.png`),
                 fullPage: true,
             });
             await page.getByRole("searchbox").fill("unmatched");
@@ -329,7 +329,7 @@ for (const width of [1440, 768, 390])
 
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"])
-        test(`inventory ${width} ${theme}`, async ({ page }) => {
+        test(`inventory ${width} ${theme}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 900 });
             await page.goto("/?screen=inventory");
             await page.evaluate(
@@ -358,7 +358,7 @@ for (const width of [1440, 768, 390])
                 });
             });
             await page.screenshot({
-                path: `test-results/seven-inventory-${width}-${theme}.png`,
+                path: info.outputPath(`seven-inventory-${width}-${theme}.png`),
                 fullPage: true,
             });
             for (const label of ["在庫数", "過小在庫しきい値"]) {
@@ -399,7 +399,7 @@ for (const width of [1440, 768, 390])
 
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"])
-        test(`orders ${width} ${theme}`, async ({ page }) => {
+        test(`orders ${width} ${theme}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 900 });
             await page.goto("/?screen=orders");
             await page.evaluate(
@@ -431,7 +431,7 @@ for (const width of [1440, 768, 390])
                 });
             });
             await page.screenshot({
-                path: `test-results/seven-orders-${width}-${theme}.png`,
+                path: info.outputPath(`seven-orders-${width}-${theme}.png`),
                 fullPage: true,
             });
             const editor = page.getByRole("group", {
@@ -484,7 +484,9 @@ for (const width of [1440, 768, 390])
                 });
             });
             await page.screenshot({
-                path: `test-results/seven-order-details-${width}-${theme}.png`,
+                path: info.outputPath(
+                    `seven-order-details-${width}-${theme}.png`
+                ),
                 fullPage: true,
             });
             await page.keyboard.press("Escape");
@@ -496,7 +498,7 @@ for (const width of [1440, 768, 390])
 
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"])
-        test(`messages ${width} ${theme}`, async ({ page }) => {
+        test(`messages ${width} ${theme}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 900 });
             await page.goto("/?screen=messages");
             await page.evaluate(
@@ -565,7 +567,7 @@ for (const width of [1440, 768, 390])
                 });
             });
             await page.screenshot({
-                path: `test-results/seven-messages-${width}-${theme}.png`,
+                path: info.outputPath(`seven-messages-${width}-${theme}.png`),
                 fullPage: true,
             });
             if (width <= 1000) {
