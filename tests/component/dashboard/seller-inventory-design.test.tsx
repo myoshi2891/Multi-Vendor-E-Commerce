@@ -119,3 +119,20 @@ it("keeps the threshold form status when the saved threshold is refreshed", asyn
     expect(props.updateThresholdAction).toHaveBeenCalled();
     expect(screen.getByRole("status")).toBeInTheDocument();
 });
+it("logs a failed inventory lookup with structured context", async () => {
+    const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.mocked(getStoreInventory).mockRejectedValueOnce(
+        new Error("private db error")
+    );
+    await Page({ params: Promise.resolve({ storeUrl: "example" }) });
+    expect(spy).toHaveBeenCalledWith(
+        "[SellerInventoryPage] Failed to load inventory",
+        expect.objectContaining({ error: "private db error" })
+    );
+    jest.mocked(getStoreInventory).mockRejectedValueOnce("raw failure");
+    await Page({ params: Promise.resolve({ storeUrl: "example" }) });
+    expect(spy).toHaveBeenCalledWith("[SellerInventoryPage] Unknown error", {
+        error: "raw failure",
+    });
+    spy.mockRestore();
+});
