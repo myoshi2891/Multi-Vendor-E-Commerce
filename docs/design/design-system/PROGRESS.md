@@ -90,7 +90,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | 未実施 |
 | DS-PAGE-047 | `/dashboard/admin/offer-tags` | 未適用 | P4 | TODO | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | 未実施 |
 | DS-PAGE-048 | `/dashboard/admin/orders` | 未適用 | P3 | TODO | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | 未実施 |
-| DS-PAGE-049 | `/dashboard/admin` | 未適用 | P3 | TODO | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | 未実施 |
+| DS-PAGE-049 | `/dashboard/admin` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-050 | `/dashboard/admin/stores` | 未適用 | P3 | TODO | [src/app/dashboard/admin/stores/page.tsx](<../../../src/app/dashboard/admin/stores/page.tsx>) | 未実施 |
 | DS-PAGE-051 | `/dashboard` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/page.tsx](<../../../src/app/dashboard/page.tsx>) | 未実施 |
 | DS-PAGE-052 | `/dashboard/seller` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/seller/page.tsx](<../../../src/app/dashboard/seller/page.tsx>) | 未実施 |
@@ -334,6 +334,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-216 | P2/P3 | 販売者スレッドopt-in | [ProfileConversationThread seller opt-in](../../../src/components/store/profile/messages/profile-conversation-thread.tsx) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
 | DS-COMP-217 | P3 | 配送設定共通表示 | [SellerShipping](../../../src/components/dashboard/seller/seller-shipping.tsx) | 保留 | 補助検証済み・実ルート保留。[優先6画面](#優先6画面移行記録) |
 | DS-COMP-218 | P3 | 配送フォーム共通入力 | [ShippingFields](../../../src/components/dashboard/forms/shipping-fields.tsx) | 保留 | 既定/国別の入力を共通化。補助検証済み・認証後実ルート保留。[優先6画面](#優先6画面移行記録) |
+| DS-COMP-219 | P3 | 取得失敗・再試行 | [LoadError](../../../src/components/dashboard/design/load-error.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -758,3 +759,11 @@ DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴ�
 - 66画面: 本体適用43/未適用15/仮実装1/転送専用7。218部品のIDを維持。現在の認証後保留は既存11＋今回6＝17。外部SDK/専用DB/認証後ルートをfixtureのみで完了扱いにしない。
 - 00-overviewは製品scope/role変更なし、02-architectureは既存Server注入境界維持、03-data-modelはschema不変で変更不要。category-attributes仕様はカテゴリ/属性契約不変、seller-dashboardのKPI/在庫設計は今回対象外で変更不要。今回表示契約はseller-ui-migrationとSDD01/04/05/06/07へ同期。
 - 一時ログ: `/tmp/six-full-jest.log`、`/tmp/six-final-browser.log`、`/tmp/six-seven-regression.log`。永続添付ではなく結果をこの記録に保存。tsxのIPC起動時EPERMはsandbox外実行で解消し、TDD Redには含めない。
+
+## P3優先6画面移行記録
+
+2026-10-05。[承認済み計画](../../../plans/layout-design/priority-six-p3-design-system-plan.md)。画面別Green後コミット。認証後実ルート/SDKは専用test DB/Clerk環境で別途受け入れ確認。fixtureを実ルート完了と扱わない。DB/API/認可/計算変更なし。[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)と[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は既存契約維持のため変更不要。
+
+### DS-PAGE-049 管理者概要
+
+新要件RTL2件とmobile nav browserのRed確認。Green/Refactor後Jest26/26、補助Chromium6/6（3幅/light/dark・nav Escape/focus復帰・長文/空/取得失敗/retry・axe contrast含む）、390px画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。共通Shellを管理者にも利用、metric/activity h2、SDK graphと集計値維持。認証後実ルートは実装あり・保留。

@@ -4,9 +4,11 @@ import styles from "./seller.module.css";
 
 export default function SellerShell({
     sidebar,
+    navigationLabel = "Store navigation",
     header,
     children,
 }: {
+    navigationLabel?: string;
     sidebar: ReactNode;
     header: ReactNode;
     children: ReactNode;
@@ -21,7 +23,7 @@ export default function SellerShell({
                     ref={trigger}
                     type="button"
                     className={styles.navToggle}
-                    aria-label="Store navigation"
+                    aria-label={navigationLabel}
                     aria-expanded={open}
                     aria-controls={id}
                     onClick={() => setOpen(!open)}

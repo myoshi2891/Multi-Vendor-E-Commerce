@@ -226,3 +226,10 @@ Phase 5: F3-第2段 platform-wide [safe-migration・破壊的・決済波及] �
 - [ ] platform-wide クーポンの按分アルゴリズム（端数の最終グループ吸収）が会計要件と合致するか。
 - [ ] `paymentStatus` 手動変更が DB のみ（決済 API 非連携・C-a）で運用上問題ないか。
 - [ ] 在庫管理スコープ外の前提（TODO フックのみ）が後続タスクへ正しく引き継がれるか。
+
+## 管理者概要 デザイン移行（2026-10-05）
+
+- [x] DS-PAGE-049: Red→Green→Refactor・関連検証・仕様同期。
+- [ ] 認証後実ルートと必要なSDKの受け入れ確認（補助検証と区別）。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。

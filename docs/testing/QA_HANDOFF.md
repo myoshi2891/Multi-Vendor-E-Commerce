@@ -838,3 +838,9 @@ DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴ�
 商品登録・バリアント追加/編集・配送・店舗設定/作成の実装、TDDと画面単位コミットは完了。[保存計画](../../plans/layout-design/priority-six-design-system-plan.md)。今回の補助Chromium37/37（3幅×light/dark36＋画像キーボード/配送空1）、共有部品回帰のseven42/42、axe WCAG AA（contrast除外なし）、画像目視、型0、lint errors0/warnings10、harness成功。画像操作のRed（RTL1件＋ブラウザー）と空配送表のaxe Redを修正し、再検証。全体Jest・coverageは上表の実測、renderer12/12、dashboard349files/367lcov/18 of 80cells。ログはローカル一時ファイル `/tmp/six-full-jest.log`、`/tmp/six-final-browser.log`、`/tmp/six-seven-regression.log`（永続成果物ではない）。
 
 **保留理由と解除条件**: E2E_DATABASE_URL未設定でschema-currentの専用test DBを利用できず、Clerkテスト販売者を含む受け入れ環境も未準備。今回はDocker socketの存在を確認したが、DB初期化は行っていない。専用環境が揃った後、6実ルートで認可・Sidebar/StoreSwitcher・実Cloudinary/Jodit・保存とrefresh/返却URL遷移を確認する。fixture adapterの成功を実SDK/実DB接続の完了としない。既存11画面の保留も維持し、計17画面。Integrationと本体E2Eは今回未実行。coverage-dashboardのDS-SIXと同期。
+
+### DS-P3-SIX-BROWSER
+
+未適用P3の6画面を画面別TDDで移行。全体統計は最終全体実測時に同期（部分実行から加算しない）。認証後5実ルート/SDKはschema-current専用test DBとClerk管理者/販売者テスト環境で受け入れ検証。既存DBへのseed/reset/削除/外部送信は実施しない。次着手: 認証後ルート・第三者UIを3幅/light/dark、Portal/既存関連画面と合わせて確認。
+
+- DS-PAGE-049 管理者概要: 新要件RTL2件とmobile nav browserのRed確認。Green/Refactor後Jest26/26、補助Chromium6/6（3幅/light/dark・nav Escape/focus復帰・長文/空/取得失敗/retry・axe contrast含む）、390px画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。共通Shellを管理者にも利用、metric/activity h2、SDK graphと集計値維持。認証後実ルートは実装あり・保留。

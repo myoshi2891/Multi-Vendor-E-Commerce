@@ -1,3 +1,6 @@
+import SellerPage from "@/components/dashboard/design/seller-page";
+import LoadError from "@/components/dashboard/design/load-error";
+import styles from "@/components/dashboard/design/seller.module.css";
 import {
     getAdminDashboardStats,
     getSalesOverTime,
@@ -17,25 +20,38 @@ export const dynamic = "force-dynamic";
  * @returns The admin dashboard layout containing statistics cards, sales chart, and recent orders and stores.
  */
 export default async function AdminDashboardPage() {
-    const [stats, salesData, recentOrders, recentStores] = await Promise.all([
+    const data = await Promise.all([
         getAdminDashboardStats(),
         getSalesOverTime("monthly"),
         getRecentOrders(5),
         getRecentStores(5),
-    ]);
+    ]).catch(() => null);
+    if (!data)
+        return (
+            <SellerPage
+                workspace="Administration"
+                id="admin-overview"
+                title="ダッシュボード"
+            >
+                <LoadError subject="dashboard information" />
+            </SellerPage>
+        );
+    const [stats, salesData, recentOrders, recentStores] = data;
 
     return (
-        <div className="flex flex-col gap-6 p-6">
-            <h1 className="text-2xl font-bold">ダッシュボード</h1>
+        <SellerPage
+            workspace="Administration"
+            id="admin-overview"
+            title="ダッシュボード"
+        >
+            <StatsCards stats={stats} design="seller" />
 
-            <StatsCards stats={stats} />
+            <SalesChart data={salesData} period="monthly" design="seller" />
 
-            <SalesChart data={salesData} period="monthly" />
-
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <RecentOrders orders={recentOrders} />
-                <RecentStores stores={recentStores} />
+            <div className={styles.grid}>
+                <RecentOrders orders={recentOrders} design="seller" />
+                <RecentStores stores={recentStores} design="seller" />
             </div>
-        </div>
+        </SellerPage>
     );
 }

@@ -1,12 +1,8 @@
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AdminDashboardStats } from "@/queries/dashboard";
 
 interface Props {
+    design?: "seller";
     stats: AdminDashboardStats;
 }
 
@@ -15,7 +11,7 @@ interface Props {
  *
  * Shows key metrics including total revenue, orders, stores, users, products, and categories.
  */
-export function StatsCards({ stats }: Props) {
+export function StatsCards({ stats, design }: Props) {
     const items = [
         {
             label: "総売上",
@@ -52,13 +48,19 @@ export function StatsCards({ stats }: Props) {
     ] as const;
 
     return (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {items.map(({ label, value }) => (
                 <Card key={label}>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            {label}
-                        </CardTitle>
+                        {design === "seller" ? (
+                            <h2 className="text-sm text-muted-foreground">
+                                {label}
+                            </h2>
+                        ) : (
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                {label}
+                            </CardTitle>
+                        )}
                     </CardHeader>
                     <CardContent>
                         <p className="text-2xl font-bold">{value}</p>
