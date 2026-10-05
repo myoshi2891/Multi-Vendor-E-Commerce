@@ -48,3 +48,42 @@ it("closes mobile navigation when choosing a destination", async () => {
     fireEvent.click(screen.getByRole("link", { name: "Products" }));
     expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
+
+// Portaled descendants (e.g. the store switcher popover) bubble React events
+// through the aside; only events inside the aside DOM may close the menu.
+import { createPortal } from "react-dom";
+import SellerShell from "@/components/dashboard/design/seller-shell";
+it("ignores Escape and link clicks bubbled from portaled descendants", async () => {
+    const user = userEvent.setup();
+    render(
+        <SellerShell
+            header={null}
+            sidebar={
+                <>
+                    <p>Sidebar text</p>
+                    {createPortal(
+                        <div>
+                            <a href="/portal">Portal link</a>
+                            <input aria-label="Portal search" />
+                        </div>,
+                        document.body
+                    )}
+                </>
+            }
+        >
+            <h1>Content</h1>
+        </SellerShell>
+    );
+    const trigger = screen.getByRole("button", { name: "Store navigation" });
+    await user.click(trigger);
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Portal search" }), {
+        key: "Escape",
+    });
+    fireEvent.click(screen.getByRole("link", { name: "Portal link" }));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(screen.getByText("Sidebar text"));
+    fireEvent.keyDown(screen.getByText("Sidebar text"), { key: "Enter" });
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(screen.getByText("Sidebar text"), { key: "Escape" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+});

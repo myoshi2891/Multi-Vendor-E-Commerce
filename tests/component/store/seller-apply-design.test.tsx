@@ -124,3 +124,49 @@ it("locks a pending application, retains data on rejection and retries", async (
         })
     );
 });
+it("updates returnPolicy via a functional update that keeps the latest state", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    const setFormData = jest.fn();
+    const base = {
+        name: "Example Store",
+        description: "Our example store description",
+        email: "test@example.com",
+        phone: "1234",
+        url: "example",
+        logo: "image",
+        cover: "image",
+        defaultShippingService: "Delivery",
+        defaultShippingFeePerItem: 0,
+        defaultShippingFeeForAdditionalItem: 0,
+        defaultShippingFeePerKg: 0,
+        defaultShippingFeeFixed: 0,
+        defaultDeliveryTimeMin: 7,
+        defaultDeliveryTimeMax: 10,
+        returnPolicy: "",
+    };
+    render(
+        <Step3
+            step={3}
+            setStep={jest.fn()}
+            setFormData={setFormData}
+            applySellerAction={jest.fn()}
+            formData={base}
+        />
+    );
+
+    // Act
+    await user.type(
+        screen.getByRole("textbox", { name: "Return policy" }),
+        "R"
+    );
+
+    // Assert: the updater must merge into prev, not a stale render snapshot
+    const updater = setFormData.mock.calls.at(-1)?.[0];
+    expect(typeof updater).toBe("function");
+    expect(updater({ ...base, name: "Newer name" })).toEqual({
+        ...base,
+        name: "Newer name",
+        returnPolicy: "R",
+    });
+});
