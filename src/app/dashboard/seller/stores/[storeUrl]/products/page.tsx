@@ -24,7 +24,17 @@ export default async function SellerProductPage({
         getAllCategories(),
         getAllOfferTags(storeUrl),
         getAllCountries(),
-    ]).catch(() => null);
+    ]).catch((error: unknown) => {
+        if (error instanceof Error) {
+            console.error("[SellerProductPage] Failed to load product data", {
+                error: error.message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[SellerProductPage] Unknown error", { error });
+        }
+        return null;
+    });
     if (!data)
         return (
             <SellerPage id="store-products" title="Products">

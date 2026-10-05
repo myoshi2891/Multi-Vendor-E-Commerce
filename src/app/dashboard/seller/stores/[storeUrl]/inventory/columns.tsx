@@ -42,7 +42,7 @@ export function getInventoryColumns(
             header: "在庫数",
             cell: ({ row }) => (
                 <InventoryQuantityCell
-                    key={`${row.original.sizeId}:${row.original.quantity}`}
+                    key={row.original.sizeId}
                     updateStockAction={updateStockAction}
                     sizeId={row.original.sizeId}
                     initialQuantity={row.original.quantity}

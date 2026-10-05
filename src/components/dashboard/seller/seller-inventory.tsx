@@ -32,7 +32,6 @@ export default function SellerInventory({
                 <InventoryAlertSummary rows={rows} threshold={threshold} />
                 <div className={styles.panel}>
                     <LowStockThresholdForm
-                        key={threshold}
                         storeUrl={storeUrl}
                         initialThreshold={threshold}
                         updateThresholdAction={updateThresholdAction}

@@ -1,4 +1,5 @@
 import SellerOrders from "@/components/dashboard/seller/seller-orders";
+import SellerPage from "@/components/dashboard/design/seller-page";
 import { LookupFailure } from "@/components/dashboard/design/seller-error";
 import { serializeSellerOrders } from "@/lib/seller-orders";
 import { getStoreOrders } from "@/queries/store";
@@ -11,7 +12,12 @@ export default async function SellerOrdersPage({
 }) {
     const { storeUrl } = await params;
     const orders = await getStoreOrders(storeUrl).catch(() => null);
-    if (!orders) return <LookupFailure />;
+    if (!orders)
+        return (
+            <SellerPage id="store-orders" title="Orders">
+                <LookupFailure />
+            </SellerPage>
+        );
     return (
         <SellerOrders
             orders={serializeSellerOrders(orders)}

@@ -311,11 +311,12 @@ export default function Step3({
                                                     placeholder="Return Policy"
                                                     onChange={(e) => {
                                                         field.onChange(e);
-                                                        setFormData({
-                                                            ...formData,
-                                                            returnPolicy:
-                                                                e.target.value,
-                                                        });
+                                                        const returnPolicy =
+                                                            e.target.value;
+                                                        setFormData((prev) => ({
+                                                            ...prev,
+                                                            returnPolicy,
+                                                        }));
                                                     }}
                                                 />
                                             </FormControl>

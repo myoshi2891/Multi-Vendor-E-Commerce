@@ -34,15 +34,20 @@ export default function SellerShell({
                 id={id}
                 className={styles.sidebar}
                 data-open={open}
+                // React の合成イベントはポータル配下からも DOM 外を経由して
+                // バブルするため、aside の DOM 内で発生したイベントのみ扱う
                 onKeyDown={(event) => {
+                    if (!(event.target instanceof Node)) return;
+                    if (!event.currentTarget.contains(event.target)) return;
                     if (event.key === "Escape") {
                         setOpen(false);
                         trigger.current?.focus();
                     }
                 }}
                 onClick={(event) => {
-                    if ((event.target as HTMLElement).closest("a"))
-                        setOpen(false);
+                    if (!(event.target instanceof Element)) return;
+                    if (!event.currentTarget.contains(event.target)) return;
+                    if (event.target.closest("a")) setOpen(false);
                 }}
             >
                 {sidebar}
