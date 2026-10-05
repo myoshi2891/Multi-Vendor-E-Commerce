@@ -18,7 +18,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2877 passed / 2880 total、3 skipped、127 snapshots passed、294 スイート（293 passed／1 skipped、failed 0）**。2026-10-06 `bun run test -- --coverage` 全体実測。 |
+| Jest テスト総数 (unit/component) | **2882 passed / 2885 total、3 skipped、127 snapshots passed、294 スイート（293 passed／1 skipped、failed 0）**。2026-10-06 `bun run test` 全体実測。 |
 | カバレッジ全体（lcov **2026-10-06実測**） | Branches76.88%（6065/7889）／Functions83.49%（1932/2314）／Lines87.31%（9092/10413）。Statementsはlcovに含まれないため今回未取得。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
 | Jest Integration テスト総数 | **222** / **17 スイート**（**2026-10-04 実測: 222/222 pass**・`bun run test:integration`。PR #187 レビュー対応で `product-update.test.ts` に同一商品へのバリアント並行追加 +1）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
@@ -28,7 +28,7 @@
 | 型エラー | **0 件**（2026-10-05 `bunx tsc --noEmit`）。lintはerrors 0 / 既存warnings 10。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（ダッシュボード集計） | **361** / lcovエントリ **375** / マトリクス18/80セル（23%）。2026-10-05 `bun run coverage:dashboard` 実測。 |
+| テストファイル総数（ダッシュボード集計） | **365** / lcovエントリ **375** / マトリクス18/80セル（23%）。2026-10-06 `bun run coverage:dashboard` 実測。 |
 
 ### `/profile/wishlist/[page]` デザイン移行の検証（2026-09-30、未コミット）
 

@@ -16,7 +16,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2877 passed / 2880 total、3 skipped、127 snapshots passed、294 スイート（293 passed／1 skipped、failed 0）** — 2026-10-06 PR#191 Sonar New Code対策後の全体実測。Integration222 / 17スイート（2026-10-04実測、今回は未実行）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **2882 passed / 2885 total、3 skipped、127 snapshots passed、294 スイート（293 passed／1 skipped、failed 0）** — 2026-10-06 PR#191 レビュー対応後の全体実測。Integration222 / 17スイート（2026-10-04実測、今回は未実行）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **222テスト / 17スイート** — 2026-10-04実測を維持（今回未実行）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5290,4 +5290,14 @@ New Code カバレッジ 70.5% の主因（0% の sidebar 2 ファイル、selle
 |------|--------|--------|
 | テスト総数 | 2862 passed / 2865 total | **2877 passed / 2880 total** |
 | スイート数 | 290 | **294** |
+| 型エラー | 0 件 | **0 件** |
+
+### PR#191 レビュー追加対応 (2026-10-06)
+
+管理者ページ 2 つの取得失敗ログ、販売者クーポンページの所有権エラーを error.tsx へ伝播、Legal のアンカー数検査と段落 key を修正（RTL +5、Red 確認済み、未コミット）。
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 2877 passed / 2880 total | **2882 passed / 2885 total** |
+| スイート数 | 294 | **294** |
 | 型エラー | 0 件 | **0 件** |
