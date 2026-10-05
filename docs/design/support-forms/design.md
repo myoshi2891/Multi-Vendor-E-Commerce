@@ -271,8 +271,8 @@ export async function createSupportTicket(
 
 - contact: category CONTACT、既存表示を維持（ブランドページの外側スタイルを再利用、フォームappearance既定）。
 - returns-exchange: category RETURN_REQUEST、appearance brand。深緑ヒーロー・パンくず・セリフh1・ゴールド装飾、クリーム本文。既存RETURNS_POLICY_SUMMARYを全文表示し、ポリシー＋申請の2列（800px以下1列）。フォームにはh2・全項目入力案内。サポート窓口へLink。返品条件・返金処理は変更しない。
-- dispute: category DISPUTE、既存表示を維持。
-- report-problem: category PROBLEM_REPORT、既存表示を維持。
+- dispute: category DISPUTE、appearance brand。DesignPageと必須注文番号付き申立フォーム、Customer service導線。
+- report-problem: category PROBLEM_REPORT、appearance brand。DesignPageと既存の問題報告フォーム（注文番号欄なし）、Customer service導線。
 
 ### 2.6 変更: `user-menu.tsx`（3 リンク配線）
 
@@ -367,3 +367,18 @@ export async function createSupportTicket(
 3. `bun run dev` → ゲスト状態で `/contact` 送信 → `bunx prisma studio` で `SupportTicket`（category=CONTACT・userId=null）を確認。
 4. ログイン状態で `/returns-exchange`（orderId 必須）送信 → `userId` が入ること・orderId 未入力でエラーになることを確認。
 5. user-menu の Return&Refund / Dispute / Report から各ページに到達できること。
+
+
+## 紛争画面デザイン移行（2026-10-05）
+
+DS-PAGE-012。公開DesignPageとSupportForm appearance=brandを使用。DISPUTE、必須UUID注文番号、申立ラベルと既存submitActionを維持。パンくずとCustomer service導線。Red 1件、Green/Refactor共通フォーム込み9/9、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。ブラウザー確認待ちのため実装済み。[計画](../../../plans/layout-design/priority-five-design-system-plan.md)。
+
+
+## 問題報告デザイン移行（2026-10-05）
+
+DS-PAGE-035。PROBLEM_REPORT、報告ラベル、既存フィールド（注文番号入力なし）とsubmitActionを保持してbrand表示を適用。Red 1件→関連10/10、tsc 0、lint 0 errors/12既存warnings。共有DesignPage再利用後に追加のRefactor差分なし。`4bda3231` / `3f35e4f1`。実ブラウザー最終検証待ち。
+
+
+### 最終受け入れ確認（2026-10-05）
+
+今回のdispute/report-problem本体は検証済み（contact/他サポート画面の移行状態は拡張しない）。公開3画面と2つの未認証転送を実ルートChromium11/11で確認。1440/768/390px、focus/keyboard・横溢れ・axe AA contrast・画像目視。送信はmock応答、実ticket作成なし。Offers空/失敗はRTL、フォームカテゴリーpayload回帰2/2。全体Jest2766/2769（3 skipped）、tsc0、lint0 errors/12既存warnings。[最終証跡](../design-system/PROGRESS.md#p2優先5画面移行記録)。

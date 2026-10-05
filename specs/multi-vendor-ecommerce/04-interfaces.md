@@ -238,3 +238,7 @@ SupportForm receives `submitAction: typeof createSupportTicket` from each Server
 ### Profile message display contract
 
 `getProfileConversations()` returns own conversations with id, userId (buyer/sender comparison), updatedAt ISO, store `{name,logo}` and latest messages `{content}[]`; exclude order/store/internal relation data. `getProfileConversationMessages(id)` returns chronological `{id,senderId,content,createdAt ISO}[]` after existing participant validation. The Server Component injects these with existing `sendMessage(id, content)` and `markConversationRead(id)` through Props. Existing schemas, authorization and transaction contracts remain. [UI contract](../../docs/design/profile-messages/requirements.md).
+
+### Priority P2 display interfaces
+
+Public URLs `/offers`, `/dispute`, `/report-problem` and authenticated `/profile/following/[page]`, `/profile/history/[page]` are unchanged. Aliases redirect to page 1. Following supplies `followAction(storeId): Promise<boolean>` from the existing facade. History supplies `fetchHistoryAction(ids, page): Promise<{ products: ProductType[]; totalPages: number }>` from getProductsByIds, retaining its default page size and ordering. URL links are the page-navigation source of truth; no new HTTP endpoint or server action is added. SupportForm keeps its existing submitAction/category contract and opts into appearance="brand" for DISPUTE and PROBLEM_REPORT.

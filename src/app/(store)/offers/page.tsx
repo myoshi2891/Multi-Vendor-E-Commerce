@@ -1,51 +1,61 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllOfferTags } from "@/queries/offer-tag";
+import DesignPage from "@/components/store/shared/design-page/design-page";
+import styles from "@/components/store/shared/design-page/design-page.module.css";
 
-export const dynamic = "force-dynamic"; // Prisma 依存ページ規約（tech.md）
-
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Discounts & Offers | Marketplace" };
 
-/**
- * プラットフォーム全体のオファー（OfferTag）一覧ページ。
- *
- * 商品グリッドは持たず、各オファーを /browse?offer=<url> へ誘導する（DRY: 商品の
- * 絞り込み・ソート・ページングは既存 /browse の getProducts フィルタへ委譲する）。
- * getAllOfferTags は src/queries 経由で Prisma を読むため force-dynamic を宣言する。
- *
- * @returns オファー一覧（タグが無い場合は空状態メッセージ）の React 要素
- */
 export default async function OffersPage() {
-    const offerTags = await getAllOfferTags();
-
-    if (offerTags.length === 0) {
+    let offerTags;
+    try {
+        offerTags = await getAllOfferTags();
+    } catch {
         return (
-            <main className="mx-auto max-w-5xl px-4 py-10">
-                <h1 className="mb-6 text-2xl font-bold">Discounts & Offers</h1>
-                <p className="text-muted-foreground">
-                    現在ご紹介できるオファーはありません。
-                </p>
-            </main>
+            <DesignPage
+                title="Discounts & Offers"
+                eyebrow="A LITTLE DISCOVERY"
+                description="Explore the latest offers from our collection."
+            >
+                <section role="alert" className={styles.empty}>
+                    <h2>Offers could not be loaded.</h2>
+                    <p>Please try again.</p>
+                    <a href="/offers">Try again</a>
+                </section>
+            </DesignPage>
         );
     }
-
     return (
-        <main className="mx-auto max-w-5xl px-4 py-10">
-            <h1 className="mb-6 text-2xl font-bold">Discounts & Offers</h1>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {offerTags.map((tag) => (
-                    <Link
-                        key={tag.id}
-                        href={`/browse?offer=${tag.url}`}
-                        className="rounded-xl border p-5 transition hover:shadow-md"
-                    >
-                        <h2 className="font-semibold">{tag.name}</h2>
-                        <p className="text-sm text-muted-foreground">
-                            {tag.products.length} 商品
-                        </p>
-                    </Link>
-                ))}
-            </div>
-        </main>
+        <DesignPage
+            title="Discounts & Offers"
+            eyebrow="A LITTLE DISCOVERY"
+            description="Explore the latest offers from our collection."
+        >
+            {offerTags.length ? (
+                <div className={styles.grid}>
+                    {offerTags.map((tag) => (
+                        <Link
+                            key={tag.id}
+                            href={`/browse?offer=${tag.url}`}
+                            className={styles.card}
+                        >
+                            <h2>{tag.name}</h2>
+                            <p>{tag.products.length} 商品</p>
+                            <span>Explore this offer ↗</span>
+                        </Link>
+                    ))}
+                </div>
+            ) : (
+                <section
+                    className={styles.empty}
+                    aria-labelledby="offers-empty-title"
+                >
+                    <h2 id="offers-empty-title">More discoveries await.</h2>
+                    <p lang="ja">現在ご紹介できるオファーはありません。</p>
+                    <Link href="/browse">Explore the collection</Link>
+                </section>
+            )}
+        </DesignPage>
     );
 }

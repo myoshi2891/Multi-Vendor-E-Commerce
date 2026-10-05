@@ -1,126 +1,25 @@
-"use client";
-import Pagination from "@/components/store/shared/pagination";
-import ProductList from "@/components/store/shared/product-list";
-import { getProductsByIds } from "@/queries/product";
-import { ProductType } from "@/lib/types";
 import { normalizePageParam } from "@/lib/utils";
-import { use, useEffect, useState } from "react";
+import { getProductsByIds } from "@/queries/product";
+import HistoryContainer from "@/components/store/profile/history/container";
+import { DiscoveryHeading } from "@/components/store/profile/shared/discovery";
+import styles from "@/components/store/profile/shared/discovery.module.css";
 
-/**
- * Fetches a page of history products and adjusts out-of-range requests to a valid page.
- *
- * @param ids - Product IDs loaded from local storage
- * @param requestedPage - The normalized page number to fetch
- * @returns The products, total page count, and page number used for the result
- */
-async function fetchHistoryPage(
-    ids: string[],
-    requestedPage: number
-): Promise<{ products: ProductType[]; totalPages: number; page: number }> {
-    const requested = await getProductsByIds(ids, requestedPage);
-    const canonicalPage =
-        requested.totalPages >= 1
-            ? Math.min(requestedPage, requested.totalPages)
-            : 1;
-
-    if (canonicalPage === requestedPage) {
-        return { ...requested, page: canonicalPage };
-    }
-
-    const clamped = await getProductsByIds(ids, canonicalPage);
-    return { ...clamped, page: canonicalPage };
-}
-
-/**
- * Displays the user's product view history with pagination.
- *
- * @param params - The route parameters containing the requested page.
- * @returns The rendered product history page.
- */
-export default function ProfileHistoryPage({
+export default async function ProfileHistoryPage({
     params,
 }: {
     params: Promise<{ page: string }>;
 }) {
-    const { page: pageParam } = use(params);
-    const currentPage = normalizePageParam(pageParam);
-    const [products, setProducts] = useState<ProductType[]>([]);
-    const [page, setPage] = useState<number>(currentPage);
-    const [totalPages, setTotalPages] = useState<number>(0);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        const fetchHistory = async () => {
-            const historyString = localStorage.getItem("productHistory");
-            if (!historyString) {
-                if (!cancelled) {
-                    setProducts([]);
-                    setLoading(false);
-                }
-                return;
-            }
-
-            try {
-                setLoading(true);
-                const parsed: unknown = JSON.parse(historyString);
-                const productHistory = Array.isArray(parsed) && parsed.every((item): item is string => typeof item === "string")
-                    ? parsed
-                    : [];
-                if (productHistory.length === 0) {
-                    if (!cancelled) {
-                        setProducts([]);
-                        setLoading(false);
-                    }
-                    return;
-                }
-                const res = await fetchHistoryPage(productHistory, currentPage);
-                if (!cancelled) {
-                    setProducts(res.products);
-                    setTotalPages(res.totalPages);
-                    setPage(res.page);
-                }
-            } catch (error: unknown) {
-                if (error instanceof Error) {
-                    console.error("[ProfileHistory] Error fetching history:", error.message, error.stack);
-                } else {
-                    console.error("[ProfileHistory] Error fetching history:", error);
-                }
-                if (!cancelled) {
-                    setProducts([]);
-                }
-            } finally {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            }
-        };
-        fetchHistory();
-
-        return () => { cancelled = true; };
-    }, [currentPage]);
+    const { page } = await params;
     return (
-        <div className="bg-white px-6 py-4">
-            <h1 className="mb-3 text-lg font-bold">
-                Your product view history
-            </h1>
-            {loading ? (
-                <div>loading...</div>
-            ) : products.length > 0 ? (
-                <div className="pb-16">
-                    <ProductList products={products} />
-                    <div className="mt-2">
-                        <Pagination
-                            page={page}
-                            setPage={setPage}
-                            totalPages={totalPages}
-                        />
-                    </div>
-                </div>
-            ) : (
-                <div>No products</div>
-            )}
+        <div className={styles.page}>
+            <DiscoveryHeading
+                title="Your product view history"
+                description="Rediscover the pieces that caught your eye."
+            />
+            <HistoryContainer
+                page={normalizePageParam(page)}
+                fetchHistoryAction={getProductsByIds}
+            />
         </div>
     );
 }

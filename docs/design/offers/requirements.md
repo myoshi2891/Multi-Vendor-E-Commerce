@@ -35,7 +35,7 @@
 | **NFR-OF1**（コード規約）       | `any` 禁止・`console.log` 禁止。ページは async server component。                                                                          |
 | **NFR-OF2**（動的レンダリング） | `src/queries/*` 経由で Prisma を読むため `export const dynamic = 'force-dynamic'` を宣言（[tech.md](../../../.claude/steering/tech.md)）。 |
 | **NFR-OF3**（DRY）              | 商品一覧は `/browse` の既存フィルタに委譲し、`/offers` で再実装しない。                                                                    |
-| **NFR-OF4**（視覚整合）         | shadcn/ui + Tailwind、slate ベース。既存 home/browse のカード意匠に整合。                                                                  |
+| **NFR-OF4**（視覚整合）         | 深緑・アイボリー・ゴールド、serif見出し、細い罫線と可視focus。既存ブランド画面の意匠に整合。                                                                  |
 | **NFR-OF5**（TDD）              | [`.claude/rules/02-tdd-step-commit.md`](../../../.claude/rules/02-tdd-step-commit.md) 遵守。                                               |
 
 ---
@@ -46,3 +46,13 @@
 - `/offers` 内での全商品グリッド描画（任意拡張・design §判断3）。
 - クーポンコードの適用処理（既存カート/チェックアウトが担当）。
 - 管理者によるオファー編集 UI（既存 admin offer-tag 管理が担当）。
+
+
+## P2デザイン移行（2026-10-05）
+
+DS-PAGE-016。共有opt-in DesignPageでパンくずとserif見出し、タグカード、空状態のcollection導線、取得失敗の汎用alertと再読み込み、route loadingを実装。タグ順・商品数・browse URLを維持。Red 2件→Green/Refactor 4/4、tsc 0、lint 0 errors/12既存warnings。実ブラウザー確認は最終検証で記録し、それまでは実装済み。コミット: `0195267c` / `1069ef25` / `5fea2f4a`。[保存計画](../../../plans/layout-design/priority-five-design-system-plan.md)。
+
+
+### 最終受け入れ確認（2026-10-05）
+
+対象公開画面は検証済み。公開3画面と2つの未認証転送を実ルートChromium11/11で確認。1440/768/390px、focus/keyboard・横溢れ・axe AA contrast・画像目視。送信はmock応答、実ticket作成なし。Offers空/失敗はRTL、フォームカテゴリーpayload回帰2/2。全体Jest2766/2769（3 skipped）、tsc0、lint0 errors/12既存warnings。[最終証跡](../design-system/PROGRESS.md#p2優先5画面移行記録)。

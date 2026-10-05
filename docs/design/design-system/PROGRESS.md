@@ -1,6 +1,6 @@
 # デザインシステム移行 — 進捗ノート
 
-- 更新日: 2026-10-04
+- 更新日: 2026-10-05
 - 状態: 運用文書・ルール整備済み／個別移行は継続
 - 対象・優先度・受け入れ条件: [移行計画](../../../plans/layout-design/design-system-adoption-plan.md)。
 - 実施手順: [design-system-workflow](../../../.agent/skills/design-system-workflow/SKILL.md)。
@@ -9,7 +9,7 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加（現台帳204部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用25・未適用33（checkout・注文詳細の2画面は実装あり／検証保留）（仮実装1・転送専用7は不変）。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（現台帳207部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用30・未適用28（checkout・注文詳細・following・historyの4画面は実装あり／検証保留）（仮実装1・転送専用7は不変）。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
@@ -53,20 +53,20 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 実装済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録) |
 | DS-PAGE-010 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-011 | `/customer-service` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | [customer-service移行記録](#customer-service移行記録) |
-| DS-PAGE-012 | `/dispute` | 未適用 | P2 | TODO | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | 未実施 |
+| DS-PAGE-012 | `/dispute` | 検証済み | P2 | 検証済み | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-013 | `/faq` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/faq/page.tsx](<../../../src/app/(store)/faq/page.tsx>) | 未実施 |
 | DS-PAGE-014 | `/faqs` | 本体適用（2026-09-30移行） | P3 | 検証済み | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | [FAQs実施記録](#faqs移行記録) |
 | DS-PAGE-015 | `/legal` | 未適用 | P3 | TODO | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | 未実施 |
-| DS-PAGE-016 | `/offers` | 未適用 | P2 | TODO | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | 未実施 |
+| DS-PAGE-016 | `/offers` | 検証済み | P2 | 検証済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | 未実施 |
 | DS-PAGE-018 | `/product-support` | 本体適用（2026-10-01移行） | P3 | 検証済み | [src/app/(store)/product-support/page.tsx](<../../../src/app/(store)/product-support/page.tsx>) | [product-support移行記録](#product-support移行記録) |
 | DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-020 | `/product/[productSlug]` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/product/[productSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-021 | `/profile/addresses` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/addresses/page.tsx](<../../../src/app/(store)/profile/addresses/page.tsx>) | [addresses実施記録](#profile-addresses移行記録) |
-| DS-PAGE-022 | `/profile/following/[page]` | 未適用 | P2 | TODO | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | 未実施 |
-| DS-PAGE-023 | `/profile/following` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/following/page.tsx](<../../../src/app/(store)/profile/following/page.tsx>) | 未実施 |
-| DS-PAGE-024 | `/profile/history/[page]` | 未適用 | P2 | TODO | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | 未実施 |
-| DS-PAGE-025 | `/profile/history` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/history/page.tsx](<../../../src/app/(store)/profile/history/page.tsx>) | 未実施 |
+| DS-PAGE-022 | `/profile/following/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
+| DS-PAGE-023 | `/profile/following` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/following/page.tsx](<../../../src/app/(store)/profile/following/page.tsx>) | aliasのRTL回帰済み。認証後実ルートは[P2記録](#p2優先5画面移行記録)の保留を継続 |
+| DS-PAGE-024 | `/profile/history/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
+| DS-PAGE-025 | `/profile/history` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/history/page.tsx](<../../../src/app/(store)/profile/history/page.tsx>) | aliasのRTL回帰済み。認証後実ルートは[P2記録](#p2優先5画面移行記録)の保留を継続 |
 | DS-PAGE-026 | `/profile/messages` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/messages/page.tsx](<../../../src/app/(store)/profile/messages/page.tsx>) | [messages実施記録](#profile-messages移行記録) |
 | DS-PAGE-027 | `/profile/orders/[filter]` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../../src/app/(store)/profile/orders/[filter]/page.tsx>) | [orders実施記録](#profile-orders移行記録) |
 | DS-PAGE-028 | `/profile/orders` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/orders/page.tsx](<../../../src/app/(store)/profile/orders/page.tsx>) | [orders実施記録](#profile-orders移行記録) |
@@ -76,7 +76,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-032 | `/profile/settings` | 未適用 | P2 | TODO | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | 未実施 |
 | DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
-| DS-PAGE-035 | `/report-problem` | 未適用 | P2 | TODO | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | 未実施 |
+| DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録) |
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | 未実施 |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録) |
@@ -200,7 +200,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-083 | P2 | マイページ（P2） | [src/components/store/profile/payments/payment-table-header.tsx](<../../../src/components/store/profile/payments/payment-table-header.tsx>) | 検証済み | [payment実施記録](#profile-payment移行記録) |
 | DS-COMP-084 | P2 | マイページ（P2） | [src/components/store/profile/addresses/container.tsx](<../../../src/components/store/profile/addresses/container.tsx>) | 検証済み | [addresses実施記録](#profile-addresses移行記録) |
 | DS-COMP-085 | P2 | マイページ（P2） | [src/components/store/profile/wishlist/container.tsx](<../../../src/components/store/profile/wishlist/container.tsx>) | 検証済み | [wishlist実施記録](#wishlist移行記録) |
-| DS-COMP-086 | P2 | マイページ（P2） | [src/components/store/profile/following/container.tsx](<../../../src/components/store/profile/following/container.tsx>) | TODO | 未実施 |
+| DS-COMP-086 | P2 | マイページ（P2） | [src/components/store/profile/following/container.tsx](<../../../src/components/store/profile/following/container.tsx>) | 保留 | 実装あり・[P2実施記録](#p2優先5画面移行記録) |
 | DS-COMP-087 | P2 | マイページ（P2） | [src/components/store/profile/reviews/reviews-container.tsx](<../../../src/components/store/profile/reviews/reviews-container.tsx>) | 検証済み | [reviews実施記録](#profile-reviews移行記録) |
 | DS-COMP-088 | P2 | マイページ（P2） | [src/components/store/profile/reviews/reviews-header.tsx](<../../../src/components/store/profile/reviews/reviews-header.tsx>) | 検証済み | [reviews実施記録](#profile-reviews移行記録) |
 | DS-COMP-089 | P2 | メッセージ共用部品（P2） | [src/components/shared/messages/messages-layout.tsx](<../../../src/components/shared/messages/messages-layout.tsx>) | TODO | 未実施 |
@@ -319,6 +319,9 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-202 | P2 | 購入者メッセージ専用スレッド | [src/components/store/profile/messages/profile-conversation-thread.tsx](<../../../src/components/store/profile/messages/profile-conversation-thread.tsx>) | 検証済み | [messages実施記録](#profile-messages移行記録) |
 | DS-COMP-203 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/filters/attribute/attribute-facet-filter.tsx](<../../../src/components/store/browse-page/filters/attribute/attribute-facet-filter.tsx>) | 検証済み | [属性ファセット実施記録](#属性ファセット移行記録) |
 | DS-COMP-204 | P1 | 購入導線の共通表示 | [src/components/store/shared/commerce.module.css](../../../src/components/store/shared/commerce.module.css) | 保留 | 実装あり・[checkout-order移行記録](#checkout-order移行記録) |
+| DS-COMP-205 | P2 | 公開opt-in共通表示 | [DesignPage](../../../src/components/store/shared/design-page/design-page.tsx)・専用CSS | 検証済み | [P2実施記録](#p2優先5画面移行記録) |
+| DS-COMP-206 | P2 | account共通表示・ページング | [Discovery](../../../src/components/store/profile/shared/discovery.tsx)・専用CSS | 保留 | 補助検証済み・[P2実施記録](#p2優先5画面移行記録) |
+| DS-COMP-207 | P2 | 閲覧履歴 | [HistoryContainer](../../../src/components/store/profile/history/container.tsx) | 保留 | 補助検証済み・[P2実施記録](#p2優先5画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -600,3 +603,31 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - lint **0 errors／既存12 warnings**、`bunx tsc --noEmit` 成功。sandboxでのlisten EPERMは権限付き再実行で解消。fixtureのprocess定義と長文住所のvalidationテスト条件を修正して再検証済み。これらの環境／fixture失敗はRed実績に含めない。
 - [SDD要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[workflows](../../../specs/multi-vendor-ecommerce/05-workflows.md)／[testing](../../../specs/multi-vendor-ecommerce/07-testing.md)と画面要件/設計/task、計画・QA・テスト計画を同期。[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[data-model](../../../specs/multi-vendor-ecommerce/03-data-model.md)／[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)／[quality](../../../specs/multi-vendor-ecommerce/06-quality.md)は変更不要（scope/DB/API/品質基準に変更なし）。旧住所部品と共有Modal、全体tokens、商品詳細保証の全利用先移行は完了扱いにしない。
 - ダッシュボード再生成: **321 test files／lcov328／18/80 cells（23%）**。lcovと全体Jest成功数は再測定せず既存実測値を維持。実認証後route、SDK実描画、Firefox/WebKit、全E2Eと全体coverageは未実行。
+
+## P2優先5画面移行記録
+
+- 2026-10-05。[保存計画](../../../plans/layout-design/priority-five-design-system-plan.md)。
+- Offers: RTL新要件Red 2件、Green/Refactor 4/4、tsc 0、lint 0 errors/12既存warnings。`0195267c`→`1069ef25`→`5fea2f4a`。ブラウザー検証待ち。
+
+- Dispute: Red 1件→Green/Refactor 9/9（SupportForm含む）、tsc 0、lint 0 errors/12既存warnings。`0ab9d890` / `89f5f198` / `a2c7ddb2`。公開実ルートHTTP 200確認、表示・操作検証待ち。
+
+- Report problem: Red 1件→関連10/10、tsc 0、lint 0 errors/12既存warnings。`4bda3231` / `3f35e4f1`。共有部品再利用後のRefactor差分なし。
+
+- Following: Red4件→Green4/4→Refactor関連18/18、tsc0、lint0 errors/12既存warnings。`1ed94eaf` / `e5c54728` / `982f13b5`。旧共有StoreCard/Paginationは未移行を維持。認証後検証待ち。
+
+- History: Red6件→Green6/6→Refactor関連21/21、tsc0、lint0 errors/12既存warnings。`a52ef2f0` / `31492ef3` / `85022b3b`。client routeをServer Action Props境界へ変更。専用test DBなしで認証後実ルートは保留（実装あり）。補助browserは別検証として実施中。
+
+### 最終検証・状態（2026-10-05）
+
+- **検証済み**: DS-PAGE-016 offers / 012 dispute / 035 report-problem、DS-COMP-205。**保留（実装あり・補助検証済み）**: DS-PAGE-022 following / 024 history、DS-COMP-086/206/207。
+- 公開実ルート: `bunx playwright test --config playwright.priority-public.config.ts` **11/11**。3画面×1440/768/390px、2つの未認証戻り先。フォームはServer Action応答mockでticket DBへの書込・外部送信なし。通常/validation/pending/error/retry/receipt、serif/cream、focus/Enter、横溢れなし、mainのaxe AA違反0（contrast除外なし）。Offersは既存DBのタグをread-only表示。空/失敗はRTLで検証。公開3画面PC/mobile画像目視確認。
+- 補助ブラウザー: `bunx playwright test --config playwright.priority-components.config.ts` **6/6**。2画面×1440/768/390px、長い店舗名/商品名、follow pending/失敗保持/再試行/成功/件数、history pending/error/retry/empty/editorial compare、URL page linksとブラウザー戻る、keyboard/focus、axe AA違反0。Next adapters/actionをmockしたfixtureで、認証後実ルートは証明しない。PC/mobile画像目視確認。
+- 追加回帰: discovery-regression **8/8**、support-category-regression **2/2**。alias/canonical、非string/非配列のstorage、旧ページ応答破棄、カテゴリーpayload/必須UUID/無注文番号/ロック/失敗入力保持/受付。
+- 全体: `bun run test -- --runInBand --coverage --json --outputFile=/tmp/ds-full-jest.json` **2766 passed / 2769 total（3 skipped）**、263 suites（262 passed/1 skipped）、127 snapshots。coverage **83.16/69.26/77.45/83.24%**（statements/branches/functions/lines）。`bunx tsc --noEmit` 0、`bun run lint` 0 errors/12既存warnings。
+- dashboard再生成 **329 test files / lcov349 / 18 of80 cells（23%）**。統計はQA_HANDOFFからSDD/COVERAGE_REPORT/docs/PROGRESSへ同期。全E2E、Firefox/WebKit、Integrationは今回未実行。
+- テストコード修正の失敗（pointer modality、ボタン名称変更、Page2/20の部分一致、router mock安定性、Zodが空orderIdをundefinedへ変換する期待値）は新要件Redへ算入しない。追加回帰に過去のRedを創作しない。
+- 保留理由: `docker ps -a`のread-only確認でdev app/dev DBのみ、専用test DB不在。解除条件は[QA DS-ACCOUNT-DISCOVERY-BROWSER](../../testing/QA_HANDOFF.md#ds-account-discovery-browser)。既存接続へのtest-user/fixture書込、seed/resetは行わない。
+- 仕様同期: SDD01/02/04/05/07、offers/support-forms、following/history。SDD00はプロダクトスコープ不変、03はモデル不変、06は既存品質基準維持、08は既存Open Question未解消で変更不要。旧共有カードと全体基盤の状態は維持。
+- 検証commit: `c4724e29` / `c3b7eaa8` / `d04848cb` / `b22ccc44`。本文は実装履歴を維持し、最終判定は本節を正本にする。
+
+- 本番ビルド: `bun run build` **exit 0**、compile/TypeScript/static page generation成功。既存のmetadataBase未設定とOG画像の✦ dynamic-font download（HTTP400）警告あり。sandbox内の停止したビルドは中断し、昇格後の成功結果を最終結果とする。

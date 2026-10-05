@@ -428,6 +428,7 @@ const setOpen = (modal, fetchData): void => {
 |------|---------|------|
 | `The "middleware" file convention is deprecated. Please use "proxy" instead.` | 対応済み | `src/proxy.ts` へ rename 済み（`clerkMiddleware` をそのまま default export） |
 | `THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.` | 対応しない | `@react-three/fiber@9.8.1`（2026-10 時点の最新）の内部 `new THREE.Clock()` が発生源。アプリ側からは回避不可。上流の対応を待つ |
+| `Encountered a script tag while rendering React component.`（`RootLayout` の `ThemeProvider`） | 対応しない | `next-themes` がちらつき防止用の `<script dangerouslySetInnerHTML>` を Client Component 内で描画するため、React 19.2 が dev で警告する。スクリプトは SSR HTML 内で hydration 前に実行されるのでテーマ初期適用は正常で、本番影響なし。上流の対応を待つ（plans/079） |
 | `AVIF image not supported (Turbopack)` | 対応しない | ローカル `import` の最適化スキップのみ。Next.js Image のリモート画像最適化経路には影響なく、production の画像配信品質は変化しない。Turbopack の AVIF 対応追加を待つ |
 
 ---

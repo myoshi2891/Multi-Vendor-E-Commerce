@@ -5137,3 +5137,39 @@ P1の `/checkout` と `/order/[orderId]` を深緑・アイボリー・ゴール
 | スイート数 | 254 | **257**（failed 0。plan 078 で Playwright spec を分母から除外） |
 | 型エラー | 0 件 | **0 件** |
 
+
+
+### P2優先5画面デザインシステム適用（2026-10-05）
+
+Offers・紛争申立・問題報告・フォロー店舗・閲覧履歴へ深緑/アイボリー/ゴールドとserif見出しを適用。画面別Red/Green/Refactorと仕様同期を分割コミット。公開3画面は検証済み、マイページ2画面は実装・補助検証済み/認証後実ルート保留。既存機能完了履歴は維持。[移行進捗](design/design-system/PROGRESS.md#p2優先5画面移行記録)、[保存計画](../plans/layout-design/priority-five-design-system-plan.md)。
+
+QA_HANDOFFの2026-10-05実測値を同期: Jest2766 passed/2769 total、263 suites（262 passed/1 skipped）、3 skipped、127 snapshots、tsc0。全体coverage83.16/69.26/77.45/83.24%、dashboard329 files/lcov349/18 of80 cells。公開Chromium11/11・補助Chromium6/6、lint0 errors/12既存warnings。旧値2742/2745・257 suitesはCOVERAGE_REPORT履歴へ保存。Integration/全E2E未実行。
+
+実装commit: Offers`1069ef25`、Dispute`89f5f198`、Report`3f35e4f1`、Following`e5c54728`、History`31492ef3`。検証commit: `c4724e29`/`c3b7eaa8`/`d04848cb`/`b22ccc44`。残課題は[QA](testing/QA_HANDOFF.md#ds-account-discovery-browser)を正本とする。
+
+本番ビルド `bun run build` exit0。既存metadataBase/OG glyph font警告あり。
+
+---
+
+### UserMenu の Clerk UserButton hydration 不一致修正（2026-10-05）
+
+#### 概要
+
+ストアヘッダーの `UserMenu` で `Hydration failed` が断続的に出ていた。Clerk の `withClerk` が React state ではなくライブな `clerk.loaded` で描画を分岐するため、SSR（常に null）と clerk-js ロード済みの hydration（DOM 出力）とで HTML が食い違っていた。`useSyncExternalStore` の server snapshot で hydration 後にのみ描画するラッパーを新設。`next-themes` の `<script>` 警告は実害がないため `tech.md` の「意図的に未対応の警告」へ記録。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/layout/header/user-menu/client-user-button.tsx` | hydration 後にのみ `UserButton` を描画する Client Component を新設 | 未コミット |
+| `src/components/store/layout/header/user-menu/user-menu.tsx` | `UserButton` をラッパーへ置換 | 未コミット |
+| `tests/component/store/client-user-button.test.tsx` | SSR 非出力・hydration 一致の回帰 +2（Red 確認済み） | 未コミット |
+| `.claude/steering/tech.md` / `plans/079-fix-user-button-hydration-mismatch.md` | 警告表追記 / 計画 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest テスト総数 | 2766 passed / 2769 total | **2768 passed / 2771 total** |
+| スイート数 | 263 | **264**（failed 0） |
+| 型エラー | 0 件 | **0 件** |

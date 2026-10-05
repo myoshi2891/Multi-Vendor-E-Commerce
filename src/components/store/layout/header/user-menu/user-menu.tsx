@@ -1,5 +1,6 @@
-import { SignOutButton, UserButton } from "@clerk/nextjs";
+import { SignOutButton } from "@clerk/nextjs";
 import DismissibleDetails from "../dismissible-details";
+import ClientUserButton from "./client-user-button";
 import { currentUser } from "@clerk/nextjs/server";
 import { ChevronDown, UserIcon } from "lucide-react";
 import Image from "next/image";
@@ -89,14 +90,8 @@ export default async function UserMenu({
                             <div className="px-6 pb-0 pt-5">
                                 {user ? (
                                     <div className="flex flex-col items-center justify-center">
-                                        {/* Clerk 内部 DOM（.cl-avatarBox）への CSS 依存を避け、公式 API で指定する */}
-                                        <UserButton
-                                            appearance={{
-                                                elements: {
-                                                    avatarBox: "size-[70px]",
-                                                },
-                                            }}
-                                        />
+                                        {/* hydration 不一致回避のため hydration 後に描画する（plans/079） */}
+                                        <ClientUserButton />
                                     </div>
                                 ) : (
                                     <div className="space-y-1">

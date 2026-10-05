@@ -17,6 +17,8 @@
 | [returns-exchange-design-system-plan.md](returns-exchange-design-system-plan.md) | Returns & Exchange の移行計画 |
 | [product-support-design-system-plan.md](product-support-design-system-plan.md) | Product support の移行計画 |
 
+| [priority-five-design-system-plan.md](priority-five-design-system-plan.md) | P2優先5画面の適用・TDD・段階コミット・最終検証（2026-10-05） |
+
 ## 関連文書
 
 - [計画全体の索引](../README.md)
