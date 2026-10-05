@@ -256,3 +256,5 @@ getSellerConversations(storeUrl)は既存getStoreConversationsの店舗所有権
 ## Seller six-screen form boundaries
 
 ProductDetails keeps its existing ProductFormActions and opts into seller design from the product creation Server Component. No public HTTP API, action signature or data schema changes. See [seller UI design](../../docs/design/seller-ui-migration/design.md).
+
+The variant creation/edit Server Components also opt into seller ProductDetails and preserve getProductMainInfo/getProductVariantForEdit arguments, initial values and missing-record behavior. Seller feedback is inline status/alert; the existing action contract is unchanged.

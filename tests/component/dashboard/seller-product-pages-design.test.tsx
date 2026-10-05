@@ -3,6 +3,8 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import NewProductPage from "@/app/dashboard/seller/stores/[storeUrl]/products/new/page";
 import NewVariantPage from "@/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page";
+import EditVariantPage from "@/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page";
+import { getProductVariantForEdit } from "@/queries/product";
 import { getProductMainInfo } from "@/queries/product";
 import { upsertProduct } from "@/queries/product";
 import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
@@ -41,6 +43,62 @@ jest.mock("@/components/dashboard/forms/product-details", () => ({
 
 beforeEach(() => {
     jest.clearAllMocks();
+});
+it("labels variant editing and forwards owner-scoped lookup and complete initial values", async () => {
+    const product = {
+        productId: "p1",
+        variantId: "v1",
+        name: "Existing product",
+        sizes: [{ size: "M", quantity: 3, price: 12.5, discount: 0 }],
+        variantAttributes: { finish: "archived-value" },
+    };
+    jest.mocked(getProductVariantForEdit).mockResolvedValueOnce(
+        product as never
+    );
+    render(
+        await EditVariantPage({
+            params: Promise.resolve({
+                storeUrl: "example",
+                productId: "p1",
+                variantId: "v1",
+            }),
+        })
+    );
+    expect(
+        screen.getByRole("region", { name: "Edit variant" })
+    ).toContainElement(
+        screen.getByRole("heading", { level: 1, name: "Edit variant" })
+    );
+    expect(
+        screen.getByText("Update Existing product and its variant information.")
+    ).toBeInTheDocument();
+    expect(form).toHaveBeenCalledWith(
+        expect.objectContaining({
+            design: "seller",
+            data: product,
+            storeUrl: "example",
+            upsertProductAction: upsertProduct,
+        })
+    );
+    expect(getProductVariantForEdit).toHaveBeenCalledWith(
+        "example",
+        "p1",
+        "v1"
+    );
+});
+it("retains notFound for an unavailable edit variant", async () => {
+    jest.mocked(getProductVariantForEdit).mockResolvedValueOnce(null);
+    await expect(
+        EditVariantPage({
+            params: Promise.resolve({
+                storeUrl: "example",
+                productId: "p1",
+                variantId: "missing",
+            }),
+        })
+    ).rejects.toThrow("NEXT_NOT_FOUND");
+    expect(db.country.findMany).not.toHaveBeenCalled();
+    expect(form).not.toHaveBeenCalled();
 });
 it("labels variant creation and preserves inherited product data and the seller action boundary", async () => {
     const product = {

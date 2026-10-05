@@ -9,6 +9,7 @@ import { getAllCategories } from "@/queries/category";
 import { flattenCategoryTree } from "@/lib/category-tree";
 import { getAllOfferTags } from "@/queries/offer-tag";
 import { getProductVariantForEdit } from "@/queries/product";
+import SellerPage from "@/components/dashboard/design/seller-page";
 
 export const dynamic = "force-dynamic";
 
@@ -59,8 +60,13 @@ export default async function SellerEditProductVariantPage({
     const countries = await findCountries();
 
     return (
-        <div>
+        <SellerPage
+            id="edit-variant-heading"
+            title="Edit variant"
+            description={`Update ${product.name} and its variant information.`}
+        >
             <ProductDetails
+                design="seller"
                 upsertProductAction={upsertProduct}
                 getAttributeDefinitionsAction={getEffectiveAttributeDefinitions}
                 categories={categories}
@@ -69,6 +75,6 @@ export default async function SellerEditProductVariantPage({
                 offerTags={offerTags}
                 countries={countries}
             />
-        </div>
+        </SellerPage>
     );
 }

@@ -442,8 +442,8 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 storeUrl
             );
             setSaveState("success");
-            // Displaying success message
-            toast({
+            // Seller forms announce feedback inline in their scoped theme.
+            if (design !== "seller") toast({
                 title:
                     data?.productId && data?.variantId
                         ? "Product has been updated."
@@ -473,7 +473,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             } else {
                 console.error("ProductDetails submit error:", error);
             }
-            toast({
+            if (design !== "seller") toast({
                 variant: "destructive",
                 title: "Oops!",
                 description: message,

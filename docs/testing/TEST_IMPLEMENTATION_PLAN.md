@@ -1092,3 +1092,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - DS-PAGE-061 商品登録: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
 
 - DS-PAGE-060 バリアント追加: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
+
+- DS-PAGE-059 バリアント編集: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。

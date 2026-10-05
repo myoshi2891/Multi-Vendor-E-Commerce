@@ -125,3 +125,68 @@ for (const width of [1440, 768, 390])
                 fullPage: true,
             });
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`editvariant ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=editvariant&failure=1");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", { level: 1, name: "Edit variant" })
+            ).toHaveCSS("font-family", /Georgia/);
+            await expect(
+                page.getByPlaceholder("Product Name", { exact: true })
+            ).toHaveValue(/An example watch/);
+            await expect(
+                page.getByRole("spinbutton", { name: "price 1", exact: true })
+            ).toHaveValue("12.5");
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            await page
+                .getByRole("button", { name: "Save product", exact: true })
+                .click();
+            await expect(
+                page.getByRole("status").filter({ hasText: "Saving product" })
+            ).toBeVisible();
+            await expect(
+                page.getByPlaceholder("Product Name", { exact: true })
+            ).toBeDisabled();
+            await expect(
+                page.getByRole("alert").filter({ hasText: "Please try again" })
+            ).toBeVisible();
+            await expect(
+                page.getByPlaceholder("Variant Name", { exact: true })
+            ).toHaveValue("Gold");
+            await page
+                .getByRole("button", { name: "Save product", exact: true })
+                .click();
+            await expect(
+                page.getByRole("status").filter({ hasText: "Product saved" })
+            ).toBeVisible();
+            expect(
+                await page.evaluate(
+                    () =>
+                        (window as unknown as { refreshed: boolean }).refreshed
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({
+                path: info.outputPath(`six-editvariant-${width}-${theme}.png`),
+                fullPage: true,
+            });
+        });
