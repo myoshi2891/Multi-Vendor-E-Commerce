@@ -12,6 +12,10 @@ const anchors = [
     "privacy-policy",
     "commercial-transaction-act",
 ] as const;
+if (anchors.length !== LEGAL_SECTIONS.length)
+    throw new Error(
+        `LEGAL_SECTIONS (${LEGAL_SECTIONS.length}) and legal anchors (${anchors.length}) must have the same length.`
+    );
 export default function LegalPage() {
     return (
         <DesignPage
@@ -41,7 +45,7 @@ export default function LegalPage() {
                                 {section.heading}
                             </h2>
                             {section.body.split("\n\n").map((paragraph, i) => (
-                                <p key={i} lang="ja">
+                                <p key={`${anchors[index]}-${i}`} lang="ja">
                                     {paragraph}
                                 </p>
                             ))}

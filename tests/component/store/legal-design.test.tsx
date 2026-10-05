@@ -31,3 +31,13 @@ it("adds a breadcrumb home link without replacing placeholder copy", () => {
     ).toHaveAttribute("href", "/");
     expect(screen.getAllByText(/（プレースホルダ）/)).toHaveLength(3);
 });
+it("fails loudly when legal sections and anchors diverge", () => {
+    jest.isolateModules(() => {
+        jest.doMock("@/components/store/static/content/legal", () => ({
+            LEGAL_SECTIONS: [{ heading: "Only", body: "x" }],
+        }));
+        expect(() => require("@/app/(store)/legal/page")).toThrow(
+            "LEGAL_SECTIONS"
+        );
+    });
+});
