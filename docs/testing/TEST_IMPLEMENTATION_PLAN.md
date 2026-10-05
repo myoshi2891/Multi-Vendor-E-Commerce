@@ -1100,3 +1100,6 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - DS-PAGE-063 店舗設定: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
 
 - DS-PAGE-065 店舗作成: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。
+
+
+最終回帰: six37/37（画像キーボード・配送空表含む）、seven42/42、全体Jest2842/2845（3既存skip）・280suites・127snapshots、型0/lint0errors（既存warnings10）・harness成功。文書リンクと66画面/218部品のID/件数を検証。認証後6画面の解除条件は[DS-SIX-BROWSER](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)を参照。

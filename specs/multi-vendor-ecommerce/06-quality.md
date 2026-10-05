@@ -137,3 +137,5 @@ Scoped seller light/dark themes and explicit Portal styles preserve other consum
 ## Seller six-screen presentation quality
 
 Use scoped light/dark themes and explicit portal inheritance, serif headings, readable wrapping and visible keyboard focus. Verify 1440/768/390px with axe WCAG AA including contrast; fixture adapters do not prove authenticated route or SDK rendering.
+
+Seller gallery removal is keyboard accessible with meaningful image/button names. Seller data-table scroll regions remain keyboard accessible when filtering returns no rows. The shared shipping fields retain the caller's validation and numeric units. [Six-screen evidence](../../docs/design/design-system/PROGRESS.md#優先6画面移行記録).

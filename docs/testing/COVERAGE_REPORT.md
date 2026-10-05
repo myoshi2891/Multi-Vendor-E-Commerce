@@ -11,15 +11,15 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-05） | **2802 passed / 2805 total、3 skipped、127 snapshots passed、275 スイート（274 passed／1 skipped、failed 0）**。全体coverage実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| 全体coverage（2026-10-05） | Statements85.06%（9577/11259）／Branches70.8%（5405/7634）／Functions80.71%（1812/2245）／Lines85.3%（8705/10204）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テストファイル総数 | **345 ファイル**（2026-10-05 dashboard実測）。 |
+| Jestテスト総数（2026-10-05） | **2842 passed / 2845 total、3 skipped、127 snapshots passed、280 スイート（279 passed／1 skipped、failed 0）**。全体coverage実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| 全体coverage（2026-10-05） | Statements86.58%（9779/11294）／Branches75.82%（5796/7644）／Functions83.08%（1872/2253）／Lines86.96%（8895/10228）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| テストファイル総数 | **349 ファイル**（2026-10-05 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **280 スイート**（279 passed／1 skipped、2026-10-05全体実測）。 |
 | テスト総数 | **2842 unit/component passed**（2845 total / 3 skipped / 280 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)**（2026-10-05 dashboard実測、変更なし）。 |
-| lcov エントリ数 | **363**（2026-10-05全体coverage再測定とdashboard実測）。 |
+| lcov エントリ数 | **367**（2026-10-05全体coverage再測定とdashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
 | 型エラー | **0 件**（2026-10-05実測）。 |
 
@@ -99,6 +99,8 @@
 ---
 
 ## 3. Next Actions (カバレッジ観点の戦略台帳)
+
+**DS-SIX（実装完了・認証後受け入れ保留）**: 販売者6画面は補助fixture37ケースと既存seven回帰42ケースが成功。専用test DB/Clerk環境で実ルート・SDK・保存後遷移を確認する。分類の列は増えていないためマトリクス18/80セルは不変。新規テストを実行した事実と、認証後検証の保留を別に記録する。[QA解除条件](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)。
 
 > **運用ルール**: このセクションは「なぜやるか・何を達成するか」の**戦略理由**を記録する台帳。
 > 「次のセッションで何をするか」の即時 TODO は **[QA_HANDOFF.md](./QA_HANDOFF.md) の `残課題・Open Issues` を Single Source of Truth** とする。
@@ -607,3 +609,7 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 - 更新前: 2822 passed / 2825 total、277 suites。差分には未同期だった seller デザイン移行コミット（`f9a88c8f`〜`07e1a3eb`）と作業ツリーの images-preview-grid 回帰を含む。
 - 更新後: 2842 passed / 2845 total、280 suites、349 files / lcov367 / 18 of 80 cells、coverage Statements86.56%（9777/11294）／Branches75.79%（5789/7638）／Functions83.04%（1871/2253）／Lines86.95%（8894/10228）。ヒートマップ分類変更なし。Integration/E2E 未実行。
 
+
+### 販売者6画面・最終監査（2026-10-05）
+
+全体再実測: 2842 passed / 2845 total、3 skipped、127 snapshots passed、280 スイート（279 passed／1 skipped、failed 0）。Statements86.58%（9779/11294）／Branches75.82%（5796/7644）／Functions83.08%（1872/2253）／Lines86.96%（8895/10228）。dashboard349files/367lcov/18 of 80cells。six37/37、seven回帰42/42、型0、lint0errors/10既存warnings、harness成功。画像キーボード操作・配送空表を追加検証し修正。認証後6実ルートとSDKは保留。Integration/本体E2Eは未実行。[QA正本](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)。

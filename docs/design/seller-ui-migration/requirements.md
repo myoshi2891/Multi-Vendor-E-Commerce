@@ -61,3 +61,6 @@ DS-PAGE-064 配送設定: 先行RTL4件で見出し/名前付きform/Action境�
 DS-PAGE-063 店舗設定: 先行RTL2件でページheading/名前付きform/送信中ロック不足をRed確認。共通StoreDetailsを画像・連絡先のレスポンシブ配置へ整理し、Server注入Actionとinline status/alertを導入。型変更に必要な店舗作成呼び出し元のAction注入だけ先行し、同画面の本体移行は未完了。Refactor後関連Jest91/91（store query認可・配送・商品dialog含む）、補助Chromium6/6（3幅/light/dark・画像upload adapter・featured・pending lock/error/値保持/retry/success/refresh・overflow・axe contrast含む）、画像目視、lint errors0/warnings10・tsc0・harness成功。DBはフォームに必要な列のみselectし、既存redirectと例外伝播を維持。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
 
 DS-PAGE-065 店舗作成: 先行RTL2件でmain/h1/theme control不足と新規IDがAPI更新branchへ誤接続する問題をRed確認。店舗別Shell外に専用テーマ枠とThemeToggleを用意し、既存upsertStoreの作成契約に合わせ新規のみidを省略（query/認可/schemaは変更なし）。更新idは維持。Refactor後関連Jest93/93、補助Chromium6/6（3幅/light/dark・theme Portal・空/画像validation・upload adapter・pending lock/error/値保持/retry/success/返却URL・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
+
+
+最終監査の要件: 商品画像の削除はキーボードで操作でき、番号付きの名前を持つ。配送表のスクロール領域は空状態でもフォーカス可能。店舗URLを変更して保存した場合は返却URLのsettingsへ移動し、同一URLの場合はrefreshする。[設計](design.md)。

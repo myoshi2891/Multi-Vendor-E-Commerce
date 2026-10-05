@@ -159,7 +159,10 @@ export default function DataTable<TData, TValue>({
                         : "rounded-lg border bg-background"
                 }
             >
-                <Table className="">
+                <Table
+                    className=""
+                    scrollLabel={design === "seller" ? "Scrollable data table" : undefined}
+                >
                     {/* Table header */}
                     {!noHeader && (
                         <TableHeader>

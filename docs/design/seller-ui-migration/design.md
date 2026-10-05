@@ -20,6 +20,11 @@ Server pageが既定配送と国別料金のDecimalを同じドル単位のnumbe
 
 ## 店舗フォーム
 
-StoreDetailsDataはid/name/description/email/phone/logo/cover/url/featured/statusだけを保持。設定pageは必要な列だけselectし、Decimalなど未使用のDBオブジェクトをClientへ渡さない。upsertStoreActionをServerから注入し、画像と連絡先をscoped gridで配置。既存Zod/featured/画像URLと更新payload・refreshを維持、保存中lock/重複防止/値保持/retry/statusを共通save hookで扱う。店舗作成のAction注入も同じinterfaceへ追従し、本体テーマは別Stepで適用する。
+StoreDetailsDataはid/name/description/email/phone/logo/cover/url/featured/statusだけを保持。設定pageは必要な列だけselectし、Decimalなど未使用のDBオブジェクトをClientへ渡さない。upsertStoreActionをServerから注入し、画像と連絡先をscoped gridで配置。既存Zod/featured/画像URLと更新payload・refreshを維持、保存中lock/重複防止/値保持/retry/statusを共通save hookで扱う。店舗作成も同じinterfaceを利用する。
 
-店舗作成は店舗別Shell外のため、scoped standalone枠にheader/ThemeToggle/main/SellerPageを置く。固定sidebar余白を持たず最大1080pxの本文を中央配置。既存APIはidあり=更新、idなし=作成のため、新規保存のみidを省略し、返却urlへ移動する。更新idとrefreshは維持する。画像未選択時はgroupのaria-describedbyとalertでエラーを関連付ける。
+店舗作成は店舗別Shell外のため、scoped standalone枠にheader/ThemeToggle/main/SellerPageを置く。固定sidebar余白を持たず最大1080pxの本文を中央配置。既存APIはidあり=更新、idなし=作成のため、新規保存のみidを省略し、返却urlへ移動する。更新idは維持し、返却URLが変われば新しいsettings URLへreplace、同一ならrefreshする。画像未選択時はgroupのaria-describedbyとalertでエラーを関連付ける。
+
+
+## 最終監査の共通部品
+
+既定・国別配送のラベル付き入力はShippingFields（DS-COMP-218）へ集約し、フォームごとのschemaとfield名を維持する。sellerテーブルだけ名前付き・フォーカス可能なスクロール領域を使用し、空状態でもキーボード操作を確保。画像galleryはseller opt-inで意味のある画像名と削除button名を持ち、hoverとfocus-withinで操作を表示する。他scopeの見た目は維持する。

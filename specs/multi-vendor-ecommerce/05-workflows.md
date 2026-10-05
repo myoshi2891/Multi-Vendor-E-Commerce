@@ -188,4 +188,4 @@ The branded product editor keeps the existing category/attribute/image/size work
 
 Shipping defaults and country overrides retain their existing save actions and store refresh. Country search scopes the table; a labeled editing dialog locks fields and dismissal during pending save, retains inputs for retry and returns focus after dismissal.
 
-New-store users complete validated profile/contact/logo/cover fields in the standalone theme. Pending locks all controls; failure retains drafts; a successful no-id create submission navigates to the returned store URL. Existing-store saves still include id and refresh.
+New-store users complete validated profile/contact/logo/cover fields in the standalone theme. Pending locks all controls; failure retains drafts; a successful no-id create submission navigates to the returned store URL. Existing-store saves include id. If the returned store URL changed, replace the route with its settings URL; otherwise refresh.

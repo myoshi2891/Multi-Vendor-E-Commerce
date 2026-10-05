@@ -475,10 +475,15 @@ bun run test -- --testPathPatterns="tests/component/ui" -u
 
 ### デザイン検証ハーネス（`playwright.design.config.ts`、2026-10-05 統合）
 
-デザイン移行のブラウザー検証は `tests/browser/` に置き、`DESIGN_SUITE=<suite> bun run test:design` で 1 suite ずつ Chromium 実行する。suite は `playwright.design.config.ts` の `DESIGN_SUITES`（commerce / priority / seven = fixture、priority-public / seven-public = dev 実ルート）に登録する。`webServer` は config 単位でしか指定できないため本体 E2E（`playwright.config.ts`、`tests/e2e/`）とは config を分けるが、suite ごとに config を増やさない。出力は `test-results/design/<suite>/`、スクリーンショットは `testInfo.outputPath()`。構成は `bun run check:playwright`（CI Lint）で検査する。手順は [playwright-browser-verification](../../.agent/skills/playwright-browser-verification/SKILL.md)、不変条件は [05-playwright-harness](../../.claude/rules/05-playwright-harness.md)、経緯は [plans/080](../../plans/080-consolidate-playwright-design-harness.md)。
+デザイン移行のブラウザー検証は `tests/browser/` に置き、`DESIGN_SUITE=<suite> bun run test:design` で 1 suite ずつ Chromium 実行する。suite は `playwright.design.config.ts` の `DESIGN_SUITES`（commerce / priority / seven / six = fixture、priority-public / seven-public = dev 実ルート）に登録する。`webServer` は config 単位でしか指定できないため本体 E2E（`playwright.config.ts`、`tests/e2e/`）とは config を分けるが、suite ごとに config を増やさない。出力は `test-results/design/<suite>/`、スクリーンショットは `testInfo.outputPath()`。構成は `bun run check:playwright`（CI Lint）で検査する。手順は [playwright-browser-verification](../../.agent/skills/playwright-browser-verification/SKILL.md)、不変条件は [05-playwright-harness](../../.claude/rules/05-playwright-harness.md)、経緯は [plans/080](../../plans/080-consolidate-playwright-design-harness.md)。
 
 > 2026-10-04〜05 の証跡（PROGRESS.md / QA_HANDOFF.md）に残る `--config playwright.<suite>.config.ts` は統合前のコマンド。現在は `DESIGN_SUITE=<suite> bun run test:design` に対応する（`priority-components` → `priority`、`tests/e2e/*-public-design.spec.ts` → `tests/browser/`）。
 
 #### 購入導線のisolated browser fixture（2026-10-04）
 
 `DESIGN_SUITE=commerce bun run test:design` は `tests/browser/commerce-design.spec.ts` を独立実行する。`tests/fixtures/commerce/server.mjs` は共通の `tests/fixtures/shared/fixture-server.mjs`（`startFixtureServer`）に固有 adapter を渡し、既存tsx依存のesbuildでproduction表示部品／CSS ModulesとTailwindをbundleし、OS tempへ出力、loopback 3107で配信して終了時に除去する（`gracefulShutdown: SIGTERM` が前提。SIGKILL では tmp が残る）。Next Image/Link/routerとStripe/PayPal SDKだけをadapterへ差し替え、action Propsにfixture応答／遅延／失敗を注入する。productionへテストrouteを追加しない。Clerk／DB／providerへのアクセスはなく、HTML長文・focus・keyboard・modal・axe・responsiveを確認できる。認証後実ルートとSDK実描画の証跡とは必ず区別する。
+
+
+### 販売者6画面の補助検証（2026-10-05）
+
+`six` suite は商品登録・バリアント追加/編集・配送・店舗設定/作成を本体コンポーネントで検証する。3幅×light/darkの36ケースと画像のキーボード操作/配送空状態1ケース。WCAG AAはcontrastも含め、保存中・失敗・値保持・再試行・成功を確認。SDK/Action/DBはadapterで置換するため認証後実ルートの検証とは区別する。[保存計画](../../plans/layout-design/priority-six-design-system-plan.md)・[QA引き継ぎ](QA_HANDOFF.md)。

@@ -1284,3 +1284,6 @@ seller-shipping-design.test.tsx covers plain-dollar serialization, country searc
 seller-store-pages-design.test.tsx records two new-requirement Red cases for labeled settings/form and pending/injected save. It covers retry/draft retention and post-implementation projection/missing-store/lookup-failure regressions. six storesettings browser cases use production form/route with image/action adapters and verify three widths/two themes with axe contrast.
 
 New-store RTL records main/theme and incorrect create-id payload Red cases. six newstore browser cases verify three widths/two themes, ThemeToggle portal, initial/validation/SDK-adapter image selection, pending/error/retry/success and no-id/returned-URL behavior. No store is created in a real DB by these design checks.
+
+
+Final six-screen audit (2026-10-05): supplemental Chromium six37/37 and existing seven regression42/42 pass. Gallery keyboard removal/payload preservation and empty shipping-table keyboard access have browser coverage; image controls have RTL coverage. Full Jest is 2842 passed / 2845 total (3 skipped), 280 suites (279 passed/1 skipped), 127 snapshots passed. Authenticated routes/SDKs remain on hold with explicit conditions in [QA](../../docs/testing/QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留).

@@ -270,6 +270,7 @@ for (const width of [1440, 768, 390])
                         .analyze()
                 ).violations
             ).toEqual([]);
+            await dialog.evaluate(element => { element.scrollTop = 0; });
             await dialog.screenshot({
                 path: info.outputPath(
                     `six-shipping-dialog-${width}-${theme}.png`
@@ -513,5 +514,8 @@ test("seller gallery keyboard actions and empty shipping states", async ({ page 
     await expect(page.getByRole("button", { name: "Actions for Japan" })).toBeVisible();
     await page.goto("/?screen=shipping&empty=1");
     await expect(page.getByText("No Results.", { exact: true })).toBeVisible();
+    const scrollRegion = page.getByRole("region", { name: "Scrollable data table" });
+    await scrollRegion.focus();
+    await expect(scrollRegion).toBeFocused();
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
 });
