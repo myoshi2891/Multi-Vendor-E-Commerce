@@ -844,3 +844,5 @@ DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴ�
 未適用P3の6画面を画面別TDDで移行。全体統計は最終全体実測時に同期（部分実行から加算しない）。認証後5実ルート/SDKはschema-current専用test DBとClerk管理者/販売者テスト環境で受け入れ検証。既存DBへのseed/reset/削除/外部送信は実施しない。次着手: 認証後ルート・第三者UIを3幅/light/dark、Portal/既存関連画面と合わせて確認。
 
 - DS-PAGE-049 管理者概要: 新要件RTL2件とmobile nav browserのRed確認。Green/Refactor後Jest26/26、補助Chromium6/6（3幅/light/dark・nav Escape/focus復帰・長文/空/取得失敗/retry・axe contrast含む）、390px画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。共通Shellを管理者にも利用、metric/activity h2、SDK graphと集計値維持。認証後実ルートは実装あり・保留。
+
+- DS-PAGE-048 管理者注文: 先行RTL2件のregion/searchbox/取得失敗Red確認。Green後に管理者group/item Action引数・ID/詳細の回帰を追加。Refactor後関連Jest37/37、補助Chromium6/6（3幅/light/dark・codeではなく注文ID検索・状態pending/error/retry/success・詳細Portal/Escape復帰・axe contrast含む）、390px dark画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。ServerでDecimal/日時を表示用にserialize、既存searchParams/query契約保持。認証後実ルートは実装あり・保留。

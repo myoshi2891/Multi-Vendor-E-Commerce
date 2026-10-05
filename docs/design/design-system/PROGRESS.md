@@ -89,7 +89,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-045 | `/dashboard/admin/coupons` | 未適用 | P4 | TODO | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | 未実施 |
 | DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | 未実施 |
 | DS-PAGE-047 | `/dashboard/admin/offer-tags` | 未適用 | P4 | TODO | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | 未実施 |
-| DS-PAGE-048 | `/dashboard/admin/orders` | 未適用 | P3 | TODO | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | 未実施 |
+| DS-PAGE-048 | `/dashboard/admin/orders` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-049 | `/dashboard/admin` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-050 | `/dashboard/admin/stores` | 未適用 | P3 | TODO | [src/app/dashboard/admin/stores/page.tsx](<../../../src/app/dashboard/admin/stores/page.tsx>) | 未実施 |
 | DS-PAGE-051 | `/dashboard` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/page.tsx](<../../../src/app/dashboard/page.tsx>) | 未実施 |
@@ -335,6 +335,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-217 | P3 | 配送設定共通表示 | [SellerShipping](../../../src/components/dashboard/seller/seller-shipping.tsx) | 保留 | 補助検証済み・実ルート保留。[優先6画面](#優先6画面移行記録) |
 | DS-COMP-218 | P3 | 配送フォーム共通入力 | [ShippingFields](../../../src/components/dashboard/forms/shipping-fields.tsx) | 保留 | 既定/国別の入力を共通化。補助検証済み・認証後実ルート保留。[優先6画面](#優先6画面移行記録) |
 | DS-COMP-219 | P3 | 取得失敗・再試行 | [LoadError](../../../src/components/dashboard/design/load-error.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
+| DS-COMP-220 | P3 | 管理者注文・詳細・列factory | [AdminOrders](../../../src/components/dashboard/admin/admin-orders.tsx) | 保留 | 補助検証済み・実ルート保留。[P3証跡](#p3優先6画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -767,3 +768,7 @@ DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴ�
 ### DS-PAGE-049 管理者概要
 
 新要件RTL2件とmobile nav browserのRed確認。Green/Refactor後Jest26/26、補助Chromium6/6（3幅/light/dark・nav Escape/focus復帰・長文/空/取得失敗/retry・axe contrast含む）、390px画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。共通Shellを管理者にも利用、metric/activity h2、SDK graphと集計値維持。認証後実ルートは実装あり・保留。
+
+### DS-PAGE-048 管理者注文
+
+先行RTL2件のregion/searchbox/取得失敗Red確認。Green後に管理者group/item Action引数・ID/詳細の回帰を追加。Refactor後関連Jest37/37、補助Chromium6/6（3幅/light/dark・codeではなく注文ID検索・状態pending/error/retry/success・詳細Portal/Escape復帰・axe contrast含む）、390px dark画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。ServerでDecimal/日時を表示用にserialize、既存searchParams/query契約保持。認証後実ルートは実装あり・保留。

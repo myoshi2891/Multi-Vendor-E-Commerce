@@ -173,3 +173,9 @@
 深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+## 管理者注文 デザイン移行（2026-10-05）
+
+深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
