@@ -7,13 +7,35 @@ import CouponsPage from "@/app/dashboard/seller/stores/[storeUrl]/coupons/page";
 import StoresPage from "@/app/dashboard/admin/stores/page";
 import OrdersPage from "@/app/dashboard/admin/orders/page";
 import Page from "@/app/dashboard/admin/page";
+import Sidebar from "@/components/dashboard/sidebar/sidebar";
+import Header from "@/components/dashboard/header/Header";
+import DataTable from "@/components/ui/data-table";
 import Shell from "@/components/dashboard/design/seller-shell";
-import ThemeToggle from "@/components/shared/theme-toggle";
 import ModalProvider from "@/providers/modal-provider";
 async function preview() {
     const screen = new URLSearchParams(location.search).get("screen");
+    const admin = !["coupons", "newcoupon"].includes(screen ?? "overview");
+    const sidebar = admin ? (
+        await Sidebar({ isAdmin: true, design: "seller" })
+    ) : (
+        <nav aria-label="Store navigation">
+            <Link href="/?screen=coupons">Coupons</Link>
+        </nav>
+    );
     const content =
-        screen === "legal" ? (
+        screen === "legacy" ? (
+            <section aria-label="Legacy P4 content">
+                <DataTable
+                    data={[{ name: "Example category" }]}
+                    columns={[{ accessorKey: "name", header: "Name" }]}
+                    filterValue="name"
+                    searchPlaceholder="Search category ..."
+                    actionButtonText="Create New Category"
+                    modalChildren={<p>Legacy form</p>}
+                    newTabLink="/dashboard/admin/categories/new"
+                />
+            </section>
+        ) : screen === "legal" ? (
             <LegalPage />
         ) : screen === "newcoupon" ? (
             await NewCouponPage({
@@ -36,14 +58,11 @@ async function preview() {
                 content
             ) : (
                 <Shell
-                    navigationLabel="Administration navigation"
-                    sidebar={
-                        <nav aria-label="Administration">
-                            <Link href="/?screen=overview">Overview</Link>
-                            <Link href="/?screen=orders">Orders</Link>
-                        </nav>
+                    navigationLabel={
+                        admin ? "Administration navigation" : "Store navigation"
                     }
-                    header={<ThemeToggle design="seller" />}
+                    sidebar={sidebar}
+                    header={<Header design="seller" />}
                 >
                     {content}
                 </Shell>

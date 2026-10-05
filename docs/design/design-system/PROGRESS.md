@@ -803,3 +803,9 @@ DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/
 先行RTL2件のlabeled目次/Breadcrumb Red確認。既存DesignPageとLegal専用CSSで既存3本文/placeholder/metadata/heading由来アンカーを保持。Jest28/28、補助Chromium3/3、公開実ルートChromium3/3（1440/768/390px・HTTP200/title/既存目次・focus/Enter/fragment・reduced-motion・overflow・main axe contrast含む）、実ルート390px画像目視。保護5ルートの既存ホーム転送も1/1（未認証）。tsc exit0、lint0 errors/既存10 warnings、harness成功。公開Legalは検証済み。認証後業務5ルート/SDKは別途保留。
 
 転送確認の初回テストはsign-inを期待したが、既存proxy.ts/plans072はresource側layoutでdashboardゲストをホームへ転送する仕様。テストを既存契約へ修正し4/4確認。認可/転送実装は変更しない。Next devのtsconfigへの生成types追記は元のincludeへ戻しコミットしない。
+
+### 共通枠の最終差分監査
+
+補助fixtureを実Sidebar/Headerへ拡張し、Clerk認証/UserButtonのみadapterを使用。先行browserでdark Avatar fallbackのcontrast不足2件と旧P4 toolbarの390px横溢れ1件をRed確認。UserInfoのseller/admin opt-inをinitials・primary-foreground・折返し可能な非操作情報へ整理、DataTable toolbarのdata属性とtheme内CSSで局所化。既存DataTable snapshot差分は属性2行のみを確認して更新。
+
+Refactor後Chromium p3 37/37（6画面、3幅/light/dark、実Sidebar展開、P4既定表検索と新規ページURL、axe contrast含む）、既存seven回帰42/42、公開p3-public 4/4。P4本文・既定表の移行完了を意味しない。RTL layout3件でADMINの共通main/sidebar opt-inとguest/SELLERの既存ホーム転送を回帰確認。関連Jest9/9、tsc exit0、lint0 errors/既存10 warnings、harness成功。実Sidebar dark390px画像目視。全体Jest/coverage/buildの実測値は最終統計同期へ記録する。

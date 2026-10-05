@@ -4,6 +4,7 @@ exports[`DataTable (snapshot) renders empty data table (no results row) 1`] = `
 <div>
   <div
     class="flex items-center justify-between"
+    data-table-tools="true"
   >
     <div
       class="flex items-center gap-2 py-4"
@@ -85,6 +86,7 @@ exports[`DataTable (snapshot) renders populated data table with 2 rows 1`] = `
 <div>
   <div
     class="flex items-center justify-between"
+    data-table-tools="true"
   >
     <div
       class="flex items-center gap-2 py-4"

@@ -185,3 +185,5 @@
 深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+共通枠の受け入れ追記: 実Sidebar/Headerを3幅とlight/darkで確認し、avatar未取得時もAA contrastを維持、長いemailを折り返す。P4既定DataTableのtoolbarをtheme scope内で折り返し、検索と既存作成URLを保持する。既定UserInfoとP4本文の全面移行は含めない。

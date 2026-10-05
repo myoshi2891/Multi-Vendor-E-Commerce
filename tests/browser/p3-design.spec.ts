@@ -23,7 +23,7 @@ for (const width of [1440, 768, 390])
                     .getByRole("button", { name: "Administration navigation" })
                     .click();
                 await page
-                    .getByRole("link", { name: "Overview", exact: true })
+                    .getByRole("link", { name: "Dashboard", exact: true })
                     .focus();
                 await page.keyboard.press("Escape");
                 await expect(
@@ -409,6 +409,59 @@ for (const width of [1440, 768, 390])
         ).toEqual([]);
         await page.screenshot({
             path: info.outputPath(`legal-${width}.png`),
+            fullPage: true,
+        });
+    });
+
+for (const width of [768, 390])
+    test(`legacy P4 table ${width}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/?screen=legacy");
+        await expect(
+            page.getByRole("link", { name: "Create in new page" })
+        ).toHaveAttribute("href", "/dashboard/admin/categories/new");
+        const input = page.getByPlaceholder("Search category ...");
+        await input.fill("missing");
+        await expect(page.getByText("No Results.")).toBeVisible();
+        await input.fill("Example");
+        await expect(page.getByText("Example category")).toBeVisible();
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+    });
+for (const width of [1440, 390])
+    test(`administration navigation dark ${width}`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/?screen=overview");
+        await page.evaluate(() =>
+            document.documentElement.classList.add("dark")
+        );
+        if (width === 390)
+            await page
+                .getByRole("button", { name: "Administration navigation" })
+                .click();
+        await expect(
+            page.getByRole("navigation", { name: "Administration" })
+        ).toBeVisible();
+        await expect(
+            page.getByRole("link", { name: "Categories", exact: true })
+        ).toHaveAttribute("href", "/dashboard/admin/categories");
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        await page.screenshot({
+            path: info.outputPath(`admin-nav-${width}-dark.png`),
             fullPage: true,
         });
     });

@@ -77,6 +77,7 @@ export default function DataTable<TData, TValue>({
         <>
             {/* Search input and action button */}
             <div
+                data-table-tools
                 className={
                     design === "seller"
                         ? styles.tableTools
@@ -161,7 +162,11 @@ export default function DataTable<TData, TValue>({
             >
                 <Table
                     className=""
-                    scrollLabel={design === "seller" ? "Scrollable data table" : undefined}
+                    scrollLabel={
+                        design === "seller"
+                            ? "Scrollable data table"
+                            : undefined
+                    }
                 >
                     {/* Table header */}
                     {!noHeader && (

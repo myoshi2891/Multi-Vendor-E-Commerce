@@ -5,6 +5,9 @@ await startFixtureServer({
     port: 3124,
     title: "P3 design fixture",
     mocks: {
+        "@clerk/nextjs/server": `export async function currentUser(){return {id:'admin-test',privateMetadata:{role:'ADMIN'},firstName:'Test',lastName:'Administrator',imageUrl:'',emailAddresses:[{emailAddress:'long.administrator.email@example.test'}]}}`,
+        "@clerk/nextjs": `import React from 'react'; export function UserButton(){return React.createElement('button',{'aria-label':'User account'},'Account')}`,
+
         "@/queries/coupon": `import {coupons,save,loadCoupon} from './tests/fixtures/p3/data'; export async function getStoreCoupons(){if(location.search.includes('fetcherror'))throw Error('fixture');return location.search.includes('empty')?[]:coupons} export const getCoupon=loadCoupon,upsertCoupon=save,deleteCoupon=save;`,
         "@/queries/store": `import {stores,save} from './tests/fixtures/p3/data';export async function getAllStores(){if(location.search.includes('fetcherror'))throw Error('fixture');return location.search.includes('empty')?[]:stores} export const updateStoreStatus=save,deleteStore=save;`,
         "@/queries/order": `import {orders,save} from './tests/fixtures/p3/data';export async function getAllOrders(){if(location.search.includes('fetcherror'))throw Error('fixture');return {orders:location.search.includes('empty')?[]:orders,total:1,page:1,limit:50}}export const updateOrderGroupStatusAsAdmin=save,updateOrderItemStatusAsAdmin=save;`,

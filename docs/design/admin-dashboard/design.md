@@ -832,3 +832,5 @@ coupon: cart.coupon
 既存scopedブランド基盤を利用し、対象本体と展開UIを統一。Serverから型付きAction Propsを渡す。Legalは公開Server Componentと既存本文/アンカーを保持。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+共通枠の受け入れ追記: 実Sidebar/Headerを3幅とlight/darkで確認し、avatar未取得時もAA contrastを維持、長いemailを折り返す。P4既定DataTableのtoolbarをtheme scope内で折り返し、検索と既存作成URLを保持する。既定UserInfoとP4本文の全面移行は含めない。
