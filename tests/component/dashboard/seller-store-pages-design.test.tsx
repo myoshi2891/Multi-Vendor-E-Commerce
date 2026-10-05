@@ -8,8 +8,13 @@ import { upsertStore } from "@/queries/store";
 
 const mockRefresh = jest.fn();
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock("next/navigation", () => ({
-    useRouter: () => ({ refresh: mockRefresh, push: mockPush }),
+    useRouter: () => ({
+        refresh: mockRefresh,
+        push: mockPush,
+        replace: mockReplace,
+    }),
     redirect: jest.fn(() => {
         throw new Error("NEXT_REDIRECT");
     }),
@@ -87,6 +92,31 @@ it("renders labeled store settings with existing values and server-injected save
         )
     );
     expect(mockRefresh).toHaveBeenCalledTimes(1);
+    expect(mockPush).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+});
+it("moves to the renamed settings URL instead of refreshing the stale one", async () => {
+    jest.mocked(upsertStore).mockResolvedValueOnce({
+        ...store,
+        url: "renamed",
+    } as never);
+    render(
+        <StoreDetails
+            data={store as never}
+            upsertStoreAction={upsertStore}
+            design="seller"
+        />
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Store url" }), {
+        target: { value: "renamed" },
+    });
+    fireEvent.submit(screen.getByRole("form", { name: "Store information" }));
+    await waitFor(() =>
+        expect(mockReplace).toHaveBeenCalledWith(
+            "/dashboard/seller/stores/renamed/settings"
+        )
+    );
+    expect(mockRefresh).not.toHaveBeenCalled();
     expect(mockPush).not.toHaveBeenCalled();
 });
 it("locks store fields, blocks duplicates and retains the failed draft for an injected retry", async () => {
@@ -202,10 +232,9 @@ it("creates through the existing no-id API branch and uses the returned store UR
             "A new store description longer than thirty characters.",
         ],
     ])
-        fireEvent.change(
-            screen.getByRole("textbox", { name: label }),
-            { target: { value } }
-        );
+        fireEvent.change(screen.getByRole("textbox", { name: label }), {
+            target: { value },
+        });
     fireEvent.click(
         screen.getByRole("button", { name: "Upload profile image" })
     );

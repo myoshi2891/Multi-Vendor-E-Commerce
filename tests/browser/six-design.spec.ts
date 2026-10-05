@@ -487,3 +487,31 @@ for (const width of [1440, 768, 390])
                 fullPage: true,
             });
         });
+
+test("seller gallery keyboard actions and empty shipping states", async ({ page }, info) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.goto("/?screen=editvariant");
+    const remove = page.getByRole("button", { name: "Remove product image 1", exact: true });
+    await remove.focus();
+    await expect(remove).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("img", { name: /^Product image \d+$/ })).toHaveCount(2);
+    await page.getByRole("button", { name: "Upload standard image", exact: true }).click();
+    await expect(page.getByRole("img", { name: /^Product image \d+$/ })).toHaveCount(3);
+    await page.getByRole("button", { name: "Save product", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Product saved" })).toBeVisible();
+    const saved = await page.evaluate(() => (window as unknown as { saved: { images: { url: string }[]; sizes: { price: number }[] }[] }).saved[0]);
+    expect(saved.images.map(image => image.url)).toEqual(expect.arrayContaining([expect.stringContaining("?n=2"), expect.stringContaining("?n=3")]));
+    expect(saved.sizes[0].price).toBe(12.5);
+    expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: info.outputPath("six-gallery-keyboard.png"), fullPage: true });
+    await page.goto("/?screen=shipping");
+    await page.getByRole("searchbox").fill("Missing country");
+    await expect(page.getByText("No Results.", { exact: true })).toBeVisible();
+    await page.getByRole("searchbox").fill("");
+    await expect(page.getByRole("button", { name: "Actions for Japan" })).toBeVisible();
+    await page.goto("/?screen=shipping&empty=1");
+    await expect(page.getByText("No Results.", { exact: true })).toBeVisible();
+    expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+});

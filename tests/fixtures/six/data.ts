@@ -37,8 +37,8 @@ export const product = {
         ),
     variantName: "Gold",
     variantDescription: "",
-    images: [1, 2, 3].map(() => ({
-        url: "http://127.0.0.1:3123/assets/images/default-user.jpg",
+    images: [1, 2, 3].map(n => ({
+        url: `http://127.0.0.1:3123/assets/images/default-user.jpg?n=${n}`,
     })),
     variantImage: "http://127.0.0.1:3123/assets/images/default-user.jpg",
     categoryId: rootId,

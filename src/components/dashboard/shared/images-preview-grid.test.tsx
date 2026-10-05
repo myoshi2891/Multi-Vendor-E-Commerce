@@ -78,3 +78,15 @@ describe("ImagesPreviewGrid", () => {
         expect(onRemove).toHaveBeenCalledWith("https://x/a.png");
     });
 });
+
+import userEvent from "@testing-library/user-event";
+it("lets keyboard users remove a named seller image without changing the legacy gallery contract", async () => {
+    const user = userEvent.setup();
+    const onRemove = jest.fn();
+    render(<ImagesPreviewGrid images={[{ url: "https://x/a.png" }, { url: "https://x/b.png" }]} onRemove={onRemove} setColors={jest.fn()} {...{ design: "seller" as const }} />);
+    const remove = await screen.findByRole("button", { name: "Remove product image 1" });
+    remove.focus();
+    await user.keyboard("{Enter}");
+    expect(onRemove).toHaveBeenCalledWith("https://x/a.png");
+    expect(screen.getByRole("img", { name: "Product image 2" })).toBeInTheDocument();
+});
