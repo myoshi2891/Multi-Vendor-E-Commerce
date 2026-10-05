@@ -297,3 +297,78 @@ for (const width of [1440, 768, 390])
                 fullPage: true,
             });
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`storesettings ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=storesettings&failure=1");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", { level: 1, name: "Store settings" })
+            ).toHaveCSS("font-family", /Georgia/);
+            const form = page.getByRole("form", { name: "Store information" });
+            await expect(
+                form.getByRole("textbox", { name: "Store name", exact: true })
+            ).toHaveValue("Example store");
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            const name = form.getByRole("textbox", {
+                name: "Store name",
+                exact: true,
+            });
+            await name.fill("Updated store");
+            await name.focus();
+            await expect(name).toHaveCSS("outline-style", "solid");
+            await form.getByRole("checkbox", { name: "Featured" }).check();
+            await form
+                .getByRole("button", { name: "Upload cover image" })
+                .click();
+            await expect(
+                form.getByRole("button", { name: "Upload profile image" })
+            ).toHaveCSS("background-image", "none");
+            await form
+                .getByRole("button", { name: "Save store information" })
+                .click();
+            await expect(name).toBeDisabled();
+            await expect(
+                form.getByRole("button", { name: "Upload cover image" })
+            ).toBeDisabled();
+            await expect(form.getByRole("alert")).toContainText(
+                "Please try again"
+            );
+            await expect(name).toHaveValue("Updated store");
+            await form
+                .getByRole("button", { name: "Save store information" })
+                .click();
+            await expect(form.getByRole("status")).toContainText(
+                "Store information saved"
+            );
+            expect(
+                await page.evaluate(
+                    () =>
+                        (window as unknown as { refreshed: boolean }).refreshed
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({
+                path: info.outputPath(
+                    `six-storesettings-${width}-${theme}.png`
+                ),
+                fullPage: true,
+            });
+        });

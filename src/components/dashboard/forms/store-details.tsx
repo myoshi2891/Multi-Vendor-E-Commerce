@@ -1,254 +1,225 @@
-'use client'
-
-// React, Next.js
-import { FC, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-
-// Prisma model
-import { Store } from '@prisma/client'
-
-// Form handling utilities
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import * as z from 'zod'
-
-// Schema
-import { StoreFormSchema } from '@/lib/schemas'
-
-// UI Components
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import type { z } from "zod";
+import type { Store } from "@prisma/client";
+import type { upsertStore } from "@/queries/store";
+import { v4 } from "uuid";
+import { StoreFormSchema } from "@/lib/schemas";
+import { useSellerSave } from "@/hooks/use-seller-save";
 import {
     Card,
-    CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
-} from '@/components/ui/card'
+    CardContent,
+    CardDescription,
+} from "@/components/ui/card";
 import {
     Form,
-    FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
+    FormControl,
     FormMessage,
-} from '@/components/ui/form'
+    FormDescription,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import ImageUpload from "../shared/image-upload";
+import styles from "../design/seller.module.css";
 
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import ImageUpload from '../shared/image-upload'
-import { useToast } from '@/hooks/use-toast'
-
-// Queries
-import { upsertStore } from '@/queries/store'
-
-// Utils
-import { v4 } from 'uuid'
-// import { useToast } from "@/components/ui/use-toast";
-
-interface StoreDetailsProps {
-    data?: Store
-}
-
-const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
-    // Initializing necessary hooks
-    const { toast } = useToast() // Hook for displaying toast messages
-    const router = useRouter() // Hook for routing
-
-    // Form hook for managing form state and validation
-    const form = useForm<z.infer<typeof StoreFormSchema>>({
-        mode: 'onChange', // Form validation mode
-        resolver: zodResolver(StoreFormSchema), // Resolver for form validation
-        defaultValues: {
-            // Setting default form values from data (if available)
-            name: data?.name ?? '',
-            description: data?.description ?? '',
-            email: data?.email ?? '',
-            phone: data?.phone ?? '',
-            logo: data?.logo ? [{ url: data.logo }] : [],
-            cover: data?.cover ? [{ url: data.cover }] : [],
-            url: data?.url ?? '',
-            featured: data?.featured ?? false,
-            status: data?.status.toString(),
-        },
-    })
-
-    // Loading status based on form submission
-    const isLoading = form.formState.isSubmitting
-
-    // Reset form values when data changes
+export type StoreDetailsData = Pick<
+    Store,
+    | "id"
+    | "name"
+    | "description"
+    | "email"
+    | "phone"
+    | "logo"
+    | "cover"
+    | "url"
+    | "featured"
+    | "status"
+>;
+type Values = z.infer<typeof StoreFormSchema>;
+const valuesFor = (data?: StoreDetailsData): Values => ({
+    name: data?.name ?? "",
+    description: data?.description ?? "",
+    email: data?.email ?? "",
+    phone: data?.phone ?? "",
+    logo: data?.logo ? [{ url: data.logo }] : [],
+    cover: data?.cover ? [{ url: data.cover }] : [],
+    url: data?.url ?? "",
+    featured: data?.featured ?? false,
+    status: data?.status,
+});
+const fields = [
+    ["name", "Store name", "text", "Name"],
+    ["email", "Store email", "email", "Email"],
+    ["phone", "Store phone number", "tel", "Phone"],
+    ["url", "Store url", "text", "/store-url"],
+] as const;
+export default function StoreDetails({
+    data,
+    upsertStoreAction,
+    design,
+}: {
+    data?: StoreDetailsData;
+    upsertStoreAction: typeof upsertStore;
+    design?: "seller";
+}) {
+    const router = useRouter();
+    const feedback = useSellerSave();
+    const form = useForm<Values>({
+        mode: "onChange",
+        resolver: zodResolver(StoreFormSchema),
+        defaultValues: valuesFor(data),
+    });
     useEffect(() => {
-        if (data) {
-            form.reset({
-                name: data?.name ?? '',
-                description: data?.description ?? '',
-                email: data?.email ?? '',
-                phone: data?.phone ?? '',
-                logo: data?.logo ? [{ url: data.logo }] : [],
-                cover: data?.cover ? [{ url: data.cover }] : [],
-                url: data?.url ?? '',
-                featured: data?.featured ?? false,
-                status: data?.status,
-            })
-        }
-    }, [data, form])
-
-    // Submit handler for form submission
-    const handleSubmit = async (values: z.infer<typeof StoreFormSchema>) => {
-        try {
-            // Upserting category data
-            const response = await upsertStore({
-                id: data?.id ? data.id : v4(),
-                name: values.name,
-                description: values.description,
-                email: values.email,
-                phone: values.phone,
-                logo: values.logo[0].url,
-                cover: values.cover[0].url,
-                url: values.url,
-                featured: values.featured,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            })
-            // Displaying success message
-            toast({
-                title: data?.id
-                    ? 'Store has been updated.'
-                    : `Congratulations! '${response?.name}' is now created.`,
-            })
-
-            // Redirect or Refresh data
-            if (data?.id) {
-                router.refresh()
-            } else {
-                router.push(`/dashboard/seller/stores/${response.url}`)
+        if (data) form.reset(valuesFor(data));
+    }, [data, form]);
+    async function save(values: Values) {
+        let destination = "";
+        await feedback.save(
+            async () => {
+                const response = await upsertStoreAction({
+                    id: data?.id ?? v4(),
+                    name: values.name,
+                    description: values.description,
+                    email: values.email,
+                    phone: values.phone,
+                    logo: values.logo[0].url,
+                    cover: values.cover[0].url,
+                    url: values.url,
+                    featured: values.featured,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+                destination = response.url;
+            },
+            () => {
+                if (data?.id) router.refresh();
+                else router.push(`/dashboard/seller/stores/${destination}`);
             }
-        } catch (error: unknown) {
-            // Handling form submission errors
-            const message = error instanceof Error ? error.message : "An unknown error occurred";
-            if (error instanceof Error) {
-                console.error("StoreDetails form submit error:", error.message, error.stack);
-            } else {
-                console.error("StoreDetails form submit error:", error);
-            }
-            toast({
-                variant: 'destructive',
-                title: 'Oops!',
-                description: message,
-            })
-        }
+        );
     }
-
     return (
-        <Card className="w-full">
+        <Card className={design === "seller" ? styles.editor : "w-full"}>
             <CardHeader>
-                <CardTitle>Store Information</CardTitle>
+                <CardTitle role="heading" aria-level={2}>
+                    Store information
+                </CardTitle>
                 <CardDescription>
                     {data?.id
-                        ? `Update ${data?.name} store information.`
+                        ? `Update ${data.name} store information.`
                         : "Let's create a store. You can edit store later from the store settings page."}
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                    <Form {...form}>
-                        <form
-                            onSubmit={form.handleSubmit(handleSubmit)}
-                            className="space-y-4"
+                <Form {...form}>
+                    <form
+                        aria-label="Store information"
+                        onSubmit={(event) =>
+                            feedback.submit(event, form.handleSubmit(save))
+                        }
+                    >
+                        <fieldset
+                            disabled={feedback.pending}
+                            className="min-w-0 space-y-6"
+                            aria-label="Store fields"
                         >
-                            {/* Logo - Cover */}
-                            <div className="relative mb-24 py-2">
-                                <FormField
-                                    control={form.control}
-                                    name="logo"
-                                    render={({ field }) => (
-                                        <FormItem className="absolute inset-x-96 -bottom-20 -left-48 z-10">
-                                            <FormControl>
-                                                <ImageUpload
-                                                    type="profile"
-                                                    value={field.value.map(
-                                                        (image) => image.url
-                                                    )}
-                                                    disabled={isLoading}
-                                                    onChange={(url) =>
-                                                        field.onChange([
-                                                            { url },
-                                                        ])
+                            <div className={styles.storeMedia}>
+                                {(["logo", "cover"] as const).map((name) => (
+                                    <FormField
+                                        key={name}
+                                        control={form.control}
+                                        name={name}
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <h3>
+                                                    {name === "logo"
+                                                        ? "Store logo"
+                                                        : "Store cover"}
+                                                </h3>
+                                                <div
+                                                    role="group"
+                                                    aria-label={
+                                                        name === "logo"
+                                                            ? "Store logo"
+                                                            : "Store cover"
                                                     }
-                                                    onRemove={(url) =>
-                                                        field.onChange([
-                                                            ...field.value.filter(
-                                                                (current) =>
-                                                                    current.url !==
-                                                                    url
-                                                            ),
-                                                        ])
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="cover"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormControl>
-                                                <ImageUpload
-                                                    type="cover"
-                                                    value={field.value.map(
-                                                        (image) => image.url
-                                                    )}
-                                                    disabled={isLoading}
-                                                    onChange={(url) =>
-                                                        field.onChange([
-                                                            { url },
-                                                        ])
-                                                    }
-                                                    onRemove={(url) =>
-                                                        field.onChange([
-                                                            ...field.value.filter(
-                                                                (current) =>
-                                                                    current.url !==
-                                                                    url
-                                                            ),
-                                                        ])
-                                                    }
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                                >
+                                                    <ImageUpload
+                                                        type={
+                                                            name === "logo"
+                                                                ? "profile"
+                                                                : "cover"
+                                                        }
+                                                        value={field.value.map(
+                                                            (image) => image.url
+                                                        )}
+                                                        disabled={
+                                                            feedback.pending
+                                                        }
+                                                        onChange={(url) =>
+                                                            field.onChange([
+                                                                { url },
+                                                            ])
+                                                        }
+                                                        onRemove={(url) =>
+                                                            field.onChange(
+                                                                field.value.filter(
+                                                                    (image) =>
+                                                                        image.url !==
+                                                                        url
+                                                                )
+                                                            )
+                                                        }
+                                                    />
+                                                </div>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                ))}
                             </div>
-                            {/* Name */}
-                            <FormField
-                                // disabled={isLoading}
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormLabel>Store name</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Name"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                            <div className={styles.grid}>
+                                {fields.map(
+                                    ([name, label, type, placeholder]) => (
+                                        <FormField
+                                            key={name}
+                                            control={form.control}
+                                            name={name}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>
+                                                        {label}
+                                                    </FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type={type}
+                                                            placeholder={
+                                                                placeholder
+                                                            }
+                                                            {...field}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )
                                 )}
-                            />
-
-                            {/* Description */}
+                            </div>
                             <FormField
-                                // disabled={isLoading}
                                 control={form.control}
                                 name="description"
                                 render={({ field }) => (
-                                    <FormItem className="flex-1">
+                                    <FormItem>
                                         <FormLabel>Store description</FormLabel>
                                         <FormControl>
                                             <Textarea
@@ -260,96 +231,55 @@ const StoreDetails: FC<StoreDetailsProps> = ({ data }) => {
                                     </FormItem>
                                 )}
                             />
-
-                            {/* Email - Phone */}
-                            <div className="flex flex-col gap-6 md:flex-row">
-                                <FormField
-                                    // disabled={isLoading}
-                                    control={form.control}
-                                    name="email"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Store email</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Email"
-                                                    {...field}
-                                                    type="email"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    // disabled={isLoading}
-                                    control={form.control}
-                                    name="phone"
-                                    render={({ field }) => (
-                                        <FormItem className="flex-1">
-                                            <FormLabel>Store phone</FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    placeholder="Phone"
-                                                    {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            {/* Url */}
-                            <FormField
-                                control={form.control}
-                                name="url"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormLabel>Store url</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="/store-url"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                             <FormField
                                 control={form.control}
                                 name="featured"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 border p-4">
                                         <FormControl>
                                             <Checkbox
                                                 checked={field.value}
-                                                // @ts-ignore
-                                                onCheckedChange={field.onChange}
+                                                onCheckedChange={(checked) =>
+                                                    field.onChange(
+                                                        checked === true
+                                                    )
+                                                }
                                             />
                                         </FormControl>
-                                        <div className="space-y-1 leading-none">
+                                        <div className="space-y-1">
                                             <FormLabel>Featured</FormLabel>
                                             <FormDescription>
-                                                This Store will appear on the
-                                                home page
+                                                This store will appear on the
+                                                home page.
                                             </FormDescription>
                                         </div>
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading
-                                    ? "loading..."
+                            <Button type="submit">
+                                {feedback.pending
+                                    ? "Saving store…"
                                     : data?.id
                                       ? "Save store information"
                                       : "Create store"}
                             </Button>
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
-        )
+                        </fieldset>
+                        {feedback.state === "error" ? (
+                            <p role="alert" className={styles.alert}>
+                                Could not save the store. Please try again.
+                            </p>
+                        ) : (
+                            <p role="status" aria-live="polite">
+                                {feedback.pending
+                                    ? "Saving store…"
+                                    : feedback.state === "success"
+                                      ? "Store information saved."
+                                      : ""}
+                            </p>
+                        )}
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+    );
 }
-export default StoreDetails

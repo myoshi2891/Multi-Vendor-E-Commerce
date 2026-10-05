@@ -17,3 +17,7 @@ six suiteはproductionのページ・フォーム・CSSをbundleし、DB/Server 
 ## 配送設定
 
 Server pageが既定配送と国別料金のDecimalを同じドル単位のnumberへ投影し、SellerShippingへ渡す。updateDefaultsAction/upsertShippingRateActionは既存queryの型を使いPropsで注入。ClientのcreateShippingColumns factoryから国別編集へ渡す。既存のDefault/Free表現、保存ID/countryId、配送範囲validationとreturn policyを維持。ラベル付きnative number入力とscoped gridでレスポンシブ表示。同期submit guardとsave guardで重複を防ぎ、失敗後の値保持/再送とinline statusを提供。CustomModalの任意lockedとDialogContentの任意closeDisabledは既定false。配送編集時だけpending中のEscape/outside/Closeを防ぎ、終了後は起点ボタンへfocusを返す。
+
+## 店舗フォーム
+
+StoreDetailsDataはid/name/description/email/phone/logo/cover/url/featured/statusだけを保持。設定pageは必要な列だけselectし、Decimalなど未使用のDBオブジェクトをClientへ渡さない。upsertStoreActionをServerから注入し、画像と連絡先をscoped gridで配置。既存Zod/featured/画像URLと更新payload・refreshを維持、保存中lock/重複防止/値保持/retry/statusを共通save hookで扱う。店舗作成のAction注入も同じinterfaceへ追従し、本体テーマは別Stepで適用する。

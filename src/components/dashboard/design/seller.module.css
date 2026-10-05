@@ -355,3 +355,17 @@
 .table :global(td:first-child) {
     min-width: 180px;
 }
+
+.storeMedia {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+}
+.storeMedia > div {
+    min-width: 0;
+}
+@media (min-width: 1100px) {
+    .storeMedia {
+        grid-template-columns: 240px minmax(0, 1fr);
+    }
+}

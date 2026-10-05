@@ -260,3 +260,5 @@ ProductDetails keeps its existing ProductFormActions and opts into seller design
 The variant creation/edit Server Components also opt into seller ProductDetails and preserve getProductMainInfo/getProductVariantForEdit arguments, initial values and missing-record behavior. Seller feedback is inline status/alert; the existing action contract is unchanged.
 
 ShippingCountryRow and StoreDefaultShippingInput are plain numeric display data projected in the Server Component without money-unit changes. Existing shipping query actions are injected as updateDefaultsAction/upsertShippingRateAction; createShippingColumns receives them on the Client. Optional CustomModal locked and DialogContent closeDisabled default to false.
+
+StoreDetails accepts required upsertStoreAction and optional seller design. StoreDetailsData projects only store form fields; the settings Server Component selects that projection, preserving the existing URL lookup and redirect. Both settings and creation callers provide the existing approved-facade action.
