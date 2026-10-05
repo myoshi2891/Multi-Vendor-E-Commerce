@@ -308,3 +308,67 @@ for (const width of [1440, 768, 390])
             await expect(page.getByRole("dialog")).toHaveCount(0);
             await expect(create).toBeFocused();
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`inventory ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=inventory");
+            await page.evaluate(
+                (d) => document.documentElement.classList.toggle("dark", d),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", { name: "Inventory", exact: true })
+            ).toBeVisible();
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: `test-results/seven-inventory-${width}-${theme}.png`,
+                fullPage: true,
+            });
+            for (const label of ["在庫数", "過小在庫しきい値"]) {
+                const editor = page
+                    .getByRole("group", { name: `${label}の編集` })
+                    .first();
+                await editor.getByLabel(label, { exact: true }).fill("-1");
+                await editor
+                    .getByRole("button", { name: "保存", exact: true })
+                    .click();
+                await expect(editor.getByRole("alert")).toContainText("整数");
+                await editor.getByLabel(label, { exact: true }).fill("10");
+                await editor
+                    .getByRole("button", { name: "保存", exact: true })
+                    .click();
+                await expect(
+                    editor.getByRole("button", { name: "保存中…" })
+                ).toBeDisabled();
+                await expect(editor.getByRole("alert")).toContainText("失敗");
+                await editor.getByRole("button", { name: "再試行" }).click();
+                await expect(editor.getByRole("status")).toContainText(
+                    "更新しました"
+                );
+                await expect(
+                    editor.getByLabel(label, { exact: true })
+                ).toHaveValue("10");
+            }
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.getByRole("searchbox").fill("unmatched");
+            await expect(page.getByText("No Results.")).toBeVisible();
+        });

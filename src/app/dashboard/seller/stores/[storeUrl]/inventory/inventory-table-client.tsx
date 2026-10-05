@@ -1,5 +1,6 @@
 "use client";
 
+import type { updateSizeStock } from "@/queries/inventory";
 import DataTable from "@/components/ui/data-table";
 import type { StoreInventoryRow } from "@/lib/types";
 import { getInventoryColumns } from "./columns";
@@ -17,18 +18,25 @@ type Props = {
     rows: StoreInventoryRow[];
     threshold: number;
     storeUrl: string;
+    updateStockAction: typeof updateSizeStock;
 };
 
 export default function InventoryTableClient({
     rows,
     threshold,
     storeUrl,
+    updateStockAction,
 }: Props) {
     return (
         <DataTable
+            design="seller"
             filterValue="productName"
             data={rows}
-            columns={getInventoryColumns(threshold, storeUrl)}
+            columns={getInventoryColumns(
+                threshold,
+                storeUrl,
+                updateStockAction
+            )}
             searchPlaceholder="Search product ..."
         />
     );

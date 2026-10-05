@@ -27,3 +27,7 @@ SellerShellはServer側のsidebar/header/childrenを受け、ナビの開閉だ�
 ## 商品一覧（DS-PAGE-062）
 
 Products見出し、ラベル付き検索、商品名/バリアント/カテゴリ/オファー/ブランド/追加操作を表示。商品色は元の色を保ち、欠画像も操作可能な編集リンクを示す。サイズ価格は表示項目に投影しDecimalを数値化（ドル単位、/100なし）。列定義はClient内でactionを受け取るfactoryから生成。作成モーダル、別ページ作成リンク、既存ProductDetailsのvalidation/payloadを維持し、sellerではラベル付きnative国複数選択を使用。作成/削除dialogのthemeとfocusを維持。削除は確認中のpending lock、失敗時dialogを維持して再試行可能。取得失敗は空と区別して再読み込みを提示。作成/属性/削除はServerから型付きaction Propsを注入し、他フォームルートも配線のみ同期する。
+
+## 在庫管理（DS-PAGE-055）
+
+数量/しきい値はラベル付き整数入力、保存/Enter、処理中disabled、汎用errorと再試行、成功statusを備える。失敗時は確定値を表示し、再試行で失敗した値を再送。判定・金額・所有権・更新queryは維持。検索で空と取得失敗を区別する。

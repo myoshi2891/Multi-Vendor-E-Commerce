@@ -96,7 +96,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-052 | `/dashboard/seller` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/seller/page.tsx](<../../../src/app/dashboard/seller/page.tsx>) | 未実施 |
 | DS-PAGE-053 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) | 未実施 |
 | DS-PAGE-054 | `/dashboard/seller/stores/[storeUrl]/coupons` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) | 未実施 |
-| DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
+| DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
 | DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
 | DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
@@ -666,5 +666,11 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ### 商品一覧（DS-PAGE-062）
 
 2026-10-05。Red2件: headingと取得失敗表示欠落。Green/Refactor関連Jest41/41・既存snapshots2/2、Supplemental Chromium6/6(3幅/light/dark・長文/欠画像/金額/検索/空/削除pending/error/作成dialog/axe AA・Escape focus復帰)。ブラウザで検出した色見本role・色選択/Selectラベル・国選択・focus復帰も修正。商品サイズ価格は表示項目だけに投影し数値化、/100なし。作成/属性取得/削除をaction Propsへ移行し、他3フォーム呼出先の配線のみ同期。Jodit/画像SDKはfixture adapterで実SDK未確認。tsc0、lintエラー0/警告11。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 在庫管理（DS-PAGE-055）
+
+2026-10-05。SellerPage、検索、数量/しきい値の編集・保存中・検証失敗・保存失敗・再試行・成功通知を適用。Red3件（見出し欠如、取得失敗の空一覧誤表示、更新失敗の再試行欠如）を確認後Green。関連RTL18/18、補助Chromium6/6（1440/768/390、light/dark、axe AAコントラスト除外なし）。所有権ガード・在庫判定・更新query・価格単位は維持。
 
 実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。

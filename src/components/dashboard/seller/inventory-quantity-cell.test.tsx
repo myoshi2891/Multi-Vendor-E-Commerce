@@ -34,6 +34,7 @@ beforeEach(() => {
 const renderCell = (initialQuantity = 3) =>
     render(
         <InventoryQuantityCell
+            updateStockAction={updateSizeStock}
             sizeId="size-1"
             initialQuantity={initialQuantity}
             storeUrl="my-store"
@@ -70,4 +71,15 @@ describe("InventoryQuantityCell", () => {
             expect(updateSizeStock).toHaveBeenCalledWith("size-1", 10, "my-store")
         );
     });
+});
+
+it("announces a failed save and provides retry without losing the attempted quantity", async () => {
+    jest.mocked(updateSizeStock).mockRejectedValueOnce(new Error("private failure"));
+    renderCell(3);
+    fireEvent.change(screen.getByLabelText("在庫数"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "保存" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("再試行");
+    fireEvent.click(screen.getByRole("button", { name: "再試行" }));
+    await waitFor(() => expect(updateSizeStock).toHaveBeenCalledTimes(2));
+    expect(updateSizeStock).toHaveBeenLastCalledWith("size-1",10,"my-store");
 });

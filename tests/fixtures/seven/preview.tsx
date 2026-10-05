@@ -1,3 +1,4 @@
+import SellerInventory from "@/components/dashboard/seller/seller-inventory";
 import SellerProducts from "@/components/dashboard/seller/seller-products";
 import type { StoreProductRow } from "@/lib/seller-products";
 import StoreOverview from "@/components/dashboard/seller/store-overview";
@@ -64,6 +65,33 @@ const productActions: ComponentProps<typeof SellerProducts>["actions"] = {
     upsertProductAction: async () => {},
     getAttributeDefinitionsAction: async () => [],
 };
+const inventoryRows = [0, 3, 10].map((quantity, index) => ({
+    sizeId: `size-${index}`,
+    productName: `Stock product ${index}`,
+    variantName: "Gold",
+    size: "M",
+    quantity,
+    price: 12.5,
+    sku: `SKU-${index}`,
+    productSlug: "product",
+    variantId: "variant",
+}));
+let stockAttempts = 0,
+    thresholdAttempts = 0;
+const stockAction: ComponentProps<
+    typeof SellerInventory
+>["updateStockAction"] = async (sizeId, quantity) => {
+    await new Promise((r) => setTimeout(r, 300));
+    if (++stockAttempts === 1) throw new Error("Fixture failure");
+    return { sizeId, quantity };
+};
+const thresholdAction: ComponentProps<
+    typeof SellerInventory
+>["updateThresholdAction"] = async (_, threshold) => {
+    await new Promise((r) => setTimeout(r, 300));
+    if (++thresholdAttempts === 1) throw new Error("Fixture failure");
+    return { lowStockThreshold: threshold };
+};
 let applyAttempts = 0;
 const applyAction: typeof applySeller = async () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -83,7 +111,15 @@ createRoot(document.getElementById("root")!).render(
     ) : (
         <ModalProvider>
             <SellerShell sidebar={sidebar} header={<Header design="seller" />}>
-                {screen === "products" ? (
+                {screen === "inventory" ? (
+                    <SellerInventory
+                        rows={inventoryRows}
+                        threshold={5}
+                        storeUrl="example"
+                        updateStockAction={stockAction}
+                        updateThresholdAction={thresholdAction}
+                    />
+                ) : screen === "products" ? (
                     <SellerProducts
                         products={productRows}
                         categories={[]}
