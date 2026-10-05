@@ -1113,3 +1113,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-05): DS-PAGE-054 販売者クーポン の新要件TDD/関連回帰・補助browser。認証後保留の正本はQA_HANDOFF。
 
 - ✅ Completed (2026-10-05): DS-PAGE-053 クーポン作成 の新要件TDD/関連回帰・補助browser。認証後保留の正本はQA_HANDOFF。
+
+- ✅ Completed (2026-10-05): DS-PAGE-015 Legal の新要件TDD/関連回帰・補助browser・公開実ルート3幅検証。

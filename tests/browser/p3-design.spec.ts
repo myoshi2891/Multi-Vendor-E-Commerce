@@ -375,3 +375,40 @@ for (const width of [1440, 768, 390])
                 fullPage: true,
             });
         });
+for (const width of [1440, 768, 390])
+    test(`legal ${width}`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await page.goto("/?screen=legal");
+        await expect(
+            page.getByRole("heading", {
+                level: 1,
+                name: "Legal & Privacy",
+                exact: true,
+            })
+        ).toHaveCSS("font-family", /Georgia/);
+        const link = page
+            .getByRole("navigation", { name: "Legal contents" })
+            .getByRole("link", { name: "Privacy Policy" });
+        await link.focus();
+        await expect(link).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await expect(page).toHaveURL(/#privacy-policy$/);
+        await expect(page.locator("#privacy-policy")).toBeFocused();
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+        await page.screenshot({
+            path: info.outputPath(`legal-${width}.png`),
+            fullPage: true,
+        });
+    });

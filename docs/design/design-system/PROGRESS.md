@@ -56,7 +56,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-012 | `/dispute` | 検証済み | P2 | 検証済み | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-013 | `/faq` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/faq/page.tsx](<../../../src/app/(store)/faq/page.tsx>) | 未実施 |
 | DS-PAGE-014 | `/faqs` | 本体適用（2026-09-30移行） | P3 | 検証済み | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | [FAQs実施記録](#faqs移行記録) |
-| DS-PAGE-015 | `/legal` | 未適用 | P3 | TODO | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | 未実施 |
+| DS-PAGE-015 | `/legal` | 検証済み | P3 | 検証済み | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-016 | `/offers` | 検証済み | P2 | 検証済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | 未実施 |
 | DS-PAGE-018 | `/product-support` | 本体適用（2026-10-01移行） | P3 | 検証済み | [src/app/(store)/product-support/page.tsx](<../../../src/app/(store)/product-support/page.tsx>) | [product-support移行記録](#product-support移行記録) |
@@ -340,6 +340,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-222 | P3 | 削除確認・pending lock | [ConfirmDelete](../../../src/components/dashboard/design/confirm-delete.tsx) | 保留 | モックAction検証済み・実ルート保留。[P3証跡](#p3優先6画面移行記録) |
 | DS-COMP-223 | P3 | クーポン一覧・列factory・編集再取得 | [SellerCoupons](../../../src/components/dashboard/seller/seller-coupons.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
 | DS-COMP-224 | P3 | seller専用クーポンフォーム | [SellerCouponForm](../../../src/components/dashboard/seller/seller-coupon-form.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
+| DS-COMP-225 | P3 | Legal本文・目次スタイル | [Legal CSS](<../../../src/app/(store)/legal/legal.module.css>) | 検証済み | 公開実ルート3幅・axe/目次検証。[P3証跡](#p3優先6画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -796,3 +797,9 @@ DS-PAGE-054最終確認: 関連Jest117/117（旧coupon列/既定adminフォー�
 先行RTL2件でcreation region/form/action接続のRed確認。日時編集の秒精度維持に追加RTL1件のRed→Greenを確認。Playwright fillのゼロ秒表記はChromiumの正規化に合わせ、ネイティブ入力は保存前に従来の秒精度へ戻す。関連Jest113/113、tsc exit0、lint0 errors/既存10 warnings、harness成功。ブラウザー最終再検証は以下に記録。保存後URL/新規UUID/scope/validation/pending/error/入力保持/retry/successを維持。認証後実ルートは実装あり・保留。
 
 DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/dark・日付/validation/pending/error/入力保持/retry/success/返却URL・axe contrast含む、390px画像目視。
+
+### DS-PAGE-015 Legal
+
+先行RTL2件のlabeled目次/Breadcrumb Red確認。既存DesignPageとLegal専用CSSで既存3本文/placeholder/metadata/heading由来アンカーを保持。Jest28/28、補助Chromium3/3、公開実ルートChromium3/3（1440/768/390px・HTTP200/title/既存目次・focus/Enter/fragment・reduced-motion・overflow・main axe contrast含む）、実ルート390px画像目視。保護5ルートの既存ホーム転送も1/1（未認証）。tsc exit0、lint0 errors/既存10 warnings、harness成功。公開Legalは検証済み。認証後業務5ルート/SDKは別途保留。
+
+転送確認の初回テストはsign-inを期待したが、既存proxy.ts/plans072はresource側layoutでdashboardゲストをホームへ転送する仕様。テストを既存契約へ修正し4/4確認。認可/転送実装は変更しない。Next devのtsconfigへの生成types追記は元のincludeへ戻しコミットしない。
