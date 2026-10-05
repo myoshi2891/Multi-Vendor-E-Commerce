@@ -58,3 +58,17 @@ it("distinguishes fetch failure from empty metrics and provides retry", async ()
     ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
 });
+it("logs the dashboard fetch failure before rendering the retry state", async () => {
+    const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+    jest.mocked(queries.getRecentStores).mockRejectedValueOnce(
+        new Error("db down")
+    );
+    render(await Page());
+    expect(consoleError).toHaveBeenCalledWith(
+        "[AdminDashboardPage] Failed to load dashboard data",
+        expect.objectContaining({ error: "db down" })
+    );
+    consoleError.mockRestore();
+});

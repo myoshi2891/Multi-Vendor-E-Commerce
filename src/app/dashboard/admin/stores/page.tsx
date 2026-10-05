@@ -5,7 +5,17 @@ import SellerPage from "@/components/dashboard/design/seller-page";
 import LoadError from "@/components/dashboard/design/load-error";
 export const dynamic = "force-dynamic";
 export default async function AdminStoresPage() {
-    const stores = await getAllStores().catch(() => null);
+    const stores = await getAllStores().catch((error: unknown) => {
+        if (error instanceof Error) {
+            console.error("[AdminStoresPage] Failed to load stores", {
+                error: error.message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[AdminStoresPage] Unknown error", { error });
+        }
+        return null;
+    });
     if (!stores)
         return (
             <SellerPage

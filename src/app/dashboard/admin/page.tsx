@@ -25,7 +25,20 @@ export default async function AdminDashboardPage() {
         getSalesOverTime("monthly"),
         getRecentOrders(5),
         getRecentStores(5),
-    ]).catch(() => null);
+    ]).catch((error: unknown) => {
+        if (error instanceof Error) {
+            console.error(
+                "[AdminDashboardPage] Failed to load dashboard data",
+                {
+                    error: error.message,
+                    stack: error.stack,
+                }
+            );
+        } else {
+            console.error("[AdminDashboardPage] Unknown error", { error });
+        }
+        return null;
+    });
     if (!data)
         return (
             <SellerPage

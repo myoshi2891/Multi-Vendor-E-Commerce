@@ -35,3 +35,15 @@ it("distinguishes store fetch failure from empty results", async () => {
     expect(screen.getByRole("alert")).toContainHTML("Could not load stores");
     expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
 });
+it("logs the store fetch failure before rendering the retry state", async () => {
+    const consoleError = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+    jest.mocked(getAllStores).mockRejectedValueOnce(new Error("db down"));
+    render(<ModalProvider>{await Page()}</ModalProvider>);
+    expect(consoleError).toHaveBeenCalledWith(
+        "[AdminStoresPage] Failed to load stores",
+        expect.objectContaining({ error: "db down" })
+    );
+    consoleError.mockRestore();
+});
