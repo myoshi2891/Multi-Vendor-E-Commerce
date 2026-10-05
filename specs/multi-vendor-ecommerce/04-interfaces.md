@@ -248,3 +248,5 @@ Public URLs `/offers`, `/dispute`, `/report-problem` and authenticated `/profile
 申請のapplySellerAction、ProductDetailsのupsertProductAction/getAttributeDefinitionsAction、商品一覧のdeleteProductActionをServer Componentから注入する。既存queryの引数・戻り値・認可を維持し、Clientはruntime Server Action importを持たない。StoreProductRow/serializeStoreProductsは商品一覧の表示項目だけを投影し、サイズ価格はドル単位のnumberとする。公開API/DB schema変更なし。[表示要件](../../docs/design/seller-ui-migration/requirements.md)。
 
 在庫UIはupdateSizeStock/updateStoreLowStockThresholdをupdateStockAction/updateThresholdActionとしてProps注入する。引数と結果・サーバー検証は既存と同一。失敗した入力値の再送は明示的な再試行操作のみ。
+
+注文一覧はSellerOrderActions（updateGroupAction/updateItemAction）を注入。既存updateOrderGroupStatus/updateOrderItemStatusの引数・結果・認可/遷移検証を維持。serializeSellerOrdersは配送日範囲と顧客/住所/支払表示、明細の価格/送料/合計を投影し、Decimalをドル単位numberへ変換する。内部のcoupon/注文relationはClientに渡さない。

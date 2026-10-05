@@ -372,3 +372,88 @@ for (const width of [1440, 768, 390])
             await page.getByRole("searchbox").fill("unmatched");
             await expect(page.getByText("No Results.")).toBeVisible();
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`orders ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=orders");
+            await page.evaluate(
+                (d) => document.documentElement.classList.toggle("dark", d),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", { name: "Orders", exact: true })
+            ).toBeVisible();
+            await expect(
+                page.getByText("$19.90", { exact: true })
+            ).toBeVisible();
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: `test-results/seven-orders-${width}-${theme}.png`,
+                fullPage: true,
+            });
+            const editor = page.getByRole("group", {
+                name: "Order status order-1 editor",
+            });
+            await editor
+                .getByLabel("Order status order-1", { exact: true })
+                .selectOption("Processing");
+            await editor.getByRole("button", { name: "Save status" }).click();
+            await expect(
+                editor.getByRole("button", { name: "Saving…" })
+            ).toBeDisabled();
+            await expect(editor.getByRole("alert")).toContainText("try again");
+            await editor.getByRole("button", { name: "Retry" }).click();
+            await expect(editor.getByRole("status")).toHaveText(
+                "Status updated."
+            );
+            const view = page.getByRole("button", {
+                name: "View order order-1",
+            });
+            await view.click();
+            const dialog = page.getByRole("dialog", { name: "Order details" });
+            await expect(dialog).toBeVisible();
+            await expect(
+                dialog.getByText("buyer@example.test", { exact: false })
+            ).toBeVisible();
+            const item = dialog.getByRole("group", {
+                name: "Item status item-1 editor",
+            });
+            await item
+                .getByLabel("Item status item-1", { exact: true })
+                .selectOption("Shipped");
+            await item.getByRole("button", { name: "Save status" }).click();
+            await expect(item.getByRole("alert")).toContainText("try again");
+            await item.getByRole("button", { name: "Retry" }).click();
+            await expect(item.getByRole("status")).toHaveText(
+                "Status updated."
+            );
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: `test-results/seven-order-details-${width}-${theme}.png`,
+                fullPage: true,
+            });
+            await page.keyboard.press("Escape");
+            await expect(dialog).toHaveCount(0);
+            await expect(view).toBeFocused();
+            await page.getByRole("searchbox").fill("unmatched");
+            await expect(page.getByText("No Results.")).toBeVisible();
+        });

@@ -639,3 +639,7 @@ DS-PAGE-058: 専用SellerPage/StoreOverview、KPIと各sectionの見出し、ゴ
 ## 在庫管理のデザイン移行（2026-10-05）
 
 DS-PAGE-055: SellerPage、テーマ対応の一覧・検索、在庫数/しきい値のラベル付き保存ボタンとEnter操作、送信中の重複防止を導入。失敗時は元の値へ戻し、再試行ボタンは失敗した値を再送する。空/小数/負数/上限超過を拒否し、成功はstatusで通知。既存getStockStatusとサーバーの所有権検証・更新は変更なし。関連RTL18/18、補助Chromium6/6。認証後実ルートは保留。[要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。
+
+## 注文一覧のデザイン移行（2026-10-05）
+
+DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失敗と空を区別し、一覧・明細状態は明示保存とpending/error/retry/statusを表示する。既存enum・更新action・金額単位を維持。RTL12/12、補助Chromium6/6。認証後実ルートは保留。[要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。

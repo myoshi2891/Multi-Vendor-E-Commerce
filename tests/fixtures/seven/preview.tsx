@@ -1,3 +1,5 @@
+import SellerOrders from "@/components/dashboard/seller/seller-orders";
+import type { SellerOrderRow, SellerOrderActions } from "@/lib/seller-orders";
 import SellerInventory from "@/components/dashboard/seller/seller-inventory";
 import SellerProducts from "@/components/dashboard/seller/seller-products";
 import type { StoreProductRow } from "@/lib/seller-products";
@@ -92,6 +94,53 @@ const thresholdAction: ComponentProps<
     if (++thresholdAttempts === 1) throw new Error("Fixture failure");
     return { lowStockThreshold: threshold };
 };
+const orderRows: SellerOrderRow[] = [
+    {
+        id: "order-1",
+        storeId: "store-1",
+        status: "Pending",
+        total: 19.9,
+        paymentStatus: "Paid",
+        shippingService: "Standard shipping",
+        deliveryRange: "Oct 8 - Oct 10",
+        paymentMethod: "Card",
+        paymentReference: "payment-1",
+        address: "A long shipping address, Tokyo, Japan",
+        customer: "Example Buyer, 123456789, buyer@example.test",
+        items: [
+            {
+                id: "item-1",
+                name: "A long order product name with responsive wrapping",
+                image: "",
+                sku: "SKU-1",
+                size: "M",
+                quantity: 1,
+                status: "Pending",
+                price: 12.5,
+                shippingFee: 7.4,
+                totalPrice: 19.9,
+            },
+        ],
+    },
+];
+let groupAttempts = 0,
+    itemAttempts = 0;
+const orderActions: SellerOrderActions = {
+    updateGroupAction: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        if (++groupAttempts === 1) throw new Error("Fixture failure");
+        return {} as Awaited<
+            ReturnType<SellerOrderActions["updateGroupAction"]>
+        >;
+    },
+    updateItemAction: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        if (++itemAttempts === 1) throw new Error("Fixture failure");
+        return {} as Awaited<
+            ReturnType<SellerOrderActions["updateItemAction"]>
+        >;
+    },
+};
 let applyAttempts = 0;
 const applyAction: typeof applySeller = async () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -111,7 +160,9 @@ createRoot(document.getElementById("root")!).render(
     ) : (
         <ModalProvider>
             <SellerShell sidebar={sidebar} header={<Header design="seller" />}>
-                {screen === "inventory" ? (
+                {screen === "orders" ? (
+                    <SellerOrders orders={orderRows} actions={orderActions} />
+                ) : screen === "inventory" ? (
                     <SellerInventory
                         rows={inventoryRows}
                         threshold={5}
