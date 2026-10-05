@@ -5226,3 +5226,31 @@ PR#189 のレビュー指摘 7 件（在庫セル/しきい値フォームの re
 
 統計の正本は [QA_HANDOFF](testing/QA_HANDOFF.md)。coverage の微減は、集計対象外のページ変更とは無関係な計測の揺らぎ。Integration / E2E 未実行。
 
+
+---
+
+### PR#190 店舗URL変更後の遷移と配送フォーム重複の解消 (2026-10-05)
+
+#### 概要
+
+店舗設定で URL を変更して保存すると旧 URL で再描画され店舗一覧へ飛ばされる不具合を、新しい settings URL への `router.replace` で修正。SonarCloud の New Code 重複（配送フォーム 2 本）を共通コンポーネント抽出で解消した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/forms/store-details.tsx` | 既存店舗で返却 URL が変わったら `router.replace(.../settings)`、同一なら `refresh`、新規は従来どおり `push` | 未コミット |
+| `src/components/dashboard/forms/shipping-fields.tsx` | 配送サービス・数値グリッド・返品ポリシーの共通入力（新規） | 未コミット |
+| `src/components/dashboard/forms/{store-default-shipping,shippingRate}-details.tsx` | 共通入力へ置換 | 未コミット |
+| `tests/component/dashboard/seller-store-pages-design.test.tsx` | URL 変更時の遷移 +1（Red 確認済み） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 2822 passed / 2825 total | **2842 passed / 2845 total** |
+| スイート数 | 277 | **280** |
+| coverage | Statements85.06%（9577/11259）／Branches70.8%（5405/7634）／Functions80.71%（1812/2245）／Lines85.3%（8705/10204） | **Statements86.56%（9777/11294）／Branches75.79%（5789/7638）／Functions83.04%（1871/2253）／Lines86.95%（8894/10228）** |
+| 型エラー | 0 件 | **0 件** |
+
+統計の正本は [QA_HANDOFF](testing/QA_HANDOFF.md)。差分には未同期だった seller デザイン移行コミット分を含む。Integration / E2E 未実行。

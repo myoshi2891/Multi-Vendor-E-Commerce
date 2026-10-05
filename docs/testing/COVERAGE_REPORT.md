@@ -14,8 +14,8 @@
 | Jestテスト総数（2026-10-05） | **2802 passed / 2805 total、3 skipped、127 snapshots passed、275 スイート（274 passed／1 skipped、failed 0）**。全体coverage実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | 全体coverage（2026-10-05） | Statements85.06%（9577/11259）／Branches70.8%（5405/7634）／Functions80.71%（1812/2245）／Lines85.3%（8705/10204）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **345 ファイル**（2026-10-05 dashboard実測）。 |
-| Jest スイート総数（unit/component のみ） | **277 スイート**（276 passed／1 skipped、2026-10-05全体実測）。 |
-| テスト総数 | **2822 unit/component passed**（2825 total / 3 skipped / 277 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
+| Jest スイート総数（unit/component のみ） | **280 スイート**（279 passed／1 skipped、2026-10-05全体実測）。 |
+| テスト総数 | **2842 unit/component passed**（2845 total / 3 skipped / 280 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)**（2026-10-05 dashboard実測、変更なし）。 |
@@ -600,4 +600,10 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 - レビュー指摘対応。`messages/page.tsx` は `requireStoreOwner`（店舗検索・所有権拒否）由来の失敗を、`inventory/page.tsx` は在庫取得失敗を、それぞれ `.catch(() => null)` で記録せずに捨てていた。products ページと同じ構造化ログを追加し、UI は従来どおりの汎用エラー表示のまま。`seller-messages-design.test.tsx` / `seller-inventory-design.test.tsx` に各 +1（修正前でログ呼び出し 0 回の Red を確認）。
 - 更新前: 2820 passed / 2823 total、coverage Statements85.07%（9579/11259）／Branches70.82%（5407/7634）／Functions80.75%（1813/2245）／Lines85.31%（8706/10204）。
 - 更新後: 2822 passed / 2825 total、277 suites、345 files / lcov363 / 18 of 80 cells、coverage Statements85.06%（9577/11259）／Branches70.8%（5405/7634）／Functions80.71%（1812/2245）／Lines85.3%（8705/10204）。対象ページは `collectCoverageFrom` の除外対象（`page.tsx`）のため、coverage の微減（Statements −2 / Branches −2 / Functions −1 / Lines −1）は今回の変更ではなく、計測ごとの揺らぎ。
+
+### PR#190 店舗URL変更後の遷移と配送フォーム重複（2026-10-05）
+
+- レビュー指摘対応。既存店舗の URL を変更して保存すると `router.refresh()` が旧 `storeUrl` で再検索して店舗一覧へリダイレクトされていたため、返却 URL が異なる場合は新しい settings URL へ `router.replace` する。`seller-store-pages-design.test.tsx` +1（修正前に `replace` 未呼び出しの Red を確認）。Sonar の New Code 重複（`store-default-shipping-details.tsx` 30.1% / `shippingRate-details.tsx` 26.0%）は共通入力を `shipping-fields.tsx` へ抽出して解消（jscpd 0 clones）。
+- 更新前: 2822 passed / 2825 total、277 suites。差分には未同期だった seller デザイン移行コミット（`f9a88c8f`〜`07e1a3eb`）と作業ツリーの images-preview-grid 回帰を含む。
+- 更新後: 2842 passed / 2845 total、280 suites、349 files / lcov367 / 18 of 80 cells、coverage Statements86.56%（9777/11294）／Branches75.79%（5789/7638）／Functions83.04%（1871/2253）／Lines86.95%（8894/10228）。ヒートマップ分類変更なし。Integration/E2E 未実行。
 
