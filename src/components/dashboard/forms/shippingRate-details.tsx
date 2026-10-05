@@ -14,17 +14,9 @@ import type {
 import { toNumberSafe } from "@/lib/utils";
 import { useSellerSave } from "@/hooks/use-seller-save";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {
-    Form,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormControl,
-    FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import ShippingFields from "./shipping-fields";
 import styles from "../design/seller.module.css";
 
 type Values = z.infer<typeof ShippingRateFormSchema>;
@@ -134,67 +126,11 @@ export default function ShippingRateDetails({
                             aria-label="Country shipping fields"
                         >
                             <p>Country: {data?.countryName}</p>
-                            <FormField
+                            <ShippingFields
                                 control={form.control}
-                                name="shippingService"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Shipping service</FormLabel>
-                                        <FormControl>
-                                            <Input {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <div className={styles.grid}>
-                                {fields.map(([name, label, min, step]) => (
-                                    <FormField
-                                        key={name}
-                                        control={form.control}
-                                        name={name}
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>{label}</FormLabel>
-                                                <FormControl>
-                                                    <Input
-                                                        type="number"
-                                                        min={min}
-                                                        step={step}
-                                                        {...field}
-                                                        onChange={(event) =>
-                                                            field.onChange(
-                                                                event.target
-                                                                    .value ===
-                                                                    ""
-                                                                    ? NaN
-                                                                    : Number(
-                                                                          event
-                                                                              .target
-                                                                              .value
-                                                                      )
-                                                            )
-                                                        }
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                            <FormField
-                                control={form.control}
-                                name="returnPolicy"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Return policy</FormLabel>
-                                        <FormControl>
-                                            <Textarea {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
+                                serviceName="shippingService"
+                                numberFields={fields}
+                                returnPolicyName="returnPolicy"
                             />
                             <Button type="submit">
                                 {feedback.pending

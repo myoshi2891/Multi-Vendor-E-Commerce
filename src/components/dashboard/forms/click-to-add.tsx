@@ -153,12 +153,9 @@ const ClickToAddInputs = <T extends Detail>({
                     {Object.keys(detail).map((property, propIndex) => (
                         <div
                             key={propIndex}
-                            className={cn(
-                                design === "seller"
-                                    ? sellerStyles.detailField
-                                    : "flex items-center gap-x-4",
-                                containerClassName
-                            )}
+                            className={design === "seller"
+                                ? cn(sellerStyles.detailField, containerClassName)
+                                : containerClassName}
                         >
                             {/* Color picker toggle */}
                             {property === "color" && colorPicker && (
@@ -205,12 +202,9 @@ const ClickToAddInputs = <T extends Detail>({
 
                             {/* Input field for each property */}
                             <Input
-                                className={cn(
-                                    design === "seller"
-                                        ? "w-full placeholder:capitalize"
-                                        : "w-28 placeholder:capitalize",
-                                    inputClassName
-                                )}
+                                className={design === "seller"
+                                    ? cn("w-full placeholder:capitalize", inputClassName)
+                                    : inputClassName}
                                 type={
                                     typeof detail[property] === "number"
                                         ? "number"

@@ -570,6 +570,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                             <FormControl>
                                                 <>
                                                     <ImagesPreviewGrid
+                                                        design={design}
                                                         images={
                                                             form.getValues()
                                                                 .images

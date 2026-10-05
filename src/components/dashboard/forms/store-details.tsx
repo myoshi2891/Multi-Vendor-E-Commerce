@@ -102,8 +102,18 @@ export default function StoreDetails({
                 destination = response.url;
             },
             () => {
-                if (data?.id) router.refresh();
-                else router.push(`/dashboard/seller/stores/${destination}`);
+                if (!data?.id) {
+                    router.push(`/dashboard/seller/stores/${destination}`);
+                    return;
+                }
+                // URL 変更時に refresh すると旧 storeUrl で再検索され一覧へ飛ばされる
+                if (destination !== data.url) {
+                    router.replace(
+                        `/dashboard/seller/stores/${destination}/settings`
+                    );
+                    return;
+                }
+                router.refresh();
             }
         );
     }

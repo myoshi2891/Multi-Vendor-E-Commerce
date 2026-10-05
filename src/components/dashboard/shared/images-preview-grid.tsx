@@ -11,8 +11,10 @@ import { cn, getDominantColors, getGridClassName } from '@/lib/utils'
 //Icons
 import { Trash } from 'lucide-react'
 import ColorPalette from './color-palette'
+import sellerStyles from '../design/seller.module.css'
 
 interface ImagesPreviewGridProps {
+    design?: "seller"
     images: { url: string }[] // Array of image URLs
     onRemove: (value: string) => void // Callback function when an image is removed
     colors?: { color: string }[] // List of colors from form
@@ -21,6 +23,7 @@ interface ImagesPreviewGridProps {
 
 const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
     images,
+    design,
     onRemove,
     colors,
     setColors,
@@ -74,7 +77,8 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
                 <div
                     className={cn(
                         'grid h-[800px] overflow-hidden rounded-md bg-white',
-                        GridClassName
+                        GridClassName,
+                        design === "seller" && sellerStyles.gallery
                     )}
                 >
                     {images.map((img, i) => (
@@ -91,7 +95,7 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
                             {/* Image */}
                             <Image
                                 src={img.url}
-                                alt={img.url + i}
+                                alt={design === "seller" ? `Product image ${i + 1}` : img.url + i}
                                 width={800}
                                 height={800}
                                 priority
@@ -100,9 +104,11 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
                             {/* Actions */}
                             <div
                                 className={cn(
-                                    'absolute bottom-0 left-0 right-0 top-0 hidden cursor-pointer flex-col items-center justify-center gap-y-3 bg-white/55 transition-all duration-500 group-hover:flex',
+                                    design === 'seller'
+                                        ? sellerStyles.galleryActions
+                                        : 'absolute bottom-0 left-0 right-0 top-0 hidden cursor-pointer flex-col items-center justify-center gap-y-3 bg-white/55 transition-all duration-500 group-hover:flex',
                                     {
-                                        '!pb-[40%]': imagesLength === 1,
+                                        '!pb-[40%]': imagesLength === 1 && design !== 'seller',
                                     }
                                 )}
                             >
@@ -114,14 +120,15 @@ const ImagesPreviewGrid: FC<ImagesPreviewGridProps> = ({
                                 />
                                 {/* Delete Button */}
                                 <button
-                                    className="Btn"
+                                    className={design === "seller" ? sellerStyles.galleryRemove : "Btn"}
+                                    aria-label={design === "seller" ? `Remove product image ${i + 1}` : undefined}
                                     type="button"
                                     onClick={() => onRemove(img.url)}
                                 >
-                                    <div className="sign">
+                                    <div className={design === "seller" ? undefined : "sign"}>
                                         <Trash size={18} />
                                     </div>
-                                    <div className="text">Delete</div>
+                                    <div className={design === "seller" ? undefined : "text"}>Delete</div>
                                 </button>
                             </div>
                         </div>
