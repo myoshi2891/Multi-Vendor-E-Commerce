@@ -167,3 +167,7 @@ Phase 5: E2E（購入者↔販売者往復）+ spec-sync
 - [x] 購入者専用heading/layout/thread/hook、最小表示facadeとaction Props、route loading。
 - [x] 最終関連Jest94/94、Chromium5/5、3幅/全状態/keyboard/axe、画像目視。
 - [x] lint/tscと仕様/台帳/QA/全体進捗/文書リンク同期。
+
+## 販売者メッセージのデザイン移行（2026-10-05）
+
+DS-PAGE-056: 購入者名/画像での識別、最新メッセージが購入者発かつ未読の場合の表示、選択時の既読更新、取得/既読errorとretry、送信draft保持・成功後クリア/再取得、5秒poll/hidden/unmount/staleを維持。PC2ペイン、1000px以下で一覧/スレッド切替と戻りfocus復帰。共通thread/CSSをopt-in拡張し購入者の既定表示を維持、左右の購入者発判定を維持し販売者のsenderラベルをBuyer/Youにする。関連RTL40/40、補助Chromium6/6。認証後の実送受信/SDK実描画は保留。[販売者要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。

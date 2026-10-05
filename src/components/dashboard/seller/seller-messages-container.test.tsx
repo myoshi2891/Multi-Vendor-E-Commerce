@@ -8,7 +8,7 @@ import {
     waitFor,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import SellerMessagesContainer from "./seller-messages-container";
+import ActualSellerMessagesContainer from "./seller-messages-container";
 import {
     getConversationMessages,
     markConversationRead,
@@ -32,26 +32,56 @@ jest.mock("next/image", () => ({
 }));
 
 // 子スレッドはモックし、渡された conversation / messages / onSent を観測する
-jest.mock("@/components/store/profile/messages/conversation-thread", () => ({
-    __esModule: true,
-    default: ({
-        conversation,
-        messages,
-        onSent,
-    }: {
-        conversation: { id: string } | null;
-        messages: { id: string }[];
-        onSent: () => void;
-    }) => (
-        <div data-testid="thread">
-            <span data-testid="selected-id">{conversation?.id ?? "none"}</span>
-            <span data-testid="message-count">{messages.length}</span>
-            <button data-testid="trigger-sent" onClick={() => onSent()}>
-                sent
-            </button>
-        </div>
-    ),
-}));
+jest.mock(
+    "@/components/store/profile/messages/profile-conversation-thread",
+    () => ({
+        __esModule: true,
+        default: ({
+            conversation,
+            messages,
+            onSent,
+            error,
+            onRetry,
+        }: {
+            conversation: { id: string } | null;
+            messages: { id: string }[];
+            onSent: () => void;
+            error: boolean;
+            onRetry: () => void;
+        }) => (
+            <div data-testid="thread">
+                {error && (
+                    <div role="alert">
+                        Please try again
+                        <button onClick={onRetry}>Retry messages</button>
+                    </div>
+                )}
+                <span data-testid="selected-id">
+                    {conversation?.id ?? "none"}
+                </span>
+                <span data-testid="message-count">{messages.length}</span>
+                <button data-testid="trigger-sent" onClick={() => onSent()}>
+                    sent
+                </button>
+            </div>
+        ),
+    })
+);
+
+const actions = {
+    loadConversationsAction: async () => conversations,
+    loadMessagesAction: getConversationMessages,
+    markReadAction: markConversationRead,
+    sendMessageAction: async () => ({ id: "sent" }),
+};
+function SellerMessagesContainer(
+    props: Pick<
+        React.ComponentProps<typeof ActualSellerMessagesContainer>,
+        "initialConversations"
+    >
+) {
+    return <ActualSellerMessagesContainer {...props} {...actions} />;
+}
 
 // 販売者一覧は store(自店舗) ではなく購入者(user) で会話を識別する
 const store = { id: "store-1", name: "Acme Store", logo: "", url: "acme" };
@@ -202,7 +232,7 @@ describe("SellerMessagesContainer", () => {
         );
     });
 
-    it("logs a structured error when polling fails", async () => {
+    it("shows a recoverable error when polling fails", async () => {
         const consoleSpy = jest
             .spyOn(console, "error")
             .mockImplementation(() => {});
@@ -217,11 +247,12 @@ describe("SellerMessagesContainer", () => {
         });
 
         await waitFor(() => {
-            expect(consoleSpy).toHaveBeenCalledWith(
-                "[SellerMessagesContainer:poll] Failed to fetch messages",
-                error.message,
-                error.stack
+            expect(screen.getByRole("alert")).toHaveTextContent(
+                "Please try again"
             );
+            expect(
+                screen.getByRole("button", { name: "Retry messages" })
+            ).toBeInTheDocument();
         });
         consoleSpy.mockRestore();
     });

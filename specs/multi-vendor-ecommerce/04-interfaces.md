@@ -250,3 +250,5 @@ Public URLs `/offers`, `/dispute`, `/report-problem` and authenticated `/profile
 在庫UIはupdateSizeStock/updateStoreLowStockThresholdをupdateStockAction/updateThresholdActionとしてProps注入する。引数と結果・サーバー検証は既存と同一。失敗した入力値の再送は明示的な再試行操作のみ。
 
 注文一覧はSellerOrderActions（updateGroupAction/updateItemAction）を注入。既存updateOrderGroupStatus/updateOrderItemStatusの引数・結果・認可/遷移検証を維持。serializeSellerOrdersは配送日範囲と顧客/住所/支払表示、明細の価格/送料/合計を投影し、Decimalをドル単位numberへ変換する。内部のcoupon/注文relationはClientに渡さない。
+
+getSellerConversations(storeUrl)は既存getStoreConversationsの店舗所有権検証を委譲し、id/userId/updatedAt ISO/store(name,logo)/user(name,picture)/messages(content)/unreadLatestを返す。unreadLatestは最新1件が購入者発かつ未読のときtrueで、未読総件数ではない。取得/送信/既読は既存getProfileConversationMessages/sendMessage/markConversationReadをProps注入し参加者検証を維持。Clientでruntime query importしない。

@@ -20,7 +20,11 @@ export default function ProfileConversationThread({
     sendMessageAction,
     onSent,
     onBusyChange,
+    counterpartyName,
+    viewer = "buyer",
 }: {
+    counterpartyName?: string;
+    viewer?: "buyer" | "seller";
     conversation: ProfileConversation;
     messages: ProfileMessage[];
     loading: boolean;
@@ -54,7 +58,7 @@ export default function ProfileConversationThread({
         <section className={styles.thread} aria-label="Selected conversation">
             <header className={styles.threadHeading}>
                 <p className={styles.eyebrow}>YOUR CONVERSATION</p>
-                <h2>{conversation.store.name}</h2>
+                <h2>{counterpartyName ?? conversation.store.name}</h2>
             </header>
             <div
                 className={styles.log}
@@ -103,7 +107,13 @@ export default function ProfileConversationThread({
                                     }
                                 >
                                     <p className={styles.sender}>
-                                        {buyer ? "You" : "Store"}
+                                        {buyer
+                                            ? viewer === "buyer"
+                                                ? "You"
+                                                : "Buyer"
+                                            : viewer === "seller"
+                                              ? "You"
+                                              : "Store"}
                                     </p>
                                     <p className={styles.content}>
                                         {message.content}

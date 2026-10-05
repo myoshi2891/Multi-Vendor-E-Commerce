@@ -1,3 +1,8 @@
+import SellerMessagesContainer from "@/components/dashboard/seller/seller-messages-container";
+import type {
+    SellerConversation,
+    SellerMessageActions,
+} from "@/lib/seller-messages";
 import SellerOrders from "@/components/dashboard/seller/seller-orders";
 import type { SellerOrderRow, SellerOrderActions } from "@/lib/seller-orders";
 import SellerInventory from "@/components/dashboard/seller/seller-inventory";
@@ -141,6 +146,65 @@ const orderActions: SellerOrderActions = {
         >;
     },
 };
+const conversations: SellerConversation[] = [
+    {
+        id: "conv-1",
+        userId: "buyer",
+        updatedAt: "2026-10-05T00:00:00Z",
+        store: { name: "Example", logo: "" },
+        user: {
+            name: "A long customer name for responsive wrapping",
+            picture: "",
+        },
+        unreadLatest: true,
+        messages: [{ content: "Hello from the buyer" }],
+    },
+];
+let messageLoads = 0,
+    readAttempts = 0,
+    sendAttempts = 0;
+const threadMessages = [
+    {
+        id: "m1",
+        senderId: "buyer",
+        content: "Hello from the buyer",
+        createdAt: "2026-10-05T00:00:00Z",
+    },
+    {
+        id: "m2",
+        senderId: "seller",
+        content:
+            "Hello from the store. " + "Long message wrapping. ".repeat(20),
+        createdAt: "2026-10-05T00:01:00Z",
+    },
+];
+const messageActions: SellerMessageActions = {
+    loadConversationsAction: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        return conversations;
+    },
+    loadMessagesAction: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        if (++messageLoads === 1) throw new Error("Fixture failure");
+        return [...threadMessages];
+    },
+    markReadAction: async () => {
+        await new Promise((r) => setTimeout(r, 300));
+        if (++readAttempts === 1) throw new Error("Fixture failure");
+        return { count: 1 };
+    },
+    sendMessageAction: async (_, content) => {
+        await new Promise((r) => setTimeout(r, 300));
+        if (++sendAttempts === 1) throw new Error("Fixture failure");
+        threadMessages.push({
+            id: "sent",
+            senderId: "seller",
+            content,
+            createdAt: "2026-10-05T00:02:00Z",
+        });
+        return { id: "sent" };
+    },
+};
 let applyAttempts = 0;
 const applyAction: typeof applySeller = async () => {
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -160,7 +224,20 @@ createRoot(document.getElementById("root")!).render(
     ) : (
         <ModalProvider>
             <SellerShell sidebar={sidebar} header={<Header design="seller" />}>
-                {screen === "orders" ? (
+                {screen === "messages" ? (
+                    <SellerMessagesContainer
+                        initialConversations={
+                            new URLSearchParams(location.search).has("empty") ||
+                            new URLSearchParams(location.search).has("error")
+                                ? []
+                                : conversations
+                        }
+                        initialError={new URLSearchParams(location.search).has(
+                            "error"
+                        )}
+                        {...messageActions}
+                    />
+                ) : screen === "orders" ? (
                     <SellerOrders orders={orderRows} actions={orderActions} />
                 ) : screen === "inventory" ? (
                     <SellerInventory

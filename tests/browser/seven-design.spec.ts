@@ -457,3 +457,92 @@ for (const width of [1440, 768, 390])
             await page.getByRole("searchbox").fill("unmatched");
             await expect(page.getByText("No Results.")).toBeVisible();
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`messages ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=messages");
+            await page.evaluate(
+                (d) => document.documentElement.classList.toggle("dark", d),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", { name: "Messages", exact: true })
+            ).toBeVisible();
+            const open = page.getByRole("button", {
+                name: /Open conversation with/,
+            });
+            await open.focus();
+            await page.keyboard.press("Enter");
+            await expect(
+                page.getByRole("button", { name: "Retry messages" })
+            ).toBeVisible();
+            await page
+                .getByRole("button", { name: "Retry read status" })
+                .click();
+            await page.getByRole("button", { name: "Retry messages" }).click();
+            await expect(
+                page.getByRole("log").getByText("Hello from the buyer")
+            ).toBeVisible();
+            const draft = page.getByRole("textbox", { name: "Your message" });
+            await page
+                .getByRole("button", { name: "Send", exact: true })
+                .click();
+            await expect(page.getByRole("alert")).toContainText(
+                "メッセージを入力"
+            );
+            await draft.fill("Reply from seller");
+            await page
+                .getByRole("button", { name: "Send", exact: true })
+                .click();
+            await expect(
+                page.getByRole("button", { name: "Sending…", exact: true })
+            ).toBeDisabled();
+            await expect(page.getByRole("alert")).toContainText(
+                "draft is saved"
+            );
+            await expect(draft).toHaveValue("Reply from seller");
+            await page
+                .getByRole("button", { name: "Send", exact: true })
+                .click();
+            await expect(draft).toHaveValue("");
+            await expect(
+                page.getByRole("log").getByText("Reply from seller")
+            ).toBeVisible();
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: `test-results/seven-messages-${width}-${theme}.png`,
+                fullPage: true,
+            });
+            if (width <= 1000) {
+                await expect(open).toBeHidden();
+                await page
+                    .getByRole("button", { name: "Back to conversations" })
+                    .click();
+                await expect(open).toBeFocused();
+            }
+            await page.goto("/?screen=messages&empty=1");
+            await expect(
+                page.getByRole("heading", { name: "No conversations yet" })
+            ).toBeVisible();
+            await page.goto("/?screen=messages&error=1");
+            await expect(page.getByRole("alert")).toContainText("try again");
+            await page
+                .getByRole("button", { name: "Try again", exact: true })
+                .click();
+            await expect(
+                page.getByRole("button", { name: /Open conversation with/ })
+            ).toBeVisible();
+        });

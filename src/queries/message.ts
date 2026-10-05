@@ -333,3 +333,24 @@ export const getProfileConversationMessages = async (id: string) => {
         createdAt: message.createdAt.toISOString(),
     }));
 };
+
+/** Seller display projection; existing store ownership and participant checks remain authoritative. */
+export const getSellerConversations = async (storeUrl: string) => {
+    const conversations = await getStoreConversations(storeUrl);
+    return conversations.map((conversation) => ({
+        id: conversation.id,
+        userId: conversation.userId,
+        updatedAt: conversation.updatedAt.toISOString(),
+        store: { name: conversation.store.name, logo: conversation.store.logo },
+        unreadLatest:
+            conversation.messages[0]?.senderId === conversation.userId &&
+            !conversation.messages[0]?.isRead,
+        user: {
+            name: conversation.user.name,
+            picture: conversation.user.picture,
+        },
+        messages: conversation.messages.map((message) => ({
+            content: message.content,
+        })),
+    }));
+};

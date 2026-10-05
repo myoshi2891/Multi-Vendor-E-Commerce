@@ -35,3 +35,7 @@ Products見出し、ラベル付き検索、商品名/バリアント/カテゴ�
 ## 注文一覧（DS-PAGE-057）
 
 STORE_ORDERS_MAXの上限、ID検索、金額、商品画像と名称、支払状態、注文/明細状態編集と配送・支払・住所・顧客詳細を維持。取得失敗は空と区別。状態は既存enum全選択肢を表示し、明示保存、処理中ロック、汎用error、選択値保持、再試行、成功statusを備える。詳細はテーマをPortalへ渡し、Escapeで閉じトリガーへfocus復帰。SellerOrderRowは表示項目を投影し金額をnumber化（ドル単位を維持・再計算なし）。既存管理者向け列とフォームは変更なし。
+
+## メッセージ（DS-PAGE-056）
+
+DS-PAGE-056: 購入者名/画像での識別、最新メッセージが購入者発かつ未読の場合の表示、選択時の既読更新、取得/既読errorとretry、送信draft保持・成功後クリア/再取得、5秒poll/hidden/unmount/staleを維持。PC2ペイン、1000px以下で一覧/スレッド切替と戻りfocus復帰。共通thread/CSSをopt-in拡張し購入者の既定表示を維持、左右の購入者発判定を維持し販売者のsenderラベルをBuyer/Youにする。関連RTL40/40、補助Chromium6/6。認証後の実送受信/SDK実描画は保留。[販売者要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。
