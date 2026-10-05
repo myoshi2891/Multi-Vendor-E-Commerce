@@ -1,5 +1,6 @@
-'use client'
-import { Button } from '@/components/ui/button'
+"use client";
+import styles from "../design/seller.module.css";
+import { Button } from "@/components/ui/button";
 import {
     Command,
     CommandEmpty,
@@ -8,45 +9,52 @@ import {
     CommandItem,
     CommandList,
     CommandSeparator,
-} from '@/components/ui/command'
+} from "@/components/ui/command";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
-} from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
-import { Check, ChevronDown, PlusCircle, StoreIcon } from 'lucide-react'
-import { useParams, useRouter } from 'next/navigation'
-import { FC, useState } from 'react'
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Check, ChevronDown, PlusCircle, StoreIcon } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { FC, useState } from "react";
 
-type PopoverTriggerProps = React.ComponentPropsWithoutRef<typeof PopoverTrigger>
+type PopoverTriggerProps = React.ComponentPropsWithoutRef<
+    typeof PopoverTrigger
+>;
 
 interface StoreSwitcherProps extends PopoverTriggerProps {
-    stores: Record<string, any>[]
+    stores: { name: string; url: string }[];
+    design?: "seller";
 }
 
-const StoreSwitcher: FC<StoreSwitcherProps> = ({ stores, className }) => {
-    const params = useParams()
-    const router = useRouter()
+const StoreSwitcher: FC<StoreSwitcherProps> = ({
+    stores,
+    className,
+    design,
+}) => {
+    const params = useParams();
+    const router = useRouter();
     // Format stores data
     const formattedItems = stores.map((store) => ({
         label: store.name,
         value: store.url,
-    }))
+    }));
 
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(false);
 
     // Get the active store
     const activeStore = formattedItems.find(
         (store) => store.value === params.storeUrl
-    )
+    );
 
     // Toggle store selection
 
     const onStoreSelect = (store: { label: string; value: string }) => {
-        setOpen(false)
-        router.push(`/dashboard/seller/stores/${store.value}`)
-    }
+        setOpen(false);
+        router.push(`/dashboard/seller/stores/${store.value}`);
+    };
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -57,14 +65,19 @@ const StoreSwitcher: FC<StoreSwitcherProps> = ({ stores, className }) => {
                     role="combobox"
                     aria-expanded={open}
                     aria-label="Select a store"
-                    className={cn('w-[250px] justify-between', className)}
+                    className={cn("w-[250px] justify-between", className)}
                 >
                     <StoreIcon className="mr-2 size-4" />
                     {activeStore?.label}
                     <ChevronDown className="ml-auto size-4 shrink-0 opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[250px] p-0">
+            <PopoverContent
+                className={cn(
+                    "w-[250px] p-0",
+                    design === "seller" && styles.theme
+                )}
+            >
                 <Command>
                     <CommandList>
                         <CommandInput placeholder="Search stores..." />
@@ -81,9 +94,9 @@ const StoreSwitcher: FC<StoreSwitcherProps> = ({ stores, className }) => {
                                     {store.label}
                                     <Check
                                         className={cn(
-                                            'ml-auto size-4 opacity-0',
+                                            "ml-auto size-4 opacity-0",
                                             {
-                                                'opacity-100':
+                                                "opacity-100":
                                                     activeStore?.value ===
                                                     store.value,
                                             }
@@ -98,8 +111,8 @@ const StoreSwitcher: FC<StoreSwitcherProps> = ({ stores, className }) => {
                         <CommandItem
                             className="cursor-pointer"
                             onSelect={() => {
-                                setOpen(false)
-                                router.push(`/dashboard/seller/stores/new`)
+                                setOpen(false);
+                                router.push(`/dashboard/seller/stores/new`);
                             }}
                         >
                             <PlusCircle className="mr-2 size-5" /> Create Store
@@ -108,7 +121,7 @@ const StoreSwitcher: FC<StoreSwitcherProps> = ({ stores, className }) => {
                 </Command>
             </PopoverContent>
         </Popover>
-    )
-}
+    );
+};
 
-export default StoreSwitcher
+export default StoreSwitcher;

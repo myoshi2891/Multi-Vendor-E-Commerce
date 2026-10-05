@@ -1,0 +1,181 @@
+.page {
+    --brand-wordmark: #755b2f;
+    color-scheme: light;
+    background: #f3f0e8;
+    color: #17251d;
+    min-height: 100vh;
+    --destructive: 0 65% 35%;
+}
+.application {
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    max-width: 1280px;
+    margin: auto;
+    padding: 2rem;
+    gap: 2rem;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.body {
+    min-width: 0;
+}
+.header {
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #c9c2b2;
+    margin-bottom: 1.5rem;
+}
+.header h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 400;
+}
+.eyebrow {
+    color: #755b2f;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 0.7rem;
+    margin-bottom: 0.7rem;
+}
+.instructions {
+    background: #e9e4d8;
+    padding: 1.25rem;
+    border: 1px solid #c9c2b2;
+    align-self: start;
+}
+.instructions summary {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+.instructions p {
+    margin-top: 0.85rem;
+    line-height: 1.6;
+    font-size: 0.85rem;
+}
+.progress {
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #c9c2b2;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 90px;
+    gap: 1rem;
+}
+.progress h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.35rem;
+    font-weight: 400;
+}
+.track {
+    height: 4px;
+    background: #c9c2b2;
+    margin: 0.75rem 0;
+}
+.fill {
+    height: 100%;
+    background: #755b2f;
+}
+.step {
+    padding: 1.5rem 0;
+}
+.application :is(input, textarea, select) {
+    width: 100%;
+    border: 1px solid #a69e8c;
+    border-radius: 3px;
+    background: #faf8f2;
+    color: #17251d;
+    padding: 0.8rem 1rem;
+    box-shadow: none;
+}
+.application label {
+    color: #17251d;
+}
+.application :is(button, a, input, textarea, select, summary):focus-visible {
+    outline: 2px solid #755b2f;
+    outline-offset: 3px;
+}
+.application button {
+    border-radius: 3px;
+}
+.primary {
+    padding: 0.7rem 1.5rem;
+    background: #17251d;
+    color: #f3f0e8;
+    border: 1px solid #17251d;
+}
+.secondary {
+    padding: 0.7rem 1.5rem;
+    background: #faf8f2;
+    color: #17251d;
+    border: 1px solid #a69e8c;
+}
+.primary:hover {
+    background: #314537;
+}
+.application button:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+    padding-top: 1.5rem;
+    border-top: 1px solid #c9c2b2;
+}
+.images {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.images :global(.absolute) {
+    max-width: 100%;
+}
+.images :global(.bg-gray-200) {
+    background: #e9e4d8;
+}
+.images button {
+    background: #17251d;
+    color: #f3f0e8;
+}
+.alert {
+    margin: 1rem 0;
+    color: #a32929;
+    padding: 1rem;
+    border: 1px solid #a32929;
+}
+.success {
+    padding: 2rem 1rem;
+    text-align: center;
+    background: #faf8f2;
+    border: 1px solid #c9c2b2;
+}
+.success h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 2rem;
+}
+.success p {
+    line-height: 1.7;
+    margin: 1rem 0 2rem;
+}
+.success a {
+    display: inline-block;
+}
+@media (max-width: 767px) {
+    .application {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 1rem;
+        gap: 1rem;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .application *,
+    .application *::before {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+.page :is(a, button):focus-visible {
+    outline: 2px solid #755b2f;
+    outline-offset: 3px;
+}

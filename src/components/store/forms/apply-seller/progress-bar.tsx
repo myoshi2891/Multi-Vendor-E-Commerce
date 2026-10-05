@@ -1,29 +1,32 @@
-import React from "react";
-
+import styles from "./application.module.css";
 export default function ProgressBar({ step }: { step: number }) {
+    const labels = [
+        "Personal Details",
+        "Store Details",
+        "Shipping Details",
+        "Completed",
+    ];
     return (
-        <div className="h-12 w-full border-b-2">
-            <div className="flex items-center justify-between gap-x-4">
-                <div className="mb-4 w-48 text-xs font-bold uppercase leading-tight tracking-wide text-gray-500">
-                    <span>Step {step} of 4</span>
-                    <div className="text-lg font-bold leading-tight text-gray-700">
-                        {step === 1
-                            ? "Personal Details"
-                            : step === 2
-                              ? "Store Details"
-                              : step === 3
-                                ? "Shipping Details"
-                                : "Completed"}
-                    </div>
-                </div>
-                <div className="mr-2 w-full flex-1 rounded-full bg-white">
-                    <div className="h-2 rounded-full bg-green-500 text-center text-white"
-                    style={{ width: `${(step/4) * 100}%` }}/>
-                </div>
-                <div className="text-xs text-gray-600" >
-                    {Math.floor((step/4) * 100)}% completed
+        <div className={styles.progress}>
+            <div>
+                <p className={styles.eyebrow}>Step {step} of 4</p>
+                <h2>{labels[step - 1]}</h2>
+                <div
+                    className={styles.track}
+                    role="progressbar"
+                    aria-label="Application progress"
+                    aria-valuemin={1}
+                    aria-valuemax={4}
+                    aria-valuenow={step}
+                    aria-valuetext={`Step ${step} of 4: ${labels[step - 1]}`}
+                >
+                    <div
+                        className={styles.fill}
+                        style={{ width: `${(step / 4) * 100}%` }}
+                    />
                 </div>
             </div>
+            <p>{Math.floor((step / 4) * 100)}% completed</p>
         </div>
     );
 }

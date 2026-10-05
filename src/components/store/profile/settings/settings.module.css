@@ -1,0 +1,68 @@
+.page {
+    background: #f3f0e8;
+    color: #17251d;
+    color-scheme: light;
+    min-width: 0;
+    padding: clamp(1rem, 3vw, 2rem);
+    font-family: Arial, Helvetica, sans-serif;
+    overflow-wrap: anywhere;
+}
+.heading {
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #c9c2b2;
+}
+.eyebrow {
+    color: #755b2f;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 0.65rem;
+}
+.heading h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-weight: 400;
+    line-height: 1.2;
+}
+.heading p:last-child {
+    margin-top: 0.75rem;
+    color: #536356;
+    line-height: 1.6;
+}
+.root,
+.cardBox,
+.card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-shadow: none;
+}
+.card {
+    background: #faf8f2;
+    border: 1px solid #c9c2b2;
+    border-radius: 3px;
+}
+.clerkTitle {
+    font-family: Georgia, "Times New Roman", serif;
+    color: #17251d;
+}
+.root :is(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid #755b2f;
+    outline-offset: 3px;
+}
+@media (max-width: 767px) {
+    .root {
+        display: block;
+    }
+    .cardBox {
+        display: flex;
+        flex-direction: column;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .root * {
+        transition: none !important;
+        animation: none !important;
+    }
+}

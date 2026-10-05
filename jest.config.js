@@ -13,7 +13,7 @@ module.exports = {
     },
     // tests/integration/ は jest.integration.config.js 経由でのみ実行する
     // (jsdom + testcontainers + globalSetup を伴うため別 worker pool が必要)
-    // tests/browser/ は playwright.commerce.config.ts 経由の Playwright spec（Jest では実行不可）
+    // tests/browser/ は playwright.design.config.ts 経由の Playwright spec（Jest では実行不可）
     testPathIgnorePatterns: [
         "/node_modules/",
         "/tests/e2e/",

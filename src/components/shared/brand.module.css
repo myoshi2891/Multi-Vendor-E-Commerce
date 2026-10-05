@@ -2,7 +2,7 @@
     display: inline-flex;
     align-items: center;
     gap: 13px;
-    color: #d4ba83;
+    color: var(--brand-wordmark, #d4ba83);
     font-family: Georgia, "Times New Roman", serif;
     font-size: 29px;
     line-height: 1;

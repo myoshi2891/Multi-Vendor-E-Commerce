@@ -1,6 +1,7 @@
 "use client";
 
 // React, Next.js
+import sellerStyles from "../design/seller.module.css";
 import { useRouter } from "next/navigation";
 import { FC, useEffect, useMemo, useRef, useState } from "react";
 
@@ -53,8 +54,7 @@ import { useToast } from "@/hooks/use-toast";
 import ImageUpload from "../shared/image-upload";
 
 // Queries
-import { upsertProduct } from "@/queries/product";
-import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
+import type { ProductFormActions } from "@/lib/seller-products";
 
 // ReactTags
 import { WithOutContext as ReactTags } from "react-tag-input";
@@ -104,7 +104,8 @@ const shippingFeeMethods = [
     },
 ];
 
-interface ProductDetailsProps {
+interface ProductDetailsProps extends ProductFormActions {
+    design?: "seller";
     data?: ProductFormData;
     categories: Category[];
     offerTags: OfferTag[];
@@ -118,6 +119,9 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     offerTags,
     storeUrl,
     countries,
+    upsertProductAction,
+    getAttributeDefinitionsAction,
+    design,
 }) => {
     // Initializing necessary hooks
     const { toast } = useToast(); // Hook for displaying toast messages
@@ -272,7 +276,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         const fetchDefinitions = async () => {
             try {
                 const defs = selectedNodeId
-                    ? await getEffectiveAttributeDefinitions(selectedNodeId)
+                    ? await getAttributeDefinitionsAction(selectedNodeId)
                     : [];
                 if (cancelled) return;
                 setAttributeLoadError(null);
@@ -325,7 +329,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
         return () => {
             cancelled = true;
         };
-    }, [selectedNodeId, form]);
+    }, [selectedNodeId, form, getAttributeDefinitionsAction]);
 
     const productAttributeDefs = attributeDefs.filter(
         (def) => def.scope === "PRODUCT"
@@ -392,7 +396,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                 filteredColors.length > 0 ? filteredColors : [];
 
             // Upserting product data
-            const response = await upsertProduct(
+            const response = await upsertProductAction(
                 {
                     productId: data?.productId ? data.productId : v4(),
                     variantId,
@@ -765,7 +769,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                 defaultValue={field.value}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger aria-label="Category">
                                                         <SelectValue
                                                             defaultValue={
                                                                 field.value
@@ -774,7 +778,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                         />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent>
+                                                <SelectContent
+                                                    className={
+                                                        design === "seller"
+                                                            ? sellerStyles.theme
+                                                            : undefined
+                                                    }
+                                                >
                                                     {categories.map(
                                                         (category) => (
                                                             <SelectItem
@@ -821,7 +831,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                 defaultValue={field.value}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger aria-label="Offer">
                                                         <SelectValue
                                                             defaultValue={
                                                                 field.value
@@ -830,7 +840,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                         />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent>
+                                                <SelectContent
+                                                    className={
+                                                        design === "seller"
+                                                            ? sellerStyles.theme
+                                                            : undefined
+                                                    }
+                                                >
                                                     {offerTags &&
                                                         offerTags.map(
                                                             (offer) => (
@@ -1285,7 +1301,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                 defaultValue={field.value}
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger>
+                                                    <SelectTrigger aria-label="Shipping fee method">
                                                         <SelectValue
                                                             defaultValue={
                                                                 field.value
@@ -1294,7 +1310,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                         />
                                                     </SelectTrigger>
                                                 </FormControl>
-                                                <SelectContent>
+                                                <SelectContent
+                                                    className={
+                                                        design === "seller"
+                                                            ? sellerStyles.theme
+                                                            : undefined
+                                                    }
+                                                >
                                                     {shippingFeeMethods.map(
                                                         (method) => (
                                                             <SelectItem
@@ -1383,23 +1405,78 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormControl>
-                                                            <MultiSelect
-                                                                className="!max-w-[800px]"
-                                                                options={
-                                                                    countryOptions
-                                                                } // Array of options, each with `label` and `value`
-                                                                value={
-                                                                    field.value
-                                                                } // Pass the array of objects directly
-                                                                onChange={(
-                                                                    selected: CountryOption[]
-                                                                ) => {
-                                                                    field.onChange(
-                                                                        selected
-                                                                    );
-                                                                }}
-                                                                labelledBy="Select"
-                                                            />
+                                                            {design ===
+                                                            "seller" ? (
+                                                                <select
+                                                                    multiple
+                                                                    aria-label="Countries eligible for free shipping"
+                                                                    value={field.value.map(
+                                                                        (
+                                                                            country
+                                                                        ) =>
+                                                                            country.value
+                                                                    )}
+                                                                    onChange={(
+                                                                        event
+                                                                    ) =>
+                                                                        field.onChange(
+                                                                            countryOptions.filter(
+                                                                                (
+                                                                                    country
+                                                                                ) =>
+                                                                                    Array.from(
+                                                                                        event
+                                                                                            .target
+                                                                                            .selectedOptions
+                                                                                    ).some(
+                                                                                        (
+                                                                                            option
+                                                                                        ) =>
+                                                                                            option.value ===
+                                                                                            country.value
+                                                                                    )
+                                                                            )
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    {countryOptions.map(
+                                                                        (
+                                                                            country
+                                                                        ) => (
+                                                                            <option
+                                                                                key={
+                                                                                    country.value
+                                                                                }
+                                                                                value={
+                                                                                    country.value
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    country.label
+                                                                                }
+                                                                            </option>
+                                                                        )
+                                                                    )}
+                                                                </select>
+                                                            ) : (
+                                                                <MultiSelect
+                                                                    className="!max-w-[800px]"
+                                                                    options={
+                                                                        countryOptions
+                                                                    } // Array of options, each with `label` and `value`
+                                                                    value={
+                                                                        field.value
+                                                                    } // Pass the array of objects directly
+                                                                    onChange={(
+                                                                        selected: CountryOption[]
+                                                                    ) => {
+                                                                        field.onChange(
+                                                                            selected
+                                                                        );
+                                                                    }}
+                                                                    labelledBy="Select"
+                                                                />
+                                                            )}
                                                         </FormControl>
                                                     </FormItem>
                                                 )}

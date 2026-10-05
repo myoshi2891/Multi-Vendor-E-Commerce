@@ -86,6 +86,14 @@ interface NextAction {
 const NEXT_ACTIONS: readonly NextAction[] = [
     {
         priority: "medium",
+        title: "DS-SEVEN: 優先7画面の認証後検証",
+        target: "settings/apply + seller overview/products/inventory/orders/messages",
+        tool: "Playwright + Clerk + dedicated test DB",
+        cost: "M",
+        impact: "補助42/42・guest5/5と区別し、実Sidebar/SDK/認証後操作の受け入れを完了する",
+    },
+    {
+        priority: "medium",
         title: "DS-PURCHASE: 購入導線の認証後検証",
         target: "/checkout /order/[orderId]（既存schemaの専用テストDB）",
         tool: "Playwright + Clerk",

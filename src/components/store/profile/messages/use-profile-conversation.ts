@@ -5,7 +5,7 @@ import type {
     ProfileMessageActions,
 } from "@/lib/profile-messages";
 
-/** Profile-only polling with injected actions, cancellation and visible retry states. */
+/** Conversation polling with injected actions, cancellation and visible retry states. */
 export function useProfileConversation(
     actions: Pick<
         ProfileMessageActions,

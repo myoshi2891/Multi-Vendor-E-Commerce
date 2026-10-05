@@ -54,7 +54,7 @@
 
 ### 2.1 件数
 
-2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。2026-10-05のoffers/dispute/report-problemは検証済み3追加、following/historyは実装済み・認証後実ルート検証保留2追加。現在は検証済み14・検証保留4・未適用28。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
+2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。2026-10-05のoffers/dispute/report-problemは検証済み3追加、following/historyは実装済み・認証後実ルート検証保留2追加。現在は検証済み14・検証保留11・未適用21。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
 
 | 区分 | ページ定義 |
 |---|---:|
@@ -68,8 +68,8 @@
 |---|---:|
 | 検証済み（2026-10-05） | 14 |
 | 本体適用・周辺確認 | 12 |
-| 本体適用・検証保留 | 4 |
-| 未適用 | 28 |
+| 本体適用・検証保留 | 11 |
+| 未適用 | 21 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
 | **合計** | **66** |
@@ -83,7 +83,7 @@
 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) |
 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) |
 | `/order/[orderId]` | 本体適用・検証保留（2026-10-04） | P1 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../src/app/(fullscreen)/order/[orderId]/page.tsx>) |
-| `/seller/apply` | 未適用 | P3 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../src/app/(fullscreen)/seller/apply/page.tsx>) |
+| `/seller/apply` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../src/app/(fullscreen)/seller/apply/page.tsx>) |
 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/about/page.tsx](<../../src/app/(store)/about/page.tsx>) |
 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/browse/page.tsx](<../../src/app/(store)/browse/page.tsx>) |
 | `/cart` | 検証済み（2026-10-01） | P1 | [src/app/(store)/cart/page.tsx](<../../src/app/(store)/cart/page.tsx>) |
@@ -111,7 +111,7 @@
 | `/profile` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/page.tsx](<../../src/app/(store)/profile/page.tsx>) |
 | `/profile/payment` | 検証済み | P2 | [src/app/(store)/profile/payment/page.tsx](<../../src/app/(store)/profile/payment/page.tsx>) |
 | `/profile/reviews` | 検証済み | P2 | [src/app/(store)/profile/reviews/page.tsx](<../../src/app/(store)/profile/reviews/page.tsx>) |
-| `/profile/settings` | 未適用 | P2 | [src/app/(store)/profile/settings/page.tsx](<../../src/app/(store)/profile/settings/page.tsx>) |
+| `/profile/settings` | 本体適用・検証保留（2026-10-05） | P2 | [src/app/(store)/profile/settings/page.tsx](<../../src/app/(store)/profile/settings/page.tsx>) |
 | `/profile/wishlist/[page]` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../src/app/(store)/profile/wishlist/[page]/page.tsx>) |
 | `/profile/wishlist` | 転送専用 | 回帰検証 | [src/app/(store)/profile/wishlist/page.tsx](<../../src/app/(store)/profile/wishlist/page.tsx>) |
 | `/report-problem` | 検証済み（2026-10-05） | P2 | [src/app/(store)/report-problem/page.tsx](<../../src/app/(store)/report-problem/page.tsx>) |
@@ -134,14 +134,14 @@
 | `/dashboard/seller` | 転送専用 | 回帰検証 | [src/app/dashboard/seller/page.tsx](<../../src/app/dashboard/seller/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/coupons` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) |
-| `/dashboard/seller/stores/[storeUrl]/inventory` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) |
-| `/dashboard/seller/stores/[storeUrl]/messages` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) |
-| `/dashboard/seller/stores/[storeUrl]/orders` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) |
-| `/dashboard/seller/stores/[storeUrl]` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) |
+| `/dashboard/seller/stores/[storeUrl]/inventory` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) |
+| `/dashboard/seller/stores/[storeUrl]/messages` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) |
+| `/dashboard/seller/stores/[storeUrl]/orders` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) |
+| `/dashboard/seller/stores/[storeUrl]` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/products/new` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) |
-| `/dashboard/seller/stores/[storeUrl]/products` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) |
+| `/dashboard/seller/stores/[storeUrl]/products` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/settings` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/shipping` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) |
 | `/dashboard/seller/stores/new` | 未適用 | P3 | [src/app/dashboard/seller/stores/new/page.tsx](<../../src/app/dashboard/seller/stores/new/page.tsx>) |
@@ -623,3 +623,30 @@ DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通C
 - [ ] DS-COMP-207: [HistoryContainer](../../src/components/store/profile/history/container.tsx)。補助検証済み、認証後実ルート保留。
 
 旧StoreCard/ProductCard/汎用Pagination、全体トークンをこの5画面だけで移行完了にしない。
+
+### 優先7画面移行チェック
+
+[保存計画](priority-seven-design-system-plan.md)／[実施記録](../../docs/design/design-system/PROGRESS.md#優先7画面移行記録)。認証後実ルートと第三者UI確認は実装と別に記録する。
+
+- [x] DS-PAGE-032 アカウント設定: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-032: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+
+- [x] DS-PAGE-004 出店申請: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-004: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+
+- [x] DS-PAGE-058 店舗概要: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-058: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+
+- [x] DS-PAGE-062 商品一覧: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-062: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+
+- [x] DS-PAGE-055 在庫管理: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-055: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+
+- [x] DS-PAGE-057 注文一覧: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-057: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+
+- [x] DS-PAGE-056 販売者メッセージ: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-056: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+
+新設部品DS-COMP-208〜216は販売者/申請scopeの本体適用・補助検証済み・認証後受け入れ保留。[台帳](../../docs/design/design-system/PROGRESS.md#部品台帳)。共通部品の他scopeを一括完了にしない。

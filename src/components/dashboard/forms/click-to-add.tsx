@@ -152,6 +152,7 @@ const ClickToAddInputs = <T extends Detail>({
                             {property === 'color' && colorPicker && (
                                 <div className="flex gap-x-4">
                                     <button
+                                        aria-label="Choose color"
                                         type="button"
                                         className="cursor-pointer"
                                         onClick={() =>

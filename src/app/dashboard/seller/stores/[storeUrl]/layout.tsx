@@ -1,3 +1,4 @@
+import SellerShell from "@/components/dashboard/design/seller-shell";
 // React, Next.js
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
@@ -9,10 +10,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { Store } from "@prisma/client";
 export default async function SellerStoreDashboardLayout({
-	children,
+    children,
 }: {
-	children: ReactNode;
-    }) {
+    children: ReactNode;
+}) {
     // Fetch the current user. If the user is not authenticated, redirect to the home page.
     const user = await currentUser();
     if (!user) {
@@ -34,20 +35,26 @@ export default async function SellerStoreDashboardLayout({
         });
     } catch (error) {
         if (error instanceof Error) {
-            console.error("Error retrieving stores for seller dashboard:", error.message, error.stack);
+            console.error(
+                "Error retrieving stores for seller dashboard:",
+                error.message,
+                error.stack
+            );
         } else {
-            console.error("Error retrieving stores for seller dashboard:", String(error));
+            console.error(
+                "Error retrieving stores for seller dashboard:",
+                String(error)
+            );
         }
     }
 
     // Render the dashboard layout with the sidebar and the child component.
     return (
-		<div className="flex size-full">
-			<Sidebar stores={stores} />
-            <div className="ml-[300px] w-full">
-                <Header />
-                <div className="mt-[75px] w-full p-4">{children}</div>
-            </div>
-		</div>
-	);
+        <SellerShell
+            sidebar={<Sidebar stores={stores} design="seller" />}
+            header={<Header design="seller" />}
+        >
+            {children}
+        </SellerShell>
+    );
 }

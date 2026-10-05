@@ -1,5 +1,6 @@
 "use client";
 
+import type { updateSizeStock } from "@/queries/inventory";
 import { ColumnDef } from "@tanstack/react-table";
 
 import type { StoreInventoryRow } from "@/lib/types";
@@ -17,7 +18,8 @@ import StockStatusBadge from "@/components/dashboard/seller/stock-status-badge";
  */
 export function getInventoryColumns(
     threshold: number,
-    storeUrl: string
+    storeUrl: string,
+    updateStockAction: typeof updateSizeStock
 ): ColumnDef<StoreInventoryRow>[] {
     return [
         {
@@ -40,6 +42,8 @@ export function getInventoryColumns(
             header: "在庫数",
             cell: ({ row }) => (
                 <InventoryQuantityCell
+                    key={row.original.sizeId}
+                    updateStockAction={updateStockAction}
                     sizeId={row.original.sizeId}
                     initialQuantity={row.original.quantity}
                     storeUrl={storeUrl}

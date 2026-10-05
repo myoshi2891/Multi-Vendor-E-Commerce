@@ -71,3 +71,7 @@
 | DS-M8 | 1440/390/768px、focus/Tab/Enter、横溢れなし、axe AA違反0（contrast除外なし）。 | Chromium |
 
 販売者画面と旧共有部品のデザイン移行、新規起票UIは対象外。今回の送信/既読/会話データはaction応答mockで検証し、既存AC-M8実往復の過去実績は再実行結果として扱わない。
+
+## 販売者メッセージのデザイン移行（2026-10-05）
+
+DS-PAGE-056: 購入者名/画像での識別、最新メッセージが購入者発かつ未読の場合の表示、選択時の既読更新、取得/既読errorとretry、送信draft保持・成功後クリア/再取得、5秒poll/hidden/unmount/staleを維持。PC2ペイン、1000px以下で一覧/スレッド切替と戻りfocus復帰。共通thread/CSSをopt-in拡張し購入者の既定表示を維持、左右の購入者発判定を維持し販売者のsenderラベルをBuyer/Youにする。関連RTL40/40、補助Chromium6/6。認証後の実送受信/SDK実描画は保留。[販売者要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。

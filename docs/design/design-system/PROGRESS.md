@@ -9,11 +9,11 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（現台帳207部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用30・未適用28（checkout・注文詳細・following・historyの4画面は実装あり／検証保留）（仮実装1・転送専用7は不変）。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216を追加、現台帳216部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用37（台帳のソース欄「検証済み」3件を含む）・未適用21（認証後の検証保留11画面を含む）（仮実装1・転送専用7は不変）。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
-次の着手はDS-BASE-001（共通トークンの適用範囲・ライト／ダーク・Portalの設計）。P1の基本操作・ヘッダー展開・モーダルを先行し、カート→checkout→注文・支払いへ進む。既存適用画面の回帰確認を受け入れ条件に含める。今回の文書整備は画面移行の完了数には含めない。
+販売者scopeの共通基盤と優先7画面を実装した。次は専用test DB/Clerk環境で11画面の認証後受け入れ確認を行い、残り21画面から次の対象を選ぶ。グローバル基盤と未対象の共有部品の移行は継続。[優先7画面の証跡](#優先7画面移行記録)。
 
 ## 状態と更新方法
 
@@ -45,7 +45,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-001 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-002 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 保留 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
-| DS-PAGE-004 | `/seller/apply` | 未適用 | P3 | TODO | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | 未実施 |
+| DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | 未実施 |
 | DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録) |
@@ -73,7 +73,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>) | [profile実施記録](#profile移行記録) |
 | DS-PAGE-030 | `/profile/payment` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/payment/page.tsx](<../../../src/app/(store)/profile/payment/page.tsx>) | [payment実施記録](#profile-payment移行記録) |
 | DS-PAGE-031 | `/profile/reviews` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/reviews/page.tsx](<../../../src/app/(store)/profile/reviews/page.tsx>) | [reviews実施記録](#profile-reviews移行記録) |
-| DS-PAGE-032 | `/profile/settings` | 未適用 | P2 | TODO | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | 未実施 |
+| DS-PAGE-032 | `/profile/settings` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
@@ -96,14 +96,14 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-052 | `/dashboard/seller` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/seller/page.tsx](<../../../src/app/dashboard/seller/page.tsx>) | 未実施 |
 | DS-PAGE-053 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) | 未実施 |
 | DS-PAGE-054 | `/dashboard/seller/stores/[storeUrl]/coupons` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) | 未実施 |
-| DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | 未実施 |
-| DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | 未実施 |
-| DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | 未実施 |
-| DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | 未実施 |
+| DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
+| DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
+| DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
+| DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-059 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) | 未実施 |
 | DS-PAGE-060 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx>) | 未実施 |
 | DS-PAGE-061 | `/dashboard/seller/stores/[storeUrl]/products/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) | 未実施 |
-| DS-PAGE-062 | `/dashboard/seller/stores/[storeUrl]/products` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) | 未実施 |
+| DS-PAGE-062 | `/dashboard/seller/stores/[storeUrl]/products` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-063 | `/dashboard/seller/stores/[storeUrl]/settings` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx>) | 未実施 |
 | DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | 未実施 |
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | 未実施 |
@@ -206,7 +206,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-089 | P2 | メッセージ共用部品（P2） | [src/components/shared/messages/messages-layout.tsx](<../../../src/components/shared/messages/messages-layout.tsx>) | TODO | 未実施 |
 | DS-COMP-090 | P2 | メッセージ共用部品（P2） | [src/components/store/profile/messages/messages-container.tsx](<../../../src/components/store/profile/messages/messages-container.tsx>) | 検証済み | [messages実施記録](#profile-messages移行記録) |
 | DS-COMP-091 | P2 | メッセージ共用部品（P2） | [src/components/store/profile/messages/conversation-thread.tsx](<../../../src/components/store/profile/messages/conversation-thread.tsx>) | TODO | 未実施 |
-| DS-COMP-092 | P2 | メッセージ共用部品（P2） | [src/components/dashboard/seller/seller-messages-container.tsx](<../../../src/components/dashboard/seller/seller-messages-container.tsx>) | TODO | 未実施 |
+| DS-COMP-092 | P2 | メッセージ共用部品（P2） | [src/components/dashboard/seller/seller-messages-container.tsx](<../../../src/components/dashboard/seller/seller-messages-container.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-093 | P2 | サポート・追跡（P2） | [src/components/store/support/support-form.tsx](<../../../src/components/store/support/support-form.tsx>) | 検証済み | [returns-exchange移行記録](#returns-exchange移行記録) |
 | DS-COMP-094 | P2 | サポート・追跡（P2） | [src/components/store/track-order/track-order-form.tsx](<../../../src/components/store/track-order/track-order-form.tsx>) | 検証済み | [track-order移行記録](#track-order移行記録) |
 | DS-COMP-095 | P2 | サポート・追跡（P2） | [src/components/store/track-order/track-order-result.tsx](<../../../src/components/store/track-order/track-order-result.tsx>) | 検証済み | [track-order移行記録](#track-order移行記録) |
@@ -227,41 +227,41 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-110 | P2 | 通知・状態・補助UI（P2） | [src/components/ui/command.tsx](<../../../src/components/ui/command.tsx>) | TODO | 未実施 |
 | DS-COMP-111 | P2 | 通知・状態・補助UI（P2） | [src/components/ui/accordion.tsx](<../../../src/components/ui/accordion.tsx>) | TODO | 未実施 |
 | DS-COMP-112 | P2 | 通知・状態・補助UI（P2） | [src/components/ui/tabs.tsx](<../../../src/components/ui/tabs.tsx>) | TODO | 未実施 |
-| DS-COMP-113 | P3 | 出店申請（P3） | [src/components/store/layout/minimal-header/header.tsx](<../../../src/components/store/layout/minimal-header/header.tsx>) | TODO | 未実施 |
-| DS-COMP-114 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/apply-seller.tsx](<../../../src/components/store/forms/apply-seller/apply-seller.tsx>) | TODO | 未実施 |
-| DS-COMP-115 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/progress-bar.tsx](<../../../src/components/store/forms/apply-seller/progress-bar.tsx>) | TODO | 未実施 |
-| DS-COMP-116 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/instructions.tsx](<../../../src/components/store/forms/apply-seller/instructions.tsx>) | TODO | 未実施 |
-| DS-COMP-117 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/animated-container.tsx](<../../../src/components/store/forms/apply-seller/animated-container.tsx>) | TODO | 未実施 |
-| DS-COMP-118 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-1/step-1.tsx](<../../../src/components/store/forms/apply-seller/steps/step-1/step-1.tsx>) | TODO | 未実施 |
-| DS-COMP-119 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-1/user-details.tsx](<../../../src/components/store/forms/apply-seller/steps/step-1/user-details.tsx>) | TODO | 未実施 |
-| DS-COMP-120 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-2/step-2.tsx](<../../../src/components/store/forms/apply-seller/steps/step-2/step-2.tsx>) | TODO | 未実施 |
-| DS-COMP-121 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-3/step-3.tsx](<../../../src/components/store/forms/apply-seller/steps/step-3/step-3.tsx>) | TODO | 未実施 |
-| DS-COMP-122 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-4/step-4.tsx](<../../../src/components/store/forms/apply-seller/steps/step-4/step-4.tsx>) | TODO | 未実施 |
+| DS-COMP-113 | P3 | 出店申請（P3） | [src/components/store/layout/minimal-header/header.tsx](<../../../src/components/store/layout/minimal-header/header.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-114 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/apply-seller.tsx](<../../../src/components/store/forms/apply-seller/apply-seller.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-115 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/progress-bar.tsx](<../../../src/components/store/forms/apply-seller/progress-bar.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-116 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/instructions.tsx](<../../../src/components/store/forms/apply-seller/instructions.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-117 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/animated-container.tsx](<../../../src/components/store/forms/apply-seller/animated-container.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-118 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-1/step-1.tsx](<../../../src/components/store/forms/apply-seller/steps/step-1/step-1.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-119 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-1/user-details.tsx](<../../../src/components/store/forms/apply-seller/steps/step-1/user-details.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-120 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-2/step-2.tsx](<../../../src/components/store/forms/apply-seller/steps/step-2/step-2.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-121 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-3/step-3.tsx](<../../../src/components/store/forms/apply-seller/steps/step-3/step-3.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-122 | P3 | 出店申請（P3） | [src/components/store/forms/apply-seller/steps/step-4/step-4.tsx](<../../../src/components/store/forms/apply-seller/steps/step-4/step-4.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-123 | P3 | 静的コンテンツ（P3） | [src/components/store/static/static-page-layout.tsx](<../../../src/components/store/static/static-page-layout.tsx>) | TODO | 未実施 |
-| DS-COMP-124 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/header/Header.tsx](<../../../src/components/dashboard/header/Header.tsx>) | TODO | 未実施 |
-| DS-COMP-125 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/sidebar/sidebar.tsx](<../../../src/components/dashboard/sidebar/sidebar.tsx>) | TODO | 未実施 |
+| DS-COMP-124 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/header/Header.tsx](<../../../src/components/dashboard/header/Header.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-125 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/sidebar/sidebar.tsx](<../../../src/components/dashboard/sidebar/sidebar.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-126 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/sidebar/nav-admin.tsx](<../../../src/components/dashboard/sidebar/nav-admin.tsx>) | TODO | 未実施 |
 | DS-COMP-127 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/sidebar/nav-seller.tsx](<../../../src/components/dashboard/sidebar/nav-seller.tsx>) | TODO | 未実施 |
-| DS-COMP-128 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/sidebar/store-switcher.tsx](<../../../src/components/dashboard/sidebar/store-switcher.tsx>) | TODO | 未実施 |
+| DS-COMP-128 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/sidebar/store-switcher.tsx](<../../../src/components/dashboard/sidebar/store-switcher.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-129 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/sidebar/user-info.tsx](<../../../src/components/dashboard/sidebar/user-info.tsx>) | TODO | 未実施 |
-| DS-COMP-130 | P3 | ダッシュボード共通（P3） | [src/components/shared/theme-toggle.tsx](<../../../src/components/shared/theme-toggle.tsx>) | TODO | 未実施 |
-| DS-COMP-131 | P3 | ダッシュボード共通（P3） | [src/components/ui/data-table.tsx](<../../../src/components/ui/data-table.tsx>) | TODO | 未実施 |
+| DS-COMP-130 | P3 | ダッシュボード共通（P3） | [src/components/shared/theme-toggle.tsx](<../../../src/components/shared/theme-toggle.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-131 | P3 | ダッシュボード共通（P3） | [src/components/ui/data-table.tsx](<../../../src/components/ui/data-table.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-132 | P3 | ダッシュボード共通（P3） | [src/components/ui/table.tsx](<../../../src/components/ui/table.tsx>) | TODO | 未実施 |
-| DS-COMP-133 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/shared/custom-modal.tsx](<../../../src/components/dashboard/shared/custom-modal.tsx>) | TODO | 未実施 |
+| DS-COMP-133 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/shared/custom-modal.tsx](<../../../src/components/dashboard/shared/custom-modal.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-134 | P3 | ダッシュボード共通（P3） | [src/components/dashboard/shared/order-table-cells.tsx](<../../../src/components/dashboard/shared/order-table-cells.tsx>) | TODO | 未実施 |
 | DS-COMP-135 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/admin/stats-cards.tsx](<../../../src/components/dashboard/admin/stats-cards.tsx>) | TODO | 未実施 |
-| DS-COMP-136 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/admin/sales-chart.tsx](<../../../src/components/dashboard/admin/sales-chart.tsx>) | TODO | 未実施 |
+| DS-COMP-136 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/admin/sales-chart.tsx](<../../../src/components/dashboard/admin/sales-chart.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-137 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/admin/recent-orders.tsx](<../../../src/components/dashboard/admin/recent-orders.tsx>) | TODO | 未実施 |
 | DS-COMP-138 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/admin/recent-stores.tsx](<../../../src/components/dashboard/admin/recent-stores.tsx>) | TODO | 未実施 |
-| DS-COMP-139 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/store-stats-cards.tsx](<../../../src/components/dashboard/seller/store-stats-cards.tsx>) | TODO | 未実施 |
-| DS-COMP-140 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/store-recent-orders.tsx](<../../../src/components/dashboard/seller/store-recent-orders.tsx>) | TODO | 未実施 |
-| DS-COMP-141 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/store-top-products.tsx](<../../../src/components/dashboard/seller/store-top-products.tsx>) | TODO | 未実施 |
-| DS-COMP-142 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/inventory-alert-summary.tsx](<../../../src/components/dashboard/seller/inventory-alert-summary.tsx>) | TODO | 未実施 |
-| DS-COMP-143 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/low-stock-threshold-form.tsx](<../../../src/components/dashboard/seller/low-stock-threshold-form.tsx>) | TODO | 未実施 |
-| DS-COMP-144 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/inventory-quantity-cell.tsx](<../../../src/components/dashboard/seller/inventory-quantity-cell.tsx>) | TODO | 未実施 |
-| DS-COMP-145 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/stock-status-badge.tsx](<../../../src/components/dashboard/seller/stock-status-badge.tsx>) | TODO | 未実施 |
+| DS-COMP-139 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/store-stats-cards.tsx](<../../../src/components/dashboard/seller/store-stats-cards.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-140 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/store-recent-orders.tsx](<../../../src/components/dashboard/seller/store-recent-orders.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-141 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/store-top-products.tsx](<../../../src/components/dashboard/seller/store-top-products.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-142 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/inventory-alert-summary.tsx](<../../../src/components/dashboard/seller/inventory-alert-summary.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-143 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/low-stock-threshold-form.tsx](<../../../src/components/dashboard/seller/low-stock-threshold-form.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-144 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/inventory-quantity-cell.tsx](<../../../src/components/dashboard/seller/inventory-quantity-cell.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
+| DS-COMP-145 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/stock-status-badge.tsx](<../../../src/components/dashboard/seller/stock-status-badge.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-146 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/store-details.tsx](<../../../src/components/dashboard/forms/store-details.tsx>) | TODO | 未実施 |
-| DS-COMP-147 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/product-details.tsx](<../../../src/components/dashboard/forms/product-details.tsx>) | TODO | 未実施 |
+| DS-COMP-147 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/product-details.tsx](<../../../src/components/dashboard/forms/product-details.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-148 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/store-default-shipping-details.tsx](<../../../src/components/dashboard/forms/store-default-shipping-details.tsx>) | TODO | 未実施 |
 | DS-COMP-149 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/shippingRate-details.tsx](<../../../src/components/dashboard/forms/shippingRate-details.tsx>) | TODO | 未実施 |
 | DS-COMP-150 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/coupon-details.tsx](<../../../src/components/dashboard/forms/coupon-details.tsx>) | TODO | 未実施 |
@@ -322,6 +322,16 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-205 | P2 | 公開opt-in共通表示 | [DesignPage](../../../src/components/store/shared/design-page/design-page.tsx)・専用CSS | 検証済み | [P2実施記録](#p2優先5画面移行記録) |
 | DS-COMP-206 | P2 | account共通表示・ページング | [Discovery](../../../src/components/store/profile/shared/discovery.tsx)・専用CSS | 保留 | 補助検証済み・[P2実施記録](#p2優先5画面移行記録) |
 | DS-COMP-207 | P2 | 閲覧履歴 | [HistoryContainer](../../../src/components/store/profile/history/container.tsx) | 保留 | 補助検証済み・[P2実施記録](#p2優先5画面移行記録) |
+
+| DS-COMP-208 | P2/P3 | 販売者テーマ・業務枠 | [SellerShell](../../../src/components/dashboard/design/seller-shell.tsx) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
+| DS-COMP-209 | P2/P3 | 設定SDK appearance | [設定appearance](../../../src/components/store/profile/settings/appearance.ts) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
+| DS-COMP-210 | P2/P3 | 申請専用表示 | [申請CSS](../../../src/components/store/forms/apply-seller/application.module.css) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
+| DS-COMP-211 | P2/P3 | 販売者見出し・loading/error | [SellerPage](../../../src/components/dashboard/design/seller-page.tsx) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
+| DS-COMP-212 | P2/P3 | 店舗概要表示 | [StoreOverview](../../../src/components/dashboard/seller/store-overview.tsx) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
+| DS-COMP-213 | P2/P3 | 販売者商品一覧・列factory | [SellerProducts](../../../src/components/dashboard/seller/seller-products.tsx) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
+| DS-COMP-214 | P2/P3 | 在庫一覧・数量編集 | [SellerInventory/StockNumberEditor](../../../src/components/dashboard/seller/seller-inventory.tsx) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
+| DS-COMP-215 | P2/P3 | 注文一覧・詳細・状態編集 | [SellerOrders/Summary/StatusEditor](../../../src/components/dashboard/seller/seller-orders.tsx) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
+| DS-COMP-216 | P2/P3 | 販売者スレッドopt-in | [ProfileConversationThread seller opt-in](../../../src/components/store/profile/messages/profile-conversation-thread.tsx) | 保留 | 本体適用・補助検証済み・[優先7画面証跡](#優先7画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -631,3 +641,75 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - 検証commit: `c4724e29` / `c3b7eaa8` / `d04848cb` / `b22ccc44`。本文は実装履歴を維持し、最終判定は本節を正本にする。
 
 - 本番ビルド: `bun run build` **exit 0**、compile/TypeScript/static page generation成功。既存のmetadataBase未設定とOG画像の✦ dynamic-font download（HTTP400）警告あり。sandbox内の停止したビルドは中断し、昇格後の成功結果を最終結果とする。
+
+## 優先7画面移行記録
+
+2026-10-05。[承認済み保存計画](../../../plans/layout-design/priority-seven-design-system-plan.md)。対象032/004/058/062/055/057/056。計画に従って7画面の実装・TDD・画面単位コミットを完了。認証後実ルート/SDK受け入れは保留。画面単位Green後にテスト・文書を同梱するコミット粒度はユーザー選択。既存QAの未コミット差分を保持する。
+
+### 共通基盤
+
+- DS-BASE-001は本タスクの販売者scopeのみ実装。グローバル共通基盤全体の完了とは扱わない。新設DS-COMP-208: SellerShellとseller.module.css。
+- Red: seller-shell RTL2件、メニューbutton欠落。Green/Refactor: shell/header/sidebar関連5/5。tscエラー0、lintエラー0/既存警告12。
+- 既存認可/DB取得は変更なし。[02-architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[03-data-model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は変更不要。
+- 補助ブラウザfixtureを追加。Next/Clerk adaptersはmock、DB/送信なし。ローカルlistenのsandbox EPERMは環境失敗でありRedに数えない。
+
+- Supplemental Chromium6/6: 1440/768/390px、light/dark、navigation、theme Portal、overflowなし、axe AA違反0。Radix閉じる遷移中のaria-hiddenを待つようテストを修正（実装のRedに数えない）。実ルート認可/Clerkは未検証。画像は切替前テーマへ戻して記録する。
+
+### アカウント設定（DS-PAGE-032）
+
+2026-10-05。Red1件: ラベル付きsection欠落。Green/Refactor関連Jest14/14、Supplemental Chromium3/3(1440/768/390px・overflow・axe AA)。Clerk mockはappearance/hashをRTLで検証。実UserProfileのresponsive/security/dialogは未確認。tsc0、lintエラー0/既存警告12。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 出店申請（DS-PAGE-004）
+
+2026-10-05。Red2件: heading/進捗role欠落。Green/Refactor新規RTL3/3(1件は実装後回帰)、設定を含む関連5/5。Supplemental Chromium3/3: 4step、validation、画像SDK adapter、値保持、pending lock、failure/retry/receipt、1440/768/390px・axe AA違反0・overflowなし・画像目視。actionはServer Propsへ変更、実店舗作成/画像アップロードなし。tsc0、lintエラー0/警告11。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 店舗概要（DS-PAGE-058）
+
+2026-10-05。Red1件: ラベル付きoverview region欠落。Green/Refactor関連Jest11/11、Supplemental Chromium6/6(1440/768/390px・light/dark・実Tremorチャート・金額/空・axe AA違反0・overflowなし)。KPI/sectionを見出しにし、チャートはopt-inでゴールドとemptyを導入。tsc0、lintエラー0/警告11。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 商品一覧（DS-PAGE-062）
+
+2026-10-05。Red2件: headingと取得失敗表示欠落。Green/Refactor関連Jest41/41・既存snapshots2/2、Supplemental Chromium6/6(3幅/light/dark・長文/欠画像/金額/検索/空/削除pending/error/作成dialog/axe AA・Escape focus復帰)。ブラウザで検出した色見本role・色選択/Selectラベル・国選択・focus復帰も修正。商品サイズ価格は表示項目だけに投影し数値化、/100なし。作成/属性取得/削除をaction Propsへ移行し、他3フォーム呼出先の配線のみ同期。Jodit/画像SDKはfixture adapterで実SDK未確認。tsc0、lintエラー0/警告11。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 在庫管理（DS-PAGE-055）
+
+2026-10-05。SellerPage、検索、数量/しきい値の編集・保存中・検証失敗・保存失敗・再試行・成功通知を適用。Red3件（見出し欠如、取得失敗の空一覧誤表示、更新失敗の再試行欠如）を確認後Green。関連RTL18/18、補助Chromium6/6（1440/768/390、light/dark、axe AAコントラスト除外なし）。所有権ガード・在庫判定・更新query・価格単位は維持。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 注文一覧（DS-PAGE-057）
+
+2026-10-05。SellerPage、検索、空/取得失敗の区別、テーマ対応の詳細モーダル、注文/明細の状態編集を適用。Red2件（見出し欠如、取得失敗の空一覧誤表示）後Green。関連RTL12/12、補助Chromium6/6（3幅2テーマ、axe AA、モーダルEscape/focus復帰、状態の失敗/再試行/成功）。追加操作テストは実装後の回帰確認。金額は既存ドル値の表示投影、注文遷移/認可/更新queryは維持。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 販売者メッセージ（DS-PAGE-056）
+
+2026-10-05。SellerPage、購入者名の会話一覧、モバイル一覧/スレッド切替、取得/既読失敗の再試行、送信中の切替ロック、下書き保持を適用。Red2件（workspace/refresh欠如、取得失敗の空一覧誤表示）後Green。関連RTL40/40（購入者回帰を含む）、補助Chromium6/6（3幅2テーマ、axe AA、keyboard選択/focus復帰、失敗/再試行/送信成功）。既存5秒pollの非表示停止・unmount取消・stale破棄・重複防止を回帰確認。認可/送信/既読queryは維持。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 最終検証と残課題（2026-10-05）
+
+- 補助fixture: 7画面とSellerShellのChromium42/42。1440/768/390px、販売者light/dark、コントラスト除外なしのaxe AA、長文/空/エラー/pending/再試行/成功、検索、キーボード、dialog閉鎖とfocus復帰を確認。PC/390pxの7画面画像を目視。設定はmock UserProfile外枠のみでSDK内部の検証実績には含めない。
+- 実Next.js guestルート: Chromium5/5。申請3幅の全document axe AA/overflow/focus表示、settingsのsign-in redirect、5販売者ルートのguest redirectを確認。実ルートで申請ヘッダーのロゴと旧Sign in buttonのコントラスト不足をRed3件として確認し、申請scopeの色・anchor化でGreen5/5。共通BrandはCSS変数opt-inとし他scopeの既定色を維持。
+- 画像目視後のRefactor: 検索icon/inputを同じ行に保ち、表見出しと先頭列の読みやすい幅を確保、上位商品名の省略を折り返しへ変更。関連検証を再実行。
+- 専用E2E_DATABASE_URLが未設定、Docker daemon/socket不在。接続できる既存DBは専用test DBでなくProduct.searchKeywords未適用を実Nextのread-onlyログで確認。環境のschema不整合は本変更のTDD Redに数えない。migration/seed/resetは未実施。認証後7画面・Clerk UserProfile/UserButton lifecycle・Cloudinary・実商品フォーム/受送信のSDK描画は保留。解除条件: 既存schema適用済み専用test DBとClerkテストアカウントを用意し、認証後7実ルートを3幅/light/dark、実Sidebar/StoreSwitcher、Portal/第三者UI、操作と既存関連ルート回帰で確認する。[QA残課題](../../testing/QA_HANDOFF.md#ds-seven-browser)。
+- 部品208〜216と実装した既存部品は本体適用・保留。共有部品全scopeや第三者SDKをfixtureだけで検証済みにしない。メッセージの旧MessagesLayout/旧ConversationThread（089/091）は新販売者から使わず他利用者の監査を継続。
+- SDD [01要件](../../../specs/multi-vendor-ecommerce/01-requirements.md)／[04内部IF](../../../specs/multi-vendor-ecommerce/04-interfaces.md)／[05workflow](../../../specs/multi-vendor-ecommerce/05-workflows.md)／[06品質](../../../specs/multi-vendor-ecommerce/06-quality.md)／[07テスト](../../../specs/multi-vendor-ecommerce/07-testing.md)を同期。02/03は既存認可・schema・金額・在庫・注文更新契約を変更しないため変更不要。
+
+- 最終全体実測: 2802 passed / 2805 total、3 skipped、127 snapshots passed、275 スイート（274 passed／1 skipped、failed 0）。Statements84.12%（9459/11244）／Branches69.87%（5329/7626）／Functions78.23%（1754/2242）／Lines84.3%（8596/10196）。lint errors0/既存warnings11、tsc0、dashboard343files/363lcov/18 of 80cells。正本は[QA_HANDOFF](../../testing/QA_HANDOFF.md#優先7画面のデザイン移行2026-10-05)。
+
+- 台帳整合: 66画面（本体適用37/未適用21/転送専用7/仮実装1）、216部品のID一意性と新設連番、変更文書の113ローカルリンク（アンカー含む）を検証。画面状態の検証済み18件には転送alias4件を含み、採用計画の本体検証済み14件と一致する。
+
+### 申請SSR/reduced-motionの回帰修正（2026-10-05）
+
+実ルート画像確認で、reduced-motionのSSR初期opacity0と初回Client描画の差によるhydration警告/本文非表示を検出。実guest3幅のconsole hydration警告なし・Sign upと親のopacity表示を先行テストでRed確認し、初期表示を両環境でvisibleに統一、reduced-motionではtransition0として修正。実guest5/5、申請補助3/3と全体Jestを再実行。認証SDKの設定画面内部とは別の実ルート検証。

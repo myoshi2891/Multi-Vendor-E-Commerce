@@ -5173,3 +5173,56 @@ QA_HANDOFFの2026-10-05実測値を同期: Jest2766 passed/2769 total、263 suit
 | Jest テスト総数 | 2766 passed / 2769 total | **2768 passed / 2771 total** |
 | スイート数 | 263 | **264**（failed 0） |
 | 型エラー | 0 件 | **0 件** |
+
+### 優先7画面のデザインシステム適用（2026-10-05）
+
+設定・出店申請・店舗概要・商品・在庫・注文・メッセージを計画保存→TDD→画面単位Greenコミットで実装。関連要件/設計/tasks/進捗とSDDを更新。[画面/部品の証跡](design/design-system/PROGRESS.md#優先7画面移行記録)／[計画](../plans/layout-design/priority-seven-design-system-plan.md)。販売者light/dark・Portal・レスポンシブ表示、処理中/失敗/再試行・下書き保持を適用。認可・schema・金額/在庫・注文遷移の契約を維持。
+
+全体Jest 2802 passed / 2805 total、3 skipped、127 snapshots passed、275 スイート（274 passed／1 skipped、failed 0）、coverage Statements84.12%（9459/11244）／Branches69.87%（5329/7626）／Functions78.23%（1754/2242）／Lines84.3%（8596/10196）。補助Chromium42/42・実guest5/5、axe AA/目視/キーボード確認、tsc0/lint0errors・既存11warnings。dashboard343files/363lcov/18 of 80cells。全体統計の正本は[QA_HANDOFF](testing/QA_HANDOFF.md)。認証後7実ルート/第三者SDKは専用test DBと認証環境不足で保留。次の作業は[DS-SEVEN-BROWSER](testing/QA_HANDOFF.md#ds-seven-browser)の専用環境での受け入れ確認。
+
+---
+
+### PR#189 レビュー指摘・Sonar New Code カバレッジ対応 (2026-10-05)
+
+#### 概要
+
+PR#189 のレビュー指摘 7 件（在庫セル/しきい値フォームの remount、Orders 失敗時の見出し、商品取得失敗のログ、SellerShell のポータル由来イベント、Step3 の関数型更新、COVERAGE_REPORT の履歴値・lcov 件数）を修正し、SonarCloud の Coverage on New Code 70.0% の主因ファイルにテストを追加。作業ツリー・コミット前。
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 2802 passed / 2805 total | **2820 passed / 2823 total** |
+| スイート数 | 275 | **277** |
+| coverage | Statements84.12%（9459/11244）／Branches69.87%（5329/7626）／Functions78.23%（1754/2242）／Lines84.3%（8596/10196） | **Statements85.07%（9579/11259）／Branches70.82%（5407/7634）／Functions80.75%（1813/2245）／Lines85.31%（8706/10204）** |
+| 型エラー | 0 件 | **0 件** |
+
+統計の正本は [QA_HANDOFF](testing/QA_HANDOFF.md)。lint 0 errors / 既存 11 warnings。Integration/E2E 未実行。
+
+---
+
+### seller messages / inventory ページの取得失敗ログ (2026-10-05)
+
+#### 概要
+
+レビュー指摘に対応し、seller の messages / inventory ページで捨てられていた取得失敗（店舗検索・所有権拒否・在庫取得失敗）を、products ページと同じ形式で構造化ログに残すようにした。UI の汎用エラー表示は変えていない。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx` | catch で `[SellerMessagesPage]` 構造化ログ | 未コミット |
+| `src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx` | catch で `[SellerInventoryPage]` 構造化ログ | 未コミット |
+| `tests/component/dashboard/seller-{messages,inventory}-design.test.tsx` | ログ検証を各 +1（Red 確認済み） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 2820 passed / 2823 total | **2822 passed / 2825 total** |
+| スイート数 | 277 | **277** |
+| coverage | Statements85.07%（9579/11259）／Branches70.82%（5407/7634）／Functions80.75%（1813/2245）／Lines85.31%（8706/10204） | **Statements85.06%（9577/11259）／Branches70.8%（5405/7634）／Functions80.71%（1812/2245）／Lines85.3%（8705/10204）** |
+| 型エラー | 0 件 | **0 件** |
+
+統計の正本は [QA_HANDOFF](testing/QA_HANDOFF.md)。coverage の微減は、集計対象外のページ変更とは無関係な計測の揺らぎ。Integration / E2E 未実行。
+

@@ -1,28 +1,34 @@
-'use client'
+"use client";
 
 // React, Next.js
-import { FC, useEffect, useState } from 'react'
-import Image from 'next/image'
+import { FC, useEffect, useState } from "react";
+import Image from "next/image";
 
 // Cloudinary
-import { CldUploadWidget, CloudinaryUploadWidgetResults } from 'next-cloudinary'
-import { Button } from '@/components/ui/button'
-import { Trash } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import {
+    CldUploadWidget,
+    CloudinaryUploadWidgetResults,
+} from "next-cloudinary";
+import { Button } from "@/components/ui/button";
+import { Trash } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ImageUploadProps {
-    disabled?: boolean
-    onChange: (value: string) => void
-    onRemove: (value: string) => void
-    value: string[]
-    type: 'standard' | 'profile' | 'cover'
-    dontShowPreview?: boolean
-    error?: boolean
+    disabled?: boolean;
+    onChange: (value: string) => void;
+    onRemove: (value: string) => void;
+    value: string[];
+    type: "standard" | "profile" | "cover";
+    dontShowPreview?: boolean;
+    error?: boolean;
 }
 
-const HiddenTestInput: FC<{ dataTestId: string; onChange: (value: string) => void }> = ({ dataTestId, onChange }) => (
-    <input 
-        type="text" 
+const HiddenTestInput: FC<{
+    dataTestId: string;
+    onChange: (value: string) => void;
+}> = ({ dataTestId, onChange }) => (
+    <input
+        type="text"
         style={{ position: "absolute", width: 1, height: 1, opacity: 0 }}
         tabIndex={-1}
         aria-hidden="true"
@@ -40,45 +46,52 @@ const ImageUpload: FC<ImageUploadProps> = ({
     dontShowPreview,
     error,
 }) => {
-    const [isMounted, setIsMounted] = useState(false)
-    const [isBouncing, setIsBouncing] = useState(false) // Add state for bounce
+    const [isMounted, setIsMounted] = useState(false);
+    const [isBouncing, setIsBouncing] = useState(false); // Add state for bounce
 
     useEffect(() => {
         if (error) {
-            setIsBouncing(true)
+            setIsBouncing(true);
             const timer = setTimeout(() => {
                 setIsBouncing(false); // Stop the bounce after 1 and half second
             }, 1500);
-            return () => clearTimeout(timer) // Clean up timer if the component unmounts or error changes
+            return () => clearTimeout(timer); // Clean up timer if the component unmounts or error changes
         }
-    }, [error])
+    }, [error]);
 
     useEffect(() => {
-        setIsMounted(true)
-    }, [])
+        setIsMounted(true);
+    }, []);
 
     if (!isMounted) {
-        return null
+        return null;
     }
 
     const onUpload = (result: CloudinaryUploadWidgetResults) => {
-        if (result.info && typeof result.info !== 'string' && result.info.secure_url) {
-            onChange(result.info.secure_url)
+        if (
+            result.info &&
+            typeof result.info !== "string" &&
+            result.info.secure_url
+        ) {
+            onChange(result.info.secure_url);
         }
-    }
+    };
 
-    if (type === 'profile') {
+    if (type === "profile") {
         return (
             <div
                 className={cn(
-                    'relative h-52 w-52 overflow-visible rounded-full border-2 border-white bg-gray-200 shadow-2xl',
+                    "relative h-52 w-52 overflow-visible rounded-full border-2 border-white bg-gray-200 shadow-2xl",
                     {
-                        'bg-red-100': error,
-                        'animate-pulse': isBouncing,
+                        "bg-red-100": error,
+                        "animate-pulse": isBouncing,
                     }
                 )}
             >
-                <HiddenTestInput dataTestId="n-mock-input-profile" onChange={onChange} />
+                <HiddenTestInput
+                    dataTestId="n-mock-input-profile"
+                    onChange={onChange}
+                />
                 {value.length > 0 && (
                     <Image
                         priority
@@ -92,12 +105,13 @@ const ImageUpload: FC<ImageUploadProps> = ({
                 <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
                     {({ open }) => {
                         const onClick = () => {
-                            open()
-                        }
+                            open();
+                        };
 
                         return (
                             <>
                                 <button
+                                    aria-label={`Upload ${type || "product"} image`}
                                     type="button"
                                     className="absolute bottom-6 right-0 z-20 flex size-14 items-center justify-center rounded-full border-none bg-gradient-to-t from-blue-primary to-blue-300 text-[17px] font-medium text-white shadow-lg hover:shadow-md active:shadow-sm"
                                     disabled={disabled}
@@ -113,24 +127,27 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                     </svg>
                                 </button>
                             </>
-                        )
+                        );
                     }}
                 </CldUploadWidget>
             </div>
-        )
-    } else if (type === 'cover') {
+        );
+    } else if (type === "cover") {
         return (
             <div
                 className={cn(
-                    'relative w-full overflow-hidden rounded-lg bg-gray-100 bg-gradient-to-b from-gray-100 via-gray-100 to-gray-400',
+                    "relative w-full overflow-hidden rounded-lg bg-gray-100 bg-gradient-to-b from-gray-100 via-gray-100 to-gray-400",
                     {
-                        'from-red-100 to-red-200': error,
-                        'animate-bounce': isBouncing,
+                        "from-red-100 to-red-200": error,
+                        "animate-bounce": isBouncing,
                     }
                 )}
-                style={{ height: '348px' }}
+                style={{ height: "348px" }}
             >
-                <HiddenTestInput dataTestId="n-mock-input-cover" onChange={onChange} />
+                <HiddenTestInput
+                    dataTestId="n-mock-input-cover"
+                    onChange={onChange}
+                />
                 {value.length > 0 && (
                     <Image
                         priority
@@ -144,11 +161,12 @@ const ImageUpload: FC<ImageUploadProps> = ({
                 <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
                     {({ open }) => {
                         const onClick = () => {
-                            open()
-                        }
+                            open();
+                        };
 
                         return (
                             <button
+                                aria-label={`Upload ${type || "product"} image`}
                                 type="button"
                                 className="absolute bottom-4 right-4 flex items-center rounded-full border-none bg-gradient-to-t from-blue-primary to-blue-300 px-6 py-3 text-[17px] font-medium text-white shadow-lg hover:shadow-md active:shadow-sm"
                                 disabled={disabled}
@@ -165,19 +183,22 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                 </svg>
                                 <span>
                                     {value.length > 0
-                                        ? 'Change cover'
-                                        : 'Upload a cover'}
+                                        ? "Change cover"
+                                        : "Upload a cover"}
                                 </span>
                             </button>
-                        )
+                        );
                     }}
                 </CldUploadWidget>
             </div>
-        )
+        );
     } else {
         return (
             <div>
-                <HiddenTestInput dataTestId="n-mock-input-standard" onChange={onChange} />
+                <HiddenTestInput
+                    dataTestId="n-mock-input-standard"
+                    onChange={onChange}
+                />
                 <div className="mb-4 flex items-center gap-4">
                     {value.length > 0 &&
                         !dontShowPreview &&
@@ -189,6 +210,7 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                 {/* Delete image btn */}
                                 <div className="absolute right-2 top-2 z-10">
                                     <Button
+                                        aria-label="Remove image"
                                         onClick={() => onRemove(imageUrl)}
                                         type="button"
                                         variant="destructive"
@@ -212,12 +234,13 @@ const ImageUpload: FC<ImageUploadProps> = ({
                 <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
                     {({ open }) => {
                         const onClick = () => {
-                            open()
-                        }
+                            open();
+                        };
 
                         return (
                             <>
                                 <button
+                                    aria-label={`Upload ${type || "product"} image`}
                                     type="button"
                                     className="flex items-center rounded-full border-none bg-gradient-to-t from-blue-primary to-blue-300 px-6 py-3 text-[17px] font-medium text-white shadow-lg hover:shadow-md active:shadow-sm"
                                     disabled={disabled}
@@ -235,12 +258,12 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                     <span>Upload images</span>
                                 </button>
                             </>
-                        )
+                        );
                     }}
                 </CldUploadWidget>
             </div>
-        )
+        );
     }
-}
+};
 
-export default ImageUpload
+export default ImageUpload;

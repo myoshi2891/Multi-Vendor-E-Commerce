@@ -1,9 +1,4 @@
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { StoreDashboardStats } from "@/queries/store-dashboard";
 
 interface Props {
@@ -29,7 +24,10 @@ export function StoreStatsCards({ stats }: Props) {
         { label: "総注文数", value: stats.totalOrders.toLocaleString("en-US") },
         { label: "総閲覧数", value: stats.totalViews.toLocaleString("en-US") },
         { label: "販売数", value: stats.totalSales.toLocaleString("en-US") },
-        { label: "総商品数", value: stats.totalProducts.toLocaleString("en-US") },
+        {
+            label: "総商品数",
+            value: stats.totalProducts.toLocaleString("en-US"),
+        },
         {
             label: "在庫アラート",
             value: stats.lowStockCount.toLocaleString("en-US"),
@@ -41,9 +39,9 @@ export function StoreStatsCards({ stats }: Props) {
             {items.map(({ label, value }) => (
                 <Card key={label}>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                        <h2 className="text-sm font-medium text-muted-foreground">
                             {label}
-                        </CardTitle>
+                        </h2>
                     </CardHeader>
                     <CardContent>
                         <p className="text-2xl font-bold">{value}</p>

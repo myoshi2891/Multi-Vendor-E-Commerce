@@ -1,5 +1,7 @@
 "use client";
 
+import { useRef } from "react";
+import styles from "@/components/dashboard/design/seller.module.css";
 // Custom components
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,7 @@ interface DataTableProps<TData, TValue> {
     heading?: string;
     subheading?: string;
     noHeader?: true;
+    design?: "seller";
 }
 
 export default function DataTable<TData, TValue>({
@@ -56,9 +59,11 @@ export default function DataTable<TData, TValue>({
     subheading,
     noHeader,
     newTabLink,
+    design,
 }: DataTableProps<TData, TValue>) {
     // Modal state
     const { setOpen } = useModal();
+    const actionTriggerRef = useRef<HTMLButtonElement>(null);
 
     // React table instance
     const table = useReactTable({
@@ -71,10 +76,22 @@ export default function DataTable<TData, TValue>({
     return (
         <>
             {/* Search input and action button */}
-            <div className="flex items-center justify-between">
+            <div
+                className={
+                    design === "seller"
+                        ? styles.tableTools
+                        : "flex items-center justify-between"
+                }
+            >
                 <div className="flex items-center gap-2 py-4">
                     <Search />
                     <Input
+                        {...(design === "seller"
+                            ? {
+                                  type: "search",
+                                  "aria-label": searchPlaceholder,
+                              }
+                            : {})}
                         placeholder={searchPlaceholder}
                         value={
                             (table
@@ -92,11 +109,18 @@ export default function DataTable<TData, TValue>({
                 <div className="flex gap-x-2">
                     {modalChildren && (
                         <Button
+                            ref={actionTriggerRef}
                             className="flex gap-2"
                             onClick={() => {
                                 if (modalChildren)
                                     setOpen(
                                         <CustomModal
+                                            design={design}
+                                            returnFocusTo={
+                                                design === "seller"
+                                                    ? actionTriggerRef
+                                                    : undefined
+                                            }
                                             heading={heading || ""}
                                             subheading={subheading || ""}
                                         >
@@ -108,19 +132,33 @@ export default function DataTable<TData, TValue>({
                             {actionButtonText}
                         </Button>
                     )}
-                    {newTabLink && (
-                        <Link href={newTabLink}>
-                            <Button variant="outline">
-                                <FilePlus2 className="me-1" /> Create in new
-                                page
+                    {newTabLink &&
+                        (design === "seller" ? (
+                            <Button asChild variant="outline">
+                                <Link href={newTabLink}>
+                                    <FilePlus2 className="me-1" /> Create in new
+                                    page
+                                </Link>
                             </Button>
-                        </Link>
-                    )}
+                        ) : (
+                            <Link href={newTabLink}>
+                                <Button variant="outline">
+                                    <FilePlus2 className="me-1" /> Create in new
+                                    page
+                                </Button>
+                            </Link>
+                        ))}
                 </div>
             </div>
 
             {/* Table */}
-            <div className="rounded-lg border bg-background">
+            <div
+                className={
+                    design === "seller"
+                        ? styles.table
+                        : "rounded-lg border bg-background"
+                }
+            >
                 <Table className="">
                     {/* Table header */}
                     {!noHeader && (

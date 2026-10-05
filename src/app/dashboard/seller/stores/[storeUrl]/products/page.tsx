@@ -1,64 +1,59 @@
-// Queries
-import DataTable from "@/components/ui/data-table";
-import { getAllStoreProducts } from "@/queries/product";
-import { columns } from "./columns";
-import { Plus } from "lucide-react";
-import ProductDetails from "@/components/dashboard/forms/product-details";
+import {
+    getAllStoreProducts,
+    deleteProduct,
+    upsertProduct,
+} from "@/queries/product";
 import { getAllCategories } from "@/queries/category";
-import { flattenCategoryTree } from "@/lib/category-tree";
 import { getAllOfferTags } from "@/queries/offer-tag";
 import { getAllCountries } from "@/queries/country";
-
+import { getEffectiveAttributeDefinitions } from "@/queries/attribute";
+import { flattenCategoryTree } from "@/lib/category-tree";
+import { serializeStoreProducts } from "@/lib/seller-products";
+import SellerProducts from "@/components/dashboard/seller/seller-products";
+import SellerPage from "@/components/dashboard/design/seller-page";
+import { LookupFailure } from "@/components/dashboard/design/seller-error";
 export const dynamic = "force-dynamic";
-
-/**
- * Renders the seller product listing page for the store identified by `storeUrl`.
- *
- * The page displays a data table of the store's products and provides a "Create New Product"
- * modal pre-populated with categories, offer tags, and countries.
- *
- * @param params - A promise that resolves to an object containing the `storeUrl` for the active store
- * @returns A React element for the seller product listing page populated with products, categories, offer tags, and countries
- */
 export default async function SellerProductPage({
     params,
 }: {
     params: Promise<{ storeUrl: string }>;
 }) {
     const { storeUrl } = await params;
-    // Fetching products data from the database for the active store
-    const [products, categoryTree, offerTags, countries] = await Promise.all([
+    const data = await Promise.all([
         getAllStoreProducts(storeUrl),
         getAllCategories(),
         getAllOfferTags(storeUrl),
         getAllCountries(),
-    ]);
-
-    // 商品フォームはツリーを 1 本の select で扱う（plan 068）。
-    // pre-order で平坦化して渡すと、選択肢の並びがそのまま木の形になる。
-    const categories = flattenCategoryTree(categoryTree);
-
+    ]).catch((error: unknown) => {
+        if (error instanceof Error) {
+            console.error("[SellerProductPage] Failed to load product data", {
+                error: error.message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[SellerProductPage] Unknown error", { error });
+        }
+        return null;
+    });
+    if (!data)
+        return (
+            <SellerPage id="store-products" title="Products">
+                <LookupFailure />
+            </SellerPage>
+        );
+    const [products, tree, offerTags, countries] = data;
     return (
-        <DataTable
-            actionButtonText={
-                <>
-                    <Plus size={15} />
-                    Create New Product
-                </>
-            }
-            modalChildren={
-                <ProductDetails
-                    categories={categories}
-                    offerTags={offerTags}
-                    countries={countries}
-                    storeUrl={storeUrl}
-                />
-            }
-            newTabLink={`/dashboard/seller/stores/${storeUrl}/products/new`}
-            filterValue="name"
-            data={products}
-            columns={columns}
-            searchPlaceholder="Search product name..."
+        <SellerProducts
+            products={serializeStoreProducts(products)}
+            categories={flattenCategoryTree(tree)}
+            offerTags={offerTags}
+            countries={countries}
+            storeUrl={storeUrl}
+            actions={{
+                deleteProductAction: deleteProduct,
+                upsertProductAction: upsertProduct,
+                getAttributeDefinitionsAction: getEffectiveAttributeDefinitions,
+            }}
         />
     );
 }

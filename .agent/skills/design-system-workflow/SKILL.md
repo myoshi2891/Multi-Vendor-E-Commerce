@@ -36,6 +36,7 @@ description: Multi-Vendor E-Commerceの画面・レイアウト・デザイン�
 - 関連テスト、`bun run lint`、`bunx tsc --noEmit` を実施する。Refactor後の最終結果を記録する。
 - PC（1440px）・モバイル（390px）を基本とし、境界の幅も必要に応じ確認する。横スクロール、折り返し、表示状態、キーボード操作、focus、見出し、コントラストを確認する。
 - Playwright・axe等で確認し、通常・空・エラー・送信中・成功など対象で必要な状態を受け入れ条件に照らす。ダッシュボードはライト・ダークを確認する。
+- ブラウザー検証の置き場所・実行方法は [playwright-browser-verification](../playwright-browser-verification/SKILL.md) に従う。Playwright config・fixture サーバーを新しく作らない。
 - 第三者UI、認証後、決済など実検証できない範囲は理由と解除条件を残す。外部送信・購入・DB初期化を検証のためだけに実行しない。
 - 失敗・未実施の必須チェックがあれば「検証済み」にしない。環境制約で止まった対象は「保留」にし、実装の有無も残す。
 

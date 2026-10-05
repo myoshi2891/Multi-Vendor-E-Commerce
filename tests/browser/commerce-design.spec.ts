@@ -14,7 +14,9 @@ async function accessible(page: Page) {
     expect(result.violations).toEqual([]);
 }
 for (const width of [1440, 768, 390]) {
-    test(`checkout and address dialog at ${width}px`, async ({ page }) => {
+    test(`checkout and address dialog at ${width}px`, async ({
+        page,
+    }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?scenario=checkout");
         await expect(
@@ -39,7 +41,7 @@ for (const width of [1440, 768, 390]) {
         expect(box!.width).toBeLessThanOrEqual(width);
         await accessible(page);
         await page.screenshot({
-            path: `test-results/checkout-dialog-${width}.png`,
+            path: info.outputPath(`checkout-dialog-${width}.png`),
             fullPage: true,
         });
         await page.keyboard.press("Shift+Tab");
@@ -53,11 +55,11 @@ for (const width of [1440, 768, 390]) {
         await expect(dialog).toBeHidden();
         await expect(trigger).toBeFocused();
         await page.screenshot({
-            path: `test-results/checkout-${width}.png`,
+            path: info.outputPath(`checkout-${width}.png`),
             fullPage: true,
         });
     });
-    test(`order paid and pending at ${width}px`, async ({ page }) => {
+    test(`order paid and pending at ${width}px`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?scenario=order-paid");
         await expect(
@@ -73,7 +75,7 @@ for (const width of [1440, 768, 390]) {
         ).toHaveAttribute("href", "/profile/orders");
         await accessible(page);
         await page.screenshot({
-            path: `test-results/order-paid-${width}.png`,
+            path: info.outputPath(`order-paid-${width}.png`),
             fullPage: true,
         });
         await page.goto("/?scenario=order-pending");
@@ -90,7 +92,7 @@ for (const width of [1440, 768, 390]) {
         );
         await accessible(page);
         await page.screenshot({
-            path: `test-results/order-pending-${width}.png`,
+            path: info.outputPath(`order-pending-${width}.png`),
             fullPage: true,
         });
     });

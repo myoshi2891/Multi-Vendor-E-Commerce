@@ -98,3 +98,7 @@
 ## 共通アカウント枠の回帰確認（2026-09-30）
 
 [profile概要の移行](../profile-overview/PROGRESS.md)で共通layout／sidebarをブランド化。Settings導線と選択状態、390pxのClerk UserProfile表示・横スクロールなしをChromiumで確認した。PCサイドバーは220px、800px以下は本文の上に折り返しメニューを表示する。UserProfile自体のappearanceと認証・webhookは変更しない。元の機能完了履歴を保持し、[移行証跡](../design-system/PROGRESS.md#profile移行記録)に検証範囲を記録。
+
+## 設定本体のデザイン移行（2026-10-05）
+
+Clerk UserProfileのhash routingとセキュリティ機能を保持し、専用appearanceとCSS Moduleを導入。アイボリー、濃いゴールドの操作色、セリフ見出し、意味を保つ危険色、focus、狭い幅のカード枠を整備。RTLはラベル付きsection・appearance・hashを検証、補助ブラウザは3幅とaxe AAを検証。実Clerk/認証後実ルートは保留。[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。既存機能の完了記録をデザイン検証完了とは扱わない。

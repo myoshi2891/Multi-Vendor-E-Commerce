@@ -22,9 +22,13 @@ jest.mock("@/components/dashboard/seller/inventory-quantity-cell", () => ({
 }));
 jest.mock("@/components/dashboard/seller/stock-status-badge", () => ({
     __esModule: true,
-    default: ({ quantity, threshold }: { quantity: number; threshold: number }) => (
-        <div data-testid="status-badge">{`${quantity}/${threshold}`}</div>
-    ),
+    default: ({
+        quantity,
+        threshold,
+    }: {
+        quantity: number;
+        threshold: number;
+    }) => <div data-testid="status-badge">{`${quantity}/${threshold}`}</div>,
 }));
 
 const THRESHOLD = 5;
@@ -44,7 +48,7 @@ const sampleRow: StoreInventoryRow = {
 
 /** 指定列の cell レンダラを最小 CellContext で描画する */
 function renderCell(index: number, row: StoreInventoryRow) {
-    const columns = getInventoryColumns(THRESHOLD, STORE_URL);
+    const columns = getInventoryColumns(THRESHOLD, STORE_URL, jest.fn());
     const cell = columns[index].cell;
     if (typeof cell !== "function") throw new Error("cell is not a function");
     const ctx = { row: { original: row } } as CellContext<
@@ -56,7 +60,7 @@ function renderCell(index: number, row: StoreInventoryRow) {
 
 describe("seller/inventory columns", () => {
     it("declares the expected accessor keys in order", () => {
-        const columns = getInventoryColumns(THRESHOLD, STORE_URL);
+        const columns = getInventoryColumns(THRESHOLD, STORE_URL, jest.fn());
         const keys = columns.map((c) =>
             "accessorKey" in c ? c.accessorKey : c.id
         );

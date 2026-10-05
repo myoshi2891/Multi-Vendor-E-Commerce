@@ -1,48 +1,30 @@
-import DataTable from "@/components/ui/data-table";
-import { columns } from "./columns";
+import SellerOrders from "@/components/dashboard/seller/seller-orders";
+import SellerPage from "@/components/dashboard/design/seller-page";
+import { LookupFailure } from "@/components/dashboard/design/seller-error";
+import { serializeSellerOrders } from "@/lib/seller-orders";
 import { getStoreOrders } from "@/queries/store";
-import { STORE_ORDERS_MAX } from "@/lib/store-constants";
-
-export const dynamic = 'force-dynamic';
-
-/**
- * Render the seller orders page for a specific store.
- *
- * Fetches orders for the store identified by `storeUrl` and renders a DataTable listing those orders.
- * If fetching fails, logs the error and renders the table with no orders.
- *
- * @param params - A promise that resolves to an object with `storeUrl`, the store identifier used to load orders.
- * @returns The page JSX containing a DataTable of the store's orders.
- */
+import { updateOrderGroupStatus, updateOrderItemStatus } from "@/queries/order";
+export const dynamic = "force-dynamic";
 export default async function SellerOrdersPage({
     params,
 }: {
     params: Promise<{ storeUrl: string }>;
 }) {
     const { storeUrl } = await params;
-
-    let orders: Awaited<ReturnType<typeof getStoreOrders>> = [];
-    try {
-        orders = await getStoreOrders(storeUrl);
-    } catch (error: unknown) {
-        if (error instanceof Error) {
-            console.error("[SellerOrders] Failed to fetch orders:", error.message, error.stack);
-        } else {
-            console.error("[SellerOrders] Failed to fetch orders:", error);
-        }
-    }
-
+    const orders = await getStoreOrders(storeUrl).catch(() => null);
+    if (!orders)
+        return (
+            <SellerPage id="store-orders" title="Orders">
+                <LookupFailure />
+            </SellerPage>
+        );
     return (
-        <div>
-            <p className="mb-4 text-sm text-muted-foreground">
-                Showing up to the latest {STORE_ORDERS_MAX} orders.
-            </p>
-            <DataTable
-                filterValue="id"
-                data={orders}
-                columns={columns}
-                searchPlaceholder="Search order by id ..."
-            />
-        </div>
+        <SellerOrders
+            orders={serializeSellerOrders(orders)}
+            actions={{
+                updateGroupAction: updateOrderGroupStatus,
+                updateItemAction: updateOrderItemStatus,
+            }}
+        />
     );
 }

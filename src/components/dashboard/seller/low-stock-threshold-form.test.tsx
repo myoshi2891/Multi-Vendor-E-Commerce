@@ -34,6 +34,7 @@ beforeEach(() => {
 const renderForm = (initialThreshold = 5) =>
     render(
         <LowStockThresholdForm
+            updateThresholdAction={updateStoreLowStockThreshold}
             storeUrl="my-store"
             initialThreshold={initialThreshold}
         />

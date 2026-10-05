@@ -270,3 +270,7 @@ TOCTOU 修正は `couponId` の once-only 保証に焦点を当てており、`c
 - `ThemeProvider` & `cookies()` (`src/providers/theme-provider.tsx`, `src/queries/product.ts`): ハイドレーションエラー警告および `cookies()` 非同期化に伴うSSRの不整合を解消。
 - `ReviewDetails` (`src/components/store/forms/review-details.tsx`): React 19 と互換性のない `react-rating-stars-component` を廃止し、自前のカスタム評価UI (`CustomRatingStars`) に置き換え、星が描画されない問題を解決。また、バリアント色が `[object Object]` になって保存されるバグを `.map((c) => c.name)` の適用で修正。
 - `upsertReview` (`src/queries/review.ts`): Clerk Webhook 未受信によるローカルDBへの `User` 登録漏れ（外部キー制約エラー）を防ぐため、存在しない場合に Clerk 情報を基に User を自動同期（フォールバック）する処理を追加。また、エラー伝播を詳細化。
+
+### Priority seven authenticated acceptance (2026-10-05)
+
+UI scope and screen-level Green commit granularity were decided and implemented under the [approved plan](../../plans/layout-design/priority-seven-design-system-plan.md). Authenticated route/Clerk and image SDK acceptance remains pending until a dedicated schema-current test DB and Clerk test account are available; follow [DS-SEVEN-BROWSER](../../docs/testing/QA_HANDOFF.md#ds-seven-browser). No new business/API/schema question was introduced.

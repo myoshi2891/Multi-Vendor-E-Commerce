@@ -38,6 +38,11 @@ bun run test -- src/queries/store.test.ts   # 単一テスト（パスを位置�
 bunx playwright test
 bunx playwright test tests/e2e/cart-smoke.spec.ts             # 単一テスト
 
+# デザイン検証（tests/browser/、Chromium・suite 単位）
+DESIGN_SUITE=seven bun run test:design                         # suite 一覧は playwright.design.config.ts
+bun run check:playwright                                       # config 増殖・未登録 spec の検査（CI Lint）
+# ※ config・fixture サーバーは新設しない（.claude/rules/05-playwright-harness.md）
+
 # E2Eシードデータ投入
 bun run seed:e2e
 

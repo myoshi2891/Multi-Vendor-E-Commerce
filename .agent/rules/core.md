@@ -56,6 +56,7 @@ Next.js 16.2.1 (App Router) + React 19 + TypeScript + Prisma (PostgreSQL) + Cler
 - 不確実な場合は実装前に確認（"Always Proceed" 禁止）
 - git commit は明示的な依頼がある場合にタスク単位で行う。文書同期はコミット依頼の有無にかかわらず実施する
 - UI・レイアウト変更は [design-system-workflow](../skills/design-system-workflow/SKILL.md) を読み、TDD・実装後検証・仕様書確認／更新・[進捗ノート](../../docs/design/design-system/PROGRESS.md)の更新までを完了条件とする
+- ブラウザー（Playwright）検証は [playwright-browser-verification](../skills/playwright-browser-verification/SKILL.md) に従い、config・fixture サーバーを新設しない（`bun run check:playwright` で検査される）
 
 ## テスト関連ドキュメントの更新ルール
 

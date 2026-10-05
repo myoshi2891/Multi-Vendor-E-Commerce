@@ -129,3 +129,7 @@
 - The comparison page scopes brand colors to its CSS Module, preserving semantic state colors and existing price calculations elsewhere.
 - At 1440px, 390px and the 700px boundary, horizontal overflow is confined to a named, keyboard-focusable comparison region. Links/buttons expose visible focus; reduced motion disables skeleton animation.
 - Loading/error/unavailable feedback uses status/alert semantics. Main-scoped axe checks cover WCAG 2 AA in the comparison E2E; shared header/footer and other routes remain outside this migration's scope.
+
+### Priority seven UI quality
+
+Scoped seller light/dark themes and explicit Portal styles preserve other consumers. Verify 1440/768/390px, keyboard focus and return focus, local table scrolling, pending/error/retry/success and reduced motion. WCAG AA axe checks keep color contrast enabled. Supplemental component adapters do not verify authenticated routes or third-party SDK internals; unavailable dedicated test DB/Clerk environments require implementation-present hold status with explicit release conditions. [Evidence](../../docs/design/design-system/PROGRESS.md#優先7画面移行記録).
