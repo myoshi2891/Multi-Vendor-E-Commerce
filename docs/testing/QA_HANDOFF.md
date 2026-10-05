@@ -823,3 +823,5 @@ Following/historyは実装あり・認証後実ルート検証保留。Docker re
 DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴリ・商品scope非表示・focus・overflow・axe contrast含む）、関連Jest46/46、tsc0、lint errors0/warnings10、harness成功。
 
 - DS-PAGE-059 バリアント編集: 新要件RTL1件の見出しRed、保存後axeで既存Radix toastのaria-hidden-focus/button-nameをRed確認。seller opt-inではフォーム内status/alertへ統一し、旧scopeのtoastは維持。Refactor後関連Jest69/69（編集ownership/属性/商品一覧含む）、補助Chromium6/6（3幅/light/dark・初期価格12.5・pending lock/error/retry/success/refresh・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。 全体統計は最終実測まで維持。認証後実ルート/SDKは専用test DB・Clerkテスト販売者環境で解除。[計画](../../plans/layout-design/priority-six-design-system-plan.md)。
+
+- DS-PAGE-064 配送設定: 先行RTL4件で見出し/名前付きform/Action境界不足をRed確認。重複submit再現のRedを同期submit guardで修正。Refactor後Jest90/90（商品dialog/seller shell/store queries含む）、補助Chromium6/6（3幅/light/dark・国別検索・12.5ドル初期値・Portal・pending lock/close防止/error/retry/success・Escape focus復帰・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。表示用数値へserializeし単位を維持。 全体統計は最終実測まで維持。認証後実ルート/SDKは専用test DB・Clerkテスト販売者環境で解除。[計画](../../plans/layout-design/priority-six-design-system-plan.md)。

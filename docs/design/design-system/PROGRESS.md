@@ -9,7 +9,7 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216を追加、現台帳216部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用40（台帳のソース欄「検証済み」3件を含む）・未適用20（本体適用には認証後の検証保留12画面を含む）（仮実装1・転送専用7は不変）。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216を追加、現台帳217部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。compare・FAQs・profile・wishlist・公開サポート・cart・orders・payment・addresses・reviews・messages移行後のソース判定は本体適用41（台帳のソース欄「検証済み」3件を含む）・未適用20（本体適用には認証後の検証保留12画面を含む）（仮実装1・転送専用7は不変）。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
@@ -105,7 +105,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-061 | `/dashboard/seller/stores/[storeUrl]/products/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
 | DS-PAGE-062 | `/dashboard/seller/stores/[storeUrl]/products` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-063 | `/dashboard/seller/stores/[storeUrl]/settings` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx>) | [優先6画面計画](../../../plans/layout-design/priority-six-design-system-plan.md) |
-| DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | [優先6画面計画](../../../plans/layout-design/priority-six-design-system-plan.md) |
+| DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面計画](../../../plans/layout-design/priority-six-design-system-plan.md) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
 
@@ -262,8 +262,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-145 | P3 | 業務概要・在庫操作（P3） | [src/components/dashboard/seller/stock-status-badge.tsx](<../../../src/components/dashboard/seller/stock-status-badge.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
 | DS-COMP-146 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/store-details.tsx](<../../../src/components/dashboard/forms/store-details.tsx>) | TODO | 未実施 |
 | DS-COMP-147 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/product-details.tsx](<../../../src/components/dashboard/forms/product-details.tsx>) | 保留 | 販売者/申請scope本体適用・[優先7画面証跡](#優先7画面移行記録)。他scopeは未完了 |
-| DS-COMP-148 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/store-default-shipping-details.tsx](<../../../src/components/dashboard/forms/store-default-shipping-details.tsx>) | TODO | 未実施 |
-| DS-COMP-149 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/shippingRate-details.tsx](<../../../src/components/dashboard/forms/shippingRate-details.tsx>) | TODO | 未実施 |
+| DS-COMP-148 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/store-default-shipping-details.tsx](<../../../src/components/dashboard/forms/store-default-shipping-details.tsx>) | 保留 | seller本体適用・補助検証済み・実ルート保留。[優先6画面](#優先6画面移行記録) |
+| DS-COMP-149 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/shippingRate-details.tsx](<../../../src/components/dashboard/forms/shippingRate-details.tsx>) | 保留 | seller本体適用・補助検証済み・実ルート保留。[優先6画面](#優先6画面移行記録) |
 | DS-COMP-150 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/coupon-details.tsx](<../../../src/components/dashboard/forms/coupon-details.tsx>) | TODO | 未実施 |
 | DS-COMP-151 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/coupon-form-fields.tsx](<../../../src/components/dashboard/forms/coupon-form-fields.tsx>) | TODO | 未実施 |
 | DS-COMP-152 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/order-status-select.tsx](<../../../src/components/dashboard/forms/order-status-select.tsx>) | TODO | 未実施 |
@@ -294,7 +294,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-177 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/seller/stores/[storeUrl]/inventory/columns.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/columns.tsx>) | TODO | 未実施 |
 | DS-COMP-178 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/seller/stores/[storeUrl]/orders/columns.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/columns.tsx>) | TODO | 未実施 |
 | DS-COMP-179 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/seller/stores/[storeUrl]/products/columns.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/columns.tsx>) | TODO | 未実施 |
-| DS-COMP-180 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/seller/stores/[storeUrl]/shipping/columns.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/columns.tsx>) | TODO | 未実施 |
+| DS-COMP-180 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/seller/stores/[storeUrl]/shipping/columns.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/columns.tsx>) | 保留 | seller本体適用・補助検証済み・実ルート保留。[優先6画面](#優先6画面移行記録) |
 | DS-COMP-181 | P4 | 利用確認が必要な旧部品 | [src/components/store/home/animated-deals.tsx](<../../../src/components/store/home/animated-deals.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
 | DS-COMP-182 | P4 | 利用確認が必要な旧部品 | [src/components/store/home/featured-categories.tsx](<../../../src/components/store/home/featured-categories.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
 | DS-COMP-183 | P4 | 利用確認が必要な旧部品 | [src/components/store/home/category-card.tsx](<../../../src/components/store/home/category-card.tsx>) | TODO | 利用確認→移行／保管／削除候補の判断 |
@@ -714,6 +714,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 実ルート画像確認で、reduced-motionのSSR初期opacity0と初回Client描画の差によるhydration警告/本文非表示を検出。実guest3幅のconsole hydration警告なし・Sign upと親のopacity表示を先行テストでRed確認し、初期表示を両環境でvisibleに統一、reduced-motionではtransition0として修正。実guest5/5、申請補助3/3と全体Jestを再実行。認証SDKの設定画面内部とは別の実ルート検証。
 
+| DS-COMP-217 | P3 | 配送設定共通表示 | [SellerShipping](../../../src/components/dashboard/seller/seller-shipping.tsx) | 保留 | 補助検証済み・実ルート保留。[優先6画面](#優先6画面移行記録) |
+
 ## 優先6画面移行記録
 
 [保存計画](../../../plans/layout-design/priority-six-design-system-plan.md)。2026-10-05。各画面の補助検証と認証後実ルート受け入れを区別する。
@@ -733,3 +735,7 @@ DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴ�
 ### DS-PAGE-059 バリアント編集
 
 新要件RTL1件の見出しRed、保存後axeで既存Radix toastのaria-hidden-focus/button-nameをRed確認。seller opt-inではフォーム内status/alertへ統一し、旧scopeのtoastは維持。Refactor後関連Jest69/69（編集ownership/属性/商品一覧含む）、補助Chromium6/6（3幅/light/dark・初期価格12.5・pending lock/error/retry/success/refresh・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。 認証後実ルート/SDKは実装あり・保留。未コミット（本画面コミットに同梱）。
+
+### DS-PAGE-064 配送設定
+
+先行RTL4件で見出し/名前付きform/Action境界不足をRed確認。重複submit再現のRedを同期submit guardで修正。Refactor後Jest90/90（商品dialog/seller shell/store queries含む）、補助Chromium6/6（3幅/light/dark・国別検索・12.5ドル初期値・Portal・pending lock/close防止/error/retry/success・Escape focus復帰・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。表示用数値へserializeし単位を維持。 認証後実ルート/SDKは実装あり・保留。未コミット（本画面コミットに同梱）。

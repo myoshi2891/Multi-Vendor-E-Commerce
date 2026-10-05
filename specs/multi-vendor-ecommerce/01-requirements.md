@@ -81,3 +81,5 @@ Account settings uses Clerk hash routing with typed brand appearance and a label
 Seller product creation uses the existing responsive branded light/dark workspace, a labeled page and form heading, readable dynamic fields and themed portal controls. Lock fields during save, retain failed input with generic retry feedback, announce pending/success, and preserve existing product/variant payloads and navigation.
 
 Variant creation uses the same branded editor and an Add variant page heading naming the inherited product. Preserve product-scope field visibility, category defaults, variant-only attribute payload and existing missing-product behavior.
+
+Shipping settings uses a branded responsive defaults form and searchable country-rate table. Preserve amounts, Default/Free labels, country identities and validation; lock saves and pending-dialog dismissal, retain failed input, announce results and return focus to the editing trigger.

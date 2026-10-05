@@ -13,3 +13,7 @@ six suiteはproductionのページ・フォーム・CSSをbundleし、DB/Server 
 バリアント追加は既存商品のmain情報をProductDetailsへ渡し、Add variantのページ見出しを追加する。商品名・商品説明・brandは従来どおり表示せず、カテゴリの既存操作と初期値を維持。商品レベルの属性は送信しない。取得結果null時の挙動は変更しない。
 
 バリアント編集は既存owner-scoped queryの初期値を保持し、Edit variant見出しを追加。seller opt-inの保存フィードバックはフォーム内status/alertに集約し、既存Radix toastのaria-hidden/focus問題を持ち込まない。旧scopeのtoastは維持する。
+
+## 配送設定
+
+Server pageが既定配送と国別料金のDecimalを同じドル単位のnumberへ投影し、SellerShippingへ渡す。updateDefaultsAction/upsertShippingRateActionは既存queryの型を使いPropsで注入。ClientのcreateShippingColumns factoryから国別編集へ渡す。既存のDefault/Free表現、保存ID/countryId、配送範囲validationとreturn policyを維持。ラベル付きnative number入力とscoped gridでレスポンシブ表示。同期submit guardとsave guardで重複を防ぎ、失敗後の値保持/再送とinline statusを提供。CustomModalの任意lockedとDialogContentの任意closeDisabledは既定false。配送編集時だけpending中のEscape/outside/Closeを防ぎ、終了後は起点ボタンへfocusを返す。

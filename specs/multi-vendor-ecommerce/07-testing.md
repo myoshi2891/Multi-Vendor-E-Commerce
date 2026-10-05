@@ -1278,3 +1278,5 @@ Offers/dispute/report-problem and account following/history record 14 new-requir
 ## Seller six-screen design verification
 
 tests/component/dashboard/seller-product-pages-design.test.tsx verifies the creation route heading and action/theme boundary; product-details.test.tsx adds pending lock and failure-retention/retry/success. DESIGN_SUITE=six runs production pages/components through the shared fixture harness. Record Red evidence and supplemental versus authenticated verification separately. [Plan](../../plans/layout-design/priority-six-design-system-plan.md).
+
+seller-shipping-design.test.tsx covers plain-dollar serialization, country search/default/free/empty, delivery validation and injected save/identity/pending/error/retry/success. six browser shipping cases cover the real forms/column factory/dialog in three widths and two themes including keyboard, pending dismissal lock and axe contrast.

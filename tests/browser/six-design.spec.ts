@@ -190,3 +190,110 @@ for (const width of [1440, 768, 390])
                 fullPage: true,
             });
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`shipping ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=shipping&failure=1");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", {
+                    level: 1,
+                    name: "Shipping settings",
+                })
+            ).toHaveCSS("font-family", /Georgia/);
+            const defaults = page.getByRole("form", {
+                name: "Default shipping details",
+            });
+            await expect(
+                defaults.getByRole("spinbutton", {
+                    name: "Shipping fee per item",
+                    exact: true,
+                })
+            ).toHaveValue("12.5");
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            await page.getByRole("searchbox").fill("Japan");
+            await expect(
+                page.getByText("An example country with a long name", {
+                    exact: true,
+                })
+            ).toHaveCount(0);
+            const trigger = page.getByRole("button", {
+                name: "Actions for Japan",
+            });
+            await trigger.focus();
+            await page.keyboard.press("Enter");
+            await expect(page.getByRole("menu")).toHaveCSS(
+                "color",
+                theme === "dark" ? "rgb(243, 240, 232)" : "rgb(24, 38, 29)"
+            );
+            await page.getByRole("menuitem", { name: "Edit details" }).click();
+            const dialog = page.getByRole("dialog", {
+                name: "Edit shipping for Japan",
+            });
+            await expect(dialog).toBeVisible();
+            await expect(
+                dialog.getByRole("spinbutton", {
+                    name: "Shipping fee per item",
+                    exact: true,
+                })
+            ).toHaveValue("12.5");
+            await dialog.getByRole("button", { name: "Save changes" }).click();
+            await expect(
+                dialog.getByRole("textbox", { name: "Shipping service" })
+            ).toBeDisabled();
+            await expect(
+                dialog.getByRole("button", { name: "Close", exact: true })
+            ).toBeDisabled();
+            await page.keyboard.press("Escape");
+            await expect(dialog).toBeVisible();
+            await expect(dialog.getByRole("alert")).toContainText(
+                "Please try again"
+            );
+            await dialog.getByRole("button", { name: "Save changes" }).click();
+            await expect(dialog.getByRole("status")).toContainText(
+                "Shipping rate saved"
+            );
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await dialog.screenshot({
+                path: info.outputPath(
+                    `six-shipping-dialog-${width}-${theme}.png`
+                ),
+            });
+            await page.keyboard.press("Escape");
+            await expect(dialog).toHaveCount(0);
+            await expect(trigger).toBeFocused();
+            await defaults
+                .getByRole("button", { name: "Save changes" })
+                .click();
+            await expect(defaults.getByRole("status")).toContainText(
+                "Shipping details saved"
+            );
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({
+                path: info.outputPath(`six-shipping-${width}-${theme}.png`),
+                fullPage: true,
+            });
+        });

@@ -1,13 +1,18 @@
-import StoreDefaultShippingDetails from "@/components/dashboard/forms/store-default-shipping-details";
-import DataTable from "@/components/ui/data-table";
+import SellerShipping from "@/components/dashboard/seller/seller-shipping";
+import SellerPage from "@/components/dashboard/design/seller-page";
 import {
-	getStoreDefaultShippingDetails,
-	getStoreShippingRates,
+    serializeShippingDefaults,
+    serializeShippingCountries,
+} from "@/lib/seller-shipping";
+import {
+    updateStoreDefaultShippingDetails,
+    upsertShippingRate,
+    getStoreDefaultShippingDetails,
+    getStoreShippingRates,
 } from "@/queries/store";
 import { redirect } from "next/navigation";
-import { columns } from "./columns";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 /**
  * Renders the seller store shipping page by loading and displaying the store's default shipping details and shipping rates.
@@ -16,29 +21,28 @@ export const dynamic = 'force-dynamic';
  * @returns The page JSX containing `StoreDefaultShippingDetails` and a `DataTable` of shipping rates for the store. If the shipping details or rates cannot be loaded, the request is redirected to the site root (`/`).
  */
 export default async function SellerStoreShippingPage({
-	params,
+    params,
 }: {
-	params: Promise<{ storeUrl: string }>;
+    params: Promise<{ storeUrl: string }>;
 }) {
-	const { storeUrl } = await params;
-	const shippingDetails = await getStoreDefaultShippingDetails(
-		storeUrl
-	);
-	const shippingRates = await getStoreShippingRates(storeUrl);
-	if (!shippingDetails || !shippingRates) return redirect("/");
+    const { storeUrl } = await params;
+    const shippingDetails = await getStoreDefaultShippingDetails(storeUrl);
+    const shippingRates = await getStoreShippingRates(storeUrl);
+    if (!shippingDetails || !shippingRates) return redirect("/");
 
-	return (
-		<div>
-			<StoreDefaultShippingDetails
-				data={shippingDetails}
-				storeUrl={storeUrl}
-			/>
-			<DataTable
-				filterValue="countryName"
-				data={shippingRates}
-				columns={columns}
-				searchPlaceholder="Search by country name..."
-			/>
-		</div>
-	);
+    return (
+        <SellerPage
+            id="shipping-heading"
+            title="Shipping settings"
+            description="Manage default delivery and country-specific shipping rates."
+        >
+            <SellerShipping
+                storeUrl={storeUrl}
+                defaults={serializeShippingDefaults(shippingDetails)}
+                rates={serializeShippingCountries(shippingRates)}
+                updateDefaultsAction={updateStoreDefaultShippingDetails}
+                upsertShippingRateAction={upsertShippingRate}
+            />
+        </SellerPage>
+    );
 }

@@ -1,213 +1,233 @@
 "use client";
-
-// React, Next.js imports
-import { useParams, useRouter } from "next/navigation";
-
-// UI components
-import { AlertDialog } from "@/components/ui/alert-dialog";
+import { useRef, useState } from "react";
+import type { RefObject } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { MoreHorizontal, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-// Hooks and utilities
 import { useModal } from "@/providers/modal-provider";
-
-// Lucide icons
-import { Edit, MoreHorizontal } from "lucide-react";
-
-// Queries
-
-// Tanstack React Table
-import { ColumnDef } from "@tanstack/react-table";
-
-// Types
-import { CountryWithShippingRatesType } from "@/lib/types";
 import CustomModal from "@/components/dashboard/shared/custom-modal";
 import ShippingRateDetails from "@/components/dashboard/forms/shippingRate-details";
-// import ShippingRateDetails from "@/components/dashboard/forms/shippingRate-details";
+import type {
+    ShippingCountryRow,
+    ShippingActions,
+} from "@/lib/seller-shipping";
+import styles from "@/components/dashboard/design/seller.module.css";
 
 type DecimalLike = { toNumber: () => number };
 
-const formatShippingAmount = (
-	value: number | string | DecimalLike | null | undefined
+export const formatShippingAmount = (
+    value: number | string | DecimalLike | null | undefined
 ): string => {
-	if (value === null || value === undefined) return "Default";
-	const numValue =
-		typeof value === "object" && "toNumber" in value
-			? value.toNumber()
-			: Number(value);
-	if (Number.isNaN(numValue)) return "Default";
-	if (numValue === 0) return "Free";
-	if (numValue > 0) return `$${numValue.toFixed(2)}`;
-	return "Default";
+    if (value === null || value === undefined) return "Default";
+    const numValue =
+        typeof value === "object" && "toNumber" in value
+            ? value.toNumber()
+            : Number(value);
+    if (Number.isNaN(numValue)) return "Default";
+    if (numValue === 0) return "Free";
+    if (numValue > 0) return `$${numValue.toFixed(2)}`;
+    return "Default";
 };
 
-export const columns: ColumnDef<CountryWithShippingRatesType>[] = [
-	{
-		accessorKey: "countryName",
-		header: "Country",
-		cell: ({ row }) => {
-			return <span>{row.original.countryName}</span>;
-		},
-	},
-	{
-		accessorKey: "shippingService",
-		header: "Shipping service",
-		cell: ({ row }) => {
-			return (
-				<span>
-					{row.original.shippingRate?.shippingService || "Default"}
-				</span>
-			);
-		},
-	},
-	{
-		accessorKey: "shippingFeePerItem",
-		header: "Shipping Fee per item",
-		cell: ({ row }) => {
-			const value = row.original.shippingRate?.shippingFeePerItem;
-			return (
-				<span>
-					{formatShippingAmount(value)}
-				</span>
-			);
-		},
-	},
-	{
-		accessorKey: "shippingFeeForAdditionalItem",
-		header: "Shipping Fee for additional item",
-		cell: ({ row }) => {
-			const value = row.original.shippingRate?.shippingFeeForAdditionalItem;
-			return (
-				<span>
-					{formatShippingAmount(value)}
-				</span>
-			);
-		},
-	},
-	{
-		accessorKey: "shippingFeePerKg",
-		header: "Shipping Fee per Kg",
-		cell: ({ row }) => {
-			const value = row.original.shippingRate?.shippingFeePerKg;
-			return (
-				<span>
-					{formatShippingAmount(value)}
-				</span>
-			);
-		},
-	},
-	{
-		accessorKey: "shippingFeeFixed",
-		header: "Shipping Fee fixed",
-		cell: ({ row }) => {
-			const value = row.original.shippingRate?.shippingFeeFixed;
-			return (
-				<span>
-					{formatShippingAmount(value)}
-				</span>
-			);
-		},
-	},
-	{
-		accessorKey: "deliveryTimeMin",
-		header: "Delivery min days",
-		cell: ({ row }) => {
-			return (
-				<span>
-					{row.original.shippingRate?.deliveryTimeMin
-						? `${row.original.shippingRate?.deliveryTimeMin}`
-						: "Default"}
-				</span>
-			);
-		},
-	},
-	{
-		accessorKey: "deliveryTimeMax",
-		header: "Delivery max days",
-		cell: ({ row }) => {
-			return (
-				<span>
-					{row.original.shippingRate?.deliveryTimeMax
-						? `${row.original.shippingRate?.deliveryTimeMax}`
-						: "Default"}
-				</span>
-			);
-		},
-	},
-	{
-		accessorKey: "returnPolicy",
-		header: "Return policy",
-		cell: ({ row }) => {
-			return (
-				<span>
-					{row.original.shippingRate?.returnPolicy
-						? `${row.original.shippingRate?.returnPolicy}`
-						: "Default"}
-				</span>
-			);
-		},
-	},
-	{
-		id: "actions",
-		cell: ({ row }) => {
-			const rowData = row.original;
+export function createShippingColumns(actions: {
+    storeUrl: string;
+    upsertShippingRateAction: ShippingActions["upsertShippingRateAction"];
+}): ColumnDef<ShippingCountryRow>[] {
+    return [
+        {
+            accessorKey: "countryName",
+            header: "Country",
+            cell: ({ row }) => {
+                return <span>{row.original.countryName}</span>;
+            },
+        },
+        {
+            accessorKey: "shippingService",
+            header: "Shipping service",
+            cell: ({ row }) => {
+                return (
+                    <span>
+                        {row.original.shippingRate?.shippingService ||
+                            "Default"}
+                    </span>
+                );
+            },
+        },
+        {
+            accessorKey: "shippingFeePerItem",
+            header: "Shipping Fee per item",
+            cell: ({ row }) => {
+                const value = row.original.shippingRate?.shippingFeePerItem;
+                return <span>{formatShippingAmount(value)}</span>;
+            },
+        },
+        {
+            accessorKey: "shippingFeeForAdditionalItem",
+            header: "Shipping Fee for additional item",
+            cell: ({ row }) => {
+                const value =
+                    row.original.shippingRate?.shippingFeeForAdditionalItem;
+                return <span>{formatShippingAmount(value)}</span>;
+            },
+        },
+        {
+            accessorKey: "shippingFeePerKg",
+            header: "Shipping Fee per Kg",
+            cell: ({ row }) => {
+                const value = row.original.shippingRate?.shippingFeePerKg;
+                return <span>{formatShippingAmount(value)}</span>;
+            },
+        },
+        {
+            accessorKey: "shippingFeeFixed",
+            header: "Shipping Fee fixed",
+            cell: ({ row }) => {
+                const value = row.original.shippingRate?.shippingFeeFixed;
+                return <span>{formatShippingAmount(value)}</span>;
+            },
+        },
+        {
+            accessorKey: "deliveryTimeMin",
+            header: "Delivery min days",
+            cell: ({ row }) => {
+                return (
+                    <span>
+                        {row.original.shippingRate?.deliveryTimeMin
+                            ? `${row.original.shippingRate?.deliveryTimeMin}`
+                            : "Default"}
+                    </span>
+                );
+            },
+        },
+        {
+            accessorKey: "deliveryTimeMax",
+            header: "Delivery max days",
+            cell: ({ row }) => {
+                return (
+                    <span>
+                        {row.original.shippingRate?.deliveryTimeMax
+                            ? `${row.original.shippingRate?.deliveryTimeMax}`
+                            : "Default"}
+                    </span>
+                );
+            },
+        },
+        {
+            accessorKey: "returnPolicy",
+            header: "Return policy",
+            cell: ({ row }) => {
+                return (
+                    <span>
+                        {row.original.shippingRate?.returnPolicy
+                            ? `${row.original.shippingRate?.returnPolicy}`
+                            : "Default"}
+                    </span>
+                );
+            },
+        },
+        {
+            id: "actions",
+            cell: ({ row }) => {
+                const rowData = row.original;
 
-			return <CellActions rowData={rowData} />;
-		},
-	},
-];
-
-// Define props interface for CellActions component
-interface CellActionsProps {
-	rowData: CountryWithShippingRatesType;
+                return <CellActions rowData={rowData} {...actions} />;
+            },
+        },
+    ];
 }
 
-// CellActions component definition
-const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
-	// Hooks
-	const { setOpen } = useModal();
-	const params = useParams<{ storeUrl: string }>();
-
-	// Return null if rowData or rowData.id don't exist
-	if (!rowData) return null;
-
-	return (
-        <AlertDialog>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="size-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="size-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem
-                        className="flex gap-2"
-                        onClick={() => {
-                            setOpen(
-                                // Custom modal component
-                                <CustomModal>
-                                    <ShippingRateDetails
-                                        data={rowData}
-                                        storeUrl={params.storeUrl}
-                                    />
-                                    {/* Shiiping rate details component */}
-                                </CustomModal>
-                            )
-                        }}
-                    >
-                        <Edit size={15} />
-                        Edit Details
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </AlertDialog>
-    )
-};
+function RateEditor({
+    rowData,
+    storeUrl,
+    upsertShippingRateAction,
+    trigger,
+}: {
+    rowData: ShippingCountryRow;
+    storeUrl: string;
+    upsertShippingRateAction: ShippingActions["upsertShippingRateAction"];
+    trigger: RefObject<HTMLButtonElement | null>;
+}) {
+    const [pending, setPending] = useState(false);
+    return (
+        <CustomModal
+            heading={`Edit shipping for ${rowData.countryName}`}
+            subheading="Update country-specific delivery and return details."
+            design="seller"
+            returnFocusTo={trigger}
+            locked={pending}
+        >
+            <ShippingRateDetails
+                data={rowData}
+                storeUrl={storeUrl}
+                upsertShippingRateAction={upsertShippingRateAction}
+                onBusyChange={setPending}
+                design="seller"
+            />
+        </CustomModal>
+    );
+}
+function CellActions({
+    rowData,
+    storeUrl,
+    upsertShippingRateAction,
+}: {
+    rowData: ShippingCountryRow;
+    storeUrl: string;
+    upsertShippingRateAction: ShippingActions["upsertShippingRateAction"];
+}) {
+    const { setOpen } = useModal();
+    const trigger = useRef<HTMLButtonElement>(null);
+    const openingDialog = useRef(false);
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    ref={trigger}
+                    variant="ghost"
+                    className="size-8 p-0"
+                    aria-label={`Actions for ${rowData.countryName}`}
+                >
+                    <MoreHorizontal className="size-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="end"
+                className={styles.theme}
+                onCloseAutoFocus={(event) => {
+                    if (openingDialog.current) {
+                        event.preventDefault();
+                        openingDialog.current = false;
+                    }
+                }}
+            >
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem
+                    className="flex gap-2"
+                    onSelect={() => {
+                        openingDialog.current = true;
+                        setOpen(
+                            <RateEditor
+                                rowData={rowData}
+                                storeUrl={storeUrl}
+                                upsertShippingRateAction={
+                                    upsertShippingRateAction
+                                }
+                                trigger={trigger}
+                            />
+                        );
+                    }}
+                >
+                    <Edit size={15} />
+                    Edit details
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}

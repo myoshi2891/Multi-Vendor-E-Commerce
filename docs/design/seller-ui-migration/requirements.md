@@ -55,3 +55,5 @@ DS-PAGE-061 商品登録: RTLの見出しRed1件・フォーム保存Red1件、�
 DS-PAGE-060 バリアント追加: 新要件RTL1件の見出しRedを確認。最小実装・既存フォーム再利用後の関連Jest46/46。商品情報の初期値と既存null応答、action Propsを維持。ブラウザーのカテゴリ操作可否は既存仕様に合わせ、商品名/説明/brand非表示とカテゴリ継承を確認する。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
 
 DS-PAGE-059 バリアント編集: 新要件RTL1件の見出しRed、保存後axeで既存Radix toastのaria-hidden-focus/button-nameをRed確認。seller opt-inではフォーム内status/alertへ統一し、旧scopeのtoastは維持。Refactor後関連Jest69/69（編集ownership/属性/商品一覧含む）、補助Chromium6/6（3幅/light/dark・初期価格12.5・pending lock/error/retry/success/refresh・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。
+
+DS-PAGE-064 配送設定: 先行RTL4件で見出し/名前付きform/Action境界不足をRed確認。重複submit再現のRedを同期submit guardで修正。Refactor後Jest90/90（商品dialog/seller shell/store queries含む）、補助Chromium6/6（3幅/light/dark・国別検索・12.5ドル初期値・Portal・pending lock/close防止/error/retry/success・Escape focus復帰・overflow・axe contrast含む）、lint errors0/warnings10・tsc0・harness成功。表示用数値へserializeし単位を維持。 実ルートとSDK受け入れは保留。[計画](../../../plans/layout-design/priority-six-design-system-plan.md)。

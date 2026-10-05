@@ -185,3 +185,5 @@ Server pages load existing store-scoped data and inject typed actions into the o
 ## Seller six-screen editing flow
 
 The branded product editor keeps the existing category/attribute/image/size workflow. Saving locks fields, guards duplicate requests, announces completion and retains inputs after failure for another submission. Existing list navigation and edit refresh remain unchanged.
+
+Shipping defaults and country overrides retain their existing save actions and store refresh. Country search scopes the table; a labeled editing dialog locks fields and dismissal during pending save, retains inputs for retry and returns focus after dismissal.
