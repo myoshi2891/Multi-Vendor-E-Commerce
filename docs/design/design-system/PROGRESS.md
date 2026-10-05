@@ -45,7 +45,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-001 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-002 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 保留 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
-| DS-PAGE-004 | `/seller/apply` | 未適用 | P3 | TODO | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | 未実施 |
+| DS-PAGE-004 | `/seller/apply` | 未適用 | P3 | 対応中 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | 未実施 |
 | DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録) |
@@ -73,7 +73,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>) | [profile実施記録](#profile移行記録) |
 | DS-PAGE-030 | `/profile/payment` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/payment/page.tsx](<../../../src/app/(store)/profile/payment/page.tsx>) | [payment実施記録](#profile-payment移行記録) |
 | DS-PAGE-031 | `/profile/reviews` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/reviews/page.tsx](<../../../src/app/(store)/profile/reviews/page.tsx>) | [reviews実施記録](#profile-reviews移行記録) |
-| DS-PAGE-032 | `/profile/settings` | 未適用 | P2 | TODO | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | 未実施 |
+| DS-PAGE-032 | `/profile/settings` | 未適用 | P2 | 対応中 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
 | DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
@@ -96,14 +96,14 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-052 | `/dashboard/seller` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/seller/page.tsx](<../../../src/app/dashboard/seller/page.tsx>) | 未実施 |
 | DS-PAGE-053 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) | 未実施 |
 | DS-PAGE-054 | `/dashboard/seller/stores/[storeUrl]/coupons` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) | 未実施 |
-| DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | 未実施 |
-| DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | 未実施 |
-| DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | 未実施 |
-| DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | 未実施 |
+| DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
+| DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
+| DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
+| DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
 | DS-PAGE-059 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) | 未実施 |
 | DS-PAGE-060 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx>) | 未実施 |
 | DS-PAGE-061 | `/dashboard/seller/stores/[storeUrl]/products/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) | 未実施 |
-| DS-PAGE-062 | `/dashboard/seller/stores/[storeUrl]/products` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) | 未実施 |
+| DS-PAGE-062 | `/dashboard/seller/stores/[storeUrl]/products` | 未適用 | P3 | 対応中 | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
 | DS-PAGE-063 | `/dashboard/seller/stores/[storeUrl]/settings` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx>) | 未実施 |
 | DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | 未実施 |
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | 未実施 |
@@ -631,3 +631,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - 検証commit: `c4724e29` / `c3b7eaa8` / `d04848cb` / `b22ccc44`。本文は実装履歴を維持し、最終判定は本節を正本にする。
 
 - 本番ビルド: `bun run build` **exit 0**、compile/TypeScript/static page generation成功。既存のmetadataBase未設定とOG画像の✦ dynamic-font download（HTTP400）警告あり。sandbox内の停止したビルドは中断し、昇格後の成功結果を最終結果とする。
+
+## 優先7画面移行記録
+
+2026-10-05。[承認済み保存計画](../../../plans/layout-design/priority-seven-design-system-plan.md)。対象032/004/058/062/055/057/056。計画保存済み、実装前。画面単位Green後にテスト・文書を同梱するコミット粒度はユーザー選択。既存QAの未コミット差分を保持する。
