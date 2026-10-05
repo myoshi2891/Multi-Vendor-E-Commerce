@@ -10,7 +10,9 @@ import { join, resolve } from "node:path";
 const root = process.cwd(),
     output = mkdtempSync(join(tmpdir(), "seven-browser-"));
 const mocks = {
-    "@clerk/nextjs": `import React from 'react'; export function UserButton(){return React.createElement('button',{'aria-label':'User account'},'Account')} export function UserProfile(){return React.createElement('section',{'aria-label':'Clerk fixture'},'Clerk UserProfile adapter (real SDK verification pending)')} export function useUser(){return {user:{firstName:'Test',lastName:'Seller',fullName:'Test Seller',primaryEmailAddress:{emailAddress:'test@example.com'},imageUrl:'/assets/logo.png'},isLoaded:true}}`,
+    "next-cloudinary": `export function CldUploadWidget({children,onSuccess}){return children({open(){onSuccess({info:{secure_url:'/assets/images/default-user.jpg'}})}})}`,
+
+    "@clerk/nextjs": `import React from 'react'; export function UserButton(){return React.createElement('button',{'aria-label':'User account'},'Account')} export function UserProfile(){return React.createElement('section',{'aria-label':'Clerk fixture'},'Clerk UserProfile adapter (real SDK verification pending)')} export function useUser(){return {user:{firstName:'Test',lastName:'Seller',fullName:'Test Seller',primaryEmailAddress:{emailAddress:'test@example.com'},imageUrl:'/assets/logo.png'},isLoaded:true,isSignedIn:!location.search.includes("guest")}}`,
     "next-themes": `export function useTheme(){return {setTheme(value){document.documentElement.classList.toggle('dark',value==='dark')}}}`,
 
     "@/queries/user": `export async function addToWishlist(){return true}`,
@@ -22,6 +24,7 @@ await build({
     entryPoints: [resolve(root, "tests/fixtures/seven/preview.tsx")],
     outdir: output,
     bundle: true,
+    loader: { ".jpg": "dataurl", ".png": "dataurl", ".svg": "dataurl" },
     format: "esm",
     jsx: "automatic",
     sourcemap: true,
@@ -36,7 +39,7 @@ await build({
             setup(builder) {
                 builder.onResolve(
                     {
-                        filter: /^(@clerk\/nextjs|next-themes|@\/queries\/user|next\/(navigation|image|link))$/,
+                        filter: /^(next-cloudinary|@clerk\/nextjs|next-themes|@\/queries\/user|next\/(navigation|image|link))$/,
                     },
                     (args) => ({ path: args.path, namespace: "fixture" })
                 );

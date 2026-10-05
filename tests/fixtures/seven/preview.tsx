@@ -1,3 +1,5 @@
+import Apply from "@/components/store/forms/apply-seller/apply-seller";
+import type { applySeller } from "@/queries/store";
 import ProfileSettingsPage from "@/app/(store)/profile/settings/page";
 import Link from "next/link";
 import React from "react";
@@ -21,9 +23,17 @@ const sidebar = (
         <Link href="/?screen=messages">Messages</Link>
     </nav>
 );
+let applyAttempts = 0;
+const applyAction: typeof applySeller = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    if (++applyAttempts === 1) throw new Error("Fixture failure");
+    return { id: "fixture-store" } as Awaited<ReturnType<typeof applySeller>>;
+};
 const screen = new URLSearchParams(location.search).get("screen");
 createRoot(document.getElementById("root")!).render(
-    screen === "settings" ? (
+    screen === "apply" ? (
+        <Apply applySellerAction={applyAction} />
+    ) : screen === "settings" ? (
         <main>
             <ProfileSettingsPage />
         </main>

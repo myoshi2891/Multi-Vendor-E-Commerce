@@ -6,7 +6,7 @@ export const poppingTransition = {
         transition: {
             duration: 0.3,
             ease: "easeOut",
-        }
+        },
     },
     exit: {
         opacity: 0,
@@ -14,6 +14,6 @@ export const poppingTransition = {
         transition: {
             duration: 0.2,
             ease: "easeIn",
-        }
-    }
-}
+        },
+    },
+};

@@ -96,3 +96,83 @@ for (const width of [1440, 768, 390])
             fullPage: true,
         });
     });
+
+for (const width of [1440, 768, 390])
+    test(`apply ${width}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/?screen=apply");
+        await expect(
+            page.getByRole("heading", { name: "Become a seller" })
+        ).toHaveCSS("font-family", /Georgia/);
+        await page.getByRole("button", { name: "Next", exact: true }).click();
+        await page.getByRole("button", { name: "Next", exact: true }).click();
+        await expect(page.getByText("Choose a logo image.")).toBeVisible();
+        await page
+            .getByRole("button", { name: "Upload profile image" })
+            .click();
+        await page.getByRole("button", { name: "Upload cover image" }).click();
+        await page
+            .getByRole("textbox", { name: "Store name", exact: true })
+            .fill("Example Store");
+        await page
+            .getByRole("textbox", { name: "Store description", exact: true })
+            .fill(
+                "A detailed description of our example store for this fixture."
+            );
+        await page
+            .getByRole("textbox", { name: "Store URL", exact: true })
+            .fill("example-store");
+        await page
+            .getByRole("textbox", { name: "Store email", exact: true })
+            .fill("test@example.com");
+        await page
+            .getByRole("textbox", { name: "Store phone", exact: true })
+            .fill("1234567890");
+        await page.getByRole("button", { name: "Previous" }).click();
+        await page.getByRole("button", { name: "Next", exact: true }).click();
+        await expect(
+            page.getByRole("textbox", { name: "Store name", exact: true })
+        ).toHaveValue("Example Store");
+        await page.getByRole("button", { name: "Next", exact: true }).click();
+        await page
+            .getByRole("textbox", { name: "Shipping service" })
+            .fill("International Delivery");
+        await page
+            .getByRole("textbox", { name: "Return policy" })
+            .fill("Return within 30 days");
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
+        await expect(
+            page.getByRole("button", { name: "Submitting…" })
+        ).toBeDisabled();
+        await expect(page.getByRole("alert")).toContainText("Please try again");
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+        await page.screenshot({
+            path: `test-results/seven-apply-${width}.png`,
+            fullPage: true,
+        });
+        await page.getByRole("button", { name: "Submit", exact: true }).click();
+        await expect(
+            page.getByRole("heading", { name: "Your store has been created!" })
+        ).toBeVisible();
+        await expect(
+            page.getByRole("link", { name: "Back to home" })
+        ).toHaveAttribute("href", "/");
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+    });

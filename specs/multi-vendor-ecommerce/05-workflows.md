@@ -173,3 +173,7 @@ The checkout UI locks order submission while shipping/cart refresh, address save
 2. Submit a public dispute (UUID order number required) or problem report (no order-number field) with existing validation. Inputs lock while pending, failures retain drafts and allow retry, success announces receipt. No refund or order-state transition is added.
 3. After authentication, revisit followed stores and toggle follow with per-store pending lock and failure/success feedback. Navigate by URL page links or browser back/forward.
 4. Read browser productHistory after hydration, retrieve variant IDs in their saved order, use existing editorial product actions, and page by URL. Malformed storage is empty; unavailable storage/query failures retry. Out-of-range results fetch the last valid page and replace the URL; cleanup discards previous-page responses.
+
+## 優先7画面の表示移行（2026-10-05）
+
+出店申請の4ステップ・payload・承認待ち状態は保持。説明開閉、読み上げ可能な進捗、native label、送信中ロックと失敗時の入力保持/再試行を整備。設定のClerk hash routingを維持。販売者shellはモバイル開閉ナビとlight/darkに対応。[表示要件](../../docs/design/seller-ui-migration/requirements.md)／[証跡](../../docs/design/design-system/PROGRESS.md#優先7画面移行記録)。DB/認可/状態遷移は変更なし。

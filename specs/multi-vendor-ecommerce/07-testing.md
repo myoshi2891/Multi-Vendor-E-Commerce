@@ -1266,3 +1266,5 @@ Offers/dispute/report-problem and account following/history record 14 new-requir
 ## Priority seven-screen design migration
 
 `tests/component/dashboard/seller-shell.test.tsx` verifies mobile navigation open/close, Escape focus return and link selection. `tests/browser/seven-design.spec.ts` uses production UI/CSS with isolated Next/Clerk adapters; it verifies 1440/768/390px, light/dark, overflow, keyboard and axe AA with contrast enabled. It does not establish authenticated route or actual Clerk SDK verification. [Plan](../../plans/layout-design/priority-seven-design-system-plan.md) and [evidence](../../docs/design/design-system/PROGRESS.md#優先7画面移行記録). Partial runs do not change full-suite totals.
+
+`seller-apply-design.test.tsx` covers progress/heading and edits retained between steps; pending/rejection/retry/payload is post-implementation regression. Seven-screen browser fixture verifies the production four-step UI with Clerk/Cloudinary and action adapters, without creating a store or uploading images. `settings-page.test.tsx` verifies labeled settings, hash routing and typed appearance; the actual Clerk SDK still requires authenticated verification.

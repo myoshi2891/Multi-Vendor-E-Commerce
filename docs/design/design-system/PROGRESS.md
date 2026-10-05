@@ -45,7 +45,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-001 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-002 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 保留 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
-| DS-PAGE-004 | `/seller/apply` | 未適用 | P3 | 対応中 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
+| DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | 未実施 |
 | DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録) |
@@ -648,5 +648,11 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ### アカウント設定（DS-PAGE-032）
 
 2026-10-05。Red1件: ラベル付きsection欠落。Green/Refactor関連Jest14/14、Supplemental Chromium3/3(1440/768/390px・overflow・axe AA)。Clerk mockはappearance/hashをRTLで検証。実UserProfileのresponsive/security/dialogは未確認。tsc0、lintエラー0/既存警告12。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。
+
+### 出店申請（DS-PAGE-004）
+
+2026-10-05。Red2件: heading/進捗role欠落。Green/Refactor新規RTL3/3(1件は実装後回帰)、設定を含む関連5/5。Supplemental Chromium3/3: 4step、validation、画像SDK adapter、値保持、pending lock、failure/retry/receipt、1440/768/390px・axe AA違反0・overflowなし・画像目視。actionはServer Propsへ変更、実店舗作成/画像アップロードなし。tsc0、lintエラー0/警告11。
 
 実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。

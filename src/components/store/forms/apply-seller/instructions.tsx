@@ -1,23 +1,14 @@
-import { Dot, Info } from "lucide-react";
-
+import styles from "./application.module.css";
 export default function Instructions() {
     return (
-        <div className="h-[calc(100vh-64px)] border-t-4 border-teal-500 bg-teal-100 px-4 py-3 text-teal-900 shadow-md">
-            <div className="flex">
-                <div className="me-1">
-                    <Info className="stroke-teal-500" />
-                </div>
-                <div>
-                    <p className="font-bold">Instructions</p>
-                    {instructions.map((inst, i) => (
-                        <div key={i} className="mt-1 flex gap-x-1">
-                            <Dot className="w-4" />
-                            <p className="text-sm">{inst.info}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
+        <aside className={styles.instructions}>
+            <details>
+                <summary>Instructions</summary>
+                {instructions.map((inst, i) => (
+                    <p key={i}>{inst.info}</p>
+                ))}
+            </details>
+        </aside>
     );
 }
 

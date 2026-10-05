@@ -1,3 +1,4 @@
+import styles from "../../application.module.css";
 import {
     Form,
     FormControl,
@@ -56,6 +57,12 @@ export default function Step2({
 
     // Get product details that are needed to add review info
     const handleSubmit = async (values: z.infer<typeof StoreFormSchema>) => {
+        setFormData((prev) => ({
+            ...prev,
+            ...values,
+            logo: values.logo[0]?.url ?? "",
+            cover: values.cover[0]?.url ?? "",
+        }));
         setStep((prev) => prev + 1);
     };
 
@@ -80,12 +87,13 @@ export default function Step2({
                         {/* Form items */}
                         <div className="space-y-4">
                             {/* Logo - Cover */}
-                            <div className="relative mb-24">
+                            <div className={styles.images}>
                                 <FormField
                                     control={form.control}
                                     name="logo"
                                     render={({ field }) => (
-                                        <FormItem className="absolute inset-x-40 -bottom-20 left-20 z-10">
+                                        <FormItem className="min-w-0">
+                                            <FormLabel>Store logo</FormLabel>
                                             <FormControl>
                                                 <ImageUpload
                                                     error={
@@ -115,6 +123,7 @@ export default function Step2({
                                                     }
                                                 />
                                             </FormControl>
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
@@ -123,6 +132,7 @@ export default function Step2({
                                     name="cover"
                                     render={({ field }) => (
                                         <FormItem>
+                                            <FormLabel>Store cover</FormLabel>
                                             <FormControl>
                                                 <ImageUpload
                                                     error={
@@ -152,6 +162,7 @@ export default function Step2({
                                                     }
                                                 />
                                             </FormControl>
+                                            <FormMessage />
                                         </FormItem>
                                     )}
                                 />
@@ -162,6 +173,7 @@ export default function Step2({
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem className="flex-1">
+                                        <FormLabel>Store name</FormLabel>
                                         <FormControl>
                                             <Input
                                                 placeholder="Store Name"
@@ -182,6 +194,7 @@ export default function Step2({
                                 name="description"
                                 render={({ field }) => (
                                     <FormItem className="flex-1">
+                                        <FormLabel>Store description</FormLabel>
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Store Description"
@@ -208,6 +221,7 @@ export default function Step2({
                                 name="url"
                                 render={({ field }) => (
                                     <FormItem>
+                                        <FormLabel>Store URL</FormLabel>
                                         <FormControl>
                                             <Input
                                                 placeholder="Store Url"
@@ -230,6 +244,7 @@ export default function Step2({
                                     name="email"
                                     render={({ field }) => (
                                         <FormItem className="flex-1">
+                                            <FormLabel>Store email</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     placeholder="Store Email"
@@ -248,6 +263,7 @@ export default function Step2({
                                     name="phone"
                                     render={({ field }) => (
                                         <FormItem className="flex-1">
+                                            <FormLabel>Store phone</FormLabel>
                                             <FormControl>
                                                 <Input
                                                     placeholder="Store Phone"
@@ -266,18 +282,18 @@ export default function Step2({
                     </form>
                 </Form>
             </AnimatedContainer>
-            <div className="flex h-[100px] justify-between px-2 pt-4">
+            <div className={styles.actions}>
                 <button
                     type="button"
                     onClick={() => step > 1 && setStep((prev) => prev - 1)}
-                    className="h-10 rounded-lg border bg-white px-4 py-2 font-medium text-gray-600 shadow-sm hover:bg-gray-100"
+                    className={styles.secondary}
                 >
                     Previous
                 </button>
                 <button
                     type="submit"
                     onClick={form.handleSubmit(handleSubmit)}
-                    className="h-10 rounded-lg border bg-blue-500 px-4 py-2 font-medium text-white shadow-sm hover:bg-blue-700"
+                    className={styles.primary}
                 >
                     Next
                 </button>

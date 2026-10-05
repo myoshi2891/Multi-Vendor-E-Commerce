@@ -1,3 +1,4 @@
+import styles from "../../application.module.css";
 import {
     Form,
     FormControl,
@@ -16,33 +17,37 @@ import AnimatedContainer from "../../animated-container";
 import ImageUpload from "@/components/dashboard/shared/image-upload";
 import Input from "@/components/store/ui/input";
 import { Textarea } from "@/components/store/ui/textarea";
-import { applySeller } from "@/queries/store";
-import toast from "react-hot-toast";
+import type { applySeller } from "@/queries/store";
+import { useRef, useState } from "react";
 
 export default function Step3({
+    applySellerAction,
     step,
     setStep,
     formData,
     setFormData,
 }: {
+    applySellerAction: typeof applySeller;
     step: number;
     setStep: Dispatch<SetStateAction<number>>;
     formData: StoreType;
     setFormData: Dispatch<SetStateAction<StoreType>>;
 }) {
+    const inFlight = useRef(false);
+    const [error, setError] = useState(false);
     // Form hook for managing form state and validation
     const form = useForm<z.infer<typeof StoreShippingSchema>>({
         mode: "onChange", // Form validation mode
         resolver: zodResolver(StoreShippingSchema), // Resolver for form validation
         defaultValues: {
             defaultShippingService: formData.defaultShippingService ?? "",
-            defaultShippingFeePerItem: formData.defaultShippingFeePerItem ,
+            defaultShippingFeePerItem: formData.defaultShippingFeePerItem,
             defaultShippingFeeForAdditionalItem:
-                formData.defaultShippingFeeForAdditionalItem ,
-            defaultShippingFeePerKg: formData.defaultShippingFeePerKg ,
-            defaultShippingFeeFixed: formData.defaultShippingFeeFixed ,
-            defaultDeliveryTimeMin: formData.defaultDeliveryTimeMin ,
-            defaultDeliveryTimeMax: formData.defaultDeliveryTimeMax ,
+                formData.defaultShippingFeeForAdditionalItem,
+            defaultShippingFeePerKg: formData.defaultShippingFeePerKg,
+            defaultShippingFeeFixed: formData.defaultShippingFeeFixed,
+            defaultDeliveryTimeMin: formData.defaultDeliveryTimeMin,
+            defaultDeliveryTimeMax: formData.defaultDeliveryTimeMax,
             returnPolicy: formData.returnPolicy ?? "",
         },
     });
@@ -51,8 +56,11 @@ export default function Step3({
     const handleSubmit = async (
         values: z.infer<typeof StoreShippingSchema>
     ) => {
+        if (inFlight.current) return;
+        inFlight.current = true;
+        setError(false);
         try {
-            const response = await applySeller({
+            const response = await applySellerAction({
                 name: formData.name,
                 description: formData.description,
                 email: formData.email,
@@ -73,9 +81,10 @@ export default function Step3({
             if (response.id) {
                 setStep((prev) => prev + 1);
             }
-        } catch (error: any) {
-            toast.error(error.toString());
-            console.error("Error applying seller", error);
+        } catch {
+            setError(true);
+        } finally {
+            inFlight.current = false;
         }
     };
 
@@ -124,191 +133,222 @@ export default function Step3({
                         </ul>
                     </div>
                     <form onSubmit={form.handleSubmit(handleSubmit)}>
-                        {/* Form items */}
-                        <div className="space-y-4">
-                            {/* Shipping Service */}
-                            <FormField
-                                control={form.control}
-                                name="defaultShippingService"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Shipping Service"
-                                                value={field.value}
-                                                type="text"
-                                                name="defaultShippingService"
-                                                onChange={handleInputChange}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                        <fieldset disabled={form.formState.isSubmitting}>
+                            {/* Form items */}
+                            <div className="space-y-4">
+                                {/* Shipping Service */}
+                                <FormField
+                                    control={form.control}
+                                    name="defaultShippingService"
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>
+                                                Shipping service
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Shipping Service"
+                                                    value={field.value}
+                                                    type="text"
+                                                    name="defaultShippingService"
+                                                    onChange={handleInputChange}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                            {/* Shipping Fee per Kg */}
-                            <FormField
-                                control={form.control}
-                                name="defaultShippingFeePerKg"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Shipping Fee for Additional Item"
-                                                name="defaultShippingFeePerKg"
-                                                value={field.value}
-                                                type="number"
-                                                onChange={handleInputChange}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                {/* Shipping Fee per Kg */}
+                                <FormField
+                                    control={form.control}
+                                    name="defaultShippingFeePerKg"
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>
+                                                Shipping fee per kg
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Shipping Fee for Additional Item"
+                                                    name="defaultShippingFeePerKg"
+                                                    value={field.value}
+                                                    type="number"
+                                                    onChange={handleInputChange}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                            {/* Shipping Fee for Additional Item */}
-                            <FormField
-                                control={form.control}
-                                name="defaultShippingFeeForAdditionalItem"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Shipping Fee for Additional Item"
-                                                name="defaultShippingFeeForAdditionalItem"
-                                                value={field.value}
-                                                type="number"
-                                                onChange={handleInputChange}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                {/* Shipping Fee for Additional Item */}
+                                <FormField
+                                    control={form.control}
+                                    name="defaultShippingFeeForAdditionalItem"
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>
+                                                Additional item shipping fee
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Shipping Fee for Additional Item"
+                                                    name="defaultShippingFeeForAdditionalItem"
+                                                    value={field.value}
+                                                    type="number"
+                                                    onChange={handleInputChange}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                            {/* Shipping Fee per Item */}
-                            <FormField
-                                control={form.control}
-                                name="defaultShippingFeePerItem"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Shipping Fee per Item"
-                                                name="defaultShippingFeePerItem"
-                                                value={field.value}
-                                                type="number"
-                                                onChange={handleInputChange}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                {/* Shipping Fee per Item */}
+                                <FormField
+                                    control={form.control}
+                                    name="defaultShippingFeePerItem"
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>
+                                                Shipping fee per item
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Shipping Fee per Item"
+                                                    name="defaultShippingFeePerItem"
+                                                    value={field.value}
+                                                    type="number"
+                                                    onChange={handleInputChange}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                            {/* Fixed Shipping */}
-                            <FormField
-                                control={form.control}
-                                name="defaultShippingFeeFixed"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormControl>
-                                            <Input
-                                                placeholder="Fixed Shipping Fee"
-                                                name="defaultShippingFeeFixed"
-                                                value={field.value}
-                                                type="number"
-                                                onChange={handleInputChange}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                {/* Fixed Shipping */}
+                                <FormField
+                                    control={form.control}
+                                    name="defaultShippingFeeFixed"
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>
+                                                Fixed shipping fee
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="Fixed Shipping Fee"
+                                                    name="defaultShippingFeeFixed"
+                                                    value={field.value}
+                                                    type="number"
+                                                    onChange={handleInputChange}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                            {/* Delivery Time Min */}
-                            <FormField
-                                control={form.control}
-                                name="defaultDeliveryTimeMin"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormControl>
-                                            <Input
-                                                name="defaultDeliveryTimeMin"
-                                                type="number"
-                                                value={field.value}
-                                                placeholder="Min Delivery Time"
-                                                onChange={handleInputChange}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                {/* Delivery Time Min */}
+                                <FormField
+                                    control={form.control}
+                                    name="defaultDeliveryTimeMin"
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>
+                                                Minimum delivery time
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    name="defaultDeliveryTimeMin"
+                                                    type="number"
+                                                    value={field.value}
+                                                    placeholder="Min Delivery Time"
+                                                    onChange={handleInputChange}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                            {/* Delivery Time Max */}
-                            <FormField
-                                control={form.control}
-                                name="defaultDeliveryTimeMax"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1">
-                                        <FormControl>
-                                            <Input
-                                                name="defaultDeliveryTimeMax"
-                                                type="number"
-                                                value={field.value}
-                                                placeholder="Max Delivery Time"
-                                                onChange={handleInputChange}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                {/* Delivery Time Max */}
+                                <FormField
+                                    control={form.control}
+                                    name="defaultDeliveryTimeMax"
+                                    render={({ field }) => (
+                                        <FormItem className="flex-1">
+                                            <FormLabel>
+                                                Maximum delivery time
+                                            </FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    name="defaultDeliveryTimeMax"
+                                                    type="number"
+                                                    value={field.value}
+                                                    placeholder="Max Delivery Time"
+                                                    onChange={handleInputChange}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                            {/* Return Policy */}
-                            <FormField
-                                control={form.control}
-                                name="returnPolicy"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <Textarea
-                                                name="returnPolicy"
-                                                value={field.value}
-                                                placeholder="Return Policy"
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    setFormData({
-                                                        ...formData,
-                                                        returnPolicy:
-                                                            field.value,
-                                                    });
-                                                }}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                                {/* Return Policy */}
+                                <FormField
+                                    control={form.control}
+                                    name="returnPolicy"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Return policy</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                    name="returnPolicy"
+                                                    value={field.value}
+                                                    placeholder="Return Policy"
+                                                    onChange={(e) => {
+                                                        field.onChange(e);
+                                                        setFormData({
+                                                            ...formData,
+                                                            returnPolicy:
+                                                                e.target.value,
+                                                        });
+                                                    }}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </fieldset>
                     </form>
                 </Form>
             </AnimatedContainer>
-            <div className="flex h-[100px] justify-between px-2 pt-4">
+            {error && (
+                <p className={styles.alert} role="alert">
+                    We couldn’t submit your application. Please try again.
+                </p>
+            )}
+            <div className={styles.actions}>
                 <button
                     type="button"
+                    disabled={form.formState.isSubmitting}
                     onClick={() => step > 1 && setStep((prev) => prev - 1)}
-                    className="h-10 rounded-lg border bg-white px-4 py-2 font-medium text-gray-600 shadow-sm hover:bg-gray-100"
+                    className={styles.secondary}
                 >
                     Previous
                 </button>
                 <button
                     type="submit"
+                    disabled={form.formState.isSubmitting}
                     onClick={form.handleSubmit(handleSubmit)}
-                    className="h-10 rounded-lg border bg-blue-500 px-4 py-2 font-medium text-white shadow-sm hover:bg-blue-700"
+                    className={styles.primary}
                 >
-                    Submit
+                    {form.formState.isSubmitting ? "Submitting…" : "Submit"}
                 </button>
             </div>
         </div>

@@ -1,5 +1,6 @@
+import styles from "./application.module.css";
 import { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { poppingTransition } from "./transition";
 
 export default function AnimatedContainer({
@@ -7,17 +8,16 @@ export default function AnimatedContainer({
 }: {
     children: ReactNode;
 }) {
+    const reduced = useReducedMotion();
     return (
         <motion.div
-            variants={poppingTransition}
-            initial="hidden"
+            variants={reduced ? undefined : poppingTransition}
+            initial={reduced ? false : "hidden"}
             animate="visible"
             exit="exit"
-            className="h-[calc(100vh-200px)]"
+            className={styles.step}
         >
-            <div className="flex h-full flex-col overflow-y-auto px-2 pt-4">
-                {children}
-            </div>
+            <div className="flex flex-col">{children}</div>
         </motion.div>
     );
 }
