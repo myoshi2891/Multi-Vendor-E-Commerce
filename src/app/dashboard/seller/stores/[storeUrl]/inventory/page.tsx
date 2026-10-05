@@ -15,7 +15,17 @@ export default async function SellerInventoryPage({
 }) {
     const { storeUrl } = await params;
     const { store } = await requireStoreOwner(storeUrl);
-    const rows = await getStoreInventory(storeUrl).catch(() => null);
+    const rows = await getStoreInventory(storeUrl).catch((error: unknown) => {
+        if (error instanceof Error) {
+            console.error("[SellerInventoryPage] Failed to load inventory", {
+                error: error.message,
+                stack: error.stack,
+            });
+        } else {
+            console.error("[SellerInventoryPage] Unknown error", { error });
+        }
+        return null;
+    });
     if (!rows)
         return (
             <SellerPage id="store-inventory" title="Inventory">
