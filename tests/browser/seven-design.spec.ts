@@ -51,7 +51,11 @@ for (const width of [1440, 768, 390])
                 "true"
             );
             await expect(page.getByRole("menu")).toHaveCount(0);
-            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
             const violations = (
                 await new AxeBuilder({ page })
                     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
@@ -64,3 +68,31 @@ for (const width of [1440, 768, 390])
             });
         });
     }
+
+for (const width of [1440, 768, 390])
+    test(`settings ${width}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto("/?screen=settings");
+        await expect(
+            page.getByRole("heading", { name: "Account settings" })
+        ).toHaveCSS("font-family", /Georgia/);
+        await expect(
+            page.getByRole("region", { name: "Account settings" })
+        ).toHaveCSS("background-color", "rgb(243, 240, 232)");
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+        await page.screenshot({
+            path: `test-results/seven-settings-${width}.png`,
+            fullPage: true,
+        });
+    });

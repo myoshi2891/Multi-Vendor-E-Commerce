@@ -54,3 +54,7 @@
 ## 共通枠の移行（2026-09-30）
 
 profile概要と共通ナビゲーションの新デザインは[profile-overview仕様](../profile-overview/requirements.md)を参照。Settingsへのリンク、選択状態、Clerk UserProfileの表示は回帰確認済み。UserProfile自体のブランド変更は本移行に含めない。
+
+## 設定本体のデザイン移行（2026-10-05）
+
+Clerk UserProfileのhash routingとセキュリティ機能を保持し、専用appearanceとCSS Moduleを導入。アイボリー、濃いゴールドの操作色、セリフ見出し、意味を保つ危険色、focus、狭い幅のカード枠を整備。RTLはラベル付きsection・appearance・hashを検証、補助ブラウザは3幅とaxe AAを検証。実Clerk/認証後実ルートは保留。[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。既存機能の完了記録をデザイン検証完了とは扱わない。

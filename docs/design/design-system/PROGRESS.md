@@ -73,7 +73,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>) | [profile実施記録](#profile移行記録) |
 | DS-PAGE-030 | `/profile/payment` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/payment/page.tsx](<../../../src/app/(store)/profile/payment/page.tsx>) | [payment実施記録](#profile-payment移行記録) |
 | DS-PAGE-031 | `/profile/reviews` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/reviews/page.tsx](<../../../src/app/(store)/profile/reviews/page.tsx>) | [reviews実施記録](#profile-reviews移行記録) |
-| DS-PAGE-032 | `/profile/settings` | 未適用 | P2 | 対応中 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面計画](../../../plans/layout-design/priority-seven-design-system-plan.md) |
+| DS-PAGE-032 | `/profile/settings` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
@@ -644,3 +644,9 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 - 補助ブラウザfixtureを追加。Next/Clerk adaptersはmock、DB/送信なし。ローカルlistenのsandbox EPERMは環境失敗でありRedに数えない。
 
 - Supplemental Chromium6/6: 1440/768/390px、light/dark、navigation、theme Portal、overflowなし、axe AA違反0。Radix閉じる遷移中のaria-hiddenを待つようテストを修正（実装のRedに数えない）。実ルート認可/Clerkは未検証。画像は切替前テーマへ戻して記録する。
+
+### アカウント設定（DS-PAGE-032）
+
+2026-10-05。Red1件: ラベル付きsection欠落。Green/Refactor関連Jest14/14、Supplemental Chromium3/3(1440/768/390px・overflow・axe AA)。Clerk mockはappearance/hashをRTLで検証。実UserProfileのresponsive/security/dialogは未確認。tsc0、lintエラー0/既存警告12。
+
+実装あり。認証後実ルート/第三者SDK実描画は専用テストDBと認証テスト環境で受け入れ確認するまで保留。補助fixtureを実ルート検証済みとは扱わない。

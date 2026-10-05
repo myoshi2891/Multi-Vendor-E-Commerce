@@ -1,3 +1,5 @@
+import styles from "@/components/store/profile/settings/settings.module.css";
+import { settingsAppearance } from "@/components/store/profile/settings/appearance";
 import { UserProfile } from "@clerk/nextjs";
 
 /**
@@ -15,19 +17,16 @@ import { UserProfile } from "@clerk/nextjs";
  */
 export default function ProfileSettingsPage() {
     return (
-        <div className="bg-white px-6 py-4">
-            <h1 className="mb-3 text-lg font-bold">Account settings</h1>
-            <UserProfile
-                routing="hash"
-                appearance={{
-                    elements: {
-                        // profile レイアウト(サイドバー 296px)と干渉しないよう
-                        // カード幅を内側に収める。実値は実装時に screenshot 調整。
-                        rootBox: "w-full",
-                        cardBox: "w-full shadow-none",
-                    },
-                }}
-            />
-        </div>
+        <section
+            className={styles.page}
+            aria-labelledby="account-settings-title"
+        >
+            <header className={styles.heading}>
+                <p className={styles.eyebrow}>Your account</p>
+                <h1 id="account-settings-title">Account settings</h1>
+                <p>Manage your profile and account security.</p>
+            </header>
+            <UserProfile routing="hash" appearance={settingsAppearance} />
+        </section>
     );
 }

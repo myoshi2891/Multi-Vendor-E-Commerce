@@ -1,3 +1,4 @@
+import ProfileSettingsPage from "@/app/(store)/profile/settings/page";
 import Link from "next/link";
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -20,17 +21,26 @@ const sidebar = (
         <Link href="/?screen=messages">Messages</Link>
     </nav>
 );
+const screen = new URLSearchParams(location.search).get("screen");
 createRoot(document.getElementById("root")!).render(
-    <ModalProvider>
-        <SellerShell sidebar={sidebar} header={<Header design="seller" />}>
-            <section className={styles.page}>
-                <header className={styles.heading}>
-                    <p className={styles.eyebrow}>Seller workspace</p>
-                    <h1>Store overview</h1>
-                    <p className={styles.description}>Manage your store.</p>
-                </header>
-                <div className={styles.panel}>Responsive brand foundation</div>
-            </section>
-        </SellerShell>
-    </ModalProvider>
+    screen === "settings" ? (
+        <main>
+            <ProfileSettingsPage />
+        </main>
+    ) : (
+        <ModalProvider>
+            <SellerShell sidebar={sidebar} header={<Header design="seller" />}>
+                <section className={styles.page}>
+                    <header className={styles.heading}>
+                        <p className={styles.eyebrow}>Seller workspace</p>
+                        <h1>Store overview</h1>
+                        <p className={styles.description}>Manage your store.</p>
+                    </header>
+                    <div className={styles.panel}>
+                        Responsive brand foundation
+                    </div>
+                </section>
+            </SellerShell>
+        </ModalProvider>
+    )
 );

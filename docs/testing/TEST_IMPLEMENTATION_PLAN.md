@@ -1070,3 +1070,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 | 5 History | ✅ TDD・補助検証 Completed (2026-10-05) | 認証後実ルート保留 |
 
 既存機能の回帰10件はRed不要の回帰確認。公開11/11・補助6/6・Jest全体2766/2769（3 skipped）。[計画](../../plans/layout-design/priority-five-design-system-plan.md)、[移行証跡](../design/design-system/PROGRESS.md#p2優先5画面移行記録)。保留理由と解除条件は[QA](QA_HANDOFF.md#ds-account-discovery-browser)。
+
+- ✅ Completed (2026-10-05): DS-PAGE-032 アカウント設定の先行RTL/補助ブラウザ。認証後実ルート確認は保留。[証跡](../design/design-system/PROGRESS.md#優先7画面移行記録)。
