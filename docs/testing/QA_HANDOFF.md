@@ -10,7 +10,7 @@
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest・lcov: 2026-10-05実測 / Integration: 2026-10-04実測 / E2Eフルラン: 2026-10-03実測）
+### テスト統計（Jest・lcov: 2026-10-06実測 / Integration: 2026-10-04実測 / E2Eフルラン: 2026-10-03実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -18,8 +18,8 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2862 passed / 2865 total、3 skipped、127 snapshots passed、290 スイート（289 passed／1 skipped、failed 0）**。2026-10-05 `bun run test -- --runInBand --coverage --json --outputFile=/tmp/six-jest-results.json` 全体実測（exit 0）。 |
-| カバレッジ全体（lcov **2026-10-05実測**） | Statements86.43%（9936/11495）／Branches75.46%（5952/7887）／Functions83.01%（1921/2314）／Lines86.88%（9047/10413）。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
+| Jest テスト総数 (unit/component) | **2877 passed / 2880 total、3 skipped、127 snapshots passed、294 スイート（293 passed／1 skipped、failed 0）**。2026-10-06 `bun run test -- --coverage` 全体実測。 |
+| カバレッジ全体（lcov **2026-10-06実測**） | Branches76.88%（6065/7889）／Functions83.49%（1932/2314）／Lines87.31%（9092/10413）。Statementsはlcovに含まれないため今回未取得。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
 | Jest Integration テスト総数 | **222** / **17 スイート**（**2026-10-04 実測: 222/222 pass**・`bun run test:integration`。PR #187 レビュー対応で `product-update.test.ts` に同一商品へのバリアント並行追加 +1）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証 5 suite（計 75 tests）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |

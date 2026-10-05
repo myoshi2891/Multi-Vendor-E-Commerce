@@ -16,7 +16,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2862 passed / 2865 total、3 skipped、127 snapshots passed、290 スイート（289 passed／1 skipped、failed 0）** — 2026-10-05P3優先6画面の全体実測。Integration222 / 17スイート（2026-10-04実測、今回は未実行）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **2877 passed / 2880 total、3 skipped、127 snapshots passed、294 スイート（293 passed／1 skipped、failed 0）** — 2026-10-06 PR#191 Sonar New Code対策後の全体実測。Integration222 / 17スイート（2026-10-04実測、今回は未実行）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **222テスト / 17スイート** — 2026-10-04実測を維持（今回未実行）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5265,3 +5265,29 @@ PR#189 のレビュー指摘 7 件（在庫セル/しきい値フォームの re
 ## P3優先6画面の実装完了（2026-10-05）
 
 管理者概要・注文・店舗、販売者クーポン一覧・新規、LegalをTDDで移行し画面単位でコミット。最終自己監査で実管理者ナビのdarkコントラストと旧表toolbarの狭幅溢れを修正。全体Jest・ブラウザー補助・公開ルート・回帰・型・lint・buildが成功。認証後5画面とClerkは専用テストDB／認証情報待ちとして記録した。次は[QAのDS-P3解除条件](./testing/QA_HANDOFF.md#ds-p3-six-browser)を満たす検証、または[採用計画](../plans/layout-design/design-system-adoption-plan.md)の残りP4 9画面の移行。
+
+---
+
+### PR#191 SonarCloud New Code カバレッジ対策 (2026-10-06)
+
+#### 概要
+
+New Code カバレッジ 70.5% の主因（0% の sidebar 2 ファイル、seller-coupons のダイアログ経路）にテストを追加し、レビュー指摘 3 件に対応した。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/dashboard/sidebar/{nav-admin,user-info}.test.tsx` | seller / 既定 design の描画・aria-current・null ユーザー | 未コミット |
+| `tests/component/dashboard/seller-coupons-dialog.test.tsx` | 取得成功・null・失敗→再試行・閉鎖後の古い応答破棄・保存中ロック・削除 | 未コミット |
+| `src/lib/admin-stores.test.ts` | 配送表示整形と `-` フォールバック | 未コミット |
+| `src/components/dashboard/forms/coupon-form-fields.tsx` | 非有限の割引値を空文字で描画（回帰テスト +1） | 未コミット |
+| `specs/.../05-workflows.md` / `COVERAGE_REPORT.md` | 秒補完の記述修正、過去エントリの値を 2842/2845・280 suites に復元 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 2862 passed / 2865 total | **2877 passed / 2880 total** |
+| スイート数 | 290 | **294** |
+| 型エラー | 0 件 | **0 件** |

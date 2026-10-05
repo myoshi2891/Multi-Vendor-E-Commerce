@@ -612,8 +612,14 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 
 ### 販売者6画面・最終監査（2026-10-05）
 
-全体再実測: 2862 passed / 2865 total、3 skipped、127 snapshots passed、290 スイート（289 passed／1 skipped、failed 0）。Statements86.58%（9779/11294）／Branches75.82%（5796/7644）／Functions83.08%（1872/2253）／Lines86.96%（8895/10228）。dashboard349files/367lcov/18 of 80cells。six37/37、seven回帰42/42、型0、lint0errors/10既存warnings、harness成功。画像キーボード操作・配送空表を追加検証し修正。認証後6実ルートとSDKは保留。Integration/本体E2Eは未実行。[QA正本](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)。
+全体再実測: 2842 passed / 2845 total、3 skipped、127 snapshots passed、280 スイート（279 passed／1 skipped、failed 0）。Statements86.58%（9779/11294）／Branches75.82%（5796/7644）／Functions83.08%（1872/2253）／Lines86.96%（8895/10228）。dashboard349files/367lcov/18 of 80cells。six37/37、seven回帰42/42、型0、lint0errors/10既存warnings、harness成功。画像キーボード操作・配送空表を追加検証し修正。認証後6実ルートとSDKは保留。Integration/本体E2Eは未実行。[QA正本](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)。
 
 ### 2026-10-05 P3優先6画面の全体再測定
 
 直前2842/2845・280 suitesから2862/2865・290 suitesへ更新（3 skipped、127 snapshots維持）。新しい表示部品を計測対象に含め、Statements86.43%／Branches75.46%／Functions83.01%／Lines86.88%。dashboard361 test files／375 lcov entries／18/80セル。Integrationは222/17の既存実測を維持。認証後5画面の残条件は[QA DS-P3](./QA_HANDOFF.md#ds-p3-six-browser)。
+
+### 2026-10-06 PR#191 SonarCloud New Code カバレッジ対策
+
+- Sonar の New Code が 70.5% だった。`nav-admin.tsx` と `user-info.tsx` はクォート整形でファイル全体が New Code 扱いになり、テストが無いため 0%。`seller-coupons.tsx` は編集ダイアログの取得・失敗・再試行・保存中ロックが 51.5% で未カバーだった。RTL を 3 スイート（`sidebar/nav-admin` / `sidebar/user-info` / `seller-coupons-dialog`）、unit を 1 スイート（`src/lib/admin-stores.test.ts`）追加した。あわせてレビュー指摘に対応し、`coupon-form-fields.tsx` の割引入力が NaN を React に渡さないよう修正（`seller-coupon-form.test.tsx` +1、修正前に NaN 警告で失敗する Red を確認）。
+- 更新前: 2862 passed / 2865 total、290 suites。
+- 更新後: 2877 passed / 2880 total、294 suites（293 passed／1 skipped）、3 skipped、127 snapshots。lcov Branches76.88%（6065/7889）／Functions83.49%（1932/2314）／Lines87.31%（9092/10413）、Statementsは今回未取得。dashboard365 test files／375 lcov entries／18/80セル。型0、lint 0 errors（既存10 warnings）。Integration/E2E 未実行。

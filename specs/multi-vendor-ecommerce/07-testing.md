@@ -12,7 +12,8 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2862 passed / 2865 total across 290 suites (289 passed, one skipped suite, 3 skipped tests), measured on 2026-10-05 with `bun run test -- --silent --runInBand --coverage` after the P3 six-screen final audit. All 127 snapshots passed.
+- 2877 passed / 2880 total across 294 suites (293 passed, one skipped suite, 3 skipped tests), measured on 2026-10-06 with `bun run test -- --coverage` after the PR#191 SonarCloud New Code follow-up (new RTL suites for the admin sidebar navigation, user info, seller coupon dialogs, and a unit suite for `src/lib/admin-stores.ts`). All 127 snapshots passed.
+- Earlier measurement (2026-10-05): 2862 passed / 2865 total across 290 suites (289 passed, one skipped suite, 3 skipped tests) after the P3 six-screen final audit.
 - Earlier measurement (2026-10-05, plan 079):
 - 2768 passed / 2771 total across 264 suites (263 passed, 1 skipped suite; 3 skipped tests), measured on 2026-10-05 with `bun run test -- --coverage` after plan 079 (`tests/component/store/client-user-button.test.tsx` +2: Clerk `UserButton` is not server-rendered and hydrates without mismatch). All 127 snapshots passed. Full coverage: statements 83.17%, branches 69.27%, functions 77.5%, lines 83.25%. Dashboard: 330 test files / 350 lcov entries / 18 of 80 cells.
 - Earlier measurement (2026-10-05): 2766 passed / 2769 total across 263 suites (262 passed, 1 skipped suite; 3 skipped tests), measured on 2026-10-05 with `bun run test -- --runInBand --coverage`. All 127 snapshots passed. Full coverage: statements 83.16%, branches 69.26%, functions 77.45%, lines 83.24%. Dashboard: 329 test files / 349 lcov entries / 18 of 80 cells. Previous measurement (2026-10-04): 2742 passed / 2745 total across 257 suites.
