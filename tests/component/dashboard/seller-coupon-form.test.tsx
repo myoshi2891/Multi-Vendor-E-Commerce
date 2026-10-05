@@ -96,3 +96,20 @@ it("validates percentage and preserves creation contract/return path", async () 
         "example"
     );
 });
+
+it("normalizes edited local minute precision to existing second precision", async () => {
+    const save = jest.fn().mockResolvedValue(coupons[0]);
+    render(
+        <Form data={coupons[0] as never} storeUrl="example" saveAction={save} />
+    );
+    fireEvent.change(screen.getByLabelText("Start date"), {
+        target: { value: "2026-10-02T09:30" },
+    });
+    fireEvent.submit(screen.getByRole("form"));
+    await waitFor(() =>
+        expect(save).toHaveBeenCalledWith(
+            expect.objectContaining({ startDate: "2026-10-02T09:30:00" }),
+            "example"
+        )
+    );
+});

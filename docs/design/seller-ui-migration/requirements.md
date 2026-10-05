@@ -70,3 +70,9 @@ DS-PAGE-065 店舗作成: 先行RTL2件でmain/h1/theme control不足と新規ID
 深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+## クーポン作成 デザイン移行（2026-10-05）
+
+深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。

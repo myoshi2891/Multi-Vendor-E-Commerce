@@ -94,7 +94,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-050 | `/dashboard/admin/stores` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/stores/page.tsx](<../../../src/app/dashboard/admin/stores/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-051 | `/dashboard` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/page.tsx](<../../../src/app/dashboard/page.tsx>) | 未実施 |
 | DS-PAGE-052 | `/dashboard/seller` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/seller/page.tsx](<../../../src/app/dashboard/seller/page.tsx>) | 未実施 |
-| DS-PAGE-053 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) | 未実施 |
+| DS-PAGE-053 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-054 | `/dashboard/seller/stores/[storeUrl]/coupons` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
@@ -790,3 +790,9 @@ SDK/uuidのJest adapter不足は環境エラーとして除外後、先行RTL2�
 旧CouponDetails/旧クーポン列（DS-COMP-150/176）、旧admin注文/店舗列（174/175）は新ルートから利用しない。旧部品の全scope移行完了とは扱わず利用監査を継続する。
 
 DS-PAGE-054最終確認: 関連Jest117/117（旧coupon列/既定adminフォーム含む）、tsc exit0、lint0 errors/既存10 warnings、補助Chromium6/6、harness成功。新要件Redと既存実装の回帰追加は区別する。
+
+### DS-PAGE-053 クーポン作成
+
+先行RTL2件でcreation region/form/action接続のRed確認。日時編集の秒精度維持に追加RTL1件のRed→Greenを確認。Playwright fillのゼロ秒表記はChromiumの正規化に合わせ、ネイティブ入力は保存前に従来の秒精度へ戻す。関連Jest113/113、tsc exit0、lint0 errors/既存10 warnings、harness成功。ブラウザー最終再検証は以下に記録。保存後URL/新規UUID/scope/validation/pending/error/入力保持/retry/successを維持。認証後実ルートは実装あり・保留。
+
+DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/dark・日付/validation/pending/error/入力保持/retry/success/返却URL・axe contrast含む、390px画像目視。

@@ -300,3 +300,78 @@ for (const width of [1440, 768, 390])
             await expect(page.getByRole("alert")).toBeVisible();
             await expect(page.getByRole("form")).toHaveCount(0);
         });
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`newcoupon ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=newcoupon&failure");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", {
+                    level: 1,
+                    name: "Create coupon",
+                    exact: true,
+                })
+            ).toHaveCSS("font-family", /Georgia/);
+            await page
+                .getByRole("button", { name: "Create coupon", exact: true })
+                .click();
+            await expect(
+                page.getByText("Discount percentage must be at least 1%")
+            ).toBeVisible();
+            await page
+                .getByRole("textbox", { name: "Coupon code" })
+                .fill("NEWCODE");
+            await page
+                .getByRole("spinbutton", { name: "Coupon discount" })
+                .fill("15");
+            await page
+                .getByLabel("Start date", { exact: true })
+                .fill("2026-10-01T12:30");
+            await page
+                .getByLabel("End date", { exact: true })
+                .fill("2026-12-01T12:30");
+            await page
+                .getByRole("button", { name: "Create coupon", exact: true })
+                .click();
+            await expect(
+                page.getByRole("textbox", { name: "Coupon code" })
+            ).toBeDisabled();
+            await expect(page.getByRole("alert")).toContainText(
+                "Your input has been kept"
+            );
+            await expect(
+                page.getByRole("textbox", { name: "Coupon code" })
+            ).toHaveValue("NEWCODE");
+            await page
+                .getByRole("button", { name: "Create coupon", exact: true })
+                .click();
+            await expect(page.getByText("Coupon saved.")).toBeVisible();
+            expect(
+                await page.evaluate(
+                    () =>
+                        (window as unknown as { destination: string })
+                            .destination
+                )
+            ).toBe("/dashboard/seller/stores/example/coupons");
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: info.outputPath(`newcoupon-${width}-${theme}.png`),
+                fullPage: true,
+            });
+        });

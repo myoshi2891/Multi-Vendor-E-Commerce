@@ -73,7 +73,12 @@ export function CouponFormFields<T extends FieldValues & CouponBaseValues>({
                                             field.onChange(
                                                 type === "number"
                                                     ? event.target.valueAsNumber
-                                                    : event.target.value
+                                                    : type ===
+                                                            "datetime-local" &&
+                                                        event.target.value
+                                                            .length === 16
+                                                      ? `${event.target.value}:00`
+                                                      : event.target.value
                                             )
                                         }
                                     />
