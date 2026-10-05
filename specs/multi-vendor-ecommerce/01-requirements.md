@@ -85,3 +85,5 @@ Variant creation uses the same branded editor and an Add variant page heading na
 Shipping settings uses a branded responsive defaults form and searchable country-rate table. Preserve amounts, Default/Free labels, country identities and validation; lock saves and pending-dialog dismissal, retain failed input, announce results and return focus to the editing trigger.
 
 Store settings uses responsive logo/cover and labeled profile/contact fields in the seller light/dark theme. Preserve validation, featured value and update payload/navigation; lock saves and retain failed values with generic retry and status feedback.
+
+Store creation has a standalone branded light/dark workspace with a main landmark, theme toggle and the shared labeled store form. Preserve validation/images/featured and navigate to the returned store URL. Creation omits id to use the existing create branch; updates retain id and owner guards.

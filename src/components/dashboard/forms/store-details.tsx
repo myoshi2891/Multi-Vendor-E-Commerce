@@ -1,12 +1,11 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { z } from "zod";
 import type { Store } from "@prisma/client";
 import type { upsertStore } from "@/queries/store";
-import { v4 } from "uuid";
 import { StoreFormSchema } from "@/lib/schemas";
 import { useSellerSave } from "@/hooks/use-seller-save";
 import {
@@ -73,6 +72,7 @@ export default function StoreDetails({
     design?: "seller";
 }) {
     const router = useRouter();
+    const imageErrorId = useId();
     const feedback = useSellerSave();
     const form = useForm<Values>({
         mode: "onChange",
@@ -87,7 +87,7 @@ export default function StoreDetails({
         await feedback.save(
             async () => {
                 const response = await upsertStoreAction({
-                    id: data?.id ?? v4(),
+                    ...(data?.id ? { id: data.id } : {}),
                     name: values.name,
                     description: values.description,
                     email: values.email,
@@ -147,6 +147,13 @@ export default function StoreDetails({
                                                 </h3>
                                                 <div
                                                     role="group"
+                                                    aria-describedby={
+                                                        form.formState.errors[
+                                                            name
+                                                        ]
+                                                            ? `${imageErrorId}-${name}`
+                                                            : undefined
+                                                    }
                                                     aria-label={
                                                         name === "logo"
                                                             ? "Store logo"
@@ -181,7 +188,10 @@ export default function StoreDetails({
                                                         }
                                                     />
                                                 </div>
-                                                <FormMessage />
+                                                <FormMessage
+                                                    id={`${imageErrorId}-${name}`}
+                                                    role="alert"
+                                                />
                                             </FormItem>
                                         )}
                                     />

@@ -48,6 +48,10 @@ seller-ui-migrationの要件/設計/tasks、SDDの要件/インターフェー�
 - [x] DS-PAGE-059 バリアント編集: TDD・実装・関連検証・文書同期。
 - [x] DS-PAGE-064 配送設定: TDD・実装・関連検証・文書同期。
 - [x] DS-PAGE-063 店舗設定: TDD・実装・関連検証・文書同期。
-- [ ] DS-PAGE-065 店舗作成: TDD・実装・関連検証・文書同期。
+- [x] DS-PAGE-065 店舗作成: TDD・実装・関連検証・文書同期。
 - [ ] 最終回帰・全体Jest・文書整合。
 - [ ] 認証後6実ルート・必要なSDK実描画の受け入れ確認。
+
+## 実装時に確認した店舗作成の接続不具合
+
+既存StoreDetailsが新規作成でもUUIDのidを送信するため、upsertStoreは更新branchへ入りowner-scoped lookupで拒否する。店舗作成Stepの先行テストで確認し、既存APIの作成条件に合わせ新規のみidを省略する。更新id・query・認可・DB/API schemaは維持する。購入や外部送信・実DB店舗作成は行わず、payload境界をRTL/補助ブラウザーで検証する。

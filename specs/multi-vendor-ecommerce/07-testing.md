@@ -1282,3 +1282,5 @@ tests/component/dashboard/seller-product-pages-design.test.tsx verifies the crea
 seller-shipping-design.test.tsx covers plain-dollar serialization, country search/default/free/empty, delivery validation and injected save/identity/pending/error/retry/success. six browser shipping cases cover the real forms/column factory/dialog in three widths and two themes including keyboard, pending dismissal lock and axe contrast.
 
 seller-store-pages-design.test.tsx records two new-requirement Red cases for labeled settings/form and pending/injected save. It covers retry/draft retention and post-implementation projection/missing-store/lookup-failure regressions. six storesettings browser cases use production form/route with image/action adapters and verify three widths/two themes with axe contrast.
+
+New-store RTL records main/theme and incorrect create-id payload Red cases. six newstore browser cases verify three widths/two themes, ThemeToggle portal, initial/validation/SDK-adapter image selection, pending/error/retry/success and no-id/returned-URL behavior. No store is created in a real DB by these design checks.

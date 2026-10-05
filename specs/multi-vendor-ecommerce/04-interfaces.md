@@ -262,3 +262,5 @@ The variant creation/edit Server Components also opt into seller ProductDetails 
 ShippingCountryRow and StoreDefaultShippingInput are plain numeric display data projected in the Server Component without money-unit changes. Existing shipping query actions are injected as updateDefaultsAction/upsertShippingRateAction; createShippingColumns receives them on the Client. Optional CustomModal locked and DialogContent closeDisabled default to false.
 
 StoreDetails accepts required upsertStoreAction and optional seller design. StoreDetailsData projects only store form fields; the settings Server Component selects that projection, preserving the existing URL lookup and redirect. Both settings and creation callers provide the existing approved-facade action.
+
+upsertStore retains its existing contract: absent id selects creation and present id selects owner-checked update. The UI no longer supplies a generated id for new-store submissions. API/query/schema/authorization are unchanged.

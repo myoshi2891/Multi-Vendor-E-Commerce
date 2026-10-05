@@ -187,3 +187,5 @@ Server pages load existing store-scoped data and inject typed actions into the o
 The branded product editor keeps the existing category/attribute/image/size workflow. Saving locks fields, guards duplicate requests, announces completion and retains inputs after failure for another submission. Existing list navigation and edit refresh remain unchanged.
 
 Shipping defaults and country overrides retain their existing save actions and store refresh. Country search scopes the table; a labeled editing dialog locks fields and dismissal during pending save, retains inputs for retry and returns focus after dismissal.
+
+New-store users complete validated profile/contact/logo/cover fields in the standalone theme. Pending locks all controls; failure retains drafts; a successful no-id create submission navigates to the returned store URL. Existing-store saves still include id and refresh.

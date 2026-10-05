@@ -167,3 +167,63 @@ it("propagates store lookup failure to the existing error boundary", async () =>
         log.mockRestore();
     }
 });
+
+import NewStorePage from "@/app/dashboard/seller/stores/new/page";
+jest.mock("@/components/shared/theme-toggle", () => ({
+    __esModule: true,
+    default: () => <button>Toggle theme</button>,
+}));
+it("gives store creation its own main landmark, heading and theme control outside the store shell", () => {
+    render(<NewStorePage />);
+    expect(screen.getByRole("main")).toContainElement(
+        screen.getByRole("heading", { level: 1, name: "Create store" })
+    );
+    expect(
+        screen.getByRole("region", { name: "Create store" })
+    ).toBeInTheDocument();
+    expect(
+        screen.getByRole("button", { name: "Toggle theme" })
+    ).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Store name" })).toHaveValue("");
+});
+it("creates through the existing no-id API branch and uses the returned store URL", async () => {
+    jest.mocked(upsertStore).mockResolvedValueOnce({
+        ...store,
+        url: "created-store",
+    } as never);
+    render(<NewStorePage />);
+    for (const [label, value] of [
+        ["Store name", "Created store"],
+        ["Store email", "new@example.test"],
+        ["Store phone number", "1234567890"],
+        ["Store url", "created-store"],
+        [
+            "Store description",
+            "A new store description longer than thirty characters.",
+        ],
+    ])
+        fireEvent.change(
+            screen.getByRole("textbox", { name: label }),
+            { target: { value } }
+        );
+    fireEvent.click(
+        screen.getByRole("button", { name: "Upload profile image" })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Upload cover image" }));
+    fireEvent.submit(screen.getByRole("form", { name: "Store information" }));
+    await waitFor(() => expect(upsertStore).toHaveBeenCalledTimes(1));
+    expect(jest.mocked(upsertStore).mock.calls[0][0]).not.toHaveProperty("id");
+    expect(upsertStore).toHaveBeenCalledWith(
+        expect.objectContaining({
+            name: "Created store",
+            featured: false,
+            url: "created-store",
+            logo: "https://example.test/profile.jpg",
+            cover: "https://example.test/cover.jpg",
+        })
+    );
+    expect(mockPush).toHaveBeenCalledWith(
+        "/dashboard/seller/stores/created-store"
+    );
+    expect(mockRefresh).not.toHaveBeenCalled();
+});

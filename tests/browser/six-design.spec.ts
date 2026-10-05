@@ -372,3 +372,118 @@ for (const width of [1440, 768, 390])
                 fullPage: true,
             });
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`newstore ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=newstore&failure=1");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", { level: 1, name: "Create store" })
+            ).toHaveCSS("font-family", /Georgia/);
+            await expect(
+                page.getByRole("button", { name: "Store navigation" })
+            ).toHaveCount(0);
+            await page.getByRole("button", { name: "Toggle theme" }).click();
+            await page
+                .getByRole("menuitem", {
+                    name: theme === "light" ? "Dark" : "Light",
+                    exact: true,
+                })
+                .click();
+            await expect(page.locator("html")).toHaveClass(
+                theme === "light" ? /dark/ : /^$/
+            );
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            const form = page.getByRole("form", { name: "Store information" });
+            await form
+                .getByRole("button", { name: "Create store", exact: true })
+                .click();
+            await expect(
+                form.getByText("Choose a logo image.", { exact: true })
+            ).toBeVisible();
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            for (const [label, value] of [
+                ["Store name", "Created store"],
+                ["Store email", "new@example.test"],
+                ["Store phone number", "1234567890"],
+                ["Store url", "created-store"],
+                [
+                    "Store description",
+                    "A store description longer than thirty characters for isolated verification.",
+                ],
+            ])
+                await form
+                    .getByRole("textbox", { name: label, exact: true })
+                    .fill(value);
+            await form
+                .getByRole("button", { name: "Upload profile image" })
+                .click();
+            await form
+                .getByRole("button", { name: "Upload cover image" })
+                .click();
+            await form
+                .getByRole("button", { name: "Create store", exact: true })
+                .click();
+            await expect(
+                form.getByRole("textbox", { name: "Store name", exact: true })
+            ).toBeDisabled();
+            await expect(form.getByRole("alert")).toContainText(
+                "Please try again"
+            );
+            await expect(
+                form.getByRole("textbox", { name: "Store name", exact: true })
+            ).toHaveValue("Created store");
+            await form
+                .getByRole("button", { name: "Create store", exact: true })
+                .click();
+            await expect(form.getByRole("status")).toContainText(
+                "Store information saved"
+            );
+            const saved = await page.evaluate(
+                () =>
+                    (window as unknown as { saved: Record<string, unknown>[] })
+                        .saved[0]
+            );
+            expect(saved).not.toHaveProperty("id");
+            expect(saved.url).toBe("created-store");
+            expect(
+                await page.evaluate(
+                    () =>
+                        (window as unknown as { destination: string })
+                            .destination
+                )
+            ).toBe("/dashboard/seller/stores/example");
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({
+                path: info.outputPath(`six-newstore-${width}-${theme}.png`),
+                fullPage: true,
+            });
+        });

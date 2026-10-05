@@ -21,3 +21,5 @@ Server pageが既定配送と国別料金のDecimalを同じドル単位のnumbe
 ## 店舗フォーム
 
 StoreDetailsDataはid/name/description/email/phone/logo/cover/url/featured/statusだけを保持。設定pageは必要な列だけselectし、Decimalなど未使用のDBオブジェクトをClientへ渡さない。upsertStoreActionをServerから注入し、画像と連絡先をscoped gridで配置。既存Zod/featured/画像URLと更新payload・refreshを維持、保存中lock/重複防止/値保持/retry/statusを共通save hookで扱う。店舗作成のAction注入も同じinterfaceへ追従し、本体テーマは別Stepで適用する。
+
+店舗作成は店舗別Shell外のため、scoped standalone枠にheader/ThemeToggle/main/SellerPageを置く。固定sidebar余白を持たず最大1080pxの本文を中央配置。既存APIはidあり=更新、idなし=作成のため、新規保存のみidを省略し、返却urlへ移動する。更新idとrefreshは維持する。画像未選択時はgroupのaria-describedbyとalertでエラーを関連付ける。
