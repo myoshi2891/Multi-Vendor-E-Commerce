@@ -817,3 +817,7 @@ Following/historyは実装あり・認証後実ルート検証保留。Docker re
 ## 優先6画面デザイン移行
 
 - DS-PAGE-061 商品登録: RTLの見出しRed1件・フォーム保存Red1件、ブラウザーの見出しRedと目視後の追加Redを確認。Green/Refactor後の関連Jest50/50、補助Chromium6/6（1440/768/390px・light/dark・focus・カテゴリPortal・axe contrast含む）、画像目視、lint errors0（既存warnings10）、tsc0、harness成功。ProductDetailsのseller opt-in・見出し階層・保存lock/汎用error/retry/status、画像とキーワードの縦配置・動的行の折り返し・旧青色を整理。 全体統計は最終実測まで維持。認証後実ルート/SDKは専用test DB・Clerkテスト販売者環境で解除。[計画](../../plans/layout-design/priority-six-design-system-plan.md)。
+
+- DS-PAGE-060 バリアント追加: 新要件RTL1件の見出しRedを確認。最小実装・既存フォーム再利用後の関連Jest46/46。商品情報の初期値と既存null応答、action Propsを維持。ブラウザーのカテゴリ操作可否は既存仕様に合わせ、商品名/説明/brand非表示とカテゴリ継承を確認する。 全体統計は最終実測まで維持。認証後実ルート/SDKは専用test DB・Clerkテスト販売者環境で解除。[計画](../../plans/layout-design/priority-six-design-system-plan.md)。
+
+DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴリ・商品scope非表示・focus・overflow・axe contrast含む）、関連Jest46/46、tsc0、lint errors0/warnings10、harness成功。

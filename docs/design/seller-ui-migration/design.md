@@ -9,3 +9,5 @@
 ## 検証境界
 
 six suiteはproductionのページ・フォーム・CSSをbundleし、DB/Server Action/Cloudinary/Jodit/Nextをadapterにする。認証後実ルート・SDK内部の実描画は専用test DBとClerk環境で別途受け入れ確認する。
+
+バリアント追加は既存商品のmain情報をProductDetailsへ渡し、Add variantのページ見出しを追加する。商品名・商品説明・brandは従来どおり表示せず、カテゴリの既存操作と初期値を維持。商品レベルの属性は送信しない。取得結果null時の挙動は変更しない。
