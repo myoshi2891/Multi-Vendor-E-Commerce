@@ -1,5 +1,6 @@
-import ThemeToggle from '@/components/shared/theme-toggle'
-import { UserButton } from '@clerk/nextjs'
+import styles from "../design/seller.module.css";
+import ThemeToggle from "@/components/shared/theme-toggle";
+import { UserButton } from "@clerk/nextjs";
 
 /**
  * Renders the application's fixed top header bar containing the user menu and theme toggle.
@@ -8,13 +9,19 @@ import { UserButton } from '@clerk/nextjs'
  *
  * @returns The header JSX element with the user button and theme toggle aligned to the right.
  */
-export default function Header() {
+export default function Header({ design }: { design?: "seller" } = {}) {
     return (
-        <div className="fixed inset-x-0 top-0 z-20 flex items-center gap-4 border-b bg-background/80 p-4 backdrop-blur-md md:left-[300px]">
+        <div
+            className={
+                design === "seller"
+                    ? styles.header
+                    : "fixed inset-x-0 top-0 z-20 flex items-center gap-4 border-b bg-background/80 p-4 backdrop-blur-md md:left-[300px]"
+            }
+        >
             <div className="ml-auto flex items-center gap-2">
                 <UserButton />
-                <ThemeToggle />
+                <ThemeToggle design={design} />
             </div>
         </div>
-    )
+    );
 }

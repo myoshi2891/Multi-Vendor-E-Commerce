@@ -1,0 +1,245 @@
+/* Scoped brand tokens: shared primitives inherit only inside an opted-in surface. */
+.theme {
+    --background: 43 31% 93%;
+    --foreground: 143 23% 12%;
+    --card: 45 38% 97%;
+    --card-foreground: 143 23% 12%;
+    --popover: 45 38% 97%;
+    --popover-foreground: 143 23% 12%;
+    --primary: 143 23% 12%;
+    --primary-foreground: 43 31% 93%;
+    --secondary: 43 22% 88%;
+    --secondary-foreground: 143 23% 12%;
+    --muted: 43 22% 88%;
+    --muted-foreground: 143 10% 34%;
+    --accent: 43 28% 85%;
+    --accent-foreground: 143 23% 12%;
+    --border: 43 16% 72%;
+    --input: 43 16% 62%;
+    --ring: 39 43% 31%;
+    --destructive: 0 68% 36%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 30 80% 30%;
+    --warning-foreground: 0 0% 100%;
+    --brand-gold: #755b2f;
+    --brand-success: #285d3c;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    color-scheme: light;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow-wrap: anywhere;
+}
+:global(.dark) .theme {
+    --background: 144 19% 5%;
+    --foreground: 43 31% 93%;
+    --card: 144 16% 10%;
+    --card-foreground: 43 31% 93%;
+    --popover: 144 16% 10%;
+    --popover-foreground: 43 31% 93%;
+    --primary: 39 49% 67%;
+    --primary-foreground: 143 23% 12%;
+    --secondary: 144 13% 17%;
+    --secondary-foreground: 43 31% 93%;
+    --muted: 144 13% 17%;
+    --muted-foreground: 43 15% 73%;
+    --accent: 144 13% 22%;
+    --accent-foreground: 43 31% 93%;
+    --border: 144 8% 36%;
+    --input: 144 8% 46%;
+    --ring: 39 49% 67%;
+    --destructive: 0 66% 65%;
+    --destructive-foreground: 0 0% 5%;
+    --warning: 30 82% 65%;
+    --warning-foreground: 0 0% 5%;
+    --brand-gold: #d4ba83;
+    --brand-success: #9bcca7;
+    color-scheme: dark;
+}
+.theme :is(h1, h2, h3) {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 400;
+}
+.theme h1 {
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    line-height: 1.15;
+}
+.theme :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+}
+.theme :is(input, select, textarea) {
+    color: hsl(var(--foreground));
+    background: hsl(var(--card));
+    border-color: hsl(var(--input));
+}
+.theme :is(button, input, textarea, select) {
+    border-radius: 3px;
+}
+.theme button:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+.shell {
+    min-height: 100vh;
+}
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--background));
+}
+.header {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.sidebar {
+    display: none;
+    padding: 1.25rem;
+    border-bottom: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+}
+.sidebar[data-open="true"] {
+    display: block;
+}
+.sidebarContent {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+.sidebarContent a {
+    color: hsl(var(--foreground));
+}
+.sidebarContent :global([cmdk-item][aria-selected="true"]) {
+    background: hsl(var(--accent));
+}
+.sidebarContent :global([role="combobox"]) {
+    max-width: 100%;
+}
+.navToggle {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+}
+.main {
+    min-width: 0;
+    padding: 1.5rem 1.25rem 3rem;
+}
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+}
+.heading {
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid hsl(var(--border));
+}
+.eyebrow {
+    margin: 0 0 0.65rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    color: var(--brand-gold);
+    text-transform: uppercase;
+}
+.description {
+    color: hsl(var(--muted-foreground));
+    margin-top: 0.75rem;
+    max-width: 65ch;
+    line-height: 1.65;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+.panel {
+    padding: 1.25rem;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    min-width: 0;
+}
+.tableTools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.tableTools > div {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+.table {
+    min-width: 0;
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+}
+.table :global(table) {
+    min-width: 640px;
+}
+.table :global(th) {
+    color: hsl(var(--muted-foreground));
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+}
+.table :global(td) {
+    vertical-align: top;
+}
+.dialog {
+    max-width: min(960px, calc(100vw - 2rem));
+    max-height: 90dvh;
+    height: auto;
+    overflow: auto;
+    border-radius: 3px;
+}
+.alert {
+    padding: 1rem;
+    border: 1px solid hsl(var(--destructive));
+    color: hsl(var(--destructive));
+}
+@media (min-width: 768px) {
+    .topbar {
+        margin-left: 300px;
+    }
+    .sidebar {
+        display: block;
+        position: fixed;
+        inset: 0 auto 0 0;
+        width: 300px;
+        overflow: auto;
+        border-right: 1px solid hsl(var(--border));
+        border-bottom: 0;
+    }
+    .main {
+        margin-left: 300px;
+        padding: 2rem;
+    }
+    .navToggle {
+        display: none;
+    }
+}
+@media (max-width: 767px) {
+    .grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .theme *,
+    .theme *::before,
+    .theme *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}

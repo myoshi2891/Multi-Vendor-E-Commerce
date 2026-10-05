@@ -635,3 +635,12 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 ## 優先7画面移行記録
 
 2026-10-05。[承認済み保存計画](../../../plans/layout-design/priority-seven-design-system-plan.md)。対象032/004/058/062/055/057/056。計画保存済み、実装前。画面単位Green後にテスト・文書を同梱するコミット粒度はユーザー選択。既存QAの未コミット差分を保持する。
+
+### 共通基盤
+
+- DS-BASE-001は本タスクの販売者scopeのみ実装。グローバル共通基盤全体の完了とは扱わない。新設DS-COMP-208: SellerShellとseller.module.css。
+- Red: seller-shell RTL2件、メニューbutton欠落。Green/Refactor: shell/header/sidebar関連5/5。tscエラー0、lintエラー0/既存警告12。
+- 既存認可/DB取得は変更なし。[02-architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[03-data-model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は変更不要。
+- 補助ブラウザfixtureを追加。Next/Clerk adaptersはmock、DB/送信なし。ローカルlistenのsandbox EPERMは環境失敗でありRedに数えない。
+
+- Supplemental Chromium6/6: 1440/768/390px、light/dark、navigation、theme Portal、overflowなし、axe AA違反0。Radix閉じる遷移中のaria-hiddenを待つようテストを修正（実装のRedに数えない）。実ルート認可/Clerkは未検証。画像は切替前テーマへ戻して記録する。
