@@ -42,7 +42,6 @@ it("keeps store identity for update/deletion and locks pending deletion", async 
     fireEvent.click(
         screen.getByRole("button", {
             name: "Delete store Example store",
-            exact: true,
         })
     );
     const confirm = screen.getByRole("button", { name: "Confirm delete" });

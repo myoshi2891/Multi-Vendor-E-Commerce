@@ -778,3 +778,5 @@ DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴ�
 ### DS-PAGE-050 管理者店舗
 
 先行RTL2件のregion/searchbox/取得失敗Red確認。Green後にstore identity・pending削除lock/重複防止の回帰を追加。関連Jest102/102、補助Chromium6/6（3幅/light/dark・名前検索・状態pending/error/retry/success・詳細配送値/Portal/Escape復帰・削除cancel/pending lock/error/retry/success・axe contrast含む）、390px画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。不要なUser情報をClientに渡さず配送Decimalのみserialize。認証後実ルートは実装あり・保留。
+
+店舗回帰テスト補正: 後続の統合tscでRTL getByRoleの余分なexact optionを検出し削除。実装動作変更なし。補正後の単独Jest1/1・tsc exit0・対象ESLint exit0を確認。以後チェックはset -eで失敗終了を伝播させる。
