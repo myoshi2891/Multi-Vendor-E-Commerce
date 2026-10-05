@@ -201,3 +201,102 @@ for (const width of [1440, 768, 390])
                 "Could not load stores"
             );
         });
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`coupons ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=coupons&loadfailure&failure");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", {
+                    level: 1,
+                    name: "Coupons",
+                    exact: true,
+                })
+            ).toHaveCSS("font-family", /Georgia/);
+            const search = page.getByRole("searchbox");
+            await search.fill("missing");
+            await expect(page.getByText("No Results.")).toBeVisible();
+            await search.fill("WELCOME");
+            const edit = page.getByRole("button", {
+                name: "Edit coupon WELCOME",
+            });
+            await edit.click();
+            await expect(page.getByRole("alert")).toContainText(
+                "Could not load coupon"
+            );
+            await expect(page.getByRole("form")).toHaveCount(0);
+            await page.getByRole("button", { name: "Retry load" }).click();
+            await expect(
+                page.getByRole("textbox", { name: "Coupon code" })
+            ).toHaveValue("WELCOME");
+            await page
+                .getByRole("spinbutton", { name: "Coupon discount" })
+                .fill("15");
+            await page
+                .getByRole("button", { name: "Save coupon", exact: true })
+                .click();
+            await expect(
+                page.getByRole("textbox", { name: "Coupon code" })
+            ).toBeDisabled();
+            await page.keyboard.press("Escape");
+            await expect(page.getByRole("dialog")).toBeVisible();
+            await expect(page.getByRole("alert")).toContainText(
+                "Your input has been kept"
+            );
+            await expect(
+                page.getByRole("spinbutton", { name: "Coupon discount" })
+            ).toHaveValue("15");
+            await page
+                .getByRole("button", { name: "Save coupon", exact: true })
+                .click();
+            await expect(page.getByText("Coupon saved.")).toBeVisible();
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: info.outputPath(`coupons-${width}-${theme}.png`),
+                fullPage: true,
+            });
+            await page.keyboard.press("Escape");
+            await expect(edit).toBeFocused();
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            await page
+                .getByRole("button", { name: "Create New Coupon", exact: true })
+                .click();
+            await page
+                .getByRole("button", { name: "Create coupon", exact: true })
+                .click();
+            await expect(
+                page.getByText("Discount percentage must be at least 1%")
+            ).toBeVisible();
+            await page.keyboard.press("Escape");
+            await page
+                .getByRole("button", {
+                    name: "Delete coupon WELCOME",
+                    exact: true,
+                })
+                .click();
+            await page
+                .getByRole("button", { name: "Cancel", exact: true })
+                .click();
+            await expect(page.getByRole("dialog")).toHaveCount(0);
+            await page.goto("/?screen=coupons&missingcoupon");
+            await page
+                .getByRole("button", { name: "Edit coupon WELCOME" })
+                .click();
+            await expect(page.getByRole("alert")).toBeVisible();
+            await expect(page.getByRole("form")).toHaveCount(0);
+        });

@@ -28,3 +28,9 @@ StoreDetailsDataはid/name/description/email/phone/logo/cover/url/featured/statu
 ## 最終監査の共通部品
 
 既定・国別配送のラベル付き入力はShippingFields（DS-COMP-218）へ集約し、フォームごとのschemaとfield名を維持する。sellerテーブルだけ名前付き・フォーカス可能なスクロール領域を使用し、空状態でもキーボード操作を確保。画像galleryはseller opt-inで意味のある画像名と削除button名を持ち、hoverとfocus-withinで操作を表示する。他scopeの見た目は維持する。
+
+## 販売者クーポン デザイン移行（2026-10-05）
+
+既存scopedブランド基盤を利用し、対象本体と展開UIを統一。Serverから型付きAction Propsを渡す。Legalは公開Server Componentと既存本文/アンカーを保持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。

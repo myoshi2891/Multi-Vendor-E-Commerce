@@ -1,42 +1,35 @@
-// Queries
-import DataTable from '@/components/ui/data-table'
-import { columns } from './columns'
-import { Plus } from 'lucide-react'
-import { getStoreCoupons } from '@/queries/coupon'
-import CouponDetails from '@/components/dashboard/forms/coupon-details'
-
-export const dynamic = 'force-dynamic';
-
-/**
- * Renders the seller coupons page for a specific store.
- *
- * Fetches coupons for the store identified by `params` and renders a DataTable
- * with search, filtering by name, and controls to create or view coupon details.
- *
- * @param params - A promise that resolves to an object containing the store's `storeUrl`
- * @returns A React element containing the coupons DataTable for the specified store
- */
-export default async function SellerCouponsPage({ params }: { params: Promise<{ storeUrl: string }> }) {
+import {
+    getStoreCoupons,
+    getCoupon,
+    upsertCoupon,
+    deleteCoupon,
+} from "@/queries/coupon";
+import SellerCoupons from "@/components/dashboard/seller/seller-coupons";
+import SellerPage from "@/components/dashboard/design/seller-page";
+import LoadError from "@/components/dashboard/design/load-error";
+export const dynamic = "force-dynamic";
+export default async function SellerCouponsPage({
+    params,
+}: {
+    params: Promise<{ storeUrl: string }>;
+}) {
     const { storeUrl } = await params;
-    // Get all coupons for the store
-    const coupons = await getStoreCoupons(storeUrl)
-
+    const coupons = await getStoreCoupons(storeUrl).catch(() => null);
+    if (!coupons)
+        return (
+            <SellerPage id="seller-coupons" title="Coupons">
+                <LoadError subject="coupons" />
+            </SellerPage>
+        );
     return (
-        <div>
-            <DataTable
-                actionButtonText={
-                    <>
-                        <Plus size={15} />
-                        Create New Coupon
-                    </>
-                }
-                modalChildren={<CouponDetails storeUrl={storeUrl} />}
-                newTabLink={`/dashboard/seller/stores/${storeUrl}/coupons/new`}
-                filterValue="name"
-                data={coupons}
-                columns={columns}
-                searchPlaceholder="Search coupon ..."
-            />
-        </div>
-    )
+        <SellerCoupons
+            coupons={coupons}
+            storeUrl={storeUrl}
+            actions={{
+                loadAction: getCoupon,
+                saveAction: upsertCoupon,
+                deleteAction: deleteCoupon,
+            }}
+        />
+    );
 }

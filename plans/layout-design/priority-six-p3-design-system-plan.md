@@ -42,7 +42,7 @@ DB/API/認可/集計・計算/状態遷移/法務本文は変更しない。既�
 - [x] DS-PAGE-049: TDD/実装/検証/文書同期/commit
 - [x] DS-PAGE-048: TDD/実装/検証/文書同期/commit
 - [x] DS-PAGE-050: TDD/実装/検証/文書同期/commit
-- [ ] DS-PAGE-054: TDD/実装/検証/文書同期/commit
+- [x] DS-PAGE-054: TDD/実装/検証/文書同期/commit
 - [ ] DS-PAGE-053: TDD/実装/検証/文書同期/commit
 - [ ] DS-PAGE-015: TDD/実装/検証/文書同期/commit
 - [ ] 最終Codex監査・回帰・統計・文書整合

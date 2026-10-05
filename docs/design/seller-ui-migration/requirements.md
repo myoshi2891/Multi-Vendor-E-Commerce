@@ -64,3 +64,9 @@ DS-PAGE-065 店舗作成: 先行RTL2件でmain/h1/theme control不足と新規ID
 
 
 最終監査の要件: 商品画像の削除はキーボードで操作でき、番号付きの名前を持つ。配送表のスクロール領域は空状態でもフォーカス可能。店舗URLを変更して保存した場合は返却URLのsettingsへ移動し、同一URLの場合はrefreshする。[設計](design.md)。
+
+## 販売者クーポン デザイン移行（2026-10-05）
+
+深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。

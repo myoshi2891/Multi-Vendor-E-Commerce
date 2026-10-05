@@ -95,7 +95,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-051 | `/dashboard` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/page.tsx](<../../../src/app/dashboard/page.tsx>) | 未実施 |
 | DS-PAGE-052 | `/dashboard/seller` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/seller/page.tsx](<../../../src/app/dashboard/seller/page.tsx>) | 未実施 |
 | DS-PAGE-053 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) | 未実施 |
-| DS-PAGE-054 | `/dashboard/seller/stores/[storeUrl]/coupons` | 未適用 | P3 | TODO | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) | 未実施 |
+| DS-PAGE-054 | `/dashboard/seller/stores/[storeUrl]/coupons` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
@@ -338,6 +338,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-220 | P3 | 管理者注文・詳細・列factory | [AdminOrders](../../../src/components/dashboard/admin/admin-orders.tsx) | 保留 | 補助検証済み・実ルート保留。[P3証跡](#p3優先6画面移行記録) |
 | DS-COMP-221 | P3 | 管理者店舗・配送詳細・列factory | [AdminStores](../../../src/components/dashboard/admin/admin-stores.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
 | DS-COMP-222 | P3 | 削除確認・pending lock | [ConfirmDelete](../../../src/components/dashboard/design/confirm-delete.tsx) | 保留 | モックAction検証済み・実ルート保留。[P3証跡](#p3優先6画面移行記録) |
+| DS-COMP-223 | P3 | クーポン一覧・列factory・編集再取得 | [SellerCoupons](../../../src/components/dashboard/seller/seller-coupons.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
+| DS-COMP-224 | P3 | seller専用クーポンフォーム | [SellerCouponForm](../../../src/components/dashboard/seller/seller-coupon-form.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -780,3 +782,11 @@ DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴ�
 先行RTL2件のregion/searchbox/取得失敗Red確認。Green後にstore identity・pending削除lock/重複防止の回帰を追加。関連Jest102/102、補助Chromium6/6（3幅/light/dark・名前検索・状態pending/error/retry/success・詳細配送値/Portal/Escape復帰・削除cancel/pending lock/error/retry/success・axe contrast含む）、390px画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。不要なUser情報をClientに渡さず配送Decimalのみserialize。認証後実ルートは実装あり・保留。
 
 店舗回帰テスト補正: 後続の統合tscでRTL getByRoleの余分なexact optionを検出し削除。実装動作変更なし。補正後の単独Jest1/1・tsc exit0・対象ESLint exit0を確認。以後チェックはset -eで失敗終了を伝播させる。
+
+### DS-PAGE-054 販売者クーポン
+
+SDK/uuidのJest adapter不足は環境エラーとして除外後、先行RTL2件のheading/code検索/取得失敗Red確認。SellerCoupons/専用formでscope・更新ID・payload・遷移を維持。共有CouponFormFieldsのnative number/datetime-localはseller opt-inのみ、admin既定SDKは維持。browser6/6（3幅/light/dark・load失敗/retry/null拒否・編集pending/close lock/error/値保持/retry/success・create validation・delete cancel・axe contrast含む）、390px dark画像目視。最終Jest/tsc/lint結果は下記最終確認。認証後実ルートは実装あり・保留。
+
+旧CouponDetails/旧クーポン列（DS-COMP-150/176）、旧admin注文/店舗列（174/175）は新ルートから利用しない。旧部品の全scope移行完了とは扱わず利用監査を継続する。
+
+DS-PAGE-054最終確認: 関連Jest117/117（旧coupon列/既定adminフォーム含む）、tsc exit0、lint0 errors/既存10 warnings、補助Chromium6/6、harness成功。新要件Redと既存実装の回帰追加は区別する。

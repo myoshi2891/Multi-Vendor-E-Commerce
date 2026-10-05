@@ -78,3 +78,24 @@ export const stores = [
         returnPolicy: "Existing return policy",
     },
 ];
+export const coupons = [
+    {
+        id: "coupon-1",
+        code: "WELCOME",
+        discount: 10,
+        startDate: "2026-10-01T12:30:00",
+        endDate: "2026-12-01T12:30:00",
+        isActive: true,
+        scope: "STORE",
+        storeId: "store-1",
+        createdAt: new Date("2026-10-01"),
+        updatedAt: new Date("2026-10-01"),
+    },
+];
+let loads = 0;
+export async function loadCoupon() {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    if (location.search.includes("loadfailure") && loads++ === 0)
+        throw Error("fixture");
+    return location.search.includes("missingcoupon") ? null : coupons[0];
+}

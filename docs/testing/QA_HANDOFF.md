@@ -848,3 +848,7 @@ DS-PAGE-060最終確認: 補助Chromium6/6（3幅/light/dark、初期カテゴ�
 - DS-PAGE-048 管理者注文: 先行RTL2件のregion/searchbox/取得失敗Red確認。Green後に管理者group/item Action引数・ID/詳細の回帰を追加。Refactor後関連Jest37/37、補助Chromium6/6（3幅/light/dark・codeではなく注文ID検索・状態pending/error/retry/success・詳細Portal/Escape復帰・axe contrast含む）、390px dark画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。ServerでDecimal/日時を表示用にserialize、既存searchParams/query契約保持。認証後実ルートは実装あり・保留。
 
 - DS-PAGE-050 管理者店舗: 先行RTL2件のregion/searchbox/取得失敗Red確認。Green後にstore identity・pending削除lock/重複防止の回帰を追加。関連Jest102/102、補助Chromium6/6（3幅/light/dark・名前検索・状態pending/error/retry/success・詳細配送値/Portal/Escape復帰・削除cancel/pending lock/error/retry/success・axe contrast含む）、390px画像目視。tsc0、lint0 errors/既存10 warnings、harness成功。不要なUser情報をClientに渡さず配送Decimalのみserialize。認証後実ルートは実装あり・保留。
+
+- DS-PAGE-054 販売者クーポン: SDK/uuidのJest adapter不足は環境エラーとして除外後、先行RTL2件のheading/code検索/取得失敗Red確認。SellerCoupons/専用formでscope・更新ID・payload・遷移を維持。共有CouponFormFieldsのnative number/datetime-localはseller opt-inのみ、admin既定SDKは維持。browser6/6（3幅/light/dark・load失敗/retry/null拒否・編集pending/close lock/error/値保持/retry/success・create validation・delete cancel・axe contrast含む）、390px dark画像目視。最終Jest/tsc/lint結果は下記最終確認。認証後実ルートは実装あり・保留。
+
+DS-PAGE-054最終確認: 関連Jest117/117（旧coupon列/既定adminフォーム含む）、tsc exit0、lint0 errors/既存10 warnings、補助Chromium6/6、harness成功。新要件Redと既存実装の回帰追加は区別する。
