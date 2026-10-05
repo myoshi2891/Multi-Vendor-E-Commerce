@@ -87,3 +87,9 @@ Shipping settings uses a branded responsive defaults form and searchable country
 Store settings uses responsive logo/cover and labeled profile/contact fields in the seller light/dark theme. Preserve validation, featured value and update payload/navigation; lock saves and retain failed values with generic retry and status feedback.
 
 Store creation has a standalone branded light/dark workspace with a main landmark, theme toggle and the shared labeled store form. Preserve validation/images/featured and navigate to the returned store URL. Creation omits id to use the existing create branch; updates retain id and owner guards.
+
+## P3優先6画面のデザイン移行（2026-10-05）
+
+管理者概要・注文・店舗、販売者クーポン一覧・新規作成、Legalの6画面を既存ブランドトークンへ移行。情報・役割認可・計算・法務本文を維持し、空／失敗／pending、再試行、キーボード、狭幅、light/darkを受け入れ条件とする。Legalは公開実ルート検証済み、業務5画面は認証後受け入れ保留。
+
+詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。

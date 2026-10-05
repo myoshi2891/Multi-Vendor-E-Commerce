@@ -139,3 +139,9 @@ Scoped seller light/dark themes and explicit Portal styles preserve other consum
 Use scoped light/dark themes and explicit portal inheritance, serif headings, readable wrapping and visible keyboard focus. Verify 1440/768/390px with axe WCAG AA including contrast; fixture adapters do not prove authenticated route or SDK rendering.
 
 Seller gallery removal is keyboard accessible with meaningful image/button names. Seller data-table scroll regions remain keyboard accessible when filtering returns no rows. The shared shipping fields retain the caller's validation and numeric units. [Six-screen evidence](../../docs/design/design-system/PROGRESS.md#優先6画面移行記録).
+
+## P3優先6画面のデザイン移行（2026-10-05）
+
+P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440pxとWCAG AA axe（contrast除外なし）を補助fixtureで検証する。実Sidebar/Header・フォーカス・native操作・表スクロール・旧P4 toolbarの回帰を含む。Clerk UIと認証後実ルートの受け入れはfixture証跡から分離する。
+
+詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。

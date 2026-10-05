@@ -267,3 +267,9 @@ upsertStore retains its existing contract: absent id selects creation and presen
 
 
 Seller presentation adapters additionally accept `Table.scrollLabel` for an opt-in named, keyboard-focusable scroll region and `ImagesPreviewGrid.design="seller"` for named image/removal actions. Default consumers preserve existing markup behavior. `ShippingFields` shares form controls while each caller retains its schema and field names. Store settings replace the route with the returned settings URL after a URL change; an unchanged URL refreshes the current route.
+
+## P3優先6画面のデザイン移行（2026-10-05）
+
+AdminOrders/AdminStores/SellerCoupons/SellerCouponFormは型付きAction Propsを受け取る。既存queriesの署名・認可を維持し、Server Componentから既存Actionへのadapterを渡す。admin-orders/admin-storesの表示用serializerはDecimalを文字列／数値へ投影し、User内部情報をClientへ渡さない。クーポン共有入力のseller opt-inは既存管理者フォームの既定動作を維持する。
+
+詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。
