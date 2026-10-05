@@ -54,7 +54,7 @@
 
 ### 2.1 件数
 
-2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。2026-10-05のoffers/dispute/report-problemは検証済み3追加、following/historyは実装済み・認証後実ルート検証保留2追加。現在は検証済み14・検証保留11・未適用21。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
+2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。2026-10-05のoffers/dispute/report-problemは検証済み3追加、following/historyは実装済み・認証後実ルート検証保留2追加。現在は検証済み14・検証保留12・未適用20。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
 
 | 区分 | ページ定義 |
 |---|---:|
@@ -68,8 +68,8 @@
 |---|---:|
 | 検証済み（2026-10-05） | 14 |
 | 本体適用・周辺確認 | 12 |
-| 本体適用・検証保留 | 11 |
-| 未適用 | 21 |
+| 本体適用・検証保留 | 12 |
+| 未適用 | 20 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
 | **合計** | **66** |
@@ -140,7 +140,7 @@
 | `/dashboard/seller/stores/[storeUrl]` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx>) |
-| `/dashboard/seller/stores/[storeUrl]/products/new` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) |
+| `/dashboard/seller/stores/[storeUrl]/products/new` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/products` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/settings` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/shipping` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) |
@@ -650,3 +650,10 @@ DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通C
 - [ ] DS-PAGE-056: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
 
 新設部品DS-COMP-208〜216は販売者/申請scopeの本体適用・補助検証済み・認証後受け入れ保留。[台帳](../../docs/design/design-system/PROGRESS.md#部品台帳)。共通部品の他scopeを一括完了にしない。
+
+### 優先6画面移行チェック
+
+[保存計画](priority-six-design-system-plan.md)／[実施記録](../../docs/design/design-system/PROGRESS.md#優先6画面移行記録)。
+
+- [x] DS-PAGE-061 商品登録: TDD・実装・補助検証・仕様同期。
+- [ ] DS-PAGE-061: 認証後実ルートと必要なSDK実描画（実装あり・保留）。

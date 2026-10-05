@@ -75,3 +75,7 @@ Offers retain tag order, product counts and browse-filter destinations in brande
 ### Priority seven screen presentation
 
 Account settings uses Clerk hash routing with typed brand appearance and a labeled account section. Seller application retains four steps and validated values, exposes progress, pending/error/retry/success, supports reduced motion and uses readable branded guest links. Seller overview/products/inventory/orders/messages share scoped light/dark tokens, serif headings, responsive navigation and local table scrolling. Inventory and order status saves lock pending requests and expose generic failure/retry and success feedback. Seller messages identify the buyer, show latest-message unread state, retain failed drafts, use existing five-second polling with stale/unmount/hidden cancellation, and switch between list/thread on small screens. Existing authorization, schema, money units/calculation and transaction/state-transition rules remain unchanged. [Saved plan](../../plans/layout-design/priority-seven-design-system-plan.md), [seller UI requirements](../../docs/design/seller-ui-migration/requirements.md).
+
+## Seller product and store form presentation
+
+Seller product creation uses the existing responsive branded light/dark workspace, a labeled page and form heading, readable dynamic fields and themed portal controls. Lock fields during save, retain failed input with generic retry feedback, announce pending/success, and preserve existing product/variant payloads and navigation.

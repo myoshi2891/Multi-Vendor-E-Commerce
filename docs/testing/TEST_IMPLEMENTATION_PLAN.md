@@ -1086,3 +1086,7 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-05): DS-PAGE-056 販売者メッセージの先行RTL/補助ブラウザ。認証後実ルート確認は保留。[証跡](../design/design-system/PROGRESS.md#優先7画面移行記録)。
 
 - ✅ Completed (2026-10-05): 優先7画面の先行TDD/回帰、補助42/42、実guest5/5、最終全体Jest2802/2805（既存skip3）、275suites/127snapshots、lint0errors・11既存warnings/tsc0。認証後7画面/SDK受け入れは[DS-SEVEN-BROWSER](./QA_HANDOFF.md#ds-seven-browser)として保留。
+
+## 優先6画面デザイン移行
+
+- DS-PAGE-061 商品登録: ✅ Completed (2026-10-05) — TDD・補助検証・仕様同期。認証後実ルートは保留。

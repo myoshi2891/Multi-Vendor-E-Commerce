@@ -390,9 +390,10 @@ const validData = (
         ...overrides,
     }) as Partial<ProductWithVariantType>;
 
-const renderForm = (data?: ProductFormData) =>
+const renderForm = (data?: ProductFormData, design?: "seller") =>
     render(
         <ProductDetails
+            design={design}
             upsertProductAction={upsertProduct}
             getAttributeDefinitionsAction={getEffectiveAttributeDefinitions}
             data={data}
@@ -439,6 +440,43 @@ describe("ProductDetails", () => {
     // spy の実装を戻さないので、別途 restoreAllMocks が要る。
     afterEach(() => {
         jest.restoreAllMocks();
+    });
+
+    it("locks the seller editor during save and retains values for retry after failure", async () => {
+        let rejectSave!: (error: Error) => void;
+        mockUpsertProduct.mockImplementationOnce(
+            () =>
+                new Promise((_, reject) => {
+                    rejectSave = reject;
+                })
+        );
+        jest.spyOn(console, "error").mockImplementation(() => {});
+        renderForm(validData(), "seller");
+        expect(
+            screen.getByRole("heading", {
+                level: 2,
+                name: "Product information",
+            })
+        ).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+        await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalledTimes(1));
+        expect(screen.getByPlaceholderText("Product Name")).toBeDisabled();
+        expect(screen.getByRole("status")).toHaveTextContent("Saving product");
+        rejectSave(new Error("Private database failure"));
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "Please try again"
+        );
+        expect(screen.getByRole("alert")).not.toHaveTextContent(
+            "Private database failure"
+        );
+        expect(screen.getByPlaceholderText("Product Name")).toHaveValue(
+            "Camera Body"
+        );
+        expect(screen.getByPlaceholderText("Product Name")).not.toBeDisabled();
+        mockUpsertProduct.mockResolvedValueOnce({} as never);
+        fireEvent.click(screen.getByRole("button", { name: /Save/i }));
+        await waitFor(() => expect(mockUpsertProduct).toHaveBeenCalledTimes(2));
+        expect(screen.getByRole("status")).toHaveTextContent("Product saved");
     });
 
     describe("カテゴリ選択（plan 068 のツリー化）", () => {
