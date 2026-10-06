@@ -33,8 +33,8 @@
 ## Current state
 
 - `package.json:26` `"@prisma/client": "5.22.0"`、`:27` `"@prisma/extension-accelerate": "^1.2.0"`、`:140` `"prisma": "5.22.0"`（いずれもピン留め）
-- `prisma/schema.prisma:3` `previewFeatures = ["fullTextSearch"]`。Prisma の `search:` クエリは使っておらず、
-  全文検索は `"searchVector"` に対する生 SQL（ADR-008）
+- `prisma/schema.prisma:3` `previewFeatures = ["fullTextSearch"]`。商品検索・ブラウズの全文検索は `"searchVector"` に対する生 SQL（ADR-008）だが、
+  **`src/app/api/index-products/route.ts` が Prisma の `search:` フィルタを使っている**（起票時は見落とし、実施時に判明）
 - 暗黙の多対多は 2 つ: `User.following ↔ Store.followers`（`_UserFollowingStore`）と `User.coupons ↔ Coupon`（`_CouponToUser`）。
   `prisma/migrations/20260222101357_init_postgresql/migration.sql:625, 631` で `CREATE UNIQUE INDEX "_..._AB_unique"` として作られている
 - `prisma/schema.prisma:222` `searchVector Unsupported("tsvector")? @default(dbgenerated("<pg_get_expr の生成式>"))` と `:229` `@@index([searchVector], type: Gin)`。
@@ -101,11 +101,12 @@ bunx prisma generate
 
 **Verify**: `bunx prisma --version` が 6.x、`bunx prisma generate` が成功する
 
-### Step 2: previewFeatures を削除する
+### Step 2: previewFeatures を改名する
 
-`fullTextSearch` は PostgreSQL では `fullTextSearchPostgres` に改名されたが、`search:` クエリを使っていないので**行ごと削除**する。
+`fullTextSearch` は PostgreSQL では `fullTextSearchPostgres` に改名された。`index-products` route が `search:` フィルタを使うため、
+削除ではなく**改名**する（削除すると型エラーになり、route が動かなくなる）。
 
-**Verify**: `bunx prisma validate` が成功し、`grep -rn "search:" src/ --include=*.ts | grep -v test` に Prisma の `search` フィルタが 0 件
+**Verify**: `bunx prisma validate` と `bunx prisma generate` が成功する
 
 ### Step 3: マイグレーションを作る（`safe-migration` スキル）
 
@@ -164,15 +165,15 @@ bun run erd:generate
 
 ## Done criteria
 
-- [ ] `prisma` / `@prisma/client` が 6.x にピン留めされている
-- [ ] `previewFeatures` が無い
-- [ ] 新規マイグレーションが 1 本（多対多 2 テーブルの主キー化のみ）
-- [ ] Step 4 のドリフト判定が 2 つとも exit 0
-- [ ] `bun run erd:generate` の結果がスキーマ変更と同じコミットに含まれる
-- [ ] tsc exit 0 / lint 0 errors / Unit・Integration の件数が着手前と一致 / stub `DATABASE_URL` で build 成功
-- [ ] 使い捨て DB への `migrate deploy` の通し適用が成功
+- [x] `prisma` / `@prisma/client` が 6.x にピン留めされている
+- [x] `previewFeatures` が `fullTextSearchPostgres` に改名されている
+- [x] 新規マイグレーションが 1 本（多対多 2 テーブルの主キー化のみ）
+- [x] Step 4 のドリフト判定が 2 つとも exit 0
+- [x] `bun run erd:generate` を実行（図の差分なし。差分が出た場合はスキーマ変更と同じコミットに含める）
+- [x] tsc exit 0 / lint 0 errors / Unit・Integration の件数が着手前と一致 / stub `DATABASE_URL` で build 成功
+- [x] 使い捨て DB への `migrate deploy` の通し適用が成功（Integration の testcontainers）
 - [ ] PR 本文に「本番で `migrate deploy` による多対多の主キー化 1 本の適用が必要」と明記
-- [ ] `plans/README.md` の 081 の行を更新し、Next Actions の DEP-PRISMA6 を `render-html.ts` と `QA_HANDOFF.md` の両方から削除
+- [x] `plans/README.md` の 081 の行を更新し、Next Actions の DEP-PRISMA6 を `render-html.ts` と `QA_HANDOFF.md` の両方から削除
 
 ## STOP conditions
 
@@ -210,6 +211,23 @@ bun run erd:generate
 - Jest と bun のモジュール解決（ESM の生成クライアント）
 - 8 は GA を待って判断する
 
-## 実施結果
+## 実施結果（2026-10-06・未コミット）
 
-（未着手）
+- **着手前の実測**: Unit 302 スイート（1 skip）/ 2,922 件（3 skip）/ スナップショット 127、Integration 17 スイート / 222 件
+- **依存**: `prisma` / `@prisma/client` を `6.19.3`（完全一致）へ。`@prisma/extension-accelerate ^1.2.0` は据え置き（generate / tsc / build で問題なし）。
+  v6 ガイドの他の破壊的変更（`Bytes` の `Uint8Array` 化・`NotFoundError` 削除・予約語 `async`/`await`/`using`）は該当 0 件。Node v22.23 / TS 5.8.3 は要件を満たす
+- **previewFeatures**: 起票時の「`search:` は未使用」は誤り。`src/app/api/index-products/route.ts` が使っているため、削除ではなく `fullTextSearchPostgres` へ改名した
+- **マイグレーション**: `20261006120000_modify_implicit_m2m_pk`。中身は想定どおり `_CouponToUser` / `_UserFollowingStore` の `ADD CONSTRAINT ..._AB_pkey PRIMARY KEY ("A", "B")` + `DROP INDEX ..._AB_unique` の 4 文のみで、`searchVector` には触れない。
+  - ローカル DB では `migrate dev` が使えなかった: `20260901223148_category_tree_phase_b_resync` が適用（2026-09-02）後に `0ffb72b8`（2026-09-05）で編集されており、チェックサムの不一致でリセット（全データ削除）を要求されるため。Prisma 6 とは無関係の既存の状態。
+    代わりに使い捨ての shadow DB で `migrate diff --from-migrations ... --to-schema-datamodel ... --script` から SQL を生成し、ローカル DB へは `migrate deploy`（チェックサムを検査しない。本番と同じ経路）で適用した
+- **ドリフト判定**: `--from-migrations`（新規分を含む）↔ スキーマ、適用後のローカル DB ↔ スキーマの両方が **exit 0**。ADR-008 D-5 の `dbgenerated` 宣言は Prisma 6 でもドリフト扱いにならない
+- **ER 図**: `bun run erd:generate` で orphan WARNING 0、`data-model.drawio` の差分なし（モデル・リレーションは不変）
+- **追従修正 1 件**: Integration（`testEnvironment: "jsdom"`）で `disconnectTestDb()` が `ReferenceError: setImmediate is not defined` で落ちた。
+  Prisma 6 の LibraryEngine は `$disconnect()` の内部で `setImmediate` を使い、jest-environment-jsdom はそれを global から外すため。
+  `tests-setup/jest.setup.ts` で未定義のときだけ Node の `timers` から補う（node 環境では何もしない）
+- **検証**: tsc exit 0 / lint 0 errors（警告 8 件は既存）/ Unit・Integration ともに件数が着手前と一致 / stub `DATABASE_URL` で `bun run build` 成功。
+  Integration は testcontainers の空 DB に 24 本を `migrate deploy` で通し適用するため、Step 7-1 もこれで確認済み
+- **E2E（Chromium・`test:e2e:local`）**: 9 passed / 7 failed。失敗は `purchase-flow` 5 件（「Product added to cart」のトーストが出ない）、
+  `engagement` のフォロー 1 件（`Follow` ボタンが見つからない）、`platform-coupon` 1 件。
+  **HEAD（Prisma 5.22）の worktree でも同じ 7 件が同じロケーターで失敗**するため、既存の失敗で本アップグレードの回帰ではない。`search-filter` は全件 pass
+- **本番**: Neon への `migrate deploy`（本マイグレーション 1 本）はオペレーターが行う。適用前に 2 テーブルの重複行が 0 であることを確認する（既存の UNIQUE インデックスがあるため通常は 0）

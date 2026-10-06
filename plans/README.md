@@ -35,7 +35,6 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | — | TODO |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | — | TODO |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
-| [081](081-prisma-6-upgrade.md) | Prisma 5.22 → 6.x（段階移行の第 1 段。多対多の主キー化マイグレーション 1 本） | dependencies | P3 | — | TODO |
 
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
 - Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（020・016・017 は独立）。
@@ -109,5 +108,6 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [074](074-product-search-vector-column.md) | 重み付き検索ベクトル列（brand・keywords）+ GIN（ADR-008・015 の後続実装 1/3） | migration | P2 | 073 | DONE（2026-10-03・43b401d5〜86b9c786） |
 | [075](075-unify-browse-search-and-type-filters.md) | ブラウズ検索の検索ベクトル統合 + `ProductFilters` 型付け + slug 並列解決（015 の後続実装 2/3） | direction | P2 | 074 | DONE（2026-10-03・43b401d5〜86b9c786） |
 | [076](076-facet-counts-and-min-price.md) | 属性ファセット件数 + `minPrice` 非正規化で価格ソートを全件に適用（015 の後続実装 3/3） | direction | P2 | 075 | DONE（2026-10-03・43b401d5〜86b9c786） |
+| [081](081-prisma-6-upgrade.md) | Prisma 5.22 → 6.x（段階移行の第 1 段。多対多の主キー化マイグレーション 1 本） | dependencies | P3 | — | DONE（2026-10-06・未コミット） |
 
 </details>

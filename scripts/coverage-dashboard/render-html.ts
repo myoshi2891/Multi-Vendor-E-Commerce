@@ -365,15 +365,7 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "S",
         impact: "絞り込みと表示・価格ソートの意味を一致させる（08-open-questions の解消）",
     },
-    {
-        // plans/081（2026-10-06 起票）。QA_HANDOFF「次回着手用 依頼プロンプト」の DEP-PRISMA6 と一対一対応。
-        priority: "low",
-        title: "DEP-PRISMA6: Prisma 5.22 → 6.x へ上げる（段階移行の第 1 段）",
-        target: "package.json / prisma/schema.prisma / 新規マイグレーション（暗黙の多対多 2 テーブルの主キー化）",
-        tool: "safe-migration + prisma migrate diff（ドリフト判定）+ 既存 Unit / Integration / E2E",
-        cost: "M",
-        impact: "8 は rc のため 5 → 6 → 7 と段階で上げ、壊れた段を切り分けられるようにする。searchVector（ADR-008 D-5）がドリフト扱いにならないことを確認する",
-    },
+    // DEP-PRISMA6（plans/081）は 2026-10-06 に完了したため削除した（QA_HANDOFF の同名プロンプトも同時に削除）。
     {
         priority: "low",
         title: "Bundle Size の継続監視",
