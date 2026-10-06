@@ -83,6 +83,16 @@ const ProductReviews: FC<Props> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters, sort, page])
 
+    // 端数ページも 1 ページとして数える（10 件 / 4 件 → 3 ページ）。
+    // 未絞り込み時は総件数で判定し、件数の少ない最終ページでもナビゲーションを残す
+    const isFilteredView = !!(filters.rating || filters.hasImages)
+    const totalPages = Math.ceil(
+        (isFilteredView ? data.length : totalReviews) / pageSize
+    )
+    const showPagination = isFilteredView
+        ? data.length >= pageSize
+        : totalPages > 1
+
     return (
         <section id="reviews" className={styles.reviewSection}>
             <div className={styles.contentHeading}><div><p>VOICES FROM THE COLLECTION</p><h2>Customer reviews ({totalReviews})</h2></div></div>
@@ -141,16 +151,12 @@ const ProductReviews: FC<Props> = ({
                         )}
                     </div>
                     {/* Pagination */}
-                    {data.length >= pageSize && (
+                    {showPagination && (
                         <Pagination
                             variant="editorial"
                             page={page}
                             setPage={setPage}
-                            totalPages={
-                                filters.rating || filters.hasImages
-                                    ? data.length / pageSize
-                                    : totalReviews / pageSize
-                            }
+                            totalPages={totalPages}
                         />
                     )}
                 </>
