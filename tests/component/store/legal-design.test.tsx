@@ -3,6 +3,7 @@ import React from "react";
 import { render, screen, within } from "@testing-library/react";
 import Page, { metadata } from "@/app/(store)/legal/page";
 import { LEGAL_SECTIONS } from "@/components/store/static/content/legal";
+import { sectionAnchorId } from "@/components/store/static/static-page-layout";
 it("provides a labeled legal contents navigation and preserves existing anchors/body/metadata", () => {
     render(<Page />);
     const contents = screen.getByRole("navigation", { name: "Legal contents" });
@@ -31,13 +32,11 @@ it("adds a breadcrumb home link without replacing placeholder copy", () => {
     ).toHaveAttribute("href", "/");
     expect(screen.getAllByText(/（プレースホルダ）/)).toHaveLength(3);
 });
-it("fails loudly when legal sections and anchors diverge", () => {
-    jest.isolateModules(() => {
-        jest.doMock("@/components/store/static/content/legal", () => ({
-            LEGAL_SECTIONS: [{ heading: "Only", body: "x" }],
-        }));
-        expect(() => require("@/app/(store)/legal/page")).toThrow(
-            "LEGAL_SECTIONS"
-        );
-    });
+it("prefers explicit section ids and falls back to heading-derived anchors", () => {
+    expect(
+        sectionAnchorId({ id: "terms-of-service", heading: "Terms", body: "x" })
+    ).toBe("terms-of-service");
+    expect(sectionAnchorId({ heading: "Cookie Policy", body: "x" })).toBe(
+        "cookie-policy"
+    );
 });
