@@ -272,43 +272,14 @@
 詳細は COVERAGE_REPORT.md §7 履歴 / plans/README.md の 067 行。
 -->
 
-#### FS-COMMIT: plans 073〜076（ファセット検索）の未コミット作業をコミット分割して PR にする
-
-2026-10-03 のセッションで plans 073〜076 を実装・検証したが、**作業ツリーに未コミットで残っている**（HEAD `3277d8a5`）。
-新規マイグレーション 4 本は**ローカル DB にのみ適用済み・リモート（Neon）未適用**。
-
-```text
-plans 073〜076（plan 015 ファセット検索の後続）の未コミット作業を、規約どおりに分割コミットして PR を作ってください。
-
-前提（必ず最初に確認）:
-- git status で作業ツリーが 2026-10-04（PR #187 レビュー対応）時点の状態か確認する（HEAD 82627f85 / 未コミット）。
-  変更内容の全体像は plans/073〜076 の「実施結果」節と docs/design/faceted-search/design.md §5 にある。
-- 着手前に bun run test / bun run test:integration / bunx tsc --noEmit / bun run lint を実行し、
-  2742 passed / 2745 total（257 スイート）・Integration 222/222・型エラー 0・lint 0 errors を再現すること。
-  再現しなければ STOP して報告する。
-
-コミット分割（.claude/rules/02-tdd-step-commit.md・03-data-model-diagram-sync.md に従う）:
-1. docs(plans): 015 の実施結果 + 073〜076 のプラン本文 + design.md + ADR-008（+ decisions/README）
-2. 073: サジェスト復旧（route.ts / search.tsx / suggestions.tsx と各テスト）→ orderBy の tie-breaker
-3. 074: マイグレーション 120000 / 120100 + schema.prisma + data-model.drawio（同一コミット必須）+ product.ts の再計算 + テスト
-4. 075: マイグレーション 120200 + search-query.ts + parseProductFilters + getProducts の生 SQL 化 + browse/page.tsx + テスト
-5. 076: マイグレーション 120300 + product-derived-columns.ts + seed 2 本 + getProductFacets + attribute-key.ts
-   + facet UI（filters/attribute/）+ E2E seed / spec（search-filter・a11y/browse）+ テスト
-6. docs: 仕様書（specs 02〜08）・design-system PROGRESS（DS-COMP-203）
-7. docs: テスト統計同期（QA_HANDOFF / 07-testing / COVERAGE_REPORT / PROGRESS / coverage-dashboard.html / render-html.ts）
-- 各コミット時点で bunx tsc --noEmit が通ること。通らない分割になる場合は隣接コミットとまとめ、理由を PR に書く。
-- 1 コミットが 3 ファイル / 200 行の目安を超える場合は PR 説明に理由とレビュアー承認チェックボックスを付ける。
-
-PR 本文に必ず書くこと:
-- **デプロイ時に bunx prisma migrate deploy でマイグレーション 4 本の適用が必要**（本番 PostgreSQL 17.11 で生成列が使えることは確認済み）。
-  migrate deploy 自体はこのタスクで実行しない（本番操作はオペレーター承認が必要）。
-- ADR-008 D-5: schema.prisma の searchVector は dbgenerated(生成式) + @@index(type: Gin) を宣言しないとドリフト扱いになる。
-- 既存の E2E 失敗（OI-13 / OI-14・Clerk FAPI 通信失敗）は本変更と無関係であること（HEAD で再現済み）。
-
-完了条件:
-1. 分割コミット + PR 作成（push / PR 作成は依頼された場合のみ）。
-2. render-html.ts の NEXT_ACTIONS から FS-COMMIT を削除し、本プロンプトも削除（二重 SSOT 同期）→ bun run coverage:dashboard。
-```
+<!--
+FS-COMMIT（plans 073〜076 ファセット検索の分割コミット + PR）✅ 完了 2026-10-04: PR #187 でマージ済み
+（例: `43b401d5` マイグレーション 4 本、`b2969ed6` search-query / derived columns、ADR-008）。
+2026-10-06 に作業ツリーがクリーンであることと main への取り込みを確認し、両一覧から削除した。
+残り: PR #187 の本文に「デプロイ時に migrate deploy が必須」という注記が入っていない。
+Neon への 4 本（20261003120000〜20261003120300）の適用確認と migrate deploy は
+オペレーターが行う（本番操作のためエージェントは実行しない）。
+-->
 
 #### 068 の残作業（次セッションの最優先）— カテゴリツリー admin 統合の仕上げ
 

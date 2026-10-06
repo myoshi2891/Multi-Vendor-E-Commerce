@@ -292,16 +292,9 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     //  QA_HANDOFF.md の 067-B 節)。いずれもテストタスクではないため
     // NEXT_ACTIONS には載せない。
     // 2026-10-03 セッション（plans 073〜076）の残作業と、実施中に見つけた既存の問題。
-    // QA_HANDOFF「次回着手用 依頼プロンプト」の FS-COMMIT / OI-13 / FS-CHIPS / OI-14 /
+    // QA_HANDOFF「次回着手用 依頼プロンプト」の OI-13 / FS-CHIPS / OI-14 /
     // E2E-AUTH / PRICE-FILTER と一対一対応（二重 SSOT）。完了時は両方から同時に削除すること。
-    {
-        priority: "high",
-        title: "FS-COMMIT: plans 073〜076 の未コミット作業をコミット分割して PR にする",
-        target: "作業ツリー全体（HEAD 86b9c786 上・マイグレーション 4 本はローカルのみ適用）",
-        tool: "git（.claude/rules/02-tdd-step-commit.md の分割規約）",
-        cost: "M",
-        impact: "サジェスト復旧・並び順の決定性・検索ベクトル・全件の価格ソート・属性ファセットを main へ届ける。PR にデプロイ時の migrate deploy 必須を明記",
-    },
+    // FS-COMMIT は PR #187（2026-10-04 マージ）で完了したため削除した。
     {
         priority: "medium",
         title: "OI-13: VRT ベースライン 3 スペック（cart / checkout / product）が空の DB で一致しない",
