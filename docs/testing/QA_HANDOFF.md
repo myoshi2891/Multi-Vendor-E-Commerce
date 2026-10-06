@@ -581,6 +581,26 @@ docs/design/faceted-search/design.md §0-9 / §2-Q4。
 3. render-html.ts の NEXT_ACTIONS から PRICE-FILTER を削除し、本プロンプトも削除 → bun run coverage:dashboard。
 ```
 
+#### DEP-PRISMA6: Prisma 5.22 → 6.x へ上げる（段階移行の第 1 段）
+
+```text
+plans/081-prisma-6-upgrade.md に従って、prisma / @prisma/client を 5.22.0 から 6 系へ上げてください。
+8.0.0-rc が npm の latest に付いているが正式版ではないため、5 → 6 → 7 の段階移行とし、本作業は 5 → 6 のみです。
+
+進め方:
+1. plan 081 の Drift check と Step 0（Unit / Integration の件数の実測、v6 ガイドと Accelerate 拡張の互換確認）から始める。
+2. 依存を上げ、previewFeatures（fullTextSearch）を削除する。
+3. safe-migration スキルで --create-only を実行し、生成 SQL が _CouponToUser / _UserFollowingStore の主キー化だけであることを確認してから適用する（db push 禁止）。
+4. prisma migrate diff --exit-code が exit 0 であることを確認する（searchVector の dbgenerated 宣言 = ADR-008 D-5 がドリフト扱いにならないこと）。
+   生成 SQL に searchVector が混ざる、または exit 2 なら STOP して報告する。
+5. bun run erd:generate → tsc / lint / Unit / Integration / stub DATABASE_URL での build / E2E 4 spec（plan 081 Step 7）。
+
+完了条件:
+1. plan 081 の Done criteria をすべて満たす。テスト件数は着手前の実測と一致すること。
+2. PR 本文に「本番で migrate deploy による多対多の主キー化 1 本の適用が必要（オペレーターが実施）」と明記する。
+3. plans/README.md の 081 を DONE に更新し、render-html.ts の NEXT_ACTIONS から DEP-PRISMA6 を削除、本プロンプトも削除 → bun run coverage:dashboard。
+```
+
 #### OI-10: a11y color-contrast 負債の是正
 
 ```text
