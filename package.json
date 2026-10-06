@@ -23,7 +23,7 @@
     "@clerk/nextjs": "^7.5.0",
     "@hookform/resolvers": "^3.6.0",
     "@paypal/react-paypal-js": "^8.7.0",
-    "@prisma/client": "5.22.0",
+    "@prisma/client": "6.19.3",
     "@prisma/extension-accelerate": "^1.2.0",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -137,7 +137,7 @@
     "postcss": "^8",
     "prettier": "^3.5.3",
     "prettier-plugin-tailwindcss": "^0.6.12",
-    "prisma": "5.22.0",
+    "prisma": "6.19.3",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.21.0",
     "typescript": "^5"
