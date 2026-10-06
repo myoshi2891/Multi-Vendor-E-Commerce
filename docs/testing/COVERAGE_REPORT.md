@@ -12,9 +12,9 @@
 | 指標 | 値 |
 |---|---|
 | Jestテスト総数（2026-10-06） | **2919 passed / 2922 total、3 skipped、127 snapshots passed、302 スイート（301 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| 全体coverage（2026-10-06） | Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テストファイル総数 | **375ファイル**（2026-10-06 dashboard実測）。 |
-| Jest スイート総数（unit/component のみ） | **301スイート**（300 passed／1 skipped、2026-10-06全体実測）。 |
+| 全体coverage（2026-10-06・レビュー指摘対応後） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| テストファイル総数 | **376ファイル**（2026-10-06 レビュー指摘対応後の dashboard実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| Jest スイート総数（unit/component のみ） | **302スイート**（301 passed／1 skipped、2026-10-06 レビュー指摘対応後の全体実測）。 |
 | テスト総数 | **2919 unit/component passed**（2922 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |

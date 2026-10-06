@@ -28,7 +28,7 @@
 | 型エラー | **0件**（2026-10-06 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（ダッシュボード集計） | **375** / lcovエントリ **387** / マトリクス18/80セル（23%）。2026-10-06 `bun run coverage:dashboard` 実測。 |
+| テストファイル総数（ダッシュボード集計） | **376** / lcovエントリ **387** / マトリクス18/80セル（23%）。2026-10-06 レビュー指摘対応後の `bun run coverage:dashboard` 実測。 |
 
 ### `/profile/wishlist/[page]` デザイン移行の検証（2026-09-30、未コミット）
 

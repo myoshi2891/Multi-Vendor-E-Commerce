@@ -5310,7 +5310,7 @@ New Code カバレッジ 70.5% の主因（0% の sidebar 2 ファイル、selle
 
 home/browse/product/store/cart/checkoutの共通header、検索/国選択、sort、数量/review paging、店舗card、cart操作/通知を新デザインシステムへ適用。先行RTL/browser Red→Greenと画面ごとの回帰/仕様同期を段階コミット。補助purchase25/25・commerce14/14、公開route7 passed/3 skipped。実商品routeとClerk認証後/SDKは専用環境待ち。画面全体の受け入れと補助検証を区別する。[計画](../plans/layout-design/priority-six-purchase-design-system-plan.md)・[証跡](design/design-system/PROGRESS.md#購入導線優先6画面移行記録)・[QA](testing/QA_HANDOFF.md#ds-purchase-six2026-10-06)。
 
-最終全体coverage: Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells。lint0 errors/8 warnings・tsc/harness成功。QA正本の実測値を同期。
+レビュー指摘対応前の全体coverage: Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells。lint0 errors/8 warnings・tsc/harness成功。最新の統計は正本[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。
 
 ### 購入導線レビュー指摘対応 (2026-10-06)
 
