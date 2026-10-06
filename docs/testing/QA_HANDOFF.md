@@ -899,3 +899,5 @@ DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/
 [計画](../../plans/layout-design/priority-six-purchase-design-system-plan.md)、[証跡](../design/design-system/PROGRESS.md#購入導線優先6画面移行記録)。対象home/browse/product/store/cart/checkout。共通header実装、RTL24/24・補助Chromium3/3・axe AAを確認。画面別回帰/最終検証は継続。全体統計は部分結果から更新しない。
 
 実Nextで既存DBのProduct.searchKeywords欠落を確認。次着手はschema-current専用test DBとClerk顧客環境で商品ありhome/browse/product/store、認証後checkoutとUserButton/SignOutの実描画を確認すること。DB初期化・既存データ変更・外部購入なし。
+
+- Step1 home: production表示の回帰Jest20/20・補助Chromium3/3。Webpack分離出力で公開route全体7 passed/3 skipped（browse専用DB待ち）。初回Turbopack cache panicは環境障害でRedに含めない。Nextが追加したtsconfigの一時includeは除去。

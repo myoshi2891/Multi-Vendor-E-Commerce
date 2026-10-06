@@ -58,7 +58,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-014 | `/faqs` | 本体適用（2026-09-30移行） | P3 | 検証済み | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | [FAQs実施記録](#faqs移行記録) |
 | DS-PAGE-015 | `/legal` | 検証済み | P3 | 検証済み | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-016 | `/offers` | 検証済み | P2 | 検証済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
-| DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | 未実施 |
+| DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、header/reduced-motion回帰済み、商品あり実route保留 |
 | DS-PAGE-018 | `/product-support` | 本体適用（2026-10-01移行） | P3 | 検証済み | [src/app/(store)/product-support/page.tsx](<../../../src/app/(store)/product-support/page.tsx>) | [product-support移行記録](#product-support移行記録) |
 | DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-020 | `/product/[productSlug]` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/product/[productSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/page.tsx>) | 未実施 |
@@ -907,3 +907,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - Refactor後RTL24/24・Chromium5/5。signed provider adapterで既存account links/controlsを確認、native suggestion Enterの遷移を確認。1440/768/390pxのaccount/search/country screenshotとaxe AAを取得。実Clerk lifecycleは別途保留。
 - SDD requirements/architecture/interfaces/testingとテスト設計/QAを同期。overview/data-modelは既存product scope/DB/moneyに変更なしのため変更不要。採用計画の共通部品全体チェックは実認証/他callerの受け入れ完了まで維持する。
+
+### Step 1 — DS-PAGE-017 Home
+
+- 共通UI適用後、既存home本体を維持。既存実装の回帰としてExperience/Selection/dataのJest20/20、Chromium home3/3（3幅・reduced motion・collection link・全体axe AA違反0・overflowなし）を確認。今回追加したhome回帰に新機能Redは主張しない。
+- 実route home3幅でheader/accountと商品取得失敗状態を確認。商品あり実routeはschema-current test DB待ち。[画面受け入れ仕様](../purchase-header/requirements.md)。画面全体は実装済み・受け入れ一部保留。

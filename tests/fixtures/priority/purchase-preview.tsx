@@ -2,6 +2,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import PurchaseHeader from "./purchase-header";
+import homeStyles from "@/components/store/home/luxury/luxury.module.css";
 import Experience from "@/components/store/home/luxury/experience";
 import FilterPanel from "@/components/store/browse-page/filter-panel";
 import ProductSort from "@/components/store/browse-page/sort";
@@ -19,7 +20,7 @@ function App() {
         <>
             <PurchaseHeader />
             {screen === "home" ? (
-                <main>
+                <main className={homeStyles.home}>
                     <Experience categories={[]} />
                 </main>
             ) : screen === "store" ? (
@@ -70,7 +71,7 @@ function App() {
                     />
                 </main>
             ) : (
-                <main className={browseStyles.page}>
+                <main className={browseStyles.browse}>
                     <h1>The collection</h1>
                     <ProductSort />
                     <FilterPanel>

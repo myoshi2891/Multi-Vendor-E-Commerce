@@ -111,18 +111,71 @@ for (const width of [1440, 768, 390]) {
     });
 }
 
-test("signed account presentation preserves provider control and links", async ({ page }) => {
+test("signed account presentation preserves provider control and links", async ({
+    page,
+}) => {
     await page.goto("/?screen=browse&signed=1");
     await page.getByLabel("Account menu", { exact: true }).click();
-    await expect(page.getByRole("button", { name: "Manage account" })).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: "Manage account" })
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "My Orders" })).toHaveAttribute("href", "/profile/orders");
+    await expect(page.getByRole("link", { name: "My Orders" })).toHaveAttribute(
+        "href",
+        "/profile/orders"
+    );
 });
-test("suggestion Enter follows its existing product route", async ({ page }) => {
-    await page.route("**/api/search-products?*", route => route.fulfill({ json: [{ name: "Considered piece", image: "/assets/images/no_image.png", link: "/product/fixture/variant" }] }));
+test("suggestion Enter follows its existing product route", async ({
+    page,
+}) => {
+    await page.route("**/api/search-products?*", (route) =>
+        route.fulfill({
+            json: [
+                {
+                    name: "Considered piece",
+                    image: "/assets/images/no_image.png",
+                    link: "/product/fixture/variant",
+                },
+            ],
+        })
+    );
     await page.goto("/?screen=browse");
     await page.getByLabel("Open search / 検索", { exact: true }).click();
     await page.getByRole("textbox", { name: "Search products" }).fill("piece");
     await page.getByRole("link", { name: "Considered piece" }).press("Enter");
     await expect(page).toHaveURL(/\/product\/fixture\/variant$/);
 });
+
+for (const width of [1440, 768, 390]) {
+    test(`home ${width}: reduced motion and collection navigation`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=home");
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        await expect(
+            page.getByRole("button", { name: /motion reduced/ })
+        ).toBeDisabled();
+        await expect(
+            page
+                .getByRole("main")
+                .getByRole("link", { name: /Discover the collections/ })
+        ).toHaveAttribute("href", "/browse");
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+        await page.screenshot({
+            path: info.outputPath(`home-${width}.png`),
+            fullPage: true,
+        });
+    });
+}

@@ -1131,3 +1131,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 - ✅ Completed (2026-10-06): header search/country keyboard, state and branded panel tests. Initial 8 RTL Red; Green 24/24. Browser trigger/contrast Red fixed; supplemental Chromium5/5.
 - Screen-specific regression and real-route environment limits: [saved plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md), [evidence](../design/design-system/PROGRESS.md#購入導線優先6画面移行記録).
+
+- ✅ Completed (2026-10-06): Step1 home補助回帰と公開失敗状態。商品あり実受け入れはQAのDB課題参照。
