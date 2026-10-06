@@ -11,12 +11,12 @@
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-05実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-06実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2882 passed / 2885 total、3 skipped、127 snapshots passed、294 スイート（293 passed／1 skipped、failed 0）** — 2026-10-06 PR#191 レビュー対応後の全体実測。Integration222 / 17スイート（2026-10-04実測、今回は未実行）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **2903 passed / 2906 total、3 skipped、127 snapshots passed、299 スイート（298 passed／1 skipped、failed 0）** — 2026-10-06 P4最終全体実測。Integration222／17 suitesは既存実測を維持。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **222テスト / 17スイート** — 2026-10-04実測を維持（今回未実行）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5301,3 +5301,7 @@ New Code カバレッジ 70.5% の主因（0% の sidebar 2 ファイル、selle
 | テスト総数 | 2877 passed / 2880 total | **2882 passed / 2885 total** |
 | スイート数 | 294 | **294** |
 | 型エラー | 0 件 | **0 件** |
+
+## P4管理マスタ6画面の移行（2026-10-06）
+
+商品分類・割引・オファーへの影響からカテゴリ/管理者クーポン/オファータグ各2画面を選び、画面ごとにTDD・検証・コミットした。共通theme/Action Props/dialogを再利用し、更新ID・カテゴリ階層・coupon scope・既存遷移を維持した。実装済み55・未適用3、受け入れ保留28。[証跡と自己レビュー](./design/design-system/PROGRESS.md#p4優先6画面移行記録)、[認証後受け入れ](./testing/QA_HANDOFF.md#ds-p4-six-browser)。

@@ -273,3 +273,11 @@ Seller presentation adapters additionally accept `Table.scrollLabel` for an opt-
 AdminOrders/AdminStores/SellerCoupons/SellerCouponFormは型付きAction Propsを受け取る。既存queriesの署名・認可を維持し、Server Componentから既存Actionへのadapterを渡す。admin-orders/admin-storesの表示用serializerはDecimalを文字列／数値へ投影し、User内部情報をClientへ渡さない。クーポン共有入力のseller opt-inは既存管理者フォームの既定動作を維持する。
 
 詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。
+
+## P4管理マスタ6画面のデザイン移行（2026-10-06）
+
+新しい管理者表示部品はCategoryActions/AdminCouponActions/OfferTagActionsのloadAction・saveAction・deleteActionをPropsで受け取る（couponのみtoggleActionも）。既存queriesの引数と返却型、公開API・Zod schemaは変更しない。CouponFormFieldsのdesignにadmin opt-inを追加し、既定SDKとseller表示は維持する。
+
+[証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+AdminCouponRowはCoupon & { store: { name: string } | null }。一覧Server Componentがこの表示契約へ投影し、StoreのDecimalフィールドを除く。queryの取得・認可・返却契約は維持する。

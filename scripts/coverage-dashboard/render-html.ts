@@ -86,6 +86,14 @@ interface NextAction {
 const NEXT_ACTIONS: readonly NextAction[] = [
     {
         priority: "medium",
+        title: "DS-P4: 管理者マスタ6画面の認証後検証",
+        target: "admin categories/coupons/offer-tags + new",
+        tool: "Playwright + Clerk + schema-current専用test DB",
+        cost: "M",
+        impact: "補助37ケースと実ルートを区別し、実Cloudinary・権限・保存/削除後表示を確認する",
+    },
+    {
+        priority: "medium",
         title: "DS-P3: 管理者3画面・販売者クーポン2画面の認証後検証",
         target: "admin overview/orders/stores + seller coupons/new",
         tool: "Playwright + Clerk + schema-current専用test DB",

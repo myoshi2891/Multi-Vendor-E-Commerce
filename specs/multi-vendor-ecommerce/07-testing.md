@@ -1294,3 +1294,9 @@ Final six-screen audit (2026-10-05): supplemental Chromium six37/37 and existing
 2026-10-05 P3優先6画面：全体Jest2862 passed / 2865 total、290 suites（289 passed／1 skipped）、3 skipped、127 snapshots。新RTLは画面ごとのRed→Green、tests/browser/p3-design.spec.tsは37/37、p3-public-design.spec.tsは公開実ルート4/4、seven回帰42/42。playwright.design.config.tsの既存fixture serverを拡張。統計と認証後5実ルートの解除条件はQA_HANDOFFを正本とする。
 
 詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。
+
+## P4管理マスタ6画面のデザイン移行（2026-10-06）
+
+admin-p4-pagesの9新要件RTLとカテゴリ390px heading browserのRedを確認してから実装。各フォームと共通dialog回帰で引数/ID/createdAt/scope/階層制限/pending/値保持/retry/stale応答/削除を検証する。p4-design.spec.tsは37ケース（6画面×3幅×2theme＋native親選択/作成dialog/Tab/reduced motion）でproduction部品とAction/SDK adaptersを使用する。既存P3管理者とseller couponはp3 suiteで回帰する。p4は既存P3 fixture serverをDESIGN_SUITEによりname/port（3126）を切替えて再利用し、config/serverを新設しない。
+
+[証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。

@@ -93,3 +93,9 @@ Store creation has a standalone branded light/dark workspace with a main landmar
 管理者概要・注文・店舗、販売者クーポン一覧・新規作成、Legalの6画面を既存ブランドトークンへ移行。情報・役割認可・計算・法務本文を維持し、空／失敗／pending、再試行、キーボード、狭幅、light/darkを受け入れ条件とする。Legalは公開実ルート検証済み、業務5画面は認証後受け入れ保留。
 
 詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。
+
+## P4管理マスタ6画面のデザイン移行（2026-10-06）
+
+カテゴリ・管理者クーポン・オファータグの一覧/作成は管理者light/dark theme、名前付きページ/form、検索、取得失敗/retryを使用する。編集/作成/削除とクーポンActivate/Deactivateを維持し、pending重複/close lock、失敗時入力保持と状態通知を提供する。カテゴリ階層・slug、coupon scope/storeId・割引/日時、offer name/urlの既存仕様は維持する。
+
+[証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。

@@ -1,8 +1,8 @@
 import { startFixtureServer } from "../shared/fixture-server.mjs";
 await startFixtureServer({
-    name: "p3",
+    name: process.env.DESIGN_SUITE === "p4" ? "p4" : "p3",
     entry: "tests/fixtures/p3/preview.tsx",
-    port: 3124,
+    port: process.env.DESIGN_SUITE === "p4" ? 3126 : 3124,
     title: "P3 design fixture",
     mocks: {
         "@clerk/nextjs/server": `export async function currentUser(){return {id:'admin-test',privateMetadata:{role:'ADMIN'},firstName:'Test',lastName:'Administrator',imageUrl:'',emailAddresses:[{emailAddress:'long.administrator.email@example.test'}]}}`,

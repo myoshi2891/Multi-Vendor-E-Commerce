@@ -38,3 +38,11 @@
 移行台帳・デザイン進捗・admin-dashboard要件/設計/tasks/進捗・SDD requirements/architecture/interfaces/workflows/quality/testing・QA_HANDOFF・TEST_IMPLEMENTATION_PLAN・docs/PROGRESSを同期する。変更不要の仕様も理由を記録する。全体統計・coverageは実測時のみ同期。
 
 専用test DBとClerk管理者環境が利用可能なら認証後実ルートを確認する。不足時は実装あり・補助検証済み・認証後/実Cloudinary保留とし解除条件を記録する。fixtureの成功を実ルート成功にしない。検証目的の既存DB初期化・外部送信は行わない。
+
+## 最終監査の補強
+
+6画面のmatrix36ケースに、作成Dialog/native親選択/実Tab/reduced motionの1ケースを追加。Radix親選択展開のaxe違反をRed確認後、対象フォームだけnative selectへ整理した。親ID/Root/nullと階層制限は保持する。P4は既存serverを3126で再利用し、P3の3124と分離する。最終結果と自己レビュー表は証跡の正本を参照。
+
+画像面の旧shadow/白枠/丸みを先行browser Redと目視で検出し、カテゴリ専用CSSへscopeして整理した。ImageUploadの他利用先は変更しない。
+
+最終境界監査ではクーポン一覧の店舗Decimal持ち込みを先行RTL Redで確認し、Server Componentで表示に必要な店舗名へ投影した。query/DB/認可は維持する。

@@ -1,5 +1,5 @@
 "use client";
-import type { Coupon, Prisma } from "@prisma/client";
+import type { Coupon } from "@prisma/client";
 import type { ColumnDef } from "@tanstack/react-table";
 import type {
     getCouponAsAdmin,
@@ -16,9 +16,7 @@ import ConfirmDelete from "../design/confirm-delete";
 import CouponForm from "./coupon-form";
 import MasterDialog from "./master-dialog";
 import { useSaveState, SaveFeedback } from "./save-state";
-export type AdminCouponRow = Prisma.CouponGetPayload<{
-    include: { store: true };
-}>;
+export type AdminCouponRow = Coupon & { store: { name: string } | null };
 export type AdminCouponActions = {
     loadAction: typeof getCouponAsAdmin;
     saveAction: typeof upsertCouponAsAdmin;

@@ -23,7 +23,10 @@ export default async function AdminCouponsPage() {
         );
     return (
         <AdminCoupons
-            coupons={coupons}
+            coupons={coupons.map(({ store, ...coupon }) => ({
+                ...coupon,
+                store: store ? { name: store.name } : null,
+            }))}
             actions={{
                 loadAction: getCouponAsAdmin,
                 saveAction: upsertCouponAsAdmin,

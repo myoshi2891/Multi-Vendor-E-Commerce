@@ -8,12 +8,57 @@ const screens = [
     { screen: "newcategory", title: "Create category" },
     { screen: "categories", title: "Categories" },
 ];
+test("category dialog native parent, Tab and reduced motion", async ({
+    page,
+}, info) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/?screen=categories");
+    await page.evaluate(() => document.documentElement.classList.add("dark"));
+    const create = page.getByRole("button", {
+        name: "Create New Category",
+        exact: true,
+    });
+    await create.click();
+    const dialog = page.getByRole("dialog"),
+        upload = dialog.getByRole("button", { name: "Upload profile image" });
+    await upload.focus();
+    await page.keyboard.press("Tab");
+    await expect(dialog.getByLabel("Category name")).toBeFocused();
+    await expect(upload).toHaveCSS("transition-duration", "0s");
+    await expect(upload.locator("..")).toHaveCSS("box-shadow", "none");
+    await expect(upload.locator("..")).toHaveCSS("border-radius", "3px");
+    const parent = dialog.getByRole("combobox");
+    await parent.selectOption("cat-1");
+    await expect(parent).toHaveValue("cat-1");
+    await parent.selectOption("__root__");
+    await expect(parent).toHaveValue("__root__");
+    expect(
+        (
+            await new AxeBuilder({ page })
+                .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                .analyze()
+        ).violations
+    ).toEqual([]);
+    await page.screenshot({
+        path: info.outputPath("category-parent-dialog-390-dark.png"),
+        fullPage: true,
+    });
+    await page.keyboard.press("Escape");
+    await expect(create).toBeFocused();
+});
 for (const entry of screens)
     for (const width of [1440, 768, 390])
         for (const theme of ["light", "dark"])
             test(`${entry.screen} ${width} ${theme}`, async ({
                 page,
             }, info) => {
+                await page.route("https://example.test/**", (route) =>
+                    route.fulfill({
+                        contentType: "image/svg+xml",
+                        body: '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="160" height="160" fill="#d4ba83"/><path d="M30 95h100v25H30z M50 40h35v55H50z" fill="#17251d"/></svg>',
+                    })
+                );
                 await page.setViewportSize({ width, height: 900 });
                 await page.goto(`/?screen=${entry.screen}`);
                 await page.evaluate(
@@ -191,10 +236,7 @@ for (const entry of screens)
                     await form
                         .getByRole("button", { name: "Upload profile image" })
                         .click();
-                    await form.getByRole("combobox").click();
-                    await page
-                        .getByRole("option", { name: "Shoes", exact: true })
-                        .click();
+                    await form.getByRole("combobox").selectOption("cat-1");
                     await form
                         .getByRole("checkbox", { name: "Featured" })
                         .check();
@@ -349,6 +391,73 @@ for (const entry of screens)
                         .getByRole("button", { name: "Cancel", exact: true })
                         .click();
                     await expect(page.getByRole("dialog")).not.toBeVisible();
+                    await page
+                        .getByRole("button", {
+                            name: `Delete ${entity} ${name}`,
+                            exact: true,
+                        })
+                        .click();
+                    await page
+                        .getByRole("button", {
+                            name: "Confirm delete",
+                            exact: true,
+                        })
+                        .click();
+                    await expect(
+                        page.getByRole("button", {
+                            name: "Cancel",
+                            exact: true,
+                        })
+                    ).toBeDisabled();
+                    await page.keyboard.press("Escape");
+                    await expect(page.getByRole("dialog")).toBeVisible();
+                    await expect(
+                        page.getByText(`Deleted ${entity} ${name}.`)
+                    ).toBeVisible();
+                    const id = category
+                        ? "cat-1"
+                        : entry.screen === "offertags"
+                          ? "tag-1"
+                          : "coupon-1";
+                    expect(
+                        await page.evaluate(() =>
+                            (
+                                window as unknown as { calls: unknown[][] }
+                            ).calls.at(-1)
+                        )
+                    ).toEqual([id]);
+                    const create = page.getByRole("button", {
+                        name: category
+                            ? "Create New Category"
+                            : entry.screen === "offertags"
+                              ? "Create New Offer Tag"
+                              : "Create New Coupon",
+                        exact: true,
+                    });
+                    await create.click();
+                    await expect(page.getByRole("form")).toBeVisible();
+                    expect(
+                        (
+                            await new AxeBuilder({ page })
+                                .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                                .analyze()
+                        ).violations
+                    ).toEqual([]);
+                    await page.keyboard.press("Escape");
+                    await expect(create).toBeFocused();
+                    await page.goto(
+                        `/?screen=${entry.screen}&missingcoupon&missing`
+                    );
+                    await page
+                        .getByRole("button", {
+                            name: `Edit ${entity} ${name}`,
+                            exact: true,
+                        })
+                        .click();
+                    await expect(
+                        page.getByRole("dialog").getByRole("alert")
+                    ).toBeVisible();
+                    await expect(page.getByRole("form")).not.toBeVisible();
                     await page.goto(`/?screen=${entry.screen}&empty`);
                     await expect(page.getByText("No Results.")).toBeVisible();
                     await page.goto(`/?screen=${entry.screen}&fetcherror`);

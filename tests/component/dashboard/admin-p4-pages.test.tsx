@@ -7,6 +7,7 @@ import { getAllOfferTags, upsertOfferTag } from "@/queries/offer-tag";
 import NewCouponPage from "@/app/dashboard/admin/coupons/new/page";
 import CouponsPage from "@/app/dashboard/admin/coupons/page";
 import { getAllCoupons, upsertCouponAsAdmin } from "@/queries/coupon";
+import { coupons } from "../../fixtures/p3/data";
 import NewCategoryPage from "@/app/dashboard/admin/categories/new/page";
 import CategoriesPage from "@/app/dashboard/admin/categories/page";
 import { getAllCategories, upsertCategory } from "@/queries/category";
@@ -111,6 +112,14 @@ it("admin coupons exposes generic load failure and retry", async () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
         "Could not load coupons"
     );
+});
+it("projects the coupon store to plain display data before the client boundary", async () => {
+    jest.mocked(getAllCoupons).mockResolvedValue([{
+        ...coupons[0], store: { name: "Store", defaultShippingFeePerItem: { toNumber: () => 12.5 } },
+    }] as never);
+    const page = await CouponsPage();
+    expect(page.props.coupons[0].store).toEqual({ name: "Store" });
+    expect(page.props.coupons[0].id).toBe("coupon-1");
 });
 
 it("new admin coupon injects creation action and normalizes PLATFORM storeId", async () => {

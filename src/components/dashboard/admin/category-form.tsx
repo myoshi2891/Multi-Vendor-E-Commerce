@@ -39,13 +39,6 @@ import {
 } from "@/components/ui/form";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ImageUpload from "../shared/image-upload";
@@ -58,6 +51,7 @@ import { v4 } from "uuid";
 // import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import styles from "../design/seller.module.css";
+import categoryStyles from "./category.module.css";
 import { useSaveState, SaveFeedback } from "./save-state";
 
 interface CategoryFormProps {
@@ -72,7 +66,7 @@ interface CategoryFormProps {
     categories?: Category[];
 }
 
-/** 親選択で「ルート」を表す番兵。空文字は Radix Select が扱えない。 */
+/** 親選択のRootを表す番兵。保存時は既存契約のnullへ変換する。 */
 const ROOT_PARENT_VALUE = "__root__";
 
 const CategoryForm: FC<CategoryFormProps> = ({
@@ -168,7 +162,9 @@ const CategoryForm: FC<CategoryFormProps> = ({
         );
 
     return (
-        <Card className={`${styles.panel} ${styles.editor}`}>
+        <Card
+            className={`${styles.panel} ${styles.editor} ${categoryStyles.editor}`}
+        >
             <CardHeader>
                 <h2 className="text-xl">Category information</h2>
                 <CardDescription>
@@ -263,56 +259,46 @@ const CategoryForm: FC<CategoryFormProps> = ({
                                             <FormLabel>
                                                 Parent category
                                             </FormLabel>
-                                            <Select
-                                                disabled={isLoading}
-                                                onValueChange={(value) =>
-                                                    field.onChange(
-                                                        value ===
-                                                            ROOT_PARENT_VALUE
-                                                            ? null
-                                                            : value
-                                                    )
-                                                }
-                                                value={
-                                                    field.value ??
-                                                    ROOT_PARENT_VALUE
-                                                }
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Root (no parent)" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent
-                                                    className={styles.theme}
+                                            <FormControl>
+                                                <select
+                                                    disabled={isLoading}
+                                                    className="w-full border p-2"
+                                                    value={
+                                                        field.value ??
+                                                        ROOT_PARENT_VALUE
+                                                    }
+                                                    onChange={(event) =>
+                                                        field.onChange(
+                                                            event.target
+                                                                .value ===
+                                                                ROOT_PARENT_VALUE
+                                                                ? null
+                                                                : event.target
+                                                                      .value
+                                                        )
+                                                    }
                                                 >
-                                                    <SelectItem
+                                                    <option
                                                         value={
                                                             ROOT_PARENT_VALUE
                                                         }
                                                     >
                                                         Root (no parent)
-                                                    </SelectItem>
+                                                    </option>
                                                     {parentOptions.map(
                                                         (category) => (
-                                                            <SelectItem
+                                                            <option
                                                                 key={
                                                                     category.id
                                                                 }
                                                                 value={
                                                                     category.id
                                                                 }
-                                                            >
-                                                                {"\u00A0".repeat(
-                                                                    category.depth *
-                                                                        4
-                                                                )}
-                                                                {category.name}
-                                                            </SelectItem>
+                                                            >{`${"— ".repeat(category.depth)}${category.name}`}</option>
                                                         )
                                                     )}
-                                                </SelectContent>
-                                            </Select>
+                                                </select>
+                                            </FormControl>
                                             <FormDescription>
                                                 Leave as root to create a
                                                 top-level department. Depth is

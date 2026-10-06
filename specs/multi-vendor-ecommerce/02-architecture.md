@@ -69,3 +69,11 @@ Checkout and order-detail Server Components inject the existing approved query a
 ## Account discovery boundaries
 
 Following remains a force-dynamic Server route and injects the existing followStore action as followAction Props into its dedicated card/container. History is a Server route injecting getProductsByIds as fetchHistoryAction Props; the Client container alone reads productHistory after hydration. Both use scoped DiscoveryHeading/Pagination; public offers/dispute/problem-report opt into DesignPage. Existing shared legacy StoreCard/Pagination and ProductCard action wiring are separate targets. No query contract, API or DB model changes. [Following design](../../docs/design/profile-following/design.md), [history design](../../docs/design/profile-history/design.md).
+
+## P4管理マスタ6画面のデザイン移行（2026-10-06）
+
+6画面のServer Componentsは既存queries facadeのload/save/delete（couponはtoggleも）を型付きPropsとして専用Clientと列factoryへ渡す。ClientではActionのtype importだけを使用する。表示は既存管理者Shell/SellerPageとscoped theme、MasterDialog/SaveFeedbackを再利用する。親カテゴリとcoupon scopeはnative selectを使用する。DB・認可・業務queryの境界は変更しない。
+
+[証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+管理者クーポン一覧はServer ComponentでCouponのスカラー項目とstore.nameだけに投影してClientへ渡す。Storeの配送Decimalや不要な店舗内部情報を境界へ持ち込まない。
