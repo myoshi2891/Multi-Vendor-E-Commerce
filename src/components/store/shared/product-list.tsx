@@ -61,7 +61,7 @@ const ProductList: FC<Props> = ({ products, title, link, arrow, variant }) => {
             ) : variant === 'editorial' ? (
                 <div className="min-h-64 border border-[#c9c8bb] px-6 py-16 text-center">
                     <p className="font-serif text-2xl text-[#17251d]">No pieces found in this edit.</p>
-                    <p className="mt-3 text-sm text-[#68766b]">Try another filter or explore the full collection.</p>
+                    <p className="mt-3 text-sm text-[#536054]">Try another filter or explore the full collection.</p>
                     <Link href="/browse" className="mt-7 inline-block border-b border-[#a68a56] pb-1 text-xs uppercase tracking-widest text-[#766541]">
                         Explore all pieces
                     </Link>

@@ -11,6 +11,7 @@ await startFixtureServer({
     port: 3110,
     title: "Priority design browser fixture",
     mocks: {
+        "@/queries/product": `import {products} from "./tests/fixtures/priority/purchase-data"; export async function getProducts(){return {products:new URLSearchParams(location.search).has("pieces") ? products : []}}`,
         "@/queries/user": `export async function addToWishlist(){return true}`,
         "next/dynamic": `export default function dynamic(){return function DynamicFixture(){return null}}`,
         "@clerk/nextjs": `import React from "react"; export function SignOutButton({children}){return children} export function UserButton(){return React.createElement("button",null,"Manage account")}`,

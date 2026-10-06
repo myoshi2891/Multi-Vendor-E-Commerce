@@ -78,7 +78,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録) |
-| DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | 未実施 |
+| DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、実route保留 |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録) |
 | DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 未実施 |
 | DS-PAGE-040 | `/dashboard/admin/attributes/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 未実施 |
@@ -924,3 +924,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - Red: quantityのsize未選択状態は無通知の旧pulse表示、editorial Paginationのnamed navが不在（RTL2件）。browser3幅でquantity操作が36px。Green: branded status、quantity/review filter44px、ivory review controls、input focusとreduced motion、review opt-inのnamed nav/current/disabledとscoped gold/cream CSSへ移行。
 - Refactor後Jest69/69（14 suites）、Chromium product3/3（3幅・quantity stock上限・review pressed・paging/current・axe AA違反0・overflowなし・no-size status）。既存商品計算、在庫制限、サイズURL、配送、レビュー処理は変更しない。フォーム/ギャラリー/実SDK/商品あり実routeの全状態は専用DB待ちで画面全体を検証済みにしない。fixture JSXの閉じタグ修正はRed実績に含めない。
+
+### Step 4 — DS-PAGE-037 Store
+
+- Red: store collection link43px・商品compare40px（各3幅）、件数/空状態本文のcontrast4.19:1を確認。Green: collection/about/clearとeditorial card操作44px、件数/空本文を濃い色へ、選択compareをgoldへ修正。ProductListのeditorial empty muted色も同期しbrowseへの波及を確認対象に含めた。
+- Refactor後Jest38/38（store details/products/sort、shared ProductList/ProductCardの5 suites）、tsc成功、Chromium6/6（3幅×長文/空・商品あり比較、axe AA違反0、overflowなし）。fixtureはproduction StoreProductsをquery adapterで解決し、本体のcollection結果/件数/リンクを直接検証。商品データ実routeはschema-current test DB待ち。

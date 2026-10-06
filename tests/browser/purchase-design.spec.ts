@@ -287,3 +287,97 @@ for (const width of [1440, 768, 390]) {
         await expect(page.getByRole("spinbutton")).toHaveCount(0);
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`store ${width}: long identity, collection and empty state`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=store");
+        const collection = page.getByRole("link", {
+            name: "Explore the collection",
+        });
+        expect((await collection.boundingBox())!.height).toBeGreaterThanOrEqual(
+            44
+        );
+        await collection.press("Enter");
+        await expect(page).toHaveURL(/#collection$/);
+        await expect(page.getByRole("heading", { level: 1 })).toContainText(
+            "A considered store"
+        );
+        await expect(
+            page.getByRole("link", { name: /Clear filters/ })
+        ).toHaveAttribute("href", "/store/fixture#collection");
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations.map((v) => ({
+                id: v.id,
+                nodes: v.nodes.map((n) => ({
+                    target: n.target,
+                    summary: n.failureSummary,
+                })),
+            }))
+        ).toEqual([]);
+        await page.screenshot({
+            path: info.outputPath(`store-${width}.png`),
+            fullPage: true,
+        });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`store cards ${width}: editorial product actions`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=store&pieces=1");
+        await expect(
+            page.getByRole("status").filter({ hasText: "1 piece found" })
+        ).toHaveCount(1);
+        const compare = page.getByRole("button", {
+            name: "Add to compare",
+            exact: true,
+        });
+        await compare.focus();
+        expect((await compare.boundingBox())!.height).toBeGreaterThanOrEqual(
+            44
+        );
+        expect((await compare.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+        await compare.press("Enter");
+        await expect(
+            page.getByRole("button", {
+                name: "Remove from compare",
+                exact: true,
+            })
+        ).toBeVisible();
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations.map((v) => ({
+                id: v.id,
+                nodes: v.nodes.map((n) => ({
+                    target: n.target,
+                    summary: n.failureSummary,
+                })),
+            }))
+        ).toEqual([]);
+        await page.screenshot({
+            path: info.outputPath(`store-cards-${width}.png`),
+        });
+    });
+}

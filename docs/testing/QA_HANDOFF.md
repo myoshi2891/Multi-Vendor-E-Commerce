@@ -905,3 +905,5 @@ DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/
 - Step2 browse: Red寸法/contrast/aria-hidden-focusを解消。RTL63/63（sort最終再実行10/10）、補助Chromium3/3。実ルートはProduct.searchKeywords不足で保留。
 
 - Step3 product: RTL Red2件・browser寸法Red3幅→Green、関連Jest69/69・Chromium3/3。review Pagination opt-in以外の共有callerと実SDKは未移行/未検証を維持。
+
+- Step4 store: 43px link/40px cardとcontrast Redを解消。Jest38/38・補助Chromium6/6。editorial ProductCardの他callerは回帰対象、画面全体の実routeは専用DB待ち。

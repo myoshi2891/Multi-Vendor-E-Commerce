@@ -6,6 +6,9 @@ import homeStyles from "@/components/store/home/luxury/luxury.module.css";
 import Experience from "@/components/store/home/luxury/experience";
 import FilterPanel from "@/components/store/browse-page/filter-panel";
 import ProductSort from "@/components/store/browse-page/sort";
+import ProductList from "@/components/store/shared/product-list";
+import { products } from "./purchase-data";
+import StoreProducts from "@/components/store/store-page/store-products";
 import StoreDetails from "@/components/store/store-page/store-details";
 import QuantitySelector from "@/components/store/product-page/quantity-selector";
 import Pagination from "@/components/store/shared/pagination";
@@ -14,7 +17,7 @@ import type { ReviewsFilterType } from "@/lib/types";
 import productStyles from "@/components/store/product-page/product.module.css";
 import browseStyles from "@/app/(store)/browse/browse.module.css";
 const screen = new URLSearchParams(location.search).get("screen") ?? "home";
-function App() {
+function App({ storeCollection }: { storeCollection: React.ReactNode }) {
     const [page, setPage] = useState(1);
     const [quantity, setQuantity] = useState(1);
     const [filters, setFilters] = useState<ReviewsFilterType>({});
@@ -26,7 +29,7 @@ function App() {
                     <Experience categories={[]} />
                 </main>
             ) : screen === "store" ? (
-                <main>
+                <main className={browseStyles.browse}>
                     <StoreDetails
                         details={{
                             id: "store",
@@ -38,12 +41,8 @@ function App() {
                             numReviews: 12,
                         }}
                     />
-                    <section id="collection">
-                        <ProductSort />
-                        <p role="status">No pieces match these filters.</p>
-                        <Link href="/store/fixture#collection">
-                            Clear filters
-                        </Link>
+                    <section id="collection" className={browseStyles.catalog}>
+                        {storeCollection}
                     </section>
                 </main>
             ) : screen === "product" ? (
@@ -95,10 +94,24 @@ function App() {
                     <FilterPanel>
                         <Link href="/browse?category=art">Art</Link>
                     </FilterPanel>
-                    <p role="status">No pieces match these filters.</p>
+                    <ProductList
+                        products={
+                            new URLSearchParams(location.search).has("pieces")
+                                ? products
+                                : []
+                        }
+                        variant="editorial"
+                    />
                 </main>
             )}
         </>
     );
 }
-createRoot(document.getElementById("root")!).render(<App />);
+StoreProducts({
+    searchParams: {} as Parameters<typeof StoreProducts>[0]["searchParams"],
+    store: "fixture",
+}).then((storeCollection) => {
+    createRoot(document.getElementById("root")!).render(
+        <App storeCollection={storeCollection} />
+    );
+});
