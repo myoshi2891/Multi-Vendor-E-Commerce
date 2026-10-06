@@ -1,5 +1,6 @@
 /* Browser-only fixtures: no query module, Clerk, database or payment provider is invoked. */
 import React from "react";
+import PurchaseHeader from "../priority/purchase-header";
 import Link from "next/link";
 import { createRoot } from "react-dom/client";
 import Checkout from "@/components/store/checkout-page/container";
@@ -257,4 +258,11 @@ function App() {
         </main>
     );
 }
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+    <>
+        {new URLSearchParams(location.search).has("header") && (
+            <PurchaseHeader />
+        )}
+        <App />
+    </>
+);

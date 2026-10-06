@@ -909,3 +909,5 @@ DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/
 - Step4 store: 43px link/40px cardとcontrast Redを解消。Jest38/38・補助Chromium6/6。editorial ProductCardの他callerは回帰対象、画面全体の実routeは専用DB待ち。
 
 - Step5 cart: 36px quantity/32px通知close Red→44px Green。Jest52/52、補助3幅3/3とcheckout retry/sync failure各1件、実empty route3幅。cartの既存検証済み件数は維持。
+
+- Step6 checkout: 既存実装の回帰Jest20/20・commerce14/14（header/dialog 3幅含む）。住所focus/refresh retryと全体axe AA違反0。実認証後route/決済SDKは保留。

@@ -935,3 +935,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Red: quantity36px（3幅）とnotification close32px（390px）。Green: item/wishlist/remove/quantityとstore notification closeを44pxへ拡大。業務動作は維持。
 - Jest52/52（container/product/summary/cart store）、Chromium3幅3/3（quantity/pending/checkout failure通知/削除→empty、全体axe AA違反0、overflowなし）。checkout retry1件・sync失敗保持1件も確認。実route empty cart3幅はWebpackで検証済み。既存DS-PAGE-007の検証済み状態は維持し新共通headerを追加監査。
 - 先行specの数量role/既存文言に誤ったlocatorがあり修正した。fixture追加時のspec誤上書きはHEADから復旧。これらテスト作成ミスはTDD Red実績に含めない。
+
+### Step 6 — DS-PAGE-008 Checkout
+
+- 既存Checkout本体の住所/coupon/pending/retryを維持し、production共通headerを既存commerce fixtureへ統合。既存実装の回帰確認として関連Jest20/20（3 suites）とChromium14/14（既存11件＋header/dialog 3幅）を確認。新機能Redは主張しない。
+- Account→address dialogのkeyboard/focus、refresh failure/retry、全体axe AA違反0とoverflowなしを確認。型検査exit0。実Clerk顧客認証後checkout/決済SDKは専用環境待ちで、画面全体の保留状態を維持する。

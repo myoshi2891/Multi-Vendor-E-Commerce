@@ -12,3 +12,7 @@
 - 国／保証の装飾はopt-in。既存保証文言を保持しprivacy／termsは `/legal` の実リンク。DB・認可・購入計算・在庫・決済を変更しない。
 
 [設計](design.md) / [タスク](tasks.md) / [保存計画](../../../plans/layout-design/checkout-order-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#checkout-order移行記録)
+
+## 購入導線の共通ヘッダー統合（2026-10-06）
+
+[共通受け入れ仕様](../purchase-header/requirements.md)のHeaderFrameを使用。住所dialogの初期focus/Escape復帰、refresh失敗後retryと購入ボタンのロックを維持する。RTL20/20・既存commerce/header回帰14/14、1440/768/390px・axe AA違反0。実認証後routeと決済SDKの受け入れは保留。業務設計と既存Checkoutタスクは変更不要。
