@@ -13,7 +13,7 @@ import {
 import { applyCoupon } from "@/queries/coupon";
 import styles from "@/components/store/shared/commerce.module.css";
 import Link from "next/link";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -22,20 +22,20 @@ export const dynamic = "force-dynamic";
 /**
  * Renders the checkout page for the current user.
  *
- * Redirects to `/cart` when the user is not signed in or does not have a cart.
+ * 認証はここ（リソース側）で行う。未認証はサインインへ送り、サインイン後に
+ * checkout へ戻れるようにする（`redirectToSignIn` が現在の URL を引き継ぐ）。
+ * カートが無い場合は `/cart` へリダイレクトする。
  *
  * @returns The checkout page content.
  */
 export default async function CheckoutPage() {
-    const user = await currentUser();
-    if (!user) {
-        redirect("/cart");
-    }
+    const { userId, redirectToSignIn } = await auth();
+    if (!userId) return redirectToSignIn();
 
     // Get user cart
     const cart = await db.cart.findFirst({
         where: {
-            userId: user.id,
+            userId,
         },
         include: {
             cartItems: true,
