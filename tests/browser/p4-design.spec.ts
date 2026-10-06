@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 const screens = [
+    { screen: "admincoupons", title: "Coupons" },
     { screen: "newcategory", title: "Create category" },
     { screen: "categories", title: "Categories" },
 ];
@@ -111,11 +112,21 @@ for (const entry of screens)
                         ).violations
                     ).toEqual([]);
                 }
-                if (entry.screen === "categories") {
-                    await page.getByRole("searchbox").fill("not-a-category");
+                if (["categories", "admincoupons"].includes(entry.screen)) {
+                    const category = entry.screen === "categories",
+                        entity = category ? "category" : "coupon",
+                        name = category ? "Shoes" : "WELCOME",
+                        field = category ? "Category name" : "Coupon code",
+                        edited = category ? "Edited shoes" : "EDITED",
+                        saveButton = category
+                            ? "Save category information"
+                            : "Save coupon";
+                    await page.getByRole("searchbox").fill("not-a-record");
                     await expect(page.getByText("No Results.")).toBeVisible();
-                    await page.getByRole("searchbox").fill("Shoes");
-                    await page.goto("/?screen=categories&loadfailure&failure");
+                    await page.getByRole("searchbox").fill(name);
+                    await page.goto(
+                        `/?screen=${entry.screen}&loadfailure&failure`
+                    );
                     await page.evaluate(
                         (dark) =>
                             document.documentElement.classList.toggle(
@@ -125,7 +136,7 @@ for (const entry of screens)
                         theme === "dark"
                     );
                     const edit = page.getByRole("button", {
-                        name: "Edit category Shoes",
+                        name: `Edit ${entity} ${name}`,
                         exact: true,
                     });
                     await edit.click();
@@ -134,29 +145,21 @@ for (const entry of screens)
                     await dialog
                         .getByRole("button", { name: "Retry load" })
                         .click();
-                    await expect(
-                        dialog.getByLabel("Category name")
-                    ).toHaveValue("Shoes");
-                    await dialog
-                        .getByLabel("Category name")
-                        .fill("Edited shoes");
+                    await expect(dialog.getByLabel(field)).toHaveValue(name);
+                    await dialog.getByLabel(field).fill(edited);
                     await dialog
                         .getByRole("button", {
-                            name: "Save category information",
+                            name: saveButton,
                         })
                         .click();
-                    await expect(
-                        dialog.getByLabel("Category name")
-                    ).toBeDisabled();
+                    await expect(dialog.getByLabel(field)).toBeDisabled();
                     await page.keyboard.press("Escape");
                     await expect(dialog).toBeVisible();
                     await expect(dialog.getByRole("alert")).toBeVisible();
-                    await expect(
-                        dialog.getByLabel("Category name")
-                    ).toHaveValue("Edited shoes");
+                    await expect(dialog.getByLabel(field)).toHaveValue(edited);
                     await dialog
                         .getByRole("button", {
-                            name: "Save category information",
+                            name: saveButton,
                         })
                         .click();
                     await expect(dialog.getByRole("status")).toHaveText(
@@ -177,9 +180,25 @@ for (const entry of screens)
                     });
                     await page.keyboard.press("Escape");
                     await expect(edit).toBeFocused();
+                    if (!category) {
+                        const toggle = page.getByRole("button", {
+                            name: "Deactivate WELCOME",
+                            exact: true,
+                        });
+                        await toggle.click();
+                        await expect(
+                            page.getByRole("button", {
+                                name: "Updating…",
+                                exact: true,
+                            })
+                        ).toBeDisabled();
+                        await expect(
+                            page.getByText("Changes saved.")
+                        ).toBeVisible();
+                    }
                     await page
                         .getByRole("button", {
-                            name: "Delete category Shoes",
+                            name: `Delete ${entity} ${name}`,
                             exact: true,
                         })
                         .click();
@@ -187,9 +206,9 @@ for (const entry of screens)
                         .getByRole("button", { name: "Cancel", exact: true })
                         .click();
                     await expect(page.getByRole("dialog")).not.toBeVisible();
-                    await page.goto("/?screen=categories&empty");
+                    await page.goto(`/?screen=${entry.screen}&empty`);
                     await expect(page.getByText("No Results.")).toBeVisible();
-                    await page.goto("/?screen=categories&fetcherror");
+                    await page.goto(`/?screen=${entry.screen}&fetcherror`);
                     await expect(page.getByRole("alert")).toBeVisible();
                     await page
                         .getByRole("button", { name: "Retry", exact: true })

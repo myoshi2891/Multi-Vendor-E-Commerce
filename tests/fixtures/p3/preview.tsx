@@ -1,6 +1,7 @@
 import Link from "next/link";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import AdminCouponsPage from "@/app/dashboard/admin/coupons/page";
 import NewCategoryPage from "@/app/dashboard/admin/categories/new/page";
 import CategoriesPage from "@/app/dashboard/admin/categories/page";
 import LegalPage from "@/app/(store)/legal/page";
@@ -25,7 +26,9 @@ async function preview() {
         </nav>
     );
     const content =
-        screen === "newcategory" ? (
+        screen === "admincoupons" ? (
+            await AdminCouponsPage()
+        ) : screen === "newcategory" ? (
             await NewCategoryPage()
         ) : screen === "categories" ? (
             await CategoriesPage()

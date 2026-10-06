@@ -1,6 +1,8 @@
 /** @jest-environment jsdom */
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import CouponsPage from "@/app/dashboard/admin/coupons/page";
+import { getAllCoupons } from "@/queries/coupon";
 import NewCategoryPage from "@/app/dashboard/admin/categories/new/page";
 import CategoriesPage from "@/app/dashboard/admin/categories/page";
 import { getAllCategories, upsertCategory } from "@/queries/category";
@@ -10,6 +12,17 @@ jest.mock("@/queries/category", () => ({
     getCategory: jest.fn(),
     upsertCategory: jest.fn(),
     deleteCategory: jest.fn(),
+}));
+jest.mock("@/queries/coupon", () => ({
+    getAllCoupons: jest.fn(),
+    getCouponAsAdmin: jest.fn(),
+    upsertCouponAsAdmin: jest.fn(),
+    deleteCouponAsAdmin: jest.fn(),
+    toggleCouponActive: jest.fn(),
+}));
+jest.mock("react-datetime-picker", () => ({
+    __esModule: true,
+    default: () => null,
 }));
 jest.mock("uuid", () => ({ v4: () => "new-id" }));
 jest.mock("next/navigation", () => ({
@@ -71,5 +84,21 @@ it("new category provides a creation heading and injects save with root identity
                 createdAt: expect.any(Date),
             })
         )
+    );
+});
+
+it("admin coupons exposes a labeled searchable empty list", async () => {
+    jest.mocked(getAllCoupons).mockResolvedValue([]);
+    render(await CouponsPage());
+    expect(screen.getByRole("region", { name: "Coupons" })).toContainElement(
+        screen.getByRole("heading", { level: 1, name: "Coupons" })
+    );
+    expect(screen.getByRole("searchbox")).toBeVisible();
+});
+it("admin coupons exposes generic load failure and retry", async () => {
+    jest.mocked(getAllCoupons).mockRejectedValue(Error("private"));
+    render(await CouponsPage());
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "Could not load coupons"
     );
 });

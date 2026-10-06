@@ -253,3 +253,5 @@ Phase 5: F3-第2段 platform-wide [safe-migration・破壊的・決済波及] �
 DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な階層一覧、Action Props経由の編集/作成/削除を使用する。validation・送信ロック・値保持retry・statusとPortal themeを提供する。業務制約と認可・DBは変更なし。補助検証済み・認証後受け入れ保留。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。
 
 - 2026-10-06 Step 2: DS-PAGE-042 カテゴリ作成は本体適用・補助検証済み・認証後受け入れ保留。既存業務契約とAction Props境界を維持。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+- 2026-10-06 Step 3: DS-PAGE-045 管理者クーポン一覧は本体適用・補助検証済み・認証後受け入れ保留。既存業務契約とAction Props境界を維持。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。
