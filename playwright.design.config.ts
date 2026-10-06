@@ -30,6 +30,20 @@ type DesignSuite = {
 };
 
 const DESIGN_SUITES = {
+    "p3-public": {
+        testMatch: "p3-public-design.spec.ts",
+        port: 3125,
+        kind: "route",
+        command: "NEXT_DEV_DIST_DIR=.next/p3-public bun run dev -- --port 3125",
+        readyPath: "/legal",
+        timeout: 120000,
+    },
+    p3: {
+        testMatch: "p3-design.spec.ts",
+        port: 3124,
+        kind: "fixture",
+        command: "node tests/fixtures/p3/server.mjs",
+    },
     six: {
         testMatch: "six-design.spec.ts",
         port: 3123,

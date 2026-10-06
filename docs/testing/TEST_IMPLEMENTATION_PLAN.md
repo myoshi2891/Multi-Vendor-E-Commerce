@@ -1103,3 +1103,15 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 
 最終回帰: six37/37（画像キーボード・配送空表含む）、seven42/42、全体Jest2842/2845（3既存skip）・280suites・127snapshots、型0/lint0errors（既存warnings10）・harness成功。文書リンクと66画面/218部品のID/件数を検証。認証後6画面の解除条件は[DS-SIX-BROWSER](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)を参照。
+
+- ✅ Completed (2026-10-05): DS-PAGE-049 管理者概要 の新要件TDD/関連回帰・補助browser。認証後保留の正本はQA_HANDOFF。
+
+- ✅ Completed (2026-10-05): DS-PAGE-048 管理者注文 の新要件TDD/関連回帰・補助browser。認証後保留の正本はQA_HANDOFF。
+
+- ✅ Completed (2026-10-05): DS-PAGE-050 管理者店舗 の新要件TDD/関連回帰・補助browser。認証後保留の正本はQA_HANDOFF。
+
+- ✅ Completed (2026-10-05): DS-PAGE-054 販売者クーポン の新要件TDD/関連回帰・補助browser。認証後保留の正本はQA_HANDOFF。
+
+- ✅ Completed (2026-10-05): DS-PAGE-053 クーポン作成 の新要件TDD/関連回帰・補助browser。認証後保留の正本はQA_HANDOFF。
+
+- ✅ Completed (2026-10-05): DS-PAGE-015 Legal の新要件TDD/関連回帰・補助browser・公開実ルート3幅検証。

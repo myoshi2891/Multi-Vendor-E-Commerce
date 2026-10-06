@@ -12,7 +12,8 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 2842 passed / 2845 total across 280 suites (279 passed, one skipped suite, 3 skipped tests), measured on 2026-10-05 with `bun run test -- --silent --coverage` after the PR#190 review fix (store URL rename redirect) and seller design-system migration.
+- 2882 passed / 2885 total across 294 suites (293 passed, one skipped suite, 3 skipped tests), measured on 2026-10-06 with `bun run test` after the PR#191 review follow-up (fetch-failure logging, ownership-error propagation on the seller coupons page, legal anchor guard), which followed the PR#191 SonarCloud New Code follow-up (new RTL suites for the admin sidebar navigation, user info, seller coupon dialogs, and a unit suite for `src/lib/admin-stores.ts`). All 127 snapshots passed.
+- Earlier measurement (2026-10-05): 2862 passed / 2865 total across 290 suites (289 passed, one skipped suite, 3 skipped tests) after the P3 six-screen final audit.
 - Earlier measurement (2026-10-05, plan 079):
 - 2768 passed / 2771 total across 264 suites (263 passed, 1 skipped suite; 3 skipped tests), measured on 2026-10-05 with `bun run test -- --coverage` after plan 079 (`tests/component/store/client-user-button.test.tsx` +2: Clerk `UserButton` is not server-rendered and hydrates without mismatch). All 127 snapshots passed. Full coverage: statements 83.17%, branches 69.27%, functions 77.5%, lines 83.25%. Dashboard: 330 test files / 350 lcov entries / 18 of 80 cells.
 - Earlier measurement (2026-10-05): 2766 passed / 2769 total across 263 suites (262 passed, 1 skipped suite; 3 skipped tests), measured on 2026-10-05 with `bun run test -- --runInBand --coverage`. All 127 snapshots passed. Full coverage: statements 83.16%, branches 69.26%, functions 77.45%, lines 83.24%. Dashboard: 329 test files / 349 lcov entries / 18 of 80 cells. Previous measurement (2026-10-04): 2742 passed / 2745 total across 257 suites.
@@ -1287,3 +1288,9 @@ New-store RTL records main/theme and incorrect create-id payload Red cases. six 
 
 
 Final six-screen audit (2026-10-05): supplemental Chromium six37/37 and existing seven regression42/42 pass. Gallery keyboard removal/payload preservation and empty shipping-table keyboard access have browser coverage; image controls have RTL coverage. Full Jest is 2842 passed / 2845 total (3 skipped), 280 suites (279 passed/1 skipped), 127 snapshots passed. Authenticated routes/SDKs remain on hold with explicit conditions in [QA](../../docs/testing/QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留).
+
+## P3優先6画面のデザイン移行（2026-10-05）
+
+2026-10-05 P3優先6画面：全体Jest2862 passed / 2865 total、290 suites（289 passed／1 skipped）、3 skipped、127 snapshots。新RTLは画面ごとのRed→Green、tests/browser/p3-design.spec.tsは37/37、p3-public-design.spec.tsは公開実ルート4/4、seven回帰42/42。playwright.design.config.tsの既存fixture serverを拡張。統計と認証後5実ルートの解除条件はQA_HANDOFFを正本とする。
+
+詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。

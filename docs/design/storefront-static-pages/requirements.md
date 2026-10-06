@@ -67,3 +67,9 @@
 ## Product support デザイン受け入れ条件（2026-10-01）
 
 既存3セクションの見出し・本文・プレースホルダ表記を保持。深緑ヒーロー、クリーム背景、ゴールド、セリフ見出し、Homeパンくず。3項目の目次に一意で空でないアンカーを設け、focus/Enterで本文へ移動できる。Customer service・Contact・Returns & Exchange・Track your orderの4導線を表示。1440/390/768pxで横溢れなし、WCAG AA。公開Server Component、plain text・DB非依存、親store layoutのレンダリング方針は維持。
+
+## Legal デザイン移行（2026-10-05）
+
+深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。

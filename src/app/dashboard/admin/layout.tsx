@@ -10,24 +10,23 @@ import Header from "@/components/dashboard/header/Header";
 
 // Sidebar
 import Sidebar from "@/components/dashboard/sidebar/sidebar";
+import SellerShell from "@/components/dashboard/design/seller-shell";
 export default async function AdminDashboardLayout({
-	children,
+    children,
 }: {
-	children: ReactNode;
+    children: ReactNode;
 }) {
-	// Block non admins from accessing the admin dashboard
-	const user = await currentUser();
+    // Block non admins from accessing the admin dashboard
+    const user = await currentUser();
 
-	if (!user || user.privateMetadata.role !== "ADMIN") redirect("/");
-	return (
-		<div className="size-full">
-			{/* Sidebar */}
-			<Sidebar isAdmin />
-			<div className="ml-[300px]">
-				{/* Header */}
-				<Header />
-				<div className="mt-[75px] w-full p-4">{children}</div>
-			</div>
-		</div>
-	);
+    if (!user || user.privateMetadata.role !== "ADMIN") redirect("/");
+    return (
+        <SellerShell
+            navigationLabel="Administration navigation"
+            sidebar={<Sidebar isAdmin design="seller" />}
+            header={<Header design="seller" />}
+        >
+            {children}
+        </SellerShell>
+    );
 }

@@ -1,6 +1,12 @@
-import DataTable from "@/components/ui/data-table";
-import { columns } from "./columns";
-import { getAllOrders } from "@/queries/order";
+import AdminOrders from "@/components/dashboard/admin/admin-orders";
+import SellerPage from "@/components/dashboard/design/seller-page";
+import LoadError from "@/components/dashboard/design/load-error";
+import { serializeAdminOrders } from "@/lib/admin-orders";
+import {
+    getAllOrders,
+    updateOrderGroupStatusAsAdmin,
+    updateOrderItemStatusAsAdmin,
+} from "@/queries/order";
 import { OrderStatus, PaymentStatus } from "@/lib/types";
 import { normalizePageParam, normalizePositiveIntParam } from "@/lib/utils";
 
@@ -52,6 +58,7 @@ export default async function AdminOrdersPage({
     const orderStatus = toEnumValue(OrderStatus, sp.orderStatus);
 
     let orders: Awaited<ReturnType<typeof getAllOrders>>["orders"] = [];
+    let failed = false;
     try {
         const result = await getAllOrders({
             page,
@@ -62,6 +69,7 @@ export default async function AdminOrdersPage({
         });
         orders = result.orders;
     } catch (error: unknown) {
+        failed = true;
         if (error instanceof Error) {
             console.error(
                 "[AdminOrders] Failed to fetch orders:",
@@ -73,14 +81,29 @@ export default async function AdminOrdersPage({
         }
     }
 
+    if (failed)
+        return (
+            <SellerPage
+                workspace="Administration"
+                id="admin-orders"
+                title="Orders"
+            >
+                <LoadError subject="orders" />
+            </SellerPage>
+        );
     return (
-        <div>
-            <DataTable
-                filterValue="id"
-                data={orders}
-                columns={columns}
-                searchPlaceholder="Search order by id ..."
-            />
-        </div>
+        <AdminOrders
+            orders={serializeAdminOrders(orders)}
+            actions={{
+                updateGroupAction: async (_storeId, groupId, status) => {
+                    "use server";
+                    return updateOrderGroupStatusAsAdmin(groupId, status);
+                },
+                updateItemAction: async (_storeId, itemId, status) => {
+                    "use server";
+                    return updateOrderItemStatusAsAdmin(itemId, status);
+                },
+            }}
+        />
     );
 }

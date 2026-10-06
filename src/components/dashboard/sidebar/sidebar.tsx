@@ -40,12 +40,12 @@ const Sidebar: FC<SideBarProps> = async ({ isAdmin, stores, design }) => {
         >
             <Logo width="100%" height="180px" />
             <span className="mt-3" />
-            {user && <UserInfo user={user} />}
+            {user && <UserInfo user={user} design={design} />}
             {!isAdmin && stores && (
                 <StoreSwitcher stores={stores} design={design} />
             )}
             {isAdmin ? (
-                <SideBarNavAdmin menuLinks={adminDashboardSidebarOptions} />
+                <SideBarNavAdmin menuLinks={adminDashboardSidebarOptions} design={design} />
             ) : (
                 <SideBarNavSeller menuLinks={SellerDashboardSidebarOptions} />
             )}

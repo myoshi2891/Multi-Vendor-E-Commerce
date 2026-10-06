@@ -5,6 +5,8 @@ export interface StaticSection {
     heading: string;
     /** 本文。改行は段落として描画する（plain text 前提・HTML 注入しない） */
     body: string;
+    /** 任意のアンカー id。見出し文言を変えても既存のフラグメント URL を維持したい場合に指定 */
+    id?: string;
 }
 
 interface StaticPageLayoutProps {
@@ -39,7 +41,7 @@ export default function StaticPageLayout({
                         {sections.map((s) => (
                             <li key={s.heading}>
                                 <a
-                                    href={`#${slugify(s.heading)}`}
+                                    href={`#${sectionAnchorId(s)}`}
                                     className="hover:underline"
                                 >
                                     {s.heading}
@@ -51,7 +53,7 @@ export default function StaticPageLayout({
             ) : null}
             <div className="space-y-10">
                 {sections.map((s) => (
-                    <section key={s.heading} id={slugify(s.heading)}>
+                    <section key={s.heading} id={sectionAnchorId(s)}>
                         <h2 className="mb-3 text-xl font-semibold">
                             {s.heading}
                         </h2>
@@ -68,6 +70,11 @@ export default function StaticPageLayout({
             </div>
         </main>
     );
+}
+
+/** セクションのアンカー id。明示 id を優先し、無ければ見出しから導出する */
+export function sectionAnchorId(section: StaticSection): string {
+    return section.id ?? slugify(section.heading);
 }
 
 /** 見出しを安定したアンカー id に変換（英数小文字 + ハイフン） */

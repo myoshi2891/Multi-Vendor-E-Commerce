@@ -167,3 +167,23 @@
 | F3-1〜F3-6 | [§F3 クーポン設計（第1段）](./design.md#4-f3-クーポン管理dashboardadmincoupons) | Phase 3 |
 | F3-7〜F3-11 | [§スキーマ第2段 + 影響箇所マトリクス](./design.md#52-スキーマ変更第2段platform-wide) | Phase 4-5 |
 | NFR-*, C-* | [§判断 5・6](./design.md#判断5-アーキテクチャ品質要件) | 全フェーズ横断 |
+
+## 管理者概要 デザイン移行（2026-10-05）
+
+深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+## 管理者注文 デザイン移行（2026-10-05）
+
+深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+## 管理者店舗 デザイン移行（2026-10-05）
+
+深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+共通枠の受け入れ追記: 実Sidebar/Headerを3幅とlight/darkで確認し、avatar未取得時もAA contrastを維持、長いemailを折り返す。P4既定DataTableのtoolbarをtheme scope内で折り返し、検索と既存作成URLを保持する。既定UserInfoとP4本文の全面移行は含めない。

@@ -54,7 +54,7 @@
 
 ### 2.1 件数
 
-2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。2026-10-05のoffers/dispute/report-problemは検証済み3追加、following/historyは実装済み・認証後実ルート検証保留2追加。現在は検証済み14・検証保留17・未適用15。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
+2026-09-30のcompare・FAQs・profile・wishlist移行により本体適用12・未適用46へ更新。2026-10-01のtrack-order・customer-service・returns-exchange・product-support移行により未適用42・検証済み4へ更新。2026-10-01のcart移行で未適用41・検証済み5へ更新。2026-10-03のorders移行で未適用39・検証済み7、payment移行で未適用38・検証済み8、addresses移行で未適用37・検証済み9、reviews移行で未適用36・検証済み10、messages移行で未適用35・検証済み11へ更新。2026-10-04のcheckout・注文詳細は実装済みだが認証後実ルートの検証保留2、未適用33へ更新（検証済み11は不変）。2026-10-05のoffers/dispute/report-problemは検証済み3追加、following/historyは実装済み・認証後実ルート検証保留2追加。現在は検証済み15・検証保留22・未適用9。検証範囲と証跡は[進捗ノート](../../docs/design/design-system/PROGRESS.md)を参照。
 
 | 区分 | ページ定義 |
 |---|---:|
@@ -66,10 +66,10 @@
 
 | 判定 | 件数 |
 |---|---:|
-| 検証済み（2026-10-05） | 14 |
+| 検証済み（2026-10-05） | 15 |
 | 本体適用・周辺確認 | 12 |
-| 本体適用・検証保留 | 17 |
-| 未適用 | 15 |
+| 本体適用・検証保留 | 22 |
+| 未適用 | 9 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
 | **合計** | **66** |
@@ -94,7 +94,7 @@
 | `/dispute` | 検証済み（2026-10-05） | P2 | [src/app/(store)/dispute/page.tsx](<../../src/app/(store)/dispute/page.tsx>) |
 | `/faq` | 転送専用 | 回帰検証 | [src/app/(store)/faq/page.tsx](<../../src/app/(store)/faq/page.tsx>) |
 | `/faqs` | 本体適用・周辺確認 | P3 | [src/app/(store)/faqs/page.tsx](<../../src/app/(store)/faqs/page.tsx>) |
-| `/legal` | 未適用 | P3 | [src/app/(store)/legal/page.tsx](<../../src/app/(store)/legal/page.tsx>) |
+| `/legal` | 検証済み（2026-10-05） | P3 | [src/app/(store)/legal/page.tsx](<../../src/app/(store)/legal/page.tsx>) |
 | `/offers` | 検証済み（2026-10-05） | P2 | [src/app/(store)/offers/page.tsx](<../../src/app/(store)/offers/page.tsx>) |
 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/page.tsx](<../../src/app/(store)/page.tsx>) |
 | `/product-support` | 検証済み（2026-10-01） | P3 | [src/app/(store)/product-support/page.tsx](<../../src/app/(store)/product-support/page.tsx>) |
@@ -127,13 +127,13 @@
 | `/dashboard/admin/coupons` | 未適用 | P4 | [src/app/dashboard/admin/coupons/page.tsx](<../../src/app/dashboard/admin/coupons/page.tsx>) |
 | `/dashboard/admin/offer-tags/new` | 未適用 | P4 | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../src/app/dashboard/admin/offer-tags/new/page.tsx>) |
 | `/dashboard/admin/offer-tags` | 未適用 | P4 | [src/app/dashboard/admin/offer-tags/page.tsx](<../../src/app/dashboard/admin/offer-tags/page.tsx>) |
-| `/dashboard/admin/orders` | 未適用 | P3 | [src/app/dashboard/admin/orders/page.tsx](<../../src/app/dashboard/admin/orders/page.tsx>) |
-| `/dashboard/admin` | 未適用 | P3 | [src/app/dashboard/admin/page.tsx](<../../src/app/dashboard/admin/page.tsx>) |
-| `/dashboard/admin/stores` | 未適用 | P3 | [src/app/dashboard/admin/stores/page.tsx](<../../src/app/dashboard/admin/stores/page.tsx>) |
+| `/dashboard/admin/orders` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/admin/orders/page.tsx](<../../src/app/dashboard/admin/orders/page.tsx>) |
+| `/dashboard/admin` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/admin/page.tsx](<../../src/app/dashboard/admin/page.tsx>) |
+| `/dashboard/admin/stores` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/admin/stores/page.tsx](<../../src/app/dashboard/admin/stores/page.tsx>) |
 | `/dashboard` | 転送専用 | 回帰検証 | [src/app/dashboard/page.tsx](<../../src/app/dashboard/page.tsx>) |
 | `/dashboard/seller` | 転送専用 | 回帰検証 | [src/app/dashboard/seller/page.tsx](<../../src/app/dashboard/seller/page.tsx>) |
-| `/dashboard/seller/stores/[storeUrl]/coupons/new` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) |
-| `/dashboard/seller/stores/[storeUrl]/coupons` | 未適用 | P3 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) |
+| `/dashboard/seller/stores/[storeUrl]/coupons/new` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) |
+| `/dashboard/seller/stores/[storeUrl]/coupons` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/inventory` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/messages` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) |
 | `/dashboard/seller/stores/[storeUrl]/orders` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) |
@@ -672,3 +672,24 @@ DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通C
 
 - [x] DS-PAGE-065 店舗作成: TDD・実装・補助検証・仕様同期。
 - [ ] DS-PAGE-065: 認証後実ルートと必要なSDK実描画（実装あり・保留）。
+
+### 未適用P3優先6画面移行チェック
+
+[保存計画](priority-six-p3-design-system-plan.md)／[実施記録](../../docs/design/design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+- [x] DS-PAGE-049 管理者概要: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-049: 認証後実ルート/必要なSDK描画（実装あり・補助検証済み・保留）。
+
+- [x] DS-PAGE-048 管理者注文: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-048: 認証後実ルート/必要なSDK描画（実装あり・補助検証済み・保留）。
+
+- [x] DS-PAGE-050 管理者店舗: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-050: 認証後実ルート/必要なSDK描画（実装あり・補助検証済み・保留）。
+
+- [x] DS-PAGE-054 販売者クーポン: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-054: 認証後実ルート/必要なSDK描画（実装あり・補助検証済み・保留）。
+
+- [x] DS-PAGE-053 クーポン作成: TDD・実装・関連検証・仕様同期。
+- [ ] DS-PAGE-053: 認証後実ルート/必要なSDK描画（実装あり・補助検証済み・保留）。
+
+- [x] DS-PAGE-015 Legal: TDD・実装・関連検証・仕様同期。公開実ルート検証済み。

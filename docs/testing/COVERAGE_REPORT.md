@@ -11,15 +11,15 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-05） | **2842 passed / 2845 total、3 skipped、127 snapshots passed、280 スイート（279 passed／1 skipped、failed 0）**。全体coverage実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| 全体coverage（2026-10-05） | Statements86.58%（9779/11294）／Branches75.82%（5796/7644）／Functions83.08%（1872/2253）／Lines86.96%（8895/10228）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テストファイル総数 | **349 ファイル**（2026-10-05 dashboard実測）。 |
-| Jest スイート総数（unit/component のみ） | **280 スイート**（279 passed／1 skipped、2026-10-05全体実測）。 |
-| テスト総数 | **2842 unit/component passed**（2845 total / 3 skipped / 280 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
+| Jestテスト総数（2026-10-06） | **2882 passed / 2885 total、3 skipped、127 snapshots passed、294 スイート（293 passed／1 skipped、failed 0）**。全体coverage実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| 全体coverage（2026-10-06） | Branches76.88%（6065/7889）／Functions83.49%（1932/2314）／Lines87.31%（9092/10413）、Statementsは未取得（lcovのみ出力）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| テストファイル総数 | **365 ファイル**（2026-10-06 dashboard実測）。 |
+| Jest スイート総数（unit/component のみ） | **290 スイート**（289 passed／1 skipped、2026-10-05全体実測）。 |
+| テスト総数 | **2862 unit/component passed**（2865 total / 3 skipped / 290 suites、2026-10-05実測）。Integrationは222 / 17 suites（2026-10-04実測を維持、今回未実行）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18 / 80 (23%)**（2026-10-05 dashboard実測、変更なし）。 |
-| lcov エントリ数 | **367**（2026-10-05全体coverage再測定とdashboard実測）。 |
+| lcov エントリ数 | **375**（2026-10-05全体coverage再測定とdashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
 | 型エラー | **0 件**（2026-10-05実測）。 |
 
@@ -613,3 +613,19 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 ### 販売者6画面・最終監査（2026-10-05）
 
 全体再実測: 2842 passed / 2845 total、3 skipped、127 snapshots passed、280 スイート（279 passed／1 skipped、failed 0）。Statements86.58%（9779/11294）／Branches75.82%（5796/7644）／Functions83.08%（1872/2253）／Lines86.96%（8895/10228）。dashboard349files/367lcov/18 of 80cells。six37/37、seven回帰42/42、型0、lint0errors/10既存warnings、harness成功。画像キーボード操作・配送空表を追加検証し修正。認証後6実ルートとSDKは保留。Integration/本体E2Eは未実行。[QA正本](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)。
+
+### 2026-10-05 P3優先6画面の全体再測定
+
+直前2842/2845・280 suitesから2862/2865・290 suitesへ更新（3 skipped、127 snapshots維持）。新しい表示部品を計測対象に含め、Statements86.43%／Branches75.46%／Functions83.01%／Lines86.88%。dashboard361 test files／375 lcov entries／18/80セル。Integrationは222/17の既存実測を維持。認証後5画面の残条件は[QA DS-P3](./QA_HANDOFF.md#ds-p3-six-browser)。
+
+### 2026-10-06 PR#191 SonarCloud New Code カバレッジ対策
+
+- Sonar の New Code が 70.5% だった。`nav-admin.tsx` と `user-info.tsx` はクォート整形でファイル全体が New Code 扱いになり、テストが無いため 0%。`seller-coupons.tsx` は編集ダイアログの取得・失敗・再試行・保存中ロックが 51.5% で未カバーだった。RTL を 3 スイート（`sidebar/nav-admin` / `sidebar/user-info` / `seller-coupons-dialog`）、unit を 1 スイート（`src/lib/admin-stores.test.ts`）追加した。あわせてレビュー指摘に対応し、`coupon-form-fields.tsx` の割引入力が NaN を React に渡さないよう修正（`seller-coupon-form.test.tsx` +1、修正前に NaN 警告で失敗する Red を確認）。
+- 更新前: 2862 passed / 2865 total、290 suites。
+- 更新後: 2877 passed / 2880 total、294 suites（293 passed／1 skipped）、3 skipped、127 snapshots。lcov Branches76.88%（6065/7889）／Functions83.49%（1932/2314）／Lines87.31%（9092/10413）、Statementsは今回未取得。dashboard365 test files／375 lcov entries／18/80セル。型0、lint 0 errors（既存10 warnings）。Integration/E2E 未実行。
+
+### 2026-10-06 PR#191 レビュー追加対応（取得失敗ログ・所有権エラー伝播・Legal 整合）
+
+- 管理者ダッシュボード／店舗一覧ページの取得失敗を構造化ログ付きにした。販売者クーポンページは `requireStoreOwner` を catch の外で先に呼び、所有権エラーを `error.tsx` へ伝播させる（取得失敗のみ LoadError）。Legal はアンカー数と `LEGAL_SECTIONS` の不一致でモジュール読込時に throw し、段落 key をセクション ID と index の組にした。RTL +5（すべて修正前に Red を確認）。p3 fixture に `@/lib/auth-guards` のモックを追加し、p3 37/37・harness 成功。
+- 更新前: 2877 passed / 2880 total、294 suites。
+- 更新後: 2882 passed / 2885 total、294 suites（293 passed／1 skipped）、3 skipped、127 snapshots。coverage は再計測していない（直前の lcov 値を維持）。dashboard365 test files／375 lcov entries／18/80セル。型0、lint 0 errors（既存10 warnings）。

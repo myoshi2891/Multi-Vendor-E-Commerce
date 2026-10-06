@@ -387,3 +387,9 @@ export default function CustomerServicePage() {
 深緑ヒーロー・クリーム本文・ゴールド・Georgia見出し、パンくずを表示。案内／3目次＋番号付き本文の2列を800px以下で1列にする。アンカーは順序に対応するsupport-1〜3、各sectionをh2のaria-labelledbyで関連付け、scroll-marginを設定。h1はProduct support。装飾番号・星・矢印はaria-hidden。目次名は「サポート内容一覧」。
 
 下部「サポート窓口」navにcustomer-service/contact/returns-exchange/track-orderの4リンクを配置。全リンクでfocus outlineを可視化する。共有StaticPageLayoutは変更せず、他ページの移行には数えない。
+
+## Legal デザイン移行（2026-10-05）
+
+既存scopedブランド基盤を利用し、対象本体と展開UIを統一。Serverから型付きAction Propsを渡す。Legalは公開Server Componentと既存本文/アンカーを保持。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。

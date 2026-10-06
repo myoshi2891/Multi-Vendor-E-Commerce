@@ -119,3 +119,10 @@
 - [x] DS-PAGE-018計画保存、RTL目次不在とChromium背景色3件Redを確認後に実装。
 - [x] 関連Jest11/11、Chromium3/3、3幅・本文保持・focus/Enter・横溢れ・axe AA・PC/モバイル画像、lint/tsc。
 - [x] requirements/design/PROGRESS、SDD、移行計画と台帳、QA・テスト計画同期、dashboard再生成。[証跡](../design-system/PROGRESS.md#product-support移行記録)。未コミット。
+
+## Legal デザイン移行（2026-10-05）
+
+- [x] DS-PAGE-015: Red→Green→Refactor・関連検証・仕様同期。
+- [x] 公開実ルートの受け入れ確認。
+
+証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。

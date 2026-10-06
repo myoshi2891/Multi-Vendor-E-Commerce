@@ -189,3 +189,9 @@ The branded product editor keeps the existing category/attribute/image/size work
 Shipping defaults and country overrides retain their existing save actions and store refresh. Country search scopes the table; a labeled editing dialog locks fields and dismissal during pending save, retains inputs for retry and returns focus after dismissal.
 
 New-store users complete validated profile/contact/logo/cover fields in the standalone theme. Pending locks all controls; failure retains drafts; a successful no-id create submission navigates to the returned store URL. Existing-store saves include id. If the returned store URL changed, replace the route with its settings URL; otherwise refresh.
+
+## P3優先6画面のデザイン移行（2026-10-05）
+
+取得失敗はLoadErrorからrefresh再試行。注文状態更新は管理者用既存Actionへ接続。店舗・クーポン削除は確認→pending→成功／error再試行、pending中の重複送信・閉鎖を防止。クーポン編集はgetCouponで最新値取得後に開き、null／失敗は保存させず再試行。新規作成は入力→Zod検証→既存保存→店舗クーポン一覧へ復帰。分精度の日時入力は秒を00で補い、秒を含む値はそのまま保持。guest dashboardは既存どおり/へ転送。
+
+詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。

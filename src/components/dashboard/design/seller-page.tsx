@@ -2,10 +2,12 @@ import type { ReactNode } from "react";
 import styles from "./seller.module.css";
 export default function SellerPage({
     id,
+    workspace = "Seller workspace",
     title,
     description,
     children,
 }: {
+    workspace?: string;
     id: string;
     title: string;
     description?: string;
@@ -14,7 +16,7 @@ export default function SellerPage({
     return (
         <section className={styles.page} aria-labelledby={id}>
             <header className={styles.heading}>
-                <p className={styles.eyebrow}>Seller workspace</p>
+                <p className={styles.eyebrow}>{workspace}</p>
                 <h1 id={id}>{title}</h1>
                 {description && (
                     <p className={styles.description}>{description}</p>
