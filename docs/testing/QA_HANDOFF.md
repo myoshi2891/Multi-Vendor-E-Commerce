@@ -10,7 +10,7 @@
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest・lcov: 2026-10-06実測 / Integration: 2026-10-04実測 / E2Eフルラン: 2026-10-03実測）
+### テスト統計（Jest: 2026-10-07実測 / lcov: 2026-10-06実測 / Integration: 2026-10-07実測 / E2Eフルラン: 2026-10-03実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -18,9 +18,9 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2919 passed / 2922 total、3 skipped、127 snapshots passed、302 スイート（301 passed／1 skipped、failed 0）**。2026-10-06 `bun run test -- --coverage --silent --maxWorkers=50%` レビュー指摘対応（review paging / country Enter / design port）後の全体実測。 |
+| Jest テスト総数 (unit/component) | **2921 passed / 2924 total、3 skipped、127 snapshots passed、303 スイート（302 passed／1 skipped、failed 0）**。2026-10-07 `bun run test --silent` の全体実測（plan 082 の OI-17 で `tests/component/store/checkout-page-auth.test.tsx` +2・+1 スイート。lcov は 2026-10-06 のまま）。 |
 | カバレッジ全体（2026-10-06実測） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
-| Jest Integration テスト総数 | **222** / **17 スイート**（**2026-10-04 実測: 222/222 pass**・`bun run test:integration`。PR #187 レビュー対応で `product-update.test.ts` に同一商品へのバリアント並行追加 +1）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest Integration テスト総数 | **223** / **17 スイート**（**2026-10-07 実測: 223/223 pass**・`bun run test:integration`。plan 082 で `category-tree-resync.test.ts` に補正マイグレーション `RESYNC_URL_SWAP` の 2 件を追加し、旧 url 交換テスト 1 件をそこへ移設）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
@@ -181,7 +181,9 @@
 | 5 | **OI-14** | `tests/e2e/mobile-responsive.spec.ts:119`（タブレットのレイアウト切替）が `h1` に旧ブランド名 `GoShop` を期待して全ブラウザで失敗（現行は `Luxuries`）。リブランド時の取り残し | 🟢 低 | 期待値を現行ブランドへ更新するか、ブランド名に依存しないランドマーク検証へ置き換える。 |
 | ~~6~~ | ~~**OI-15**~~ | ~~`tests/browser/commerce-design.spec.ts`（Playwright spec）を Jest が収集し suite fail（CI exit 1）~~ | ✅ 解消（2026-10-04・plan 078） | `jest.config.js` の `testPathIgnorePatterns` に `/tests/browser/` を追加。`bun run test` が 0 failed suite・exit 0、`playwright.commerce.config.ts --list` で 11 tests 列挙を確認 |
 | ~~6~~ | ~~**OI-16**~~ | ~~Playwright config 6 本への増殖と、`tests/e2e/*-public-design.spec.ts` 2 本の本体 E2E での二重実行（3 ブラウザ計 48 件）。fixture サーバーの tmp が SIGKILL で削除されず溜まり続ける~~ | ✅ 解消（2026-10-05・plan 080、未コミット） | config を `playwright.design.config.ts`（`DESIGN_SUITES`）に統合し、spec を `tests/browser/` へ移動。`startFixtureServer` で共通化し `gracefulShutdown: SIGTERM` を指定。`bun run check:playwright` を CI Lint に追加。ルール `.claude/rules/05-playwright-harness.md`、手順はスキル `.agent/skills/playwright-browser-verification`（AGENTS.md から誘導）。5 suite 75/75 pass、本体 `--list` 447/46。旧コマンドの対応は TESTING_DESIGN の「デザイン検証ハーネス」節 |
-| 6 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
+| ~~6~~ | ~~**OI-17**~~ | ~~`tests/e2e/payment-error.spec.ts:22` が未認証の `/checkout` で `/sign-in` への遷移を待って失敗する。実装（`checkout/page.tsx`）は `redirect("/cart")` で、spec のコメント「ミドルウェアで保護」は plan 072 以前の前提。2026-10-07 に Chromium で確認（plan 082 の変更とは無関係）~~ | ✅ 解消（2026-10-07・plan 082、未コミット） | 正しい遷移先は sign-in（ユーザー判断）。`checkout/page.tsx` を `auth()` + `redirectToSignIn()`（`profile/layout.tsx` と同じ形）へ変更し、`checkout-page-auth.test.tsx` +2（Red 確認済み）。Chromium で payment-error:22 pass。`visual/checkout.spec.ts` は redirect が通るようになり、残る失敗はベースラインが旧 GoShop デザインのまま（OI-13 で扱う） |
+| ~~7~~ | ~~**OI-18**~~ | ~~`tests/e2e/profile.spec.ts:141`（住所追加）の前処理 `prisma.country.upsert` が `Country.name` の一意制約に衝突する（`code` で upsert して `name: "United States"` を作るが、同名の国が seed に既にある）。2026-10-07 に Chromium で確認（plan 082 の変更とは無関係）~~ | ✅ 解消（2026-10-07・plan 082、未コミット） | 住所フォームは DB の id で選ぶ native select のため、実国名の fixture をやめ seed の project 別の国（`seedCountryId`）を選ぶ。国の作成・削除も撤去。実国名の `US` 行があるローカル DB で Chromium pass |
+| 8 | **C2** | Bundle Size の継続監視 | 🟢 低 | `@next/bundle-analyzer + size-limit` で初期 JS の閾値超過を CI 警告（下記 C2 プロンプト参照）。 |
 
 > ✅ **OI-8 完了（2026-06-14）**: CI flake の真因は `src/queries/size.test.ts` の `@/lib/db` 未モックによる実 Prisma 接続リーク（stub DB へ P1001 → jest-circus が別ファイルへ「本文空」失敗を帰属）。`size.test.ts` に `jest.mock("@/lib/db")` を追加して根絶（`83ef06c`）→ 被害者だった `modal-provider.test.tsx` 9 件を un-skip（`49fa32d`、1272→1281 / skip 12→3）。CI push/pull_request 両 event × 2 サイクル緑・stub DB フルスイート P1001 = 0。詳細: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)。
 >

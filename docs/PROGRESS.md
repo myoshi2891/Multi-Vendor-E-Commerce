@@ -16,8 +16,8 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2919 passed / 2922 total、3 skipped、127 snapshots passed、302 スイート（301 passed／1 skipped、failed 0）** — 2026-10-06 購入導線レビュー指摘対応後の全体実測。Integration222／17 suitesは既存実測を維持。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
-| Jest Integration テスト | **222テスト / 17スイート** — 2026-10-04実測を維持（今回未実行）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
+| Jestユニットテスト | **2921 passed / 2924 total、3 skipped、127 snapshots passed、303 スイート（302 passed／1 skipped、failed 0）** — 2026-10-07 plan 082（OI-17）後の全体実測。Integration223／17 suitesは2026-10-07実測（plan 082）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jest Integration テスト | **223テスト / 17スイート** — 2026-10-07実測（plan 082・223/223 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |
@@ -5320,4 +5320,30 @@ home/browse/product/store/cart/checkoutの共通header、検索/国選択、sort
 |------|--------|--------|
 | テスト総数 | 2916 passed / 2919 total | **2919 passed / 2922 total** |
 | スイート数 | 301 | **302** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 082: E2E セレクター追従 + 適用済みマイグレーション編集の是正 (2026-10-07)
+
+plan 081 で「既存の失敗」とされた E2E 7 件の原因は、デザイン移行（`d3e87f64` / `21924e9d`）の文言・構造変更に E2E が追従していなかったこと。あわせて、適用済みマイグレーションを `0ffb72b8` で編集していた件を、元の版への復元と補正マイグレーションの新設で是正した（未コミット）。
+
+| 対象 | 変更内容 |
+|------|---------|
+| `prisma/migrations/20260901223148_category_tree_phase_b_resync/` | `5c4b2501` の内容へ復元（チェックサムを適用済み DB と一致させる） |
+| `prisma/migrations/20261007120000_category_tree_resync_url_swap/` | 一時退避付きの再同期を補正として新設（`RESYNC_URL_SWAP` 区間） |
+| `tests/integration/category-tree-resync.test.ts` | url 交換テストを補正区間へ移設、冪等性 +1 |
+| `tests/e2e/*.spec.ts`（7 ファイル） | トースト・フォローボタン・注文詳細・住所エラーの各セレクターを現行 UI へ |
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Integration | 222 / 17 | **223 / 17** |
+| Jest | 2919 passed / 2922 total | **2919 passed / 2922 total** |
+| 型エラー | 0 件 | **0 件** |
+
+#### plan 082 追補: OI-17 / OI-18 (2026-10-07)
+
+未認証の `/checkout` を `/cart` ではなくサインインへ送るよう、`checkout/page.tsx` を `auth()` + `redirectToSignIn()` へ変更（OI-17、RTL +2・Red 確認済み）。profile E2E の国 fixture が `Country.name` の UNIQUE に衝突していた件は、seed の project 別の国を選ぶ形に変更（OI-18）。いずれも未コミット。
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2919 passed / 2922 total・302 スイート | **2921 passed / 2924 total・303 スイート** |
 | 型エラー | 0 件 | **0 件** |
