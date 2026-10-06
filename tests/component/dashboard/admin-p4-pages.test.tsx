@@ -1,8 +1,9 @@
 /** @jest-environment jsdom */
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import NewCouponPage from "@/app/dashboard/admin/coupons/new/page";
 import CouponsPage from "@/app/dashboard/admin/coupons/page";
-import { getAllCoupons } from "@/queries/coupon";
+import { getAllCoupons, upsertCouponAsAdmin } from "@/queries/coupon";
 import NewCategoryPage from "@/app/dashboard/admin/categories/new/page";
 import CategoriesPage from "@/app/dashboard/admin/categories/page";
 import { getAllCategories, upsertCategory } from "@/queries/category";
@@ -100,5 +101,36 @@ it("admin coupons exposes generic load failure and retry", async () => {
     render(await CouponsPage());
     expect(screen.getByRole("alert")).toHaveTextContent(
         "Could not load coupons"
+    );
+});
+
+it("new admin coupon injects creation action and normalizes PLATFORM storeId", async () => {
+    jest.mocked(upsertCouponAsAdmin).mockResolvedValue({
+        code: "NEWCODE",
+    } as never);
+    render(<NewCouponPage />);
+    expect(
+        screen.getByRole("heading", { level: 1, name: "Create coupon" })
+    ).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Coupon code"), {
+        target: { value: "NEWCODE" },
+    });
+    fireEvent.change(screen.getByLabelText("Coupon discount"), {
+        target: { value: "10" },
+    });
+    fireEvent.change(screen.getByLabelText("Scope"), {
+        target: { value: "PLATFORM" },
+    });
+    fireEvent.submit(screen.getByRole("form", { name: "Coupon information" }));
+    await waitFor(() =>
+        expect(upsertCouponAsAdmin).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: "new-id",
+                code: "NEWCODE",
+                scope: "PLATFORM",
+                storeId: null,
+                discount: 10,
+            })
+        )
     );
 });

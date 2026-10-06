@@ -10,7 +10,7 @@
 | 1 | DS-PAGE-043 | /dashboard/admin/categories | [x] |
 | 2 | DS-PAGE-042 | /dashboard/admin/categories/new | [x] |
 | 3 | DS-PAGE-045 | /dashboard/admin/coupons | [x] |
-| 4 | DS-PAGE-044 | /dashboard/admin/coupons/new | [ ] |
+| 4 | DS-PAGE-044 | /dashboard/admin/coupons/new | [x] |
 | 5 | DS-PAGE-047 | /dashboard/admin/offer-tags | [ ] |
 | 6 | DS-PAGE-046 | /dashboard/admin/offer-tags/new | [ ] |
 

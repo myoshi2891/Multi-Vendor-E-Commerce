@@ -842,3 +842,5 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 - 2026-10-06 Step 2: DS-PAGE-042 カテゴリ作成は本体適用・補助検証済み・認証後受け入れ保留。既存業務契約とAction Props境界を維持。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。
 
 - 2026-10-06 Step 3: DS-PAGE-045 管理者クーポン一覧は本体適用・補助検証済み・認証後受け入れ保留。既存業務契約とAction Props境界を維持。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+- 2026-10-06 Step 4: DS-PAGE-044 管理者クーポン作成は本体適用・補助検証済み・認証後受け入れ保留。既存業務契約とAction Props境界を維持。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 const screens = [
+    { screen: "adminnewcoupon", title: "Create coupon" },
     { screen: "admincoupons", title: "Coupons" },
     { screen: "newcategory", title: "Create category" },
     { screen: "categories", title: "Categories" },
@@ -43,6 +44,65 @@ for (const entry of screens)
                     ),
                     fullPage: true,
                 });
+                if (entry.screen === "adminnewcoupon") {
+                    await page.goto("/?screen=adminnewcoupon&failure");
+                    await page.evaluate(
+                        (dark) =>
+                            document.documentElement.classList.toggle(
+                                "dark",
+                                dark
+                            ),
+                        theme === "dark"
+                    );
+                    const form = page.getByRole("form", {
+                        name: "Coupon information",
+                    });
+                    await form
+                        .getByRole("button", {
+                            name: "Create coupon",
+                            exact: true,
+                        })
+                        .click();
+                    await expect(
+                        form.getByLabel("Coupon code")
+                    ).toHaveAttribute("aria-invalid", "true");
+                    await form.getByLabel("Coupon code").fill("NEWCODE");
+                    await form.getByLabel("Coupon discount").fill("10");
+                    await form.getByLabel("Scope").selectOption("PLATFORM");
+                    await expect(form.getByLabel("Store ID")).not.toBeVisible();
+                    await form.getByLabel("Coupon code").focus();
+                    await expect(form.getByLabel("Coupon code")).toHaveCSS(
+                        "outline-style",
+                        "solid"
+                    );
+                    await form
+                        .getByRole("button", {
+                            name: "Create coupon",
+                            exact: true,
+                        })
+                        .click();
+                    await expect(form.getByLabel("Coupon code")).toBeDisabled();
+                    await expect(page.getByRole("alert")).toBeVisible();
+                    await expect(form.getByLabel("Coupon code")).toHaveValue(
+                        "NEWCODE"
+                    );
+                    await form
+                        .getByRole("button", {
+                            name: "Create coupon",
+                            exact: true,
+                        })
+                        .click();
+                    await expect(
+                        page.getByText("Changes saved.")
+                    ).toBeVisible();
+                    expect(
+                        (
+                            await new AxeBuilder({ page })
+                                .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                                .analyze()
+                        ).violations
+                    ).toEqual([]);
+                }
                 if (entry.screen === "newcategory") {
                     await page.goto("/?screen=newcategory&failure");
                     await page.evaluate(

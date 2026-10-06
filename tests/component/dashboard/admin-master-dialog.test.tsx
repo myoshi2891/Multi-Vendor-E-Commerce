@@ -13,7 +13,7 @@ it("rejects a missing edit result and offers retry without showing stale row dat
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ name: "Fresh data" });
     render(
-        <MasterDialog label="Edit example" loadAction={load}>
+        <MasterDialog<{ name: string }> label="Edit example" loadAction={load}>
             {(data) => <p>{data?.name}</p>}
         </MasterDialog>
     );
@@ -36,7 +36,7 @@ it("ignores a completed load from a dismissed edit session", async () => {
         )
         .mockResolvedValueOnce({ name: "Current session" });
     render(
-        <MasterDialog label="Edit example" loadAction={load}>
+        <MasterDialog<{ name: string }> label="Edit example" loadAction={load}>
             {(data) => <p>{data?.name}</p>}
         </MasterDialog>
     );
@@ -64,14 +64,10 @@ it("deletion requires confirmation, locks pending and retries a failure", async 
         .mockResolvedValueOnce(undefined);
     render(<ConfirmDelete label="example" deleteAction={remove} />);
     const user = userEvent.setup();
-    await user.click(
-        screen.getByRole("button", { name: "Delete example", exact: true })
-    );
+    await user.click(screen.getByRole("button", { name: "Delete example" }));
     await user.click(screen.getByRole("button", { name: "Cancel" }));
     expect(remove).not.toHaveBeenCalled();
-    await user.click(
-        screen.getByRole("button", { name: "Delete example", exact: true })
-    );
+    await user.click(screen.getByRole("button", { name: "Delete example" }));
     await user.click(screen.getByRole("button", { name: "Confirm delete" }));
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
     await user.keyboard("{Escape}");
