@@ -929,3 +929,9 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - Red: store collection link43px・商品compare40px（各3幅）、件数/空状態本文のcontrast4.19:1を確認。Green: collection/about/clearとeditorial card操作44px、件数/空本文を濃い色へ、選択compareをgoldへ修正。ProductListのeditorial empty muted色も同期しbrowseへの波及を確認対象に含めた。
 - Refactor後Jest38/38（store details/products/sort、shared ProductList/ProductCardの5 suites）、tsc成功、Chromium6/6（3幅×長文/空・商品あり比較、axe AA違反0、overflowなし）。fixtureはproduction StoreProductsをquery adapterで解決し、本体のcollection結果/件数/リンクを直接検証。商品データ実routeはschema-current test DB待ち。
+
+### Step 5 — DS-PAGE-007 Cart
+
+- Red: quantity36px（3幅）とnotification close32px（390px）。Green: item/wishlist/remove/quantityとstore notification closeを44pxへ拡大。業務動作は維持。
+- Jest52/52（container/product/summary/cart store）、Chromium3幅3/3（quantity/pending/checkout failure通知/削除→empty、全体axe AA違反0、overflowなし）。checkout retry1件・sync失敗保持1件も確認。実route empty cart3幅はWebpackで検証済み。既存DS-PAGE-007の検証済み状態は維持し新共通headerを追加監査。
+- 先行specの数量role/既存文言に誤ったlocatorがあり修正した。fixture追加時のspec誤上書きはHEADから復旧。これらテスト作成ミスはTDD Red実績に含めない。

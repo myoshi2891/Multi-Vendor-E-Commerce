@@ -6,6 +6,10 @@ import homeStyles from "@/components/store/home/luxury/luxury.module.css";
 import Experience from "@/components/store/home/luxury/experience";
 import FilterPanel from "@/components/store/browse-page/filter-panel";
 import ProductSort from "@/components/store/browse-page/sort";
+import CartContainer from "@/components/store/cart-page/container";
+import StoreToaster from "@/components/store/shared/store-toaster";
+import { useCartStore } from "@/cart-store/useCartStore";
+import { createMockCartProduct } from "@/config/test-fixtures";
 import ProductList from "@/components/store/shared/product-list";
 import { products } from "./purchase-data";
 import StoreProducts from "@/components/store/store-page/store-products";
@@ -17,6 +21,25 @@ import type { ReviewsFilterType } from "@/lib/types";
 import productStyles from "@/components/store/product-page/product.module.css";
 import browseStyles from "@/app/(store)/browse/browse.module.css";
 const screen = new URLSearchParams(location.search).get("screen") ?? "home";
+let saveCalls = 0;
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+if (screen === "cart")
+    useCartStore
+        .getState()
+        .setCart(
+            new URLSearchParams(location.search).has("empty")
+                ? []
+                : [
+                      createMockCartProduct({
+                          name: "A considered cart piece ".repeat(8),
+                          image: "/assets/images/no_image.png",
+                          variantImage: "/assets/images/no_image.png",
+                          price: 10,
+                          quantity: 1,
+                          stock: 3,
+                      }),
+                  ]
+        );
 function App({ storeCollection }: { storeCollection: React.ReactNode }) {
     const [page, setPage] = useState(1);
     const [quantity, setQuantity] = useState(1);
@@ -24,7 +47,37 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
     return (
         <>
             <PurchaseHeader />
-            {screen === "home" ? (
+            {screen === "cart" ? (
+                <>
+                    <StoreToaster />
+                    <CartContainer
+                        userCountry={{
+                            name: "Japan",
+                            code: "JP",
+                            city: "",
+                            region: "",
+                        }}
+                        syncCartAction={async (items) => {
+                            await delay(150);
+                            if (
+                                new URLSearchParams(location.search).has(
+                                    "sync-error"
+                                )
+                            )
+                                throw new Error("Fixture sync failure");
+                            return items;
+                        }}
+                        saveCartAction={async () => {
+                            saveCalls++;
+                            await delay(600);
+                            if (saveCalls === 1)
+                                throw new Error("Fixture save failure");
+                            return true;
+                        }}
+                        wishlistAction={async () => true}
+                    />
+                </>
+            ) : screen === "home" ? (
                 <main className={homeStyles.home}>
                     <Experience categories={[]} />
                 </main>

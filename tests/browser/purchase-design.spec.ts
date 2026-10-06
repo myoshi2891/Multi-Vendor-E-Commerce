@@ -381,3 +381,84 @@ for (const width of [1440, 768, 390]) {
         });
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`cart ${width}: quantity, checkout failure and empty`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=cart");
+        const plus = page.getByRole("button", {
+            name: "Increase quantity",
+            exact: true,
+        });
+        await expect(plus).toBeEnabled();
+        expect((await plus.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        await plus.press("Enter");
+        await expect(page.getByTestId("cart-item-qty")).toHaveValue("2");
+        const checkout = page.getByTestId("checkout");
+        await checkout.press("Enter");
+        await expect(checkout).toBeDisabled();
+        await expect(page.getByRole("alert")).toContainText(
+            "couldn’t start checkout"
+        );
+        const dismiss = page.getByRole("button", {
+            name: "Dismiss notification",
+        });
+        expect((await dismiss.boundingBox())!.height).toBeGreaterThanOrEqual(
+            44
+        );
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations.map((v) => ({
+                id: v.id,
+                nodes: v.nodes.map((n) => ({
+                    target: n.target,
+                    summary: n.failureSummary,
+                })),
+            }))
+        ).toEqual([]);
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        await page.screenshot({
+            path: info.outputPath(`cart-${width}.png`),
+            fullPage: true,
+        });
+        await dismiss.press("Enter");
+        await page
+            .getByRole("button", { name: /^Remove .* from cart$/ })
+            .press("Enter");
+        await expect(
+            page.getByRole("link", { name: /Explore items/ })
+        ).toHaveAttribute("href", "/browse");
+    });
+}
+
+test("cart retry starts checkout after retaining failed bag", async ({
+    page,
+}) => {
+    await page.goto("/?screen=cart");
+    const checkout = page.getByTestId("checkout");
+    await expect(checkout).toBeEnabled();
+    await checkout.click();
+    await expect(checkout).toBeDisabled();
+    await expect(page.getByRole("alert")).toContainText(
+        "couldn’t start checkout"
+    );
+    await expect(page.getByTestId("cart-item-qty")).toHaveValue("1");
+    await checkout.click();
+    await expect(page).toHaveURL(/\/checkout$/);
+});
+test("cart sync failure keeps local contents", async ({ page }) => {
+    await page.goto("/?screen=cart&sync-error=1");
+    await expect(page.getByTestId("cart-item-qty")).toHaveValue("1");
+    await expect(
+        page.getByRole("alert").filter({ hasText: "Prices and" })
+    ).toBeVisible();
+});

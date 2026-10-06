@@ -1139,3 +1139,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-06): Step3 product quantity/review/paginationのTDDと関連回帰。実route/SDK受け入れは保留。
 
 - ✅ Completed (2026-10-06): Step4 store long/empty/product cardのTDDとshared regression。実route受け入れは保留。
+
+- ✅ Completed (2026-10-06): Step5 cart操作/通知寸法のTDD、購入開始/同期失敗と新header統合回帰。

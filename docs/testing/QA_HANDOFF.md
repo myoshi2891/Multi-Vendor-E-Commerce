@@ -907,3 +907,5 @@ DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/
 - Step3 product: RTL Red2件・browser寸法Red3幅→Green、関連Jest69/69・Chromium3/3。review Pagination opt-in以外の共有callerと実SDKは未移行/未検証を維持。
 
 - Step4 store: 43px link/40px cardとcontrast Redを解消。Jest38/38・補助Chromium6/6。editorial ProductCardの他callerは回帰対象、画面全体の実routeは専用DB待ち。
+
+- Step5 cart: 36px quantity/32px通知close Red→44px Green。Jest52/52、補助3幅3/3とcheckout retry/sync failure各1件、実empty route3幅。cartの既存検証済み件数は維持。

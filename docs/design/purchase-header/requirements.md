@@ -15,7 +15,7 @@
 | DS-PAGE-006 browse | filter/sort/query/paging/候補。sortはnon-modal、44px、reduced motionとAA contrast | RTL63/63、fixture3幅/axe。実routeはtest DB待ち |
 | DS-PAGE-019 product | size/quantity/stock/reviews/配送。quantity/filter44px、review paging named nav/selected/focus、size待ちstatus | RTL69/69、fixture3幅/axe。実route/SDKはtest DB待ち |
 | DS-PAGE-037 store | 長文identity/sort/products/empty、44pxリンク/card、件数/emptyのAA contrast | RTL38/38、fixture6件/3幅/axe。実routeはtest DB待ち |
-| DS-PAGE-007 cart | quantity/delete/sync/checkout引継ぎ | 検証継続 |
+| DS-PAGE-007 cart | quantity/delete/sync/checkout引継ぎ、item/通知close44px | RTL52/52、fixture3幅＋retry/sync、実empty route3幅/axe |
 | DS-PAGE-008 checkout | address/dialog/coupon/pending/retry | 検証継続 |
 
 第三者UIとDB dependent実routeはfixture結果から完了にしない。

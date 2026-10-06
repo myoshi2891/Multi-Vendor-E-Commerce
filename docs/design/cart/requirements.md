@@ -15,3 +15,7 @@
 - DBモデル・購入・決済・認証の規則を変更しない。Radix/Sonner通知は別対象。
 
 [設計](design.md) / [計画](../../../plans/layout-design/cart-design-system-plan.md) / [検証記録](../design-system/PROGRESS.md#cart移行記録)
+
+## 共通ヘッダー統合回帰（2026-10-06）
+
+[購入導線6画面計画](../../../plans/layout-design/priority-six-purchase-design-system-plan.md)。既存Cartの購入・金額・保存契約を維持し、item/wishlist/remove/quantityと通知closeの操作範囲を44pxへ拡大。新headerとの組み合わせ、保存失敗保持/retry・同期失敗保持・空状態を検証する。
