@@ -730,3 +730,5 @@ P4専用部品DS-COMP-226〜233と共通CouponFormFieldsのadmin opt-inは補助
 - [ ] DS-COMP-237 [country CSS](../../src/components/shared/country-selector.module.css)。
 
 DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/他callerは別検証を必要とする。
+
+- [ ] DS-COMP-238 [review pagination CSS](../../src/components/store/shared/pagination.module.css): product opt-in実装・補助検証済み、実route保留。他callerは別対象。

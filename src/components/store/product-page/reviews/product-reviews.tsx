@@ -143,6 +143,7 @@ const ProductReviews: FC<Props> = ({
                     {/* Pagination */}
                     {data.length >= pageSize && (
                         <Pagination
+                            variant="editorial"
                             page={page}
                             setPage={setPage}
                             totalPages={

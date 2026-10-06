@@ -1,28 +1,42 @@
-import { cn } from '@/lib/utils'
-import { MoveLeft, MoveRight } from 'lucide-react'
-import { Dispatch, FC, SetStateAction } from 'react'
+import styles from "./pagination.module.css";
+import { cn } from "@/lib/utils";
+import { MoveLeft, MoveRight } from "lucide-react";
+import { Dispatch, FC, SetStateAction } from "react";
 
 interface Props {
-    page: number
-    totalPages: number
-    setPage: Dispatch<SetStateAction<number>>
+    variant?: "default" | "editorial";
+    page: number;
+    totalPages: number;
+    setPage: Dispatch<SetStateAction<number>>;
 }
 
-const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
+const Pagination: FC<Props> = ({
+    page,
+    totalPages,
+    setPage,
+    variant = "default",
+}) => {
     const handlePrevious = () => {
         if (page > 1) {
-            setPage((prev) => prev - 1)
+            setPage((prev) => prev - 1);
         }
-    }
+    };
 
     const handleNext = () => {
         if (page < totalPages) {
-            setPage((prev) => prev + 1)
+            setPage((prev) => prev + 1);
         }
-    }
+    };
 
+    const Wrapper = variant === "editorial" ? "nav" : "div";
     return (
-        <div className="w-full px-4 py-0 sm:px-6 lg:px-0">
+        <Wrapper
+            aria-label={variant === "editorial" ? "Review pages" : undefined}
+            className={cn(
+                "w-full px-4 py-0 sm:px-6 lg:px-0",
+                variant === "editorial" && styles.editorial
+            )}
+        >
             <div className="flex w-full items-center justify-end gap-x-4 border-t border-gray-200">
                 <button
                     type="button"
@@ -66,8 +80,8 @@ const Pagination: FC<Props> = ({ page, totalPages, setPage }) => {
                     </span>
                 </button>
             </div>
-        </div>
+        </Wrapper>
     );
-}
+};
 
-export default Pagination
+export default Pagination;

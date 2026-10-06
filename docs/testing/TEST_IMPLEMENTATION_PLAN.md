@@ -1135,3 +1135,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-06): Step1 home補助回帰と公開失敗状態。商品あり実受け入れはQAのDB課題参照。
 
 - ✅ Completed (2026-10-06): Step2 browse/sort先行browser Red→Greenとfilter/query/paging回帰。実DB受け入れは保留。
+
+- ✅ Completed (2026-10-06): Step3 product quantity/review/paginationのTDDと関連回帰。実route/SDK受け入れは保留。

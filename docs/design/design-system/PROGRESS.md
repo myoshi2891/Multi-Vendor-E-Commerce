@@ -9,7 +9,7 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216、優先6画面で217〜218を追加、P3優先6画面で219〜225を追加、P4優先6画面で226〜233を追加、今回の購入導線共通UIで234〜237を追加、現台帳237部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。購入者・販売者移行後の現在のソース判定は本体適用55・未適用3・仮実装1・転送専用7。本体適用55の内訳は本体検証済み15・周辺のみ適用12・認証後受け入れ保留28。検証済みの転送alias4件は本体検証済み15件へ加算しない。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216、優先6画面で217〜218を追加、P3優先6画面で219〜225を追加、P4優先6画面で226〜233を追加、今回の購入導線共通UIで234〜237を追加、商品レビュー専用CSS238を追加、現台帳238部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。購入者・販売者移行後の現在のソース判定は本体適用55・未適用3・仮実装1・転送専用7。本体適用55の内訳は本体検証済み15・周辺のみ適用12・認証後受け入れ保留28。検証済みの転送alias4件は本体検証済み15件へ加算しない。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
@@ -60,7 +60,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-016 | `/offers` | 検証済み | P2 | 検証済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、header/reduced-motion回帰済み、商品あり実route保留 |
 | DS-PAGE-018 | `/product-support` | 本体適用（2026-10-01移行） | P3 | 検証済み | [src/app/(store)/product-support/page.tsx](<../../../src/app/(store)/product-support/page.tsx>) | [product-support移行記録](#product-support移行記録) |
-| DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | 未実施 |
+| DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、操作/ページング補助検証済み、実route保留 |
 | DS-PAGE-020 | `/product/[productSlug]` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/product/[productSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-021 | `/profile/addresses` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/addresses/page.tsx](<../../../src/app/(store)/profile/addresses/page.tsx>) | [addresses実施記録](#profile-addresses移行記録) |
 | DS-PAGE-022 | `/profile/following/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
@@ -171,7 +171,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-054 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/cards/store-card.tsx](<../../../src/components/store/cards/store-card.tsx>) | TODO | 未実施 |
 | DS-COMP-055 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/shared/product-list.tsx](<../../../src/components/store/shared/product-list.tsx>) | TODO | 未実施 |
 | DS-COMP-056 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/compare/compare-grid.tsx](<../../../src/components/store/compare/compare-grid.tsx>) | 実装済み | [compare実施記録](#compare移行記録) |
-| DS-COMP-057 | P2 | ページング・フィルター（P2） | [src/components/store/shared/pagination.tsx](<../../../src/components/store/shared/pagination.tsx>) | TODO | 未実施 |
+| DS-COMP-057 | P2 | ページング・フィルター（P2） | [src/components/store/shared/pagination.tsx](<../../../src/components/store/shared/pagination.tsx>) | 実装済み | product review opt-inのみ。[購入導線6画面](#購入導線優先6画面移行記録)。他callerは未移行 |
 | DS-COMP-058 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/browse-pagination.tsx](<../../../src/components/store/browse-page/browse-pagination.tsx>) | TODO | 未実施 |
 | DS-COMP-059 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/filters/header.tsx](<../../../src/components/store/browse-page/filters/header.tsx>) | TODO | 未実施 |
 | DS-COMP-060 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/filters/category/category-filter.tsx](<../../../src/components/store/browse-page/filters/category/category-filter.tsx>) | TODO | 未実施 |
@@ -354,6 +354,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-235 | P1 | Account menu presentation | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 保留 | 実装あり、signed補助検証済み、実Clerk受け入れ保留 |
 | DS-COMP-236 | P1 | Store panel tokens/styles | [panels.module.css](../../../src/components/store/layout/header/panels.module.css) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、補助axe済み |
 | DS-COMP-237 | P1 | Country picker styles | [country-selector.module.css](../../../src/components/shared/country-selector.module.css) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、store opt-in補助検証済み |
+
+| DS-COMP-238 | P2 | Review pagination styles | [pagination.module.css](../../../src/components/store/shared/pagination.module.css) | 実装済み | product review opt-inの補助検証済み、実route保留 |
 
 ## 前セッションの確認結果
 
@@ -917,3 +919,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - Red: Chromium3幅でsort radio itemが40px未満、hover/open label contrast 4.01:1、modal rootのaria-hidden-focusを確認。Green: 44px、state付きreduced-motion CSS、濃いlabel、sort専用non-modal menuへ修正。Chromium3/3・axe AA違反0・overflowなし、keyboard選択でcategory/size/searchを保持。
 - Refactor後sort RTL10/10。関連filter/pagingの回帰38/38、browse pageは括弧パスをrunTestsByPathで実行25/25（合計63、11 suites）。専用fixtureのwrapperをproduction CSSに合わせた。実browseは既存DB schema不整合で保留、route suiteは専用E2E_DATABASE_URLなしでは明示skip。
+
+### Step 3 — DS-PAGE-019 Product
+
+- Red: quantityのsize未選択状態は無通知の旧pulse表示、editorial Paginationのnamed navが不在（RTL2件）。browser3幅でquantity操作が36px。Green: branded status、quantity/review filter44px、ivory review controls、input focusとreduced motion、review opt-inのnamed nav/current/disabledとscoped gold/cream CSSへ移行。
+- Refactor後Jest69/69（14 suites）、Chromium product3/3（3幅・quantity stock上限・review pressed・paging/current・axe AA違反0・overflowなし・no-size status）。既存商品計算、在庫制限、サイズURL、配送、レビュー処理は変更しない。フォーム/ギャラリー/実SDK/商品あり実routeの全状態は専用DB待ちで画面全体を検証済みにしない。fixture JSXの閉じタグ修正はRed実績に含めない。

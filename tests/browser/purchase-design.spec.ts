@@ -234,3 +234,56 @@ for (const width of [1440, 768, 390]) {
         ).toBe(true);
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`product ${width}: quantity and review controls`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=product");
+        const plus = page.getByRole("button", { name: "Increase quantity" });
+        expect((await plus.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        expect((await plus.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+        await plus.press("Enter");
+        await expect(page.getByRole("spinbutton")).toHaveValue("2");
+        await plus.press("Enter");
+        await expect(plus).toBeDisabled();
+        const photos = page.getByRole("button", { name: /With photos/ });
+        expect((await photos.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        await photos.press("Enter");
+        await expect(photos).toHaveAttribute("aria-pressed", "true");
+        const pages = page.getByRole("navigation", { name: "Review pages" });
+        await pages
+            .getByRole("button", { name: "2", exact: true })
+            .press("Enter");
+        await expect(
+            pages.getByRole("button", { name: "2", exact: true })
+        ).toHaveAttribute("aria-current", "page");
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations.map((v) => ({
+                id: v.id,
+                nodes: v.nodes.map((n) => ({
+                    target: n.target,
+                    summary: n.failureSummary,
+                })),
+            }))
+        ).toEqual([]);
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        await page.screenshot({
+            path: info.outputPath(`product-${width}.png`),
+        });
+        await page.goto("/?screen=product&no-size=1");
+        await expect(page.getByRole("status")).toContainText(
+            "Select a size to choose quantity."
+        );
+        await expect(page.getByRole("spinbutton")).toHaveCount(0);
+    });
+}

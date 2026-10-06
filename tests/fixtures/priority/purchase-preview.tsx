@@ -8,12 +8,14 @@ import FilterPanel from "@/components/store/browse-page/filter-panel";
 import ProductSort from "@/components/store/browse-page/sort";
 import StoreDetails from "@/components/store/store-page/store-details";
 import QuantitySelector from "@/components/store/product-page/quantity-selector";
+import Pagination from "@/components/store/shared/pagination";
 import ReviewFilters from "@/components/store/product-page/reviews/filters";
 import type { ReviewsFilterType } from "@/lib/types";
 import productStyles from "@/components/store/product-page/product.module.css";
 import browseStyles from "@/app/(store)/browse/browse.module.css";
 const screen = new URLSearchParams(location.search).get("screen") ?? "home";
 function App() {
+    const [page, setPage] = useState(1);
     const [quantity, setQuantity] = useState(1);
     const [filters, setFilters] = useState<ReviewsFilterType>({});
     return (
@@ -50,25 +52,41 @@ function App() {
                     <QuantitySelector
                         productId="product"
                         variantId="variant"
-                        sizeId="size"
+                        sizeId={
+                            new URLSearchParams(location.search).has("no-size")
+                                ? null
+                                : "size"
+                        }
                         quantity={quantity}
                         stock={3}
                         handleChange={(key, value) => {
                             if (key === "quantity") setQuantity(Number(value));
                         }}
                     />
-                    <ReviewFilters
-                        filters={filters}
-                        setFilters={setFilters}
-                        setSort={() => {}}
-                        stats={{
-                            totalReviews: 3,
-                            reviewsWithImagesCount: 1,
-                            ratingStatistics: [
-                                { rating: 5, numReviews: 3, percentage: 100 },
-                            ],
-                        }}
-                    />
+                    <section className={productStyles.belowFold}>
+                        <ReviewFilters
+                            filters={filters}
+                            setFilters={setFilters}
+                            setSort={() => {}}
+                            stats={{
+                                totalReviews: 3,
+                                reviewsWithImagesCount: 1,
+                                ratingStatistics: [
+                                    {
+                                        rating: 5,
+                                        numReviews: 3,
+                                        percentage: 100,
+                                    },
+                                ],
+                            }}
+                        />
+                        <Pagination
+                            variant="editorial"
+                            page={page}
+                            totalPages={3}
+                            setPage={setPage}
+                        />
+                    </section>
                 </main>
             ) : (
                 <main className={browseStyles.browse}>

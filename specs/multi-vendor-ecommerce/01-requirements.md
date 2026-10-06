@@ -103,3 +103,5 @@ Store creation has a standalone branded light/dark workspace with a main landmar
 ## Store purchase header presentation
 
 The home, browse, product, store, cart and checkout surfaces share a scoped branded header. Account links, search suggestions and country selection remain operable with keyboard and touch. Search announces pending, empty and unavailable suggestions while preserving full-search navigation and URL conditions; stale responses never replace newer results. Shipping-country updates lock pending controls, retain the previous selection on failure and offer retry. Language English and currency USD remain fixed information. See [saved plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md).
+
+Product quantity and review-filter controls provide 44px operation targets. Review paging uses named branded navigation with current-page indication and disabled boundaries. QuantitySelector waiting for size provides readable status instead of an indefinite animated placeholder; the product page retains its existing size-selection/out-of-stock hint and purchase guards.

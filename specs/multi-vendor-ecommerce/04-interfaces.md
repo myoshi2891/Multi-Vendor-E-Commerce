@@ -285,3 +285,5 @@ AdminCouponRowはCoupon & { store: { name: string } | null }。一覧Server Comp
 ## Store header presentation
 
 The existing search-products GET and setUserCountryInCookies POST shapes remain unchanged. CountrySelector adds an optional `variant` of `default` or `store`; callers retain controlled open/onToggle/onChange/selectedValue/disabled behavior. HeaderFrame receives `userCountry` and `accountMenu` presentation nodes; AccountMenu receives only avatar URL and name from the server. See [plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md).
+
+Product-review Pagination accepts optional `variant: "default" | "editorial"`. Editorial renders named Review pages navigation with scoped brand styling; page/totalPages/setPage contracts and default callers remain unchanged.

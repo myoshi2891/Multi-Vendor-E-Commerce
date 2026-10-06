@@ -903,3 +903,5 @@ DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/
 - Step1 home: production表示の回帰Jest20/20・補助Chromium3/3。Webpack分離出力で公開route全体7 passed/3 skipped（browse専用DB待ち）。初回Turbopack cache panicは環境障害でRedに含めない。Nextが追加したtsconfigの一時includeは除去。
 
 - Step2 browse: Red寸法/contrast/aria-hidden-focusを解消。RTL63/63（sort最終再実行10/10）、補助Chromium3/3。実ルートはProduct.searchKeywords不足で保留。
+
+- Step3 product: RTL Red2件・browser寸法Red3幅→Green、関連Jest69/69・Chromium3/3。review Pagination opt-in以外の共有callerと実SDKは未移行/未検証を維持。

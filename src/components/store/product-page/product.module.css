@@ -1,5 +1,5 @@
 .page { background: #0b100e; color: #eeeade; min-height: 100vh; overflow-x: clip; }
-.page a:focus-visible, .page button:focus-visible { outline: 2px solid #d4ba83; outline-offset: 4px; }
+.page a:focus-visible, .page button:focus-visible, .page input:focus-visible, .page select:focus-visible, .page textarea:focus-visible { outline: 2px solid #d4ba83; outline-offset: 4px; }
 .discoveryNav { position: relative; z-index: 40; background: #17251d; border-bottom: 1px solid #bba57435; color: #e8e7dc; }
 .discoveryInner { max-width: 1720px; min-height: 62px; margin: auto; padding: 0 clamp(20px, 4vw, 70px); display: flex; align-items: center; gap: clamp(18px, 2vw, 34px); }
 .discoveryLabel { flex: none; color: #d4ba83; font-size: 9px; letter-spacing: .19em; white-space: nowrap; }
@@ -161,7 +161,7 @@
 .quantityControl label { display: block; color: #edece0; font-size: 11px; }
 .quantityControl p { margin-top: 3px; color: #aebba9; font-size: 9px; line-height: 1.5; }
 .quantityStepper { display: flex; align-items: center; flex: none; border: 1px solid #829880; }
-.quantityStepper button { width: 34px; height: 36px; display: grid; place-items: center; color: #e9e7d9; }
+.quantityStepper button { width: 44px; height: 44px; display: grid; place-items: center; color: #e9e7d9; }
 .quantityStepper button:hover:not(:disabled) { background: #36533b; }
 .quantityStepper button:disabled { opacity: .4; cursor: not-allowed; }
 .quantityStepper input { width: 32px; background: transparent; border: 0; appearance: textfield; color: #f0eee2; font-size: 12px; text-align: center; outline: 0; }
@@ -243,7 +243,7 @@
 .verifiedText { color: #5b7960; font-size: 11px; line-height: 1.4; }
 .ratingBarFill { position: absolute; left: 0; height: 100%; border-radius: 999px; background: #c3a26b; }
 .reviewFilters { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 25px; }
-.reviewFilters button { min-height: 36px; padding: 6px 12px; border: 1px solid #d5d8cb; background: #fff; color: #415747; font-size: 11px; }
+.reviewFilters button { min-height: 44px; padding: 6px 12px; border: 1px solid #d5d8cb; background: #f3f0e8; color: #415747; font-size: 11px; }
 .reviewFilters button:hover, .reviewFilters button[aria-pressed='true'] { border-color: #9a7b49; background: #efe6d4; color: #5c4525; }
 .reviewSort { display: inline-flex; align-items: center; gap: 10px; margin-top: 18px; color: #647767; font-size: 11px; }
 .reviewSort select { min-height: 34px; padding: 6px 25px 6px 9px; border: 1px solid #cbd1c2; background: #fff; color: #213a29; }
@@ -303,3 +303,6 @@
   .recommendationCopy { padding: 12px; }
   .recommendationImage > span { display: none; }
 }
+
+.quantityPrompt { padding: 12px; border: 1px solid #829880; color: #edece0; font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .page *, .belowFold * { animation: none; transition: none; } }
