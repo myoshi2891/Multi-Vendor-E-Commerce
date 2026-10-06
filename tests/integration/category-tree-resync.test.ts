@@ -44,6 +44,18 @@ const ALIAS_OWNER_STATEMENTS = splitStatements(
     )
 );
 
+const URL_SWAP_STATEMENTS = splitStatements(
+    extractMarkedSection(
+        readMigrationSql("_category_tree_resync_url_swap"),
+        "RESYNC_URL_SWAP"
+    )
+);
+
+/** url 交換に対応した再同期（補正マイグレーション）を 1 回実行する。 */
+async function runResyncUrlSwap(db: PrismaClient): Promise<void> {
+    await runStatements(db, URL_SWAP_STATEMENTS);
+}
+
 /** 別名所有者の先着投入（補正マイグレーション）を 1 回実行する。 */
 async function runAliasOwnerPreserve(db: PrismaClient): Promise<void> {
     await runStatements(db, ALIAS_OWNER_STATEMENTS);
@@ -228,35 +240,6 @@ describe("カテゴリツリー Phase B — 再同期 (plan 067)", () => {
         expect(second?.path).toBe("electronics/electronics-camera");
     });
 
-    it("2 ノードが url を交換しても、双方が SubCategory 側の url に揃う", async () => {
-        // Arrange —— sub-a / sub-b を取り込んだあとで legacy 側の url を交換する
-        await seedRoot(db, "root-1", "electronics");
-        await seedSubCategory(db, "sub-a", "camera", "root-1");
-        await seedSubCategory(db, "sub-b", "audio", "root-1");
-        await runResync(db);
-
-        // SubCategory.url も UNIQUE なので、legacy 側の交換自体が 2 段階になる
-        // （まさにこの制約が、Category 側にも一時退避を要求している理由）。
-        await db.$executeRaw`UPDATE "SubCategory" SET url = 'swap-tmp' WHERE id = 'sub-a'`;
-        await db.$executeRaw`UPDATE "SubCategory" SET url = 'camera' WHERE id = 'sub-b'`;
-        await db.$executeRaw`UPDATE "SubCategory" SET url = 'audio' WHERE id = 'sub-a'`;
-
-        // Act —— 一時退避が無いと、先に処理される側が「相手がまだ旧 url を持っている」
-        // ために衝突扱いされ、<親slug>-<旧slug> へ不要に寄せられる。
-        await runResync(db);
-
-        // Assert —— Category.url が SubCategory.url と一致している（片側だけずれない）
-        const nodes = await db.category.findMany({
-            where: { id: { in: ["sub-a", "sub-b"] } },
-            orderBy: { id: "asc" },
-            select: { id: true, url: true, path: true },
-        });
-        expect(nodes).toEqual([
-            { id: "sub-a", url: "audio", path: "electronics/audio" },
-            { id: "sub-b", url: "camera", path: "electronics/camera" },
-        ]);
-    });
-
     it("childCount を全件再計算する（親付け替えで両側が動くため）", async () => {
         // Arrange
         await seedRoot(db, "root-1", "electronics");
@@ -435,6 +418,88 @@ describe("カテゴリツリー — SUB_CATEGORY 別名の所有者は先着で�
 
         // Assert
         expect(first).toEqual([{ oldSlug: "camera", categoryId: "sub-1" }]);
+        expect(second).toEqual(first);
+    });
+});
+
+/**
+ * url 交換に対応した再同期（`_category_tree_resync_url_swap`・plan 082）
+ *
+ * 067 の再同期は 2 ノードが url を交換すると、先に処理される側を
+ * 「相手がまだ旧 url を持っている」ために衝突扱いし、`<親slug>-<旧slug>` へ寄せる。
+ * 067 は適用済みで編集できないため、補正マイグレーションが一時退避付きで再同期し直す。
+ * 067 で既にずれた行が補正で直ることまでを検証する（新規 DB でも 067 → 補正の順に流れる）。
+ */
+describe("カテゴリツリー — url 交換の補正再同期 (plan 082)", () => {
+    let db: PrismaClient;
+
+    beforeAll(() => {
+        db = getTestDb();
+    });
+
+    beforeEach(async () => {
+        await resetDb(db);
+    });
+
+    afterAll(async () => {
+        await disconnectTestDb();
+    });
+
+    /** sub-a / sub-b を取り込んだあとで legacy 側の url を交換する。 */
+    async function seedSwappedSubCategories(): Promise<void> {
+        await seedRoot(db, "root-1", "electronics");
+        await seedSubCategory(db, "sub-a", "camera", "root-1");
+        await seedSubCategory(db, "sub-b", "audio", "root-1");
+        await runResync(db);
+
+        // SubCategory.url も UNIQUE なので、legacy 側の交換自体が 2 段階になる
+        // （まさにこの制約が、Category 側にも一時退避を要求している理由）。
+        await db.$executeRaw`UPDATE "SubCategory" SET url = 'swap-tmp' WHERE id = 'sub-a'`;
+        await db.$executeRaw`UPDATE "SubCategory" SET url = 'camera' WHERE id = 'sub-b'`;
+        await db.$executeRaw`UPDATE "SubCategory" SET url = 'audio' WHERE id = 'sub-a'`;
+    }
+
+    /** sub-a / sub-b の url と path を id 順で読む。 */
+    async function readSwappedNodes() {
+        return db.category.findMany({
+            where: { id: { in: ["sub-a", "sub-b"] } },
+            orderBy: { id: "asc" },
+            select: { id: true, url: true, path: true },
+        });
+    }
+
+    it("067 の再同期で片側がずれた url を、SubCategory 側の url に揃え直す", async () => {
+        // Arrange —— 067 の再同期だけでは sub-a が electronics-audio へ寄せられる
+        await seedSwappedSubCategories();
+        await runResync(db);
+        const broken = await db.category.findUnique({ where: { id: "sub-a" } });
+        expect(broken?.url).toBe("electronics-audio");
+
+        // Act
+        await runResyncUrlSwap(db);
+
+        // Assert —— Category.url が SubCategory.url と一致している（片側だけずれない）
+        expect(await readSwappedNodes()).toEqual([
+            { id: "sub-a", url: "audio", path: "electronics/audio" },
+            { id: "sub-b", url: "camera", path: "electronics/camera" },
+        ]);
+    });
+
+    it("補正の再同期は冪等（2 回目で結果が変わらない）", async () => {
+        // Arrange
+        await seedSwappedSubCategories();
+
+        // Act
+        await runResyncUrlSwap(db);
+        const first = await readSwappedNodes();
+        await runResyncUrlSwap(db);
+        const second = await readSwappedNodes();
+
+        // Assert
+        expect(first).toEqual([
+            { id: "sub-a", url: "audio", path: "electronics/audio" },
+            { id: "sub-b", url: "camera", path: "electronics/camera" },
+        ]);
         expect(second).toEqual(first);
     });
 });
