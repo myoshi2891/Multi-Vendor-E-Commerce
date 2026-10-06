@@ -12,7 +12,7 @@
 | ID | 表示・操作 | 受け入れ範囲 |
 |---|---|---|
 | DS-PAGE-017 home | 既存3章/collection導線/reduced motionと新header | RTL20/20、fixture3幅/axe、実route3幅（商品取得失敗状態）。商品ありはtest DB待ち |
-| DS-PAGE-006 browse | filter/sort/query/paging/候補 | 検証継続 |
+| DS-PAGE-006 browse | filter/sort/query/paging/候補。sortはnon-modal、44px、reduced motionとAA contrast | RTL63/63、fixture3幅/axe。実routeはtest DB待ち |
 | DS-PAGE-019 product | size/quantity/stock/reviews/配送 | 検証継続 |
 | DS-PAGE-037 store | 長文identity/sort/products/empty | 検証継続 |
 | DS-PAGE-007 cart | quantity/delete/sync/checkout引継ぎ | 検証継続 |

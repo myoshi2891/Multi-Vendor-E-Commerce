@@ -179,3 +179,58 @@ for (const width of [1440, 768, 390]) {
         });
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`browse ${width}: filter and sort portal preserve conditions`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto(
+            "/browse?screen=browse&category=art&size=M&search=piece"
+        );
+        if (width === 390) {
+            await page
+                .getByRole("button", { name: "Show filters" })
+                .press("Enter");
+            await expect(
+                page.getByRole("button", { name: "Hide filters" })
+            ).toHaveAttribute("aria-expanded", "true");
+        }
+        const sort = page.getByRole("button", { name: "Sort by Most Popular" });
+        await sort.focus();
+        await sort.press("Enter");
+        const choice = page.getByRole("menuitemradio", {
+            name: "Price low to high",
+        });
+        await expect(choice).toBeVisible();
+        await choice.focus();
+        expect((await choice.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations.map((v) => ({
+                id: v.id,
+                nodes: v.nodes.map((n) => ({
+                    target: n.target,
+                    summary: n.failureSummary,
+                })),
+            }))
+        ).toEqual([]);
+        await page.screenshot({
+            path: info.outputPath(`browse-sort-${width}.png`),
+        });
+        await choice.press("Enter");
+        const query = new URL(page.url()).searchParams;
+        expect(query.get("sort")).toBe("price-low-to-high");
+        expect(query.get("category")).toBe("art");
+        expect(query.get("size")).toBe("M");
+        expect(query.get("search")).toBe("piece");
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+    });
+}

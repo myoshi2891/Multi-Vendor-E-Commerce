@@ -1133,3 +1133,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - Screen-specific regression and real-route environment limits: [saved plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md), [evidence](../design/design-system/PROGRESS.md#購入導線優先6画面移行記録).
 
 - ✅ Completed (2026-10-06): Step1 home補助回帰と公開失敗状態。商品あり実受け入れはQAのDB課題参照。
+
+- ✅ Completed (2026-10-06): Step2 browse/sort先行browser Red→Greenとfilter/query/paging回帰。実DB受け入れは保留。

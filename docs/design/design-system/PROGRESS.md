@@ -47,7 +47,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 保留 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
 | DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
-| DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | TODO | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | 未実施 |
+| DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、補助/RTL済み、schema-current実route保留 |
 | DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録) |
 | DS-PAGE-008 | `/checkout` | 本体適用・検証保留 | P1 | 保留 | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
 | DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 実装済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録) |
@@ -912,3 +912,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - 共通UI適用後、既存home本体を維持。既存実装の回帰としてExperience/Selection/dataのJest20/20、Chromium home3/3（3幅・reduced motion・collection link・全体axe AA違反0・overflowなし）を確認。今回追加したhome回帰に新機能Redは主張しない。
 - 実route home3幅でheader/accountと商品取得失敗状態を確認。商品あり実routeはschema-current test DB待ち。[画面受け入れ仕様](../purchase-header/requirements.md)。画面全体は実装済み・受け入れ一部保留。
+
+### Step 2 — DS-PAGE-006 Browse
+
+- Red: Chromium3幅でsort radio itemが40px未満、hover/open label contrast 4.01:1、modal rootのaria-hidden-focusを確認。Green: 44px、state付きreduced-motion CSS、濃いlabel、sort専用non-modal menuへ修正。Chromium3/3・axe AA違反0・overflowなし、keyboard選択でcategory/size/searchを保持。
+- Refactor後sort RTL10/10。関連filter/pagingの回帰38/38、browse pageは括弧パスをrunTestsByPathで実行25/25（合計63、11 suites）。専用fixtureのwrapperをproduction CSSに合わせた。実browseは既存DB schema不整合で保留、route suiteは専用E2E_DATABASE_URLなしでは明示skip。
