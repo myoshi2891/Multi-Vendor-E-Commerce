@@ -16,7 +16,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）** — 2026-10-06 購入導線最終全体実測。Integration222／17 suitesは既存実測を維持。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **2919 passed / 2922 total、3 skipped、127 snapshots passed、302 スイート（301 passed／1 skipped、failed 0）** — 2026-10-06 購入導線レビュー指摘対応後の全体実測。Integration222／17 suitesは既存実測を維持。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **222テスト / 17スイート** — 2026-10-04実測を維持（今回未実行）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5311,3 +5311,13 @@ New Code カバレッジ 70.5% の主因（0% の sidebar 2 ファイル、selle
 home/browse/product/store/cart/checkoutの共通header、検索/国選択、sort、数量/review paging、店舗card、cart操作/通知を新デザインシステムへ適用。先行RTL/browser Red→Greenと画面ごとの回帰/仕様同期を段階コミット。補助purchase25/25・commerce14/14、公開route7 passed/3 skipped。実商品routeとClerk認証後/SDKは専用環境待ち。画面全体の受け入れと補助検証を区別する。[計画](../plans/layout-design/priority-six-purchase-design-system-plan.md)・[証跡](design/design-system/PROGRESS.md#購入導線優先6画面移行記録)・[QA](testing/QA_HANDOFF.md#ds-purchase-six2026-10-06)。
 
 最終全体coverage: Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells。lint0 errors/8 warnings・tsc/harness成功。QA正本の実測値を同期。
+
+### 購入導線レビュー指摘対応 (2026-10-06)
+
+レビュー一覧の端数ページ切り上げと最終短ページのナビゲーション維持、国選択の Enter を option 上に限定、purchase design suite を priority と別 port（3127、`DESIGN_FIXTURE_PORT` 経由）に分離（RTL +3、Red 確認済み、未コミット）。
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 2916 passed / 2919 total | **2919 passed / 2922 total** |
+| スイート数 | 301 | **302** |
+| 型エラー | 0 件 | **0 件** |

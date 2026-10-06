@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-06） | **2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| Jestテスト総数（2026-10-06） | **2919 passed / 2922 total、3 skipped、127 snapshots passed、302 スイート（301 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | 全体coverage（2026-10-06） | Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **375ファイル**（2026-10-06 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **301スイート**（300 passed／1 skipped、2026-10-06全体実測）。 |
-| テスト総数 | **2916 unit/component passed**（2919 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
+| テスト総数 | **2919 unit/component passed**（2922 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
@@ -637,3 +637,9 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 ### 2026-10-06 購入導線6画面・共通UIの最終全体実測
 
 2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）。Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells、分類セルの状態は不変。補助purchase25/25・commerce14/14と公開route7 passed/3 skippedを確認。実商品route/Clerk SDKの保留解除条件は[QA正本](QA_HANDOFF.md#ds-purchase-six2026-10-06)。初回全体で旧UserMenu期待4件の追随漏れを確認して同期し、再実行で失敗0。
+
+### 2026-10-06 — 購入導線レビュー指摘対応（review paging / country Enter / design port）
+
+- 更新前: 2916 passed / 2919 total、301 suites。Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。
+- 更新後: 2919 passed / 2922 total、302 suites（301 passed／1 skipped）、3 skipped、127 snapshots。Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。dashboard376 files/387 lcov/18 of 80 cells。型0、lint 0 errors（既存8 warnings）。
+- 追加: `tests/component/store/product-reviews.test.tsx`（新規 2 件: 端数ページの切り上げと最終短ページでのナビゲーション維持）、`tests/component/shared/country-selector.test.tsx`（+1 件: 検索欄の Enter で確定しない。既存 Enter テストは option 対象へ変更）。いずれも修正前コードで Red を確認。未コミット。
