@@ -309,6 +309,12 @@ for (const entry of screens)
                     await page.getByRole("searchbox").fill("not-a-record");
                     await expect(page.getByText("No Results.")).toBeVisible();
                     await page.getByRole("searchbox").fill(name);
+                    await expect(
+                        page.getByRole("button", {
+                            name: `Edit ${entity} ${name}`,
+                            exact: true,
+                        })
+                    ).toBeVisible();
                     await page.goto(
                         `/?screen=${entry.screen}&loadfailure&failure`
                     );
