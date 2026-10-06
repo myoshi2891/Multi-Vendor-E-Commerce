@@ -230,4 +230,5 @@ bun run erd:generate
 - **E2E（Chromium・`test:e2e:local`）**: 9 passed / 7 failed。失敗は `purchase-flow` 5 件（「Product added to cart」のトーストが出ない）、
   `engagement` のフォロー 1 件（`Follow` ボタンが見つからない）、`platform-coupon` 1 件。
   **HEAD（Prisma 5.22）の worktree でも同じ 7 件が同じロケーターで失敗**するため、既存の失敗で本アップグレードの回帰ではない。`search-filter` は全件 pass
+  （2026-10-07 追記: 原因はデザイン移行 `d3e87f64` で文言・構造が変わったのに E2E が追従していなかったこと。[plan 082](082-fix-stale-e2e-selectors-and-migration-edit.md) で修正。ローカル DB で `migrate dev` が使えなかった件も plan 082 で解消）
 - **本番**: Neon への `migrate deploy`（本マイグレーション 1 本）はオペレーターが行う。適用前に 2 テーブルの重複行が 0 であることを確認する（既存の UNIQUE インデックスがあるため通常は 0）

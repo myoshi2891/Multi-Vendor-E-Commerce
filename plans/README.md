@@ -109,5 +109,6 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [075](075-unify-browse-search-and-type-filters.md) | ブラウズ検索の検索ベクトル統合 + `ProductFilters` 型付け + slug 並列解決（015 の後続実装 2/3） | direction | P2 | 074 | DONE（2026-10-03・43b401d5〜86b9c786） |
 | [076](076-facet-counts-and-min-price.md) | 属性ファセット件数 + `minPrice` 非正規化で価格ソートを全件に適用（015 の後続実装 3/3） | direction | P2 | 075 | DONE（2026-10-03・43b401d5〜86b9c786） |
 | [081](081-prisma-6-upgrade.md) | Prisma 5.22 → 6.x（段階移行の第 1 段。多対多の主キー化マイグレーション 1 本） | dependencies | P3 | — | DONE（2026-10-06・未コミット） |
+| [082](082-fix-stale-e2e-selectors-and-migration-edit.md) | E2E のセレクターをデザイン移行へ追従 + 適用済みマイグレーション編集（`0ffb72b8`）を補正マイグレーションへ移す | bug | P2 | 081 | DONE（2026-10-07・未コミット） |
 
 </details>
