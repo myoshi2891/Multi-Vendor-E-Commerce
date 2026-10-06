@@ -1,38 +1,38 @@
-// Queries
-import DataTable from '@/components/ui/data-table'
-import { columns } from './columns'
-import { Plus } from 'lucide-react'
-import { getAllCoupons } from '@/queries/coupon'
-import AdminCouponDetails from '@/components/dashboard/forms/admin-coupon-details'
-
-export const dynamic = 'force-dynamic'
-
-/**
- * Renders the admin coupon management page.
- *
- * Displays all coupons in a searchable table with options to create and manage coupon details.
- *
- * @returns The coupon management interface.
- */
+import {
+    getAllCoupons,
+    getCouponAsAdmin,
+    upsertCouponAsAdmin,
+    deleteCouponAsAdmin,
+    toggleCouponActive,
+} from "@/queries/coupon";
+import AdminCoupons from "@/components/dashboard/admin/admin-coupons";
+import SellerPage from "@/components/dashboard/design/seller-page";
+import LoadError from "@/components/dashboard/design/load-error";
+export const dynamic = "force-dynamic";
 export default async function AdminCouponsPage() {
-    const coupons = await getAllCoupons()
-
+    const coupons = await getAllCoupons().catch(() => null);
+    if (!coupons)
+        return (
+            <SellerPage
+                workspace="Administration"
+                id="admin-coupons"
+                title="Coupons"
+            >
+                <LoadError subject="coupons" />
+            </SellerPage>
+        );
     return (
-        <div>
-            <DataTable
-                actionButtonText={
-                    <>
-                        <Plus size={15} />
-                        Create New Coupon
-                    </>
-                }
-                modalChildren={<AdminCouponDetails />}
-                newTabLink="/dashboard/admin/coupons/new"
-                filterValue="code"
-                data={coupons}
-                columns={columns}
-                searchPlaceholder="Search coupon code ..."
-            />
-        </div>
-    )
+        <AdminCoupons
+            coupons={coupons.map(({ store, ...coupon }) => ({
+                ...coupon,
+                store: store ? { name: store.name } : null,
+            }))}
+            actions={{
+                loadAction: getCouponAsAdmin,
+                saveAction: upsertCouponAsAdmin,
+                deleteAction: deleteCouponAsAdmin,
+                toggleAction: toggleCouponActive,
+            }}
+        />
+    );
 }

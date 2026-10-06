@@ -1,6 +1,12 @@
 import Link from "next/link";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import NewOfferTagPage from "@/app/dashboard/admin/offer-tags/new/page";
+import OfferTagsPage from "@/app/dashboard/admin/offer-tags/page";
+import AdminNewCouponPage from "@/app/dashboard/admin/coupons/new/page";
+import AdminCouponsPage from "@/app/dashboard/admin/coupons/page";
+import NewCategoryPage from "@/app/dashboard/admin/categories/new/page";
+import CategoriesPage from "@/app/dashboard/admin/categories/page";
 import LegalPage from "@/app/(store)/legal/page";
 import NewCouponPage from "@/app/dashboard/seller/stores/[storeUrl]/coupons/new/page";
 import CouponsPage from "@/app/dashboard/seller/stores/[storeUrl]/coupons/page";
@@ -23,7 +29,19 @@ async function preview() {
         </nav>
     );
     const content =
-        screen === "legacy" ? (
+        screen === "newoffertag" ? (
+            <NewOfferTagPage />
+        ) : screen === "offertags" ? (
+            await OfferTagsPage()
+        ) : screen === "adminnewcoupon" ? (
+            <AdminNewCouponPage />
+        ) : screen === "admincoupons" ? (
+            await AdminCouponsPage()
+        ) : screen === "newcategory" ? (
+            await NewCategoryPage()
+        ) : screen === "categories" ? (
+            await CategoriesPage()
+        ) : screen === "legacy" ? (
             <section aria-label="Legacy P4 content">
                 <DataTable
                     data={[{ name: "Example category" }]}

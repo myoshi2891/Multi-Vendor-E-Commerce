@@ -195,3 +195,9 @@ New-store users complete validated profile/contact/logo/cover fields in the stan
 取得失敗はLoadErrorからrefresh再試行。注文状態更新は管理者用既存Actionへ接続。店舗・クーポン削除は確認→pending→成功／error再試行、pending中の重複送信・閉鎖を防止。クーポン編集はgetCouponで最新値取得後に開き、null／失敗は保存させず再試行。新規作成は入力→Zod検証→既存保存→店舗クーポン一覧へ復帰。分精度の日時入力は秒を00で補い、秒を含む値はそのまま保持。guest dashboardは既存どおり/へ転送。
 
 詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。
+
+## P4管理マスタ6画面のデザイン移行（2026-10-06）
+
+一覧検索から編集すると最新データを取得し、null/失敗は入力画面を表示せずretryする。閉じた編集sessionの応答は無視する。保存/削除中は重複操作とdialog終了を防止し、失敗時入力を保持する。カテゴリ/offer作成は既存一覧URLへ、編集とadmin coupon保存/toggle/削除はrefreshする。削除は確認とキャンセルを経由する。
+
+[証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。

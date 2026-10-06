@@ -99,3 +99,63 @@ export async function loadCoupon() {
         throw Error("fixture");
     return location.search.includes("missingcoupon") ? null : coupons[0];
 }
+
+export const categories = [
+    {
+        id: "cat-1",
+        name: "Shoes",
+        url: "shoes",
+        path: "shoes",
+        depth: 0,
+        parentId: null,
+        sortOrder: 0,
+        featured: true,
+        image: "https://example.test/shoes.png",
+        createdAt: new Date("2026-10-01"),
+        updatedAt: new Date("2026-10-01"),
+        children: [
+            {
+                id: "cat-2",
+                name: "A long category name for responsive layout",
+                url: "boots",
+                path: "shoes/boots",
+                depth: 1,
+                parentId: "cat-1",
+                sortOrder: 1,
+                featured: false,
+                image: "https://example.test/boots.png",
+                createdAt: new Date("2026-10-01"),
+                updatedAt: new Date("2026-10-01"),
+                children: [],
+            },
+        ],
+    },
+];
+let categoryLoads = 0;
+export async function loadCategory(id: string) {
+    await new Promise((r) => setTimeout(r, 200));
+    if (location.search.includes("loadfailure") && categoryLoads++ === 0)
+        throw Error("fixture");
+    return location.search.includes("missing")
+        ? null
+        : id === "cat-1"
+          ? categories[0]
+          : categories[0].children[0];
+}
+
+export const offerTags = [
+    {
+        id: "tag-1",
+        name: "Summer offers with a long seasonal title",
+        url: "summer-offers",
+        createdAt: new Date("2026-10-01"),
+        updatedAt: new Date("2026-10-01"),
+    },
+];
+let offerLoads = 0;
+export async function loadOffer() {
+    await new Promise((r) => setTimeout(r, 200));
+    if (location.search.includes("loadfailure") && offerLoads++ === 0)
+        throw Error("fixture");
+    return location.search.includes("missing") ? null : offerTags[0];
+}

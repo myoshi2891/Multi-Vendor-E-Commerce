@@ -1,6 +1,6 @@
 # デザインシステム移行 — 進捗ノート
 
-- 更新日: 2026-10-05
+- 更新日: 2026-10-06
 - 状態: 運用文書・ルール整備済み／個別移行は継続
 - 対象・優先度・受け入れ条件: [移行計画](../../../plans/layout-design/design-system-adoption-plan.md)。
 - 実施手順: [design-system-workflow](../../../.agent/skills/design-system-workflow/SKILL.md)。
@@ -9,11 +9,11 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216、優先6画面で217〜218を追加、P3優先6画面で219〜225を追加、現台帳225部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。購入者・販売者移行後の現在のソース判定は本体適用49・未適用9・仮実装1・転送専用7。本体適用49の内訳は本体検証済み15・周辺のみ適用12・認証後受け入れ保留22。検証済みの転送alias4件は本体検証済み15件へ加算しない。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216、優先6画面で217〜218を追加、P3優先6画面で219〜225を追加、P4優先6画面で226〜233を追加、現台帳233部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。購入者・販売者移行後の現在のソース判定は本体適用55・未適用3・仮実装1・転送専用7。本体適用55の内訳は本体検証済み15・周辺のみ適用12・認証後受け入れ保留28。検証済みの転送alias4件は本体検証済み15件へ加算しない。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
-販売者scopeの共通基盤と優先7画面・優先6画面、P3優先6画面を実装した。次は専用test DB/Clerk環境で22画面の認証後受け入れ確認を行い、未適用9画面（P4）から次の対象を選ぶ。グローバル基盤と未対象の共有部品の移行は継続。[優先7画面の証跡](#優先7画面移行記録)。
+販売者scopeの共通基盤と優先7画面・優先6画面、P3優先6画面を実装した。P4優先6画面も実装・補助検証した。認証後28画面の受け入れ環境と残り属性3画面は[QA_HANDOFF](../../testing/QA_HANDOFF.md#ds-p4-six-browser)に記録する。グローバル基盤と未対象の共有部品の移行は継続。[優先7画面の証跡](#優先7画面移行記録)。
 
 ## 状態と更新方法
 
@@ -83,12 +83,12 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 未実施 |
 | DS-PAGE-040 | `/dashboard/admin/attributes/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 未実施 |
 | DS-PAGE-041 | `/dashboard/admin/attributes` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 未実施 |
-| DS-PAGE-042 | `/dashboard/admin/categories/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | 未実施 |
-| DS-PAGE-043 | `/dashboard/admin/categories` | 未適用 | P4 | TODO | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | 未実施 |
-| DS-PAGE-044 | `/dashboard/admin/coupons/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | 未実施 |
-| DS-PAGE-045 | `/dashboard/admin/coupons` | 未適用 | P4 | TODO | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | 未実施 |
-| DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | 未実施 |
-| DS-PAGE-047 | `/dashboard/admin/offer-tags` | 未適用 | P4 | TODO | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | 未実施 |
+| DS-PAGE-042 | `/dashboard/admin/categories/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-044 | `/dashboard/admin/coupons/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-045 | `/dashboard/admin/coupons` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-047 | `/dashboard/admin/offer-tags` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-048 | `/dashboard/admin/orders` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-049 | `/dashboard/admin` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-050 | `/dashboard/admin/stores` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/stores/page.tsx](<../../../src/app/dashboard/admin/stores/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
@@ -265,16 +265,16 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-148 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/store-default-shipping-details.tsx](<../../../src/components/dashboard/forms/store-default-shipping-details.tsx>) | 保留 | seller本体適用・補助検証済み・実ルート保留。[優先6画面](#優先6画面移行記録) |
 | DS-COMP-149 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/shippingRate-details.tsx](<../../../src/components/dashboard/forms/shippingRate-details.tsx>) | 保留 | seller本体適用・補助検証済み・実ルート保留。[優先6画面](#優先6画面移行記録) |
 | DS-COMP-150 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/coupon-details.tsx](<../../../src/components/dashboard/forms/coupon-details.tsx>) | TODO | 未実施 |
-| DS-COMP-151 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/coupon-form-fields.tsx](<../../../src/components/dashboard/forms/coupon-form-fields.tsx>) | TODO | 未実施 |
+| DS-COMP-151 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/coupon-form-fields.tsx](<../../../src/components/dashboard/forms/coupon-form-fields.tsx>) | 保留 | seller/admin opt-inのnative fieldsは補助検証済み。既定SDK/認証後は保留。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-152 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/order-status-select.tsx](<../../../src/components/dashboard/forms/order-status-select.tsx>) | TODO | 未実施 |
 | DS-COMP-153 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/product-status-select.tsx](<../../../src/components/dashboard/forms/product-status-select.tsx>) | TODO | 未実施 |
 | DS-COMP-154 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/store-status-select.tsx](<../../../src/components/dashboard/forms/store-status-select.tsx>) | TODO | 未実施 |
-| DS-COMP-155 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/category-details.tsx](<../../../src/components/dashboard/forms/category-details.tsx>) | TODO | 未実施 |
+| DS-COMP-155 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/category-details.tsx](<../../../src/components/dashboard/forms/category-details.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-156 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/attribute-details.tsx](<../../../src/components/dashboard/forms/attribute-details.tsx>) | TODO | 未実施 |
 | DS-COMP-157 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/attribute-option-details.tsx](<../../../src/components/dashboard/forms/attribute-option-details.tsx>) | TODO | 未実施 |
 | DS-COMP-158 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/attribute-fields.tsx](<../../../src/components/dashboard/forms/attribute-fields.tsx>) | TODO | 未実施 |
-| DS-COMP-159 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/offer-tag-details.tsx](<../../../src/components/dashboard/forms/offer-tag-details.tsx>) | TODO | 未実施 |
-| DS-COMP-160 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/admin-coupon-details.tsx](<../../../src/components/dashboard/forms/admin-coupon-details.tsx>) | TODO | 未実施 |
+| DS-COMP-159 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/offer-tag-details.tsx](<../../../src/components/dashboard/forms/offer-tag-details.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-160 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/admin-coupon-details.tsx](<../../../src/components/dashboard/forms/admin-coupon-details.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-161 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/click-to-add.tsx](<../../../src/components/dashboard/forms/click-to-add.tsx>) | 保留 | seller opt-in補助検証済み・他scope未完了。[優先6画面](#優先6画面移行記録) |
 | DS-COMP-162 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/shared/input-fieldset.tsx](<../../../src/components/dashboard/shared/input-fieldset.tsx>) | TODO | 未実施 |
 | DS-COMP-163 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/shared/image-upload.tsx](<../../../src/components/dashboard/shared/image-upload.tsx>) | TODO | 未実施 |
@@ -285,9 +285,9 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-168 | P4 | 印刷（P4） | [src/components/store/order-page/pdf-invoice.tsx](<../../../src/components/store/order-page/pdf-invoice.tsx>) | TODO | 未実施 |
 | DS-COMP-169 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/attributes/[id]/options/columns.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/columns.tsx>) | TODO | 未実施 |
 | DS-COMP-170 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/attributes/columns.tsx](<../../../src/app/dashboard/admin/attributes/columns.tsx>) | TODO | 未実施 |
-| DS-COMP-171 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/categories/columns.tsx](<../../../src/app/dashboard/admin/categories/columns.tsx>) | TODO | 未実施 |
-| DS-COMP-172 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/coupons/columns.tsx](<../../../src/app/dashboard/admin/coupons/columns.tsx>) | TODO | 未実施 |
-| DS-COMP-173 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/offer-tags/columns.tsx](<../../../src/app/dashboard/admin/offer-tags/columns.tsx>) | TODO | 未実施 |
+| DS-COMP-171 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/categories/columns.tsx](<../../../src/app/dashboard/admin/categories/columns.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-172 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/coupons/columns.tsx](<../../../src/app/dashboard/admin/coupons/columns.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-173 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/offer-tags/columns.tsx](<../../../src/app/dashboard/admin/offer-tags/columns.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-174 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/orders/columns.tsx](<../../../src/app/dashboard/admin/orders/columns.tsx>) | TODO | 未実施 |
 | DS-COMP-175 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/stores/columns.tsx](<../../../src/app/dashboard/admin/stores/columns.tsx>) | TODO | 未実施 |
 | DS-COMP-176 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/seller/stores/[storeUrl]/coupons/columns.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/columns.tsx>) | TODO | 未実施 |
@@ -341,6 +341,14 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-223 | P3 | クーポン一覧・列factory・編集再取得 | [SellerCoupons](../../../src/components/dashboard/seller/seller-coupons.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
 | DS-COMP-224 | P3 | seller専用クーポンフォーム | [SellerCouponForm](../../../src/components/dashboard/seller/seller-coupon-form.tsx) | 保留 | 補助検証済み・認証後保留。[P3証跡](#p3優先6画面移行記録) |
 | DS-COMP-225 | P3 | Legal本文・目次スタイル | [Legal CSS](<../../../src/app/(store)/legal/legal.module.css>) | 検証済み | 公開実ルート3幅・axe/目次検証。[P3証跡](#p3優先6画面移行記録) |
+| DS-COMP-226 | P4 | カテゴリ一覧・列factory | [admin-categories.tsx](../../../src/components/dashboard/admin/admin-categories.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-227 | P4 | カテゴリ専用フォーム | [category-form.tsx](../../../src/components/dashboard/admin/category-form.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-228 | P4 | 管理者クーポン一覧・toggle・列factory | [admin-coupons.tsx](../../../src/components/dashboard/admin/admin-coupons.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-229 | P4 | 管理者専用クーポンフォーム | [coupon-form.tsx](../../../src/components/dashboard/admin/coupon-form.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-230 | P4 | オファータグ一覧・列factory | [admin-offer-tags.tsx](../../../src/components/dashboard/admin/admin-offer-tags.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-231 | P4 | オファータグ専用フォーム | [offer-tag-form.tsx](../../../src/components/dashboard/admin/offer-tag-form.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-232 | P4 | 取得失敗・stale対策・編集/作成dialog | [master-dialog.tsx](../../../src/components/dashboard/admin/master-dialog.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
+| DS-COMP-233 | P4 | 同期pending guard・状態通知 | [save-state.tsx](../../../src/components/dashboard/admin/save-state.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -817,3 +825,66 @@ Refactor後Chromium p3 37/37（6画面、3幅/light/dark、実Sidebar展開、P4
 次の新規移行は未適用9画面（P4）から選定する。認証後受け入れ保留22画面は専用テストDBとClerk情報を用意して別途解除する。SDD architecture/data-model/open-questionsは境界・DB・未解決仕様を変更しないため据え置き、requirements/interfaces/workflows/quality/testingに適用範囲と検証限界を同期した。
 
 最終文書監査：66画面／225部品IDの一意性、追加ローカル参照49件（anchor含む）、状態件数、`git diff --check`を確認。DB schema／queriesの変更なし。dashboard生成器の関連Jest12/12・型検査・lint成功、統計同期後にdashboardを再生成（361／375／18/80）。
+
+## P4優先6画面移行記録
+
+- 日付: 2026-10-06。[承認済み保存計画](../../../plans/layout-design/priority-six-p4-design-system-plan.md)。対象DS-PAGE-043/042/045/044/047/046。自己レビュー・画面別コミット。
+- 認証後実ルート/Clerk/実Cloudinaryは専用環境の確認まで保留。補助fixtureの成功を実ルート検証済みとしない。
+
+### Step 1 — DS-PAGE-043 カテゴリ一覧
+
+先行RTL2件（region/h1/searchboxと取得失敗）と390px browser見出し欠落のRedを確認。CategoryForm・Action Props列factory・MasterDialog・SaveFeedbackを導入。旧CategoryDetails/旧列は未使用の旧scopeとして別管理。Refactor後関連Jest112/112（6 suites）、Chromium6/6（1440/768/390 × light/dark、検索/空/load失敗/retry/保存pending・close lock/error/入力保持/retry/success/Delete cancel/Escape focus復帰、axe AA contrast含む）、390px dark画像目視。tsc成功、lint0 errors/既存10 warnings、harness成功。カテゴリ階層・サブツリー制約・正準slug・更新createdAt維持を回帰確認。認証後実ルートは実装あり・保留。
+
+### Step 2 — DS-PAGE-042 カテゴリ作成
+
+先行RTL1件のh1欠落をRed確認。既存CategoryForm再利用後Jest4/4、Chromium6/6（3幅/light/dark、validation・画像adapter・親選択・featured・focus・pending lock/error/入力保持/retry/success、axe contrast含む）。作成ID/createdAt/root parent契約を確認。 認証後実ルート/実SDKは実装あり・保留。
+
+### Step 3 — DS-PAGE-045 管理者クーポン一覧
+
+先行RTL2件のregion/h1/searchboxと取得例外をRed確認。AdminCouponFormと管理者Action Props列factoryを導入し、toggle操作も保持。関連Jest118/118＋共通dialog回帰3件。Chromium6/6（3幅/light/dark・edit load failure/retry・pending close lock/入力保持/retry・toggle pending/success・delete cancel・空/取得失敗・axe contrast含む）。toggleの処理中ラベルに対するテストlocatorを修正し再検証。tsc成功、lint0 errors/既存10 warnings、harness成功。 認証後実ルート/実SDKは実装あり・保留。
+
+### Step 4 — DS-PAGE-044 管理者クーポン作成
+
+先行RTL1件の作成h1欠落をRed確認。既存AdminCouponFormをAction Propsで接続。関連Jest9/9、Chromium6/6（3幅/light/dark・validation・PLATFORM時Store ID非表示/null payload・native日時/割引・focus・pending/error/値保持/retry/success・axe contrast含む）、390px dark画像目視。共通dialog回帰テストのgeneric型とRTL selector型不整合は型検査で検出し修正。 認証後実ルート/実SDKは実装あり・保留。
+
+### Step 5 — DS-PAGE-047 オファータグ一覧
+
+先行RTL2件（h1/searchbox/new-page linkと取得例外）のRed確認。Action Props・列factory・既存MasterDialog/SaveFeedbackを再利用。関連Jest36/36＋フォーム回帰2/2、Chromium6/6（3幅/light/dark・長文検索・load失敗/retry・pending close lock/error/値保持/retry/success/delete cancel/空/取得失敗・axe contrast含む）。編集ID/createdAtを保持。tsc成功、lint0 errors/既存10 warnings。 認証後実ルート/実SDKは実装あり・保留。
+
+### Step 6 — DS-PAGE-046 オファータグ作成
+
+先行RTL1件の作成h1欠落をRed確認。Action Propsの共通OfferTagFormへ接続。関連Jest11/11、Chromium6/6（3幅/light/dark・validation・focus/Enter・pending/error/値保持/retry/success・axe contrast含む）。作成ID/name/url/createdAtと既存一覧遷移を維持。tsc成功、lint0 errors/既存10 warnings。 認証後実ルート/実SDKは実装あり・保留。
+
+### 6画面横断の自己レビュー
+
+| 対象 | 確認した部品・状態 | 証跡 |
+|---|---|---|
+| カテゴリ一覧/作成 | 階層/親/slug/画像/featured/並び順、検索/空/取得失敗、作成/編集/削除、欠落データ・古いsession応答 | admin-p4-pages、admin-category-form、admin-master-dialog、p4 browser |
+| クーポン一覧/作成 | STORE/PLATFORM・storeId、割引/日時/active、toggle、検索/空/取得失敗、作成/編集/削除 | admin-p4-pages、admin-coupon-form、p4 browser、既存coupon queries/default SDK/seller回帰 |
+| オファータグ一覧/作成 | name/url・更新ID/createdAt、検索/長文/空/取得失敗、作成/編集/削除 | admin-p4-pages、admin-offer-tag-form、p4 browser、既存offer queries |
+| 全dialog/form | validation、重複submit、pending field/close lock、値保持error/retry/success、削除cancel/confirm/retry、欠落loadを拒否、focus/Enter/Escape/復帰、axe contrast | admin-master-dialog + 各form RTL、p4 browser |
+| 共通利用先 | 管理者Shell/Sidebar/Header、P3概要/注文/店舗、seller coupon一覧/作成、CouponFormFields既定SDK | p3 browser、全体Jest |
+
+新画面と展開時/Portalを別に確認。旧CategoryDetails/AdminCouponDetails/OfferTagDetailsと旧列は6実ルートから利用しないが、旧scopeの利用監査は未完了。一覧は元実装と同じクライアント検索・全行表示で、存在しないページング機能を新規追加していない。DB/権限/業務処理は変更しない。
+
+仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)は製品scope不変、[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)はDB不変、[open questions](../../../specs/multi-vendor-ecommerce/08-open-questions.md)は新規業務判断なしで変更不要。requirements/architecture/interfaces/workflows/quality/testingとadmin-dashboard要件/設計/tasks/進捗を同期した。
+
+### 最終監査で検出した親選択のaxe違反
+
+開いたRadix親選択で、aria-hidden背景にfocus可能要素が残るaria-hidden-focus（serious）を追加browserのRedとして確認した。対象CategoryFormの親選択だけをscoped native selectへ置換し、Root→null・親ID・サブツリー/深さ制限を維持した。共有Selectと旧フォームには変更を波及させない。新カテゴリフォームの階層・親選択/Root・numeric orderを直接RTLで回帰し、creation dialogのaxe AA・実Tab移動・Escape focus復帰・reduced motionは修正後1/1で成功。
+
+P4 suiteは既存P3 serverのDESIGN_SUITEに応じてname/portをp4/3126へ分離する。P3はp3/3124を維持し、新config/serverは作らない。sandboxのlisten/tsx IPC EPERMとbuild停止、同portの一時競合、処理中ラベルに対するテストlocator修正は環境/テスト問題として記録し、新要件Redに数えない。sandbox外buildと最終検証の結果を採用する。
+
+画像選択面も目視で旧shadow/白枠/大きな丸みの残存を発見し、先行browserのshadow要件Redを確認した。CategoryFormだけがcategory.module.cssへopt-inし、themeのmuted面/罫線、3px角丸、shadowなしへ変更した。ImageUpload本体/他scope/実Cloudinaryには波及させない。
+
+### 最終監査で検出したクーポンのClient境界
+
+getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが店舗全体を持ち込むことを先行RTLでRed確認（1 failed/9 passed）し、Server ComponentでCouponスカラー項目とstore.nameだけへ投影した。型もAdminCouponRowの表示契約へ限定し、10/10でGreen。既存query/DB/権限は変更しない。
+
+### 最終検証結果（2026-10-06）
+
+全体Jest2903 passed/2906 total（3 skipped、298 passed/299 suites、127 snapshots）。Statements86.81%（10190/11738）、Branches77.32%（6356/8220）、Functions82.72%（1983/2397）、Lines87.25%（9285/10641）。6画面の最終補助Chromium37/37と既存P3回帰37/37を確認。店舗名投影後のクーポン一覧6ケースも6/6で再確認した。1440/768/390px × light/dark、axe AA（contrast含む）と6画面/展開Dialogのスクリーンショットを目視確認した。
+
+型検査exit0、本番build成功、lint0 errors/既存10 warnings、Playwright harness成功。認証後6実ルート・実Clerk/Cloudinaryは専用test DBと管理者テスト認証未設定で保留。補助検証の成功を実DBの受け入れに加算しない。
+
+最終文書監査: 66画面/233部品IDの一意性、追加ローカル参照、状態件数、git diff --checkを確認。dashboard371 test files/383 lcov/18/80セルへ再生成した。計画・6画面・最終監査の8段階コミット。

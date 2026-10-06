@@ -145,3 +145,9 @@ Seller gallery removal is keyboard accessible with meaningful image/button names
 P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440pxとWCAG AA axe（contrast除外なし）を補助fixtureで検証する。実Sidebar/Header・フォーカス・native操作・表スクロール・旧P4 toolbarの回帰を含む。Clerk UIと認証後実ルートの受け入れはfixture証跡から分離する。
 
 詳細は[計画](../../plans/layout-design/priority-six-p3-design-system-plan.md)と[検証正本](../../docs/testing/QA_HANDOFF.md#ds-p3-six-browser)を参照。
+
+## P4管理マスタ6画面のデザイン移行（2026-10-06）
+
+6画面は1440/768/390px × light/dark、長文/横溢れ/検索/空/validation/pending/error/retry/success、Portal、focus/Enter/Escape/復帰、axe WCAG AA（contrast含む）を検証する。第三者SDKと認証後実ルートは補助fixtureと区別して保留理由/解除条件を記録する。旧フォーム/列の全scopeを移行済みとしない。
+
+[証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。

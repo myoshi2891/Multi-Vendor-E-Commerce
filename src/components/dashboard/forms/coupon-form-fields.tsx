@@ -25,7 +25,7 @@ type CouponBaseValues = {
 };
 
 interface CouponFormFieldsProps<T extends FieldValues & CouponBaseValues> {
-    design?: "seller";
+    design?: "seller" | "admin";
     control: Control<T>;
 }
 
@@ -39,7 +39,7 @@ export function CouponFormFields<T extends FieldValues & CouponBaseValues>({
     control,
     design,
 }: CouponFormFieldsProps<T>) {
-    if (design === "seller")
+    if (design === "seller" || design === "admin")
         return (
             <>
                 {(

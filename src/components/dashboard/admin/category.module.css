@@ -1,0 +1,14 @@
+/* Only the migrated category editor opts in; other image-upload users keep their layout. */
+.editor :global(.shadow-2xl) {
+    box-shadow: none;
+}
+.editor :global(.rounded-full) {
+    border-radius: 3px;
+}
+.editor :global(.border-white) {
+    border-color: hsl(var(--border));
+    border-width: 1px;
+}
+.editor :global(.bg-gray-200) {
+    background: hsl(var(--muted));
+}
