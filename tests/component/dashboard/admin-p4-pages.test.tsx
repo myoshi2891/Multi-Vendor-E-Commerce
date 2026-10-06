@@ -1,8 +1,9 @@
 /** @jest-environment jsdom */
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import NewOfferTagPage from "@/app/dashboard/admin/offer-tags/new/page";
 import OfferTagsPage from "@/app/dashboard/admin/offer-tags/page";
-import { getAllOfferTags } from "@/queries/offer-tag";
+import { getAllOfferTags, upsertOfferTag } from "@/queries/offer-tag";
 import NewCouponPage from "@/app/dashboard/admin/coupons/new/page";
 import CouponsPage from "@/app/dashboard/admin/coupons/page";
 import { getAllCoupons, upsertCouponAsAdmin } from "@/queries/coupon";
@@ -159,5 +160,34 @@ it("offer tags lookup failure provides generic retry feedback", async () => {
     render(await OfferTagsPage());
     expect(screen.getByRole("alert")).toHaveTextContent(
         "Could not load offer tags"
+    );
+});
+
+it("new offer tag injects creation action and provides labeled fields", async () => {
+    jest.mocked(upsertOfferTag).mockResolvedValue({
+        name: "New offer",
+    } as never);
+    render(<NewOfferTagPage />);
+    expect(
+        screen.getByRole("heading", { level: 1, name: "Create offer tag" })
+    ).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Offer tag name"), {
+        target: { value: "New offer" },
+    });
+    fireEvent.change(screen.getByLabelText("Offer tag url"), {
+        target: { value: "new-offer" },
+    });
+    fireEvent.submit(
+        screen.getByRole("form", { name: "Offer tag information" })
+    );
+    await waitFor(() =>
+        expect(upsertOfferTag).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: "new-id",
+                name: "New offer",
+                url: "new-offer",
+                createdAt: expect.any(Date),
+            })
+        )
     );
 });

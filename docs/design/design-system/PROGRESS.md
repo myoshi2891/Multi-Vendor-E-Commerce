@@ -87,7 +87,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-044 | `/dashboard/admin/coupons/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-045 | `/dashboard/admin/coupons` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | 未実施 |
+| DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-047 | `/dashboard/admin/offer-tags` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-048 | `/dashboard/admin/orders` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-049 | `/dashboard/admin` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
@@ -842,3 +842,7 @@ Refactor後Chromium p3 37/37（6画面、3幅/light/dark、実Sidebar展開、P4
 ### Step 5 — DS-PAGE-047 オファータグ一覧
 
 先行RTL2件（h1/searchbox/new-page linkと取得例外）のRed確認。Action Props・列factory・既存MasterDialog/SaveFeedbackを再利用。関連Jest36/36＋フォーム回帰2/2、Chromium6/6（3幅/light/dark・長文検索・load失敗/retry・pending close lock/error/値保持/retry/success/delete cancel/空/取得失敗・axe contrast含む）。編集ID/createdAtを保持。tsc成功、lint0 errors/既存10 warnings。 認証後実ルート/実SDKは実装あり・保留。
+
+### Step 6 — DS-PAGE-046 オファータグ作成
+
+先行RTL1件の作成h1欠落をRed確認。Action Propsの共通OfferTagFormへ接続。関連Jest11/11、Chromium6/6（3幅/light/dark・validation・focus/Enter・pending/error/値保持/retry/success・axe contrast含む）。作成ID/name/url/createdAtと既存一覧遷移を維持。tsc成功、lint0 errors/既存10 warnings。 認証後実ルート/実SDKは実装あり・保留。
