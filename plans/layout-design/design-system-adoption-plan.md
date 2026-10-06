@@ -121,7 +121,7 @@
 | `/dashboard/admin/attributes/[id]/options` | 未適用 | P4 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) |
 | `/dashboard/admin/attributes/new` | 未適用 | P4 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../src/app/dashboard/admin/attributes/new/page.tsx>) |
 | `/dashboard/admin/attributes` | 未適用 | P4 | [src/app/dashboard/admin/attributes/page.tsx](<../../src/app/dashboard/admin/attributes/page.tsx>) |
-| `/dashboard/admin/categories/new` | 未適用 | P4 | [src/app/dashboard/admin/categories/new/page.tsx](<../../src/app/dashboard/admin/categories/new/page.tsx>) |
+| `/dashboard/admin/categories/new` | 本体適用・検証保留（2026-10-06） | P4 | [src/app/dashboard/admin/categories/new/page.tsx](<../../src/app/dashboard/admin/categories/new/page.tsx>) |
 | `/dashboard/admin/categories` | 本体適用・検証保留（2026-10-06） | P4 | [src/app/dashboard/admin/categories/page.tsx](<../../src/app/dashboard/admin/categories/page.tsx>) |
 | `/dashboard/admin/coupons/new` | 未適用 | P4 | [src/app/dashboard/admin/coupons/new/page.tsx](<../../src/app/dashboard/admin/coupons/new/page.tsx>) |
 | `/dashboard/admin/coupons` | 未適用 | P4 | [src/app/dashboard/admin/coupons/page.tsx](<../../src/app/dashboard/admin/coupons/page.tsx>) |
@@ -700,3 +700,6 @@ DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通C
 
 - [x] DS-PAGE-043 カテゴリ一覧: TDD・実装・補助検証・文書同期。
 - [ ] DS-PAGE-043 認証後実ルートと実SDK受け入れ（実装あり・保留）。
+
+- [x] DS-PAGE-042 カテゴリ作成: TDD・実装・補助検証・文書同期。
+- [ ] DS-PAGE-042 認証後実ルート/実SDK受け入れ（実装あり・保留）。

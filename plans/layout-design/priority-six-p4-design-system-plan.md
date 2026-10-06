@@ -8,7 +8,7 @@
 | Step | ID | URL | 実装・補助検証・文書同期 |
 |---|---|---|---|
 | 1 | DS-PAGE-043 | /dashboard/admin/categories | [x] |
-| 2 | DS-PAGE-042 | /dashboard/admin/categories/new | [ ] |
+| 2 | DS-PAGE-042 | /dashboard/admin/categories/new | [x] |
 | 3 | DS-PAGE-045 | /dashboard/admin/coupons | [ ] |
 | 4 | DS-PAGE-044 | /dashboard/admin/coupons/new | [ ] |
 | 5 | DS-PAGE-047 | /dashboard/admin/offer-tags | [ ] |

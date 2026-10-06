@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-const screens = [{ screen: "categories", title: "Categories" }];
+const screens = [
+    { screen: "newcategory", title: "Create category" },
+    { screen: "categories", title: "Categories" },
+];
 for (const entry of screens)
     for (const width of [1440, 768, 390])
         for (const theme of ["light", "dark"])
@@ -39,6 +42,75 @@ for (const entry of screens)
                     ),
                     fullPage: true,
                 });
+                if (entry.screen === "newcategory") {
+                    await page.goto("/?screen=newcategory&failure");
+                    await page.evaluate(
+                        (dark) =>
+                            document.documentElement.classList.toggle(
+                                "dark",
+                                dark
+                            ),
+                        theme === "dark"
+                    );
+                    const form = page.getByRole("form", {
+                        name: "Category information",
+                    });
+                    await form
+                        .getByRole("button", {
+                            name: "Create category",
+                            exact: true,
+                        })
+                        .click();
+                    await expect(
+                        form.getByLabel("Category name")
+                    ).toHaveAttribute("aria-invalid", "true");
+                    await form.getByLabel("Category name").fill("New shoes");
+                    await form.getByLabel("Category url").fill("new-shoes");
+                    await form
+                        .getByRole("button", { name: "Upload profile image" })
+                        .click();
+                    await form.getByRole("combobox").click();
+                    await page
+                        .getByRole("option", { name: "Shoes", exact: true })
+                        .click();
+                    await form
+                        .getByRole("checkbox", { name: "Featured" })
+                        .check();
+                    await form.getByLabel("Category name").focus();
+                    await expect(form.getByLabel("Category name")).toHaveCSS(
+                        "outline-style",
+                        "solid"
+                    );
+                    await form
+                        .getByRole("button", {
+                            name: "Create category",
+                            exact: true,
+                        })
+                        .click();
+                    await expect(
+                        form.getByLabel("Category name")
+                    ).toBeDisabled();
+                    await expect(page.getByRole("alert")).toBeVisible();
+                    await expect(form.getByLabel("Category name")).toHaveValue(
+                        "New shoes"
+                    );
+                    await form
+                        .getByRole("button", {
+                            name: "Create category",
+                            exact: true,
+                        })
+                        .click();
+                    await expect(
+                        page.getByText("Changes saved.")
+                    ).toBeVisible();
+                    expect(
+                        (
+                            await new AxeBuilder({ page })
+                                .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                                .analyze()
+                        ).violations
+                    ).toEqual([]);
+                }
                 if (entry.screen === "categories") {
                     await page.getByRole("searchbox").fill("not-a-category");
                     await expect(page.getByText("No Results.")).toBeVisible();

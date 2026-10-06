@@ -83,7 +83,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 未実施 |
 | DS-PAGE-040 | `/dashboard/admin/attributes/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 未実施 |
 | DS-PAGE-041 | `/dashboard/admin/attributes` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 未実施 |
-| DS-PAGE-042 | `/dashboard/admin/categories/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | 未実施 |
+| DS-PAGE-042 | `/dashboard/admin/categories/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-044 | `/dashboard/admin/coupons/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | 未実施 |
 | DS-PAGE-045 | `/dashboard/admin/coupons` | 未適用 | P4 | TODO | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | 未実施 |
@@ -826,3 +826,7 @@ Refactor後Chromium p3 37/37（6画面、3幅/light/dark、実Sidebar展開、P4
 ### Step 1 — DS-PAGE-043 カテゴリ一覧
 
 先行RTL2件（region/h1/searchboxと取得失敗）と390px browser見出し欠落のRedを確認。CategoryForm・Action Props列factory・MasterDialog・SaveFeedbackを導入。旧CategoryDetails/旧列は未使用の旧scopeとして別管理。Refactor後関連Jest112/112（6 suites）、Chromium6/6（1440/768/390 × light/dark、検索/空/load失敗/retry/保存pending・close lock/error/入力保持/retry/success/Delete cancel/Escape focus復帰、axe AA contrast含む）、390px dark画像目視。tsc成功、lint0 errors/既存10 warnings、harness成功。カテゴリ階層・サブツリー制約・正準slug・更新createdAt維持を回帰確認。認証後実ルートは実装あり・保留。
+
+### Step 2 — DS-PAGE-042 カテゴリ作成
+
+先行RTL1件のh1欠落をRed確認。既存CategoryForm再利用後Jest4/4、Chromium6/6（3幅/light/dark、validation・画像adapter・親選択・featured・focus・pending lock/error/入力保持/retry/success、axe contrast含む）。作成ID/createdAt/root parent契約を確認。 認証後実ルート/実SDKは実装あり・保留。

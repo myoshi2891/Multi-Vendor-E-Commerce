@@ -1,8 +1,9 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import NewCategoryPage from "@/app/dashboard/admin/categories/new/page";
 import CategoriesPage from "@/app/dashboard/admin/categories/page";
-import { getAllCategories } from "@/queries/category";
+import { getAllCategories, upsertCategory } from "@/queries/category";
 
 jest.mock("@/queries/category", () => ({
     getAllCategories: jest.fn(),
@@ -40,4 +41,35 @@ it("categories lookup failure provides generic feedback rather than crashing", a
     );
     expect(screen.queryByText(/private database/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+});
+
+it("new category provides a creation heading and injects save with root identity", async () => {
+    jest.mocked(upsertCategory).mockResolvedValue({ name: "Shoes" } as never);
+    render(await NewCategoryPage());
+    expect(
+        screen.getByRole("heading", { level: 1, name: "Create category" })
+    ).toBeVisible();
+    fireEvent.change(screen.getByLabelText("Category name"), {
+        target: { value: "Shoes" },
+    });
+    fireEvent.change(screen.getByLabelText("Category url"), {
+        target: { value: "shoes" },
+    });
+    fireEvent.change(screen.getByTestId("n-mock-input-profile"), {
+        target: { value: "https://example.test/shoes.png" },
+    });
+    fireEvent.submit(
+        screen.getByRole("form", { name: "Category information" })
+    );
+    await waitFor(() =>
+        expect(upsertCategory).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: "new-id",
+                name: "Shoes",
+                parentId: null,
+                sortOrder: 0,
+                createdAt: expect.any(Date),
+            })
+        )
+    );
 });

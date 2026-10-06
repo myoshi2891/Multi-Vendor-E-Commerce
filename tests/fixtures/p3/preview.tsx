@@ -1,6 +1,7 @@
 import Link from "next/link";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import NewCategoryPage from "@/app/dashboard/admin/categories/new/page";
 import CategoriesPage from "@/app/dashboard/admin/categories/page";
 import LegalPage from "@/app/(store)/legal/page";
 import NewCouponPage from "@/app/dashboard/seller/stores/[storeUrl]/coupons/new/page";
@@ -24,7 +25,9 @@ async function preview() {
         </nav>
     );
     const content =
-        screen === "categories" ? (
+        screen === "newcategory" ? (
+            await NewCategoryPage()
+        ) : screen === "categories" ? (
             await CategoriesPage()
         ) : screen === "legacy" ? (
             <section aria-label="Legacy P4 content">
