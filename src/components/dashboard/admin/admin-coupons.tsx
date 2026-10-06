@@ -8,7 +8,7 @@ import type {
     toggleCouponActive,
 } from "@/queries/coupon";
 import { useRouter } from "next/navigation";
-import { getTimeUntil } from "@/lib/utils";
+import { getCouponPeriodColumns } from "../shared/coupon-columns";
 import { Button } from "@/components/ui/button";
 import DataTable from "@/components/ui/data-table";
 import SellerPage from "../design/seller-page";
@@ -63,37 +63,7 @@ export function getAdminCouponColumns(
         },
         { accessorKey: "code", header: "Code" },
         { accessorKey: "scope", header: "Scope" },
-        {
-            accessorKey: "discount",
-            header: "Discount",
-            cell: ({ row }) => <span>{row.original.discount}%</span>,
-        },
-        {
-            accessorKey: "startDate",
-            header: "Start date",
-            cell: ({ row }) => (
-                <span>{new Date(row.original.startDate).toDateString()}</span>
-            ),
-        },
-        {
-            accessorKey: "endDate",
-            header: "End date",
-            cell: ({ row }) => (
-                <span>{new Date(row.original.endDate).toDateString()}</span>
-            ),
-        },
-        {
-            id: "timeleft",
-            header: "Time left",
-            cell: ({ row }) => {
-                const { days, hours } = getTimeUntil(row.original.endDate);
-                return (
-                    <span>
-                        {days} days and {hours} hours
-                    </span>
-                );
-            },
-        },
+        ...getCouponPeriodColumns<AdminCouponRow>(),
         {
             accessorKey: "isActive",
             header: "Status",
