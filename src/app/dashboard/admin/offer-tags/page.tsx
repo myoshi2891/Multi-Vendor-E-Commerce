@@ -1,40 +1,33 @@
-// Queries
-import { getAllOfferTags } from "@/queries/offer-tag";
-
-// Data table
-import DataTable from "@/components/ui/data-table";
-
-// Plus icon
-import { Plus } from "lucide-react";
-
-// Offer tag details
-import OfferTagDetails from "@/components/dashboard/forms/offer-tag-details";
-
-// Columns
-import { columns } from "./columns";
-
-export const dynamic = 'force-dynamic';
-
+import {
+    getAllOfferTags,
+    getOfferTag,
+    upsertOfferTag,
+    deleteOfferTag,
+} from "@/queries/offer-tag";
+import AdminOfferTags from "@/components/dashboard/admin/admin-offer-tags";
+import SellerPage from "@/components/dashboard/design/seller-page";
+import LoadError from "@/components/dashboard/design/load-error";
+export const dynamic = "force-dynamic";
 export default async function AdminOfferTagsPage() {
-	// Fetching offer tags data from the database
-	const categories = await getAllOfferTags();
-
-	// Checking if no offer tags are found
-	if (!categories) return null; // If no offer tags found, return null
-
-	return (
-		<DataTable
-			actionButtonText={
-				<>
-					<Plus size={15} />
-					Create offer tag
-				</>
-			}
-			modalChildren={<OfferTagDetails />}
-			filterValue="name"
-			data={categories}
-			searchPlaceholder="Search offer tag name..."
-			columns={columns}
-		/>
-	);
+    const tags = await getAllOfferTags().catch(() => null);
+    if (!tags)
+        return (
+            <SellerPage
+                workspace="Administration"
+                id="admin-offer-tags"
+                title="Offer tags"
+            >
+                <LoadError subject="offer tags" />
+            </SellerPage>
+        );
+    return (
+        <AdminOfferTags
+            tags={tags}
+            actions={{
+                loadAction: getOfferTag,
+                saveAction: upsertOfferTag,
+                deleteAction: deleteOfferTag,
+            }}
+        />
+    );
 }

@@ -142,3 +142,20 @@ export async function loadCategory(id: string) {
           ? categories[0]
           : categories[0].children[0];
 }
+
+export const offerTags = [
+    {
+        id: "tag-1",
+        name: "Summer offers with a long seasonal title",
+        url: "summer-offers",
+        createdAt: new Date("2026-10-01"),
+        updatedAt: new Date("2026-10-01"),
+    },
+];
+let offerLoads = 0;
+export async function loadOffer() {
+    await new Promise((r) => setTimeout(r, 200));
+    if (location.search.includes("loadfailure") && offerLoads++ === 0)
+        throw Error("fixture");
+    return location.search.includes("missing") ? null : offerTags[0];
+}

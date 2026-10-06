@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 const screens = [
+    { screen: "offertags", title: "Offer tags" },
     { screen: "adminnewcoupon", title: "Create coupon" },
     { screen: "admincoupons", title: "Coupons" },
     { screen: "newcategory", title: "Create category" },
@@ -172,15 +173,37 @@ for (const entry of screens)
                         ).violations
                     ).toEqual([]);
                 }
-                if (["categories", "admincoupons"].includes(entry.screen)) {
+                if (
+                    ["categories", "admincoupons", "offertags"].includes(
+                        entry.screen
+                    )
+                ) {
                     const category = entry.screen === "categories",
-                        entity = category ? "category" : "coupon",
-                        name = category ? "Shoes" : "WELCOME",
-                        field = category ? "Category name" : "Coupon code",
-                        edited = category ? "Edited shoes" : "EDITED",
+                        entity = category
+                            ? "category"
+                            : entry.screen === "offertags"
+                              ? "offer tag"
+                              : "coupon",
+                        name = category
+                            ? "Shoes"
+                            : entry.screen === "offertags"
+                              ? "Summer offers with a long seasonal title"
+                              : "WELCOME",
+                        field = category
+                            ? "Category name"
+                            : entry.screen === "offertags"
+                              ? "Offer tag name"
+                              : "Coupon code",
+                        edited = category
+                            ? "Edited shoes"
+                            : entry.screen === "offertags"
+                              ? "Edited offer"
+                              : "EDITED",
                         saveButton = category
                             ? "Save category information"
-                            : "Save coupon";
+                            : entry.screen === "offertags"
+                              ? "Save offer tag"
+                              : "Save coupon";
                     await page.getByRole("searchbox").fill("not-a-record");
                     await expect(page.getByText("No Results.")).toBeVisible();
                     await page.getByRole("searchbox").fill(name);
@@ -240,7 +263,7 @@ for (const entry of screens)
                     });
                     await page.keyboard.press("Escape");
                     await expect(edit).toBeFocused();
-                    if (!category) {
+                    if (entry.screen === "admincoupons") {
                         const toggle = page.getByRole("button", {
                             name: "Deactivate WELCOME",
                             exact: true,

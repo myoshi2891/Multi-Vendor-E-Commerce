@@ -11,7 +11,7 @@
 | 2 | DS-PAGE-042 | /dashboard/admin/categories/new | [x] |
 | 3 | DS-PAGE-045 | /dashboard/admin/coupons | [x] |
 | 4 | DS-PAGE-044 | /dashboard/admin/coupons/new | [x] |
-| 5 | DS-PAGE-047 | /dashboard/admin/offer-tags | [ ] |
+| 5 | DS-PAGE-047 | /dashboard/admin/offer-tags | [x] |
 | 6 | DS-PAGE-046 | /dashboard/admin/offer-tags/new | [ ] |
 
 未適用9画面はP4。商品分類・割引・オファーを優先し、属性3画面と既存保留22画面は今回の移行対象外。DB・認可・計算・業務ルール・既存URLは変更しない。

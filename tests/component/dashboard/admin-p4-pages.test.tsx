@@ -1,6 +1,8 @@
 /** @jest-environment jsdom */
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import OfferTagsPage from "@/app/dashboard/admin/offer-tags/page";
+import { getAllOfferTags } from "@/queries/offer-tag";
 import NewCouponPage from "@/app/dashboard/admin/coupons/new/page";
 import CouponsPage from "@/app/dashboard/admin/coupons/page";
 import { getAllCoupons, upsertCouponAsAdmin } from "@/queries/coupon";
@@ -24,6 +26,12 @@ jest.mock("@/queries/coupon", () => ({
 jest.mock("react-datetime-picker", () => ({
     __esModule: true,
     default: () => null,
+}));
+jest.mock("@/queries/offer-tag", () => ({
+    getAllOfferTags: jest.fn(),
+    getOfferTag: jest.fn(),
+    upsertOfferTag: jest.fn(),
+    deleteOfferTag: jest.fn(),
 }));
 jest.mock("uuid", () => ({ v4: () => "new-id" }));
 jest.mock("next/navigation", () => ({
@@ -132,5 +140,24 @@ it("new admin coupon injects creation action and normalizes PLATFORM storeId", a
                 discount: 10,
             })
         )
+    );
+});
+
+it("offer tags exposes a labeled searchable list and a standalone create link", async () => {
+    jest.mocked(getAllOfferTags).mockResolvedValue([]);
+    render(await OfferTagsPage());
+    expect(
+        screen.getByRole("heading", { level: 1, name: "Offer tags" })
+    ).toBeVisible();
+    expect(screen.getByRole("searchbox")).toBeVisible();
+    expect(
+        screen.getByRole("link", { name: "Create in new page" })
+    ).toHaveAttribute("href", "/dashboard/admin/offer-tags/new");
+});
+it("offer tags lookup failure provides generic retry feedback", async () => {
+    jest.mocked(getAllOfferTags).mockRejectedValue(Error("private"));
+    render(await OfferTagsPage());
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "Could not load offer tags"
     );
 });
