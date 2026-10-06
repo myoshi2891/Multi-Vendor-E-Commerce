@@ -123,14 +123,15 @@ describe("UserMenu", () => {
         expect(link).toHaveAttribute("href", "/report-problem");
     });
 
-    it("未認証時はサインイン/登録ボタンを描画する（user=null 経路）", async () => {
+    it("未認証時はサインイン/登録リンクを描画する（user=null 経路）", async () => {
         mockCurrentUser.mockResolvedValueOnce(null);
 
         render(await UserMenu());
 
-        expect(
-            screen.getByRole("button", { name: "Sign in" })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+            "href",
+            "/sign-in"
+        );
         expect(
             screen.getByRole("link", { name: "Register" })
         ).toBeInTheDocument();
@@ -149,15 +150,12 @@ describe("UserMenu", () => {
         render(await UserMenu());
 
         const avatar = screen.getByRole("img", { name: "Jane Doe" });
-        expect(avatar).toHaveAttribute(
-            "src",
-            "https://cdn.example/avatar.png"
-        );
+        expect(avatar).toHaveAttribute("src", "https://cdn.example/avatar.png");
         expect(screen.getByTestId("user-button")).toBeInTheDocument();
         expect(screen.getByTestId("sign-out-button")).toBeInTheDocument();
-        // 認証済み時はサインインボタンを描画しない
+        // 認証済み時はサインインリンクを描画しない
         expect(
-            screen.queryByRole("button", { name: "Sign in" })
+            screen.queryByRole("link", { name: "Sign in" })
         ).not.toBeInTheDocument();
     });
 
@@ -178,7 +176,7 @@ describe("UserMenu", () => {
         );
     });
 
-    it("認証済みで fullName が無い場合は alt に 'user name' をフォールバックする", async () => {
+    it("認証済みで fullName が無い場合は alt に 'Your account' をフォールバックする", async () => {
         mockCurrentUser.mockResolvedValueOnce({
             imageUrl: "https://cdn.example/avatar.png",
             fullName: null,
@@ -187,7 +185,7 @@ describe("UserMenu", () => {
         render(await UserMenu());
 
         expect(
-            screen.getByRole("img", { name: "user name" })
+            screen.getByRole("img", { name: "Your account" })
         ).toBeInTheDocument();
     });
 
@@ -205,9 +203,10 @@ describe("UserMenu", () => {
             { error: error.message, stack: error.stack }
         );
         // 失敗時はサインイン経路へ安全に縮退する
-        expect(
-            screen.getByRole("button", { name: "Sign in" })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+            "href",
+            "/sign-in"
+        );
         consoleSpy.mockRestore();
     });
 
@@ -223,9 +222,10 @@ describe("UserMenu", () => {
             "[UserMenu] Failed to fetch current user (unknown)",
             { error: "clerk boom" }
         );
-        expect(
-            screen.getByRole("button", { name: "Sign in" })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute(
+            "href",
+            "/sign-in"
+        );
         consoleSpy.mockRestore();
     });
 });

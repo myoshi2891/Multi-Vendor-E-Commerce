@@ -53,7 +53,7 @@ export async function startFixtureServer({
     );
 
     await build({
-        entryPoints: [resolve(root, entry)],
+        entryPoints: { preview: resolve(root, entry) },
         outdir: output,
         bundle: true,
         loader,

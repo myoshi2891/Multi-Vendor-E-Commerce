@@ -36,18 +36,18 @@
 .editorial .card:focus-within .actions :global(button) { pointer-events: auto; }
 .editorial .actions > div:nth-child(2) { display: none; }
 .editorial .buttonRow {
-    display: grid; grid-template-columns: minmax(0, 1fr) 40px 40px;
+    display: grid; grid-template-columns: minmax(0, 1fr) 44px 44px;
     gap: 6px;
 }
 .editorial .buttonRow :global(a) {
-    min-width: 0; width: 100%; height: 40px; border: 0; border-radius: 0;
+    min-width: 0; width: 100%; height: 44px; border: 0; border-radius: 0;
     background: #d4ba83; color: #17251d;
     font-size: 11px; font-weight: 600; white-space: nowrap;
     transition: none;
 }
 .editorial .buttonRow :global(a:hover) { background: #ead7ad; }
 .editorial .buttonRow :global(button) {
-    width: 40px; min-width: 40px; max-width: 40px; height: 40px;
+    width: 44px; min-width: 44px; max-width: 44px; height: 44px;
     border: 1px solid #d4ba83; border-radius: 0;
     background: #0b100ecc; color: #f1eee4;
     transition: none;
@@ -66,3 +66,6 @@
     .editorial .buttonRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .editorial .buttonRow :global(a) { grid-column: 1 / -1; }
 }
+
+.editorial .buttonRow :global(button[aria-pressed="true"]) { background: #21382a; color: #d4ba83; }
+.editorial .buttonRow :global(button[aria-pressed="true"] svg) { color: inherit; }

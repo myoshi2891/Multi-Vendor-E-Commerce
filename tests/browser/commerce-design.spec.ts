@@ -231,3 +231,44 @@ test("successful address editing selects fresh data and restores focus", async (
     ).toHaveCount(1);
     await accessible(page);
 });
+
+for (const width of [1440, 768, 390]) {
+    test(`checkout shared header and dialog ${width}px`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=checkout&header=1");
+        await expect(
+            page.getByRole("button", { name: "Place order" })
+        ).toBeEnabled();
+        const account = page.getByLabel("Account menu", { exact: true });
+        await account.press("Enter");
+        await expect(
+            page.getByRole("link", { name: "Sign in", exact: true })
+        ).toBeVisible();
+        await account.press("Escape");
+        const trigger = page.getByRole("button", { name: "Add new address" });
+        await trigger.press("Enter");
+        await expect(
+            page.getByRole("dialog", { name: "Add new address" })
+        ).toBeVisible();
+        await expect(page.getByLabel("First name")).toBeFocused();
+        await accessible(page);
+        await page.screenshot({
+            path: info.outputPath(`checkout-header-dialog-${width}.png`),
+            fullPage: true,
+        });
+        await page.keyboard.press("Escape");
+        await expect(trigger).toBeFocused();
+        await page.goto("/?scenario=checkout-error&header=1");
+        await expect(page.getByRole("alert")).toContainText("refresh");
+        await expect(
+            page.getByRole("button", { name: "Place order" })
+        ).toBeDisabled();
+        await page.getByRole("button", { name: "Retry checkout" }).click();
+        await expect(
+            page.getByRole("button", { name: "Place order" })
+        ).toBeEnabled();
+        await accessible(page);
+    });
+}

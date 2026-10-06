@@ -99,3 +99,9 @@ Store creation has a standalone branded light/dark workspace with a main landmar
 カテゴリ・管理者クーポン・オファータグの一覧/作成は管理者light/dark theme、名前付きページ/form、検索、取得失敗/retryを使用する。編集/作成/削除とクーポンActivate/Deactivateを維持し、pending重複/close lock、失敗時入力保持と状態通知を提供する。カテゴリ階層・slug、coupon scope/storeId・割引/日時、offer name/urlの既存仕様は維持する。
 
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+## Store purchase header presentation
+
+The home, browse, product, store, cart and checkout surfaces share a scoped branded header. Account links, search suggestions and country selection remain operable with keyboard and touch. Search announces pending, empty and unavailable suggestions while preserving full-search navigation and URL conditions; stale responses never replace newer results. Shipping-country updates lock pending controls, retain the previous selection on failure and offer retry. Language English and currency USD remain fixed information. See [saved plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md).
+
+Product quantity and review-filter controls provide 44px operation targets. Review paging uses named branded navigation with current-page indication and disabled boundaries. QuantitySelector waiting for size provides readable status instead of an indefinite animated placeholder; the product page retains its existing size-selection/out-of-stock hint and purchase guards.

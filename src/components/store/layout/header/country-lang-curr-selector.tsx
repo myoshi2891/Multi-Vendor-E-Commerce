@@ -1,138 +1,102 @@
 "use client";
-// React, Next.js
 import DismissibleDetails from "./dismissible-details";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-
-// Icons
-import { ChevronDown } from "lucide-react";
-import "flag-icons/css/flag-icons.min.css";
-
-// Types
-import { Country, SelectMenuOption } from "@/lib/types";
-
-// Country selectors
+import type { Country, SelectMenuOption } from "@/lib/types";
 import CountrySelector from "@/components/shared/country-selector";
-
-// countries data
 import countries from "@/data/countries.json";
+import styles from "./panels.module.css";
 
 export default function CountryLanguageCurrencySelector({
     userCountry,
 }: {
     userCountry: Country;
 }) {
-    // Router hook for navigation
     const router = useRouter();
-
-    // State to manage countries dropdown visibility
     const [show, setShow] = useState(false);
-
-    const handleCountryClick = async (country: string) => {
-        // Find the country data based on the selected country name
-        const countryData = countries.find((c) => c.name === country);
-
-        if (countryData) {
-            const data: Country = {
-                name: countryData.name,
-                code: countryData.code,
-                city: "",
-                region: "",
-            };
-            try {
-                // Send a POST request to your API endpoint to set the cookie
-                const response = await fetch("/api/setUserCountryInCookies", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ userCountry: data }),
-                });
-
-                if (response.ok) {
-                    router.refresh();
-                }
-            } catch (error) {
-                console.error("Error in handleCountryClick:", error);
-            }
+    const [pending, setPending] = useState(false);
+    const [failedCountry, setFailedCountry] = useState<string | null>(null);
+    const [saved, setSaved] = useState<Country | null>(null);
+    const lock = useRef(false);
+    const selection = saved ?? userCountry;
+    const save = async (name: string) => {
+        if (lock.current) return;
+        const country = countries.find((item) => item.name === name);
+        if (!country) return;
+        lock.current = true;
+        setPending(true);
+        setFailedCountry(null);
+        const data: Country = {
+            name: country.name,
+            code: country.code,
+            city: "",
+            region: "",
+        };
+        try {
+            const response = await fetch("/api/setUserCountryInCookies", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userCountry: data }),
+            });
+            if (!response.ok) throw new Error("Country could not be saved");
+            setSaved(data);
+            router.refresh();
+        } catch {
+            setFailedCountry(name);
+        } finally {
+            lock.current = false;
+            setPending(false);
         }
     };
     return (
-        <DismissibleDetails className="group relative inline-block">
-            {/* Trigger */}
+        <DismissibleDetails className={styles.theme}>
             <summary
-                aria-label={`Country, language and currency: ${userCountry.name}, English, USD`}
-                className="cursor-pointer list-none"
+                aria-label={`Country, language and currency: ${selection.name}, English, USD`}
+                style={{ color: "#f3f0e8", minHeight: 44 }}
             >
-                <div className="flex h-11 cursor-pointer items-center px-2 py-0">
-                    <span className="mr-0.5 grid h-[33px] place-items-center">
-                        <span
-                            // eslint-disable-next-line tailwindcss/no-custom-classname
-                            className={`fi fi-${userCountry.code.toLowerCase()}`}
-                        />
-                    </span>
-                    <div className="ml-1">
-                        <span className="mt-2 block text-xs leading-3 text-white">
-                            {userCountry.name}/EN/
-                        </span>
-                        <b className="text-xs font-bold text-white">
-                            USD
-                            <span className="inline-block scale-[60%] align-middle text-white">
-                                <ChevronDown />
-                            </span>
-                        </b>
-                    </div>
-                </div>
+                Ship to {selection.name} / EN / USD
             </summary>
-            {/* Content */}
-            <div className="absolute right-0 top-full cursor-pointer">
-                <div className="relative z-50 mt-2 w-[300px] rounded-[24px] bg-white px-6 pb-6 pt-2 text-main-primary">
-                    {/* Triangle */}
-                    <div className="absolute -top-1.5 right-24 size-0 !border-x-[10px] !border-b-[10px] !border-x-transparent border-b-white"></div>
-                    <div className="mt-4 text-[20px] font-bold leading-6">
-                        Ship to
+            <div className={`${styles.panel} ${styles.countryPanel}`}>
+                <h2 className={styles.heading}>Ship to</h2>
+                <CountrySelector
+                    id="header-country"
+                    variant="store"
+                    open={show}
+                    disabled={pending}
+                    onToggle={() => setShow((value) => !value)}
+                    onChange={(name) => void save(name)}
+                    selectedValue={
+                        (countries.find(
+                            (country) => country.name === selection.name
+                        ) as SelectMenuOption) || countries[0]
+                    }
+                />
+                <p role="status" className={styles.feedback}>
+                    {pending
+                        ? "Saving shipping country…"
+                        : saved
+                          ? `Shipping country saved: ${saved.name}.`
+                          : ""}
+                </p>
+                {failedCountry && (
+                    <div role="alert" className={styles.error}>
+                        Shipping country could not be saved. Your previous
+                        selection is unchanged.
+                        <button
+                            type="button"
+                            className={styles.secondary}
+                            onClick={() => void save(failedCountry)}
+                        >
+                            Retry
+                        </button>
                     </div>
-                    <div className="mt-2">
-                        <div className="relative rounded-lg bg-white text-main-primary">
-                            <CountrySelector
-                                id={"countries"}
-                                open={show}
-                                onToggle={() => setShow(!show)}
-                                onChange={(val) => handleCountryClick(val)}
-                                selectedValue={
-                                    (countries.find(
-                                        (option) =>
-                                            option.name === userCountry?.name
-                                    ) as SelectMenuOption) || countries[0]
-                                }
-                            />
-                            <div className="">
-                                <div className="mt-4 text-[20px] font-bold leading-6">
-                                    Language
-                                </div>
-                                <div className="relative mt-2.5 flex h-10 cursor-pointer items-center truncate rounded-lg border border-black/20 px-3 py-0">
-                                    <div className="align-middle">English</div>
-                                    <span className="absolute right-2">
-                                        <ChevronDown className="scale-75 text-main-primary" />
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="">
-                                <div className="mt-4 text-[20px] font-bold leading-6">
-                                    Currency
-                                </div>
-                                <div className="relative mt-2.5 flex h-10 cursor-pointer items-center truncate rounded-lg border border-black/20 px-3 py-0">
-                                    <div className="align-middle">
-                                        USD (US Dollar)
-                                    </div>
-                                    <span className="absolute right-2">
-                                        <ChevronDown className="scale-75 text-main-primary" />
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                )}
+                <dl className={styles.fixed}>
+                    <dt>Language</dt>
+                    <dd>English</dd>
+                    <dt>Currency</dt>
+                    <dd>USD (US Dollar)</dd>
+                </dl>
             </div>
         </DismissibleDetails>
     );

@@ -281,3 +281,9 @@ AdminOrders/AdminStores/SellerCoupons/SellerCouponFormは型付きAction Props�
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
 
 AdminCouponRowはCoupon & { store: { name: string } | null }。一覧Server Componentがこの表示契約へ投影し、StoreのDecimalフィールドを除く。queryの取得・認可・返却契約は維持する。
+
+## Store header presentation
+
+The existing search-products GET and setUserCountryInCookies POST shapes remain unchanged. CountrySelector adds an optional `variant` of `default` or `store`; callers retain controlled open/onToggle/onChange/selectedValue/disabled behavior. HeaderFrame receives `userCountry` and `accountMenu` presentation nodes; AccountMenu receives only avatar URL and name from the server. See [plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md).
+
+Product-review Pagination accepts optional `variant: "default" | "editorial"`. Editorial renders named Review pages navigation with scoped brand styling; page/totalPages/setPage contracts and default callers remain unchanged.

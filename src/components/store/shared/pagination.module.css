@@ -1,0 +1,33 @@
+.editorial {
+    color: #17251d;
+    padding: 16px 0;
+}
+.editorial > div {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    border-color: #ccc7b9;
+}
+.editorial button {
+    min-height: 44px;
+    min-width: 44px;
+    margin: 0;
+    padding: 10px;
+    color: #17251d;
+    border: 1px solid #ccc7b9;
+    background: #f3f0e8;
+}
+.editorial button[aria-current="page"],
+.editorial button:hover:not(:disabled) {
+    color: #786035;
+    border-color: #786035;
+    background: #e4dfd2;
+}
+.editorial button:focus-visible {
+    outline: 2px solid #786035;
+    outline-offset: 3px;
+}
+.editorial button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}

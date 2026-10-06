@@ -30,6 +30,20 @@ type DesignSuite = {
 };
 
 const DESIGN_SUITES = {
+    purchase: {
+        testMatch: "purchase-design.spec.ts",
+        // priority と同じ server.mjs を使うが、並行実行で衝突しないよう port を分ける
+        port: 3127,
+        kind: "fixture",
+        command: "node tests/fixtures/priority/server.mjs",
+    },
+    "purchase-public": {
+        testMatch: "purchase-public-design.spec.ts",
+        port: 3128,
+        kind: "route",
+        command: "NEXT_DEV_DIST_DIR=.next/purchase-public bun run dev -- --webpack --port 3128",
+        timeout: 120000,
+    },
     p4: {
         testMatch: "p4-design.spec.ts",
         port: 3126,
@@ -129,6 +143,8 @@ export default defineConfig({
         url: `${baseURL}${suite.readyPath ?? ""}`,
         reuseExistingServer: false,
         timeout: suite.timeout ?? 60000,
+        // fixture サーバーは listen する port をここから受け取る（DESIGN_SUITES と二重管理しない）
+        env: { DESIGN_FIXTURE_PORT: String(suite.port) },
         // 未指定だと SIGKILL で終了され、fixture サーバーの SIGTERM ハンドラー（OS tmp の
         // bundle 出力の削除）が動かずに tmp が残り続ける
         gracefulShutdown: { signal: "SIGTERM", timeout: 5000 },

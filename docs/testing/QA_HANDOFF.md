@@ -18,17 +18,17 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2903 passed / 2906 total、3 skipped、127 snapshots passed、299 スイート（298 passed／1 skipped、failed 0）**。2026-10-06 `bun run test --runInBand --coverage --silent` 全体実測。 |
-| カバレッジ全体（2026-10-06実測） | Statements86.81%（10190/11738）／Branches77.32%（6356/8220）／Functions82.72%（1983/2397）／Lines87.25%（9285/10641）。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
+| Jest テスト総数 (unit/component) | **2919 passed / 2922 total、3 skipped、127 snapshots passed、302 スイート（301 passed／1 skipped、failed 0）**。2026-10-06 `bun run test -- --coverage --silent --maxWorkers=50%` レビュー指摘対応（review paging / country Enter / design port）後の全体実測。 |
+| カバレッジ全体（2026-10-06実測） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
 | Jest Integration テスト総数 | **222** / **17 スイート**（**2026-10-04 実測: 222/222 pass**・`bun run test:integration`。PR #187 レビュー対応で `product-update.test.ts` に同一商品へのバリアント並行追加 +1）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
-| Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証 5 suite（計 75 tests）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**7 spec すべて passed**。2026-08-09 実測（`bash scripts/e2e/run-local.sh tests/e2e/a11y --project=chromium` が 7 passed / 58.3s）。home（`/`）は OI-9（本番ビルドで SSR 500）が未解消のため対象外。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-06 `bunx tsc --noEmit`）。lint errors0／既存warnings10。 |
+| 型エラー | **0件**（2026-10-06 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（ダッシュボード集計） | **371** / lcovエントリ **383** / マトリクス18/80セル（23%）。2026-10-06 `bun run coverage:dashboard` 実測。 |
+| テストファイル総数（ダッシュボード集計） | **376** / lcovエントリ **387** / マトリクス18/80セル（23%）。2026-10-06 レビュー指摘対応後の `bun run coverage:dashboard` 実測。 |
 
 ### `/profile/wishlist/[page]` デザイン移行の検証（2026-09-30、未コミット）
 
@@ -893,3 +893,27 @@ DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/
 最終補助Chromium37/37、既存P3回帰37/37、店舗名投影後クーポン一覧6/6。型検査・build・harness成功、lint0 errors/既存10 warnings。6画面と展開Dialogの画像目視を確認。
 
 全体統計は上表のみを正本とし、部分検証から加算しない。[計画](../../plans/layout-design/priority-six-p4-design-system-plan.md)・[画面/部品/状態の証跡](../design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+## DS-PURCHASE-SIX（2026-10-06）
+
+[計画](../../plans/layout-design/priority-six-purchase-design-system-plan.md)、[証跡](../design/design-system/PROGRESS.md#購入導線優先6画面移行記録)。対象home/browse/product/store/cart/checkout。共通header実装、RTL24/24・補助Chromium3/3・axe AAを確認。6画面別回帰は完了。最終補助purchase25/25・commerce14/14、公開route7 passed/3 skipped。実環境保留は下記参照。全体統計は部分結果から更新しない。
+
+実Nextで既存DBのProduct.searchKeywords欠落を確認。次着手はschema-current専用test DBとClerk顧客環境で商品ありhome/browse/product/store、認証後checkoutとUserButton/SignOutの実描画を確認すること。DB初期化・既存データ変更・外部購入なし。
+
+- Step1 home: production表示の回帰Jest20/20・補助Chromium3/3。Webpack分離出力で公開route全体7 passed/3 skipped（browse専用DB待ち）。初回Turbopack cache panicは環境障害でRedに含めない。Nextが追加したtsconfigの一時includeは除去。
+
+- Step2 browse: Red寸法/contrast/aria-hidden-focusを解消。RTL63/63（sort最終再実行10/10）、補助Chromium3/3。実ルートはProduct.searchKeywords不足で保留。
+
+- Step3 product: RTL Red2件・browser寸法Red3幅→Green、関連Jest69/69・Chromium3/3。review Pagination opt-in以外の共有callerと実SDKは未移行/未検証を維持。
+
+- Step4 store: 43px link/40px cardとcontrast Redを解消。Jest38/38・補助Chromium6/6。editorial ProductCardの他callerは回帰対象、画面全体の実routeは専用DB待ち。
+
+- Step5 cart: 36px quantity/32px通知close Red→44px Green。Jest52/52、補助3幅3/3とcheckout retry/sync failure各1件、実empty route3幅。cartの既存検証済み件数は維持。
+
+- Step6 checkout: 既存実装の回帰Jest20/20・commerce14/14（header/dialog 3幅含む）。住所focus/refresh retryと全体axe AA違反0。実認証後route/決済SDKは保留。
+
+### DS-PURCHASE-SIX（medium）次回着手用プロンプト
+
+schema-current専用test DBとClerk顧客のテスト環境で、商品ありhome/browse/product/storeと認証後checkout、実UserButton/SignOutを1440/768/390pxで検証してください。補助purchase25件・commerce14件の成功とは別に、実データ・SDK・URL/refresh・axe AAの受け入れを確認し、台帳の保留を解除してください。DB初期化や外部購入はこの検証の前提にしません。実行環境がなければ保留を維持してください。
+
+最終全体実測: 2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）。Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells。型/harness成功・lint0 errors/8 warnings。全E2EとIntegrationの従来実測は維持（今回未実行）。

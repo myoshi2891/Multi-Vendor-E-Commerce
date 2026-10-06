@@ -8,7 +8,8 @@ await startFixtureServer({
     port: 3107,
     title: "Commerce browser fixture",
     mocks: {
-        "next/navigation": `export function useRouter(){return {push(){},refresh(){}}}`,
+        "@clerk/nextjs": `import React from "react"; export function SignOutButton({children}){return children} export function UserButton(){return React.createElement("button",null,"Manage account")}`,
+        "next/navigation": `export function useSearchParams(){return new URLSearchParams(location.search)} export function usePathname(){return location.pathname} export function useRouter(){return {push(){},replace(){},refresh(){}}}`,
         "@stripe/stripe-js": `export function loadStripe(){return Promise.resolve(null)}`,
         "@stripe/react-stripe-js": `import React from 'react'; export function Elements({children}){return children} export function useStripe(){return {}} export function useElements(){return {}} export function PaymentElement(){return React.createElement('div',null,'Card provider fixture')}`,
         "@paypal/react-paypal-js": `import React from 'react'; export const DISPATCH_ACTION={RESET_OPTIONS:'resetOptions'}; export function PayPalScriptProvider({children}){return children} export function usePayPalScriptReducer(){return [{isPending:false,isRejected:false,options:{}},()=>{}]} export function PayPalButtons({disabled,onError}){return React.createElement('button',{disabled,onClick:()=>onError(new Error('fixture provider failure'))},'PayPal fixture')}`,
