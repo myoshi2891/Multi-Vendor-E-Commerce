@@ -893,3 +893,9 @@ DS-PAGE-053最終確認: 補助Chromium作成6/6＋一覧回帰6/6、3幅/light/
 最終補助Chromium37/37、既存P3回帰37/37、店舗名投影後クーポン一覧6/6。型検査・build・harness成功、lint0 errors/既存10 warnings。6画面と展開Dialogの画像目視を確認。
 
 全体統計は上表のみを正本とし、部分検証から加算しない。[計画](../../plans/layout-design/priority-six-p4-design-system-plan.md)・[画面/部品/状態の証跡](../design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+## DS-PURCHASE-SIX（2026-10-06）
+
+[計画](../../plans/layout-design/priority-six-purchase-design-system-plan.md)、[証跡](../design/design-system/PROGRESS.md#購入導線優先6画面移行記録)。対象home/browse/product/store/cart/checkout。共通header実装、RTL24/24・補助Chromium3/3・axe AAを確認。画面別回帰/最終検証は継続。全体統計は部分結果から更新しない。
+
+実Nextで既存DBのProduct.searchKeywords欠落を確認。次着手はschema-current専用test DBとClerk顧客環境で商品ありhome/browse/product/store、認証後checkoutとUserButton/SignOutの実描画を確認すること。DB初期化・既存データ変更・外部購入なし。

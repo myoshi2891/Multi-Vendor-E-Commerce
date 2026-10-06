@@ -45,10 +45,15 @@
 .actions {
     display: flex;
     align-items: center;
-    gap: 17px;
+    gap: 8px;
 }
 .header summary {
     list-style: none;
+    min-width: 44px;
+    min-height: 44px;
+    display: grid;
+    align-items: center;
+    justify-items: center;
     cursor: pointer;
 }
 .header summary::-webkit-details-marker {
@@ -131,13 +136,30 @@
         padding: 14px 5%;
     }
     .actions {
-        gap: 12px;
+        gap: 0;
     }
     .announcement {
         font-size: 7px;
-        gap: 12px;
+        gap: 0;
     }
     .announcement span[lang] {
         font-size: 8px;
+    }
+}
+
+.actions > a {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+}
+.searchPanel,
+.menuPanel {
+    max-height: calc(100dvh - 140px);
+    overflow-y: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+    .header * {
+        transition: none;
+        animation: none;
     }
 }

@@ -9,7 +9,7 @@
 
 ## 現在地と次の作業
 
-この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216、優先6画面で217〜218を追加、P3優先6画面で219〜225を追加、P4優先6画面で226〜233を追加、現台帳233部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。購入者・販売者移行後の現在のソース判定は本体適用55・未適用3・仮実装1・転送専用7。本体適用55の内訳は本体検証済み15・周辺のみ適用12・認証後受け入れ保留28。検証済みの転送alias4件は本体検証済み15件へ加算しない。
+この文書は画面・部品の移行状態と検証証跡の正本。66ページ定義と200部品項目を2026-09-30のソース監査から初期登録した。cart移行でストア通知DS-COMP-201を追加。messages移行で購入者専用thread DS-COMP-202を追加、属性facet DS-COMP-203と購入導線CSS DS-COMP-204を追加、公開ページDS-COMP-205・account共通表示206・履歴container207を追加（優先7画面で208〜216、優先6画面で217〜218を追加、P3優先6画面で219〜225を追加、P4優先6画面で226〜233を追加、今回の購入導線共通UIで234〜237を追加、現台帳237部品）。ソース判定は本体適用8、未適用50、仮実装1、転送専用7。これらは検証済み件数ではない。購入者・販売者移行後の現在のソース判定は本体適用55・未適用3・仮実装1・転送専用7。本体適用55の内訳は本体検証済み15・周辺のみ適用12・認証後受け入れ保留28。検証済みの転送alias4件は本体検証済み15件へ加算しない。
 
 About・Contact・sign-in・sign-upは前セッションで実装・一部検証済みだが、移行全体の受け入れ条件と関連文書同期の確認が残るため「実装済み」で登録する。他の本体適用ページも周辺部品・表示状態の確認が残る。部品台帳はすべてTODOで開始する。
 
@@ -115,11 +115,11 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 | ID | 優先度 | グループ | 対象 | 状態 | 証跡・次の作業 |
 |---|---|---|---|---|---|
-| DS-COMP-001 | P1 | ヘッダー展開部品（P1） | [src/components/store/layout/header/user-menu/user-menu.tsx](<../../../src/components/store/layout/header/user-menu/user-menu.tsx>) | TODO | 未実施 |
-| DS-COMP-002 | P1 | ヘッダー展開部品（P1） | [src/components/store/layout/header/search/search.tsx](<../../../src/components/store/layout/header/search/search.tsx>) | TODO | 未実施 |
-| DS-COMP-003 | P1 | ヘッダー展開部品（P1） | [src/components/store/layout/header/search/suggestions.tsx](<../../../src/components/store/layout/header/search/suggestions.tsx>) | TODO | 未実施 |
-| DS-COMP-004 | P1 | ヘッダー展開部品（P1） | [src/components/store/layout/header/country-lang-curr-selector.tsx](<../../../src/components/store/layout/header/country-lang-curr-selector.tsx>) | TODO | 未実施 |
-| DS-COMP-005 | P1 | ヘッダー展開部品（P1） | [src/components/shared/country-selector.tsx](<../../../src/components/shared/country-selector.tsx>) | TODO | 未実施 |
+| DS-COMP-001 | P1 | ヘッダー展開部品（P1） | [src/components/store/layout/header/user-menu/user-menu.tsx](<../../../src/components/store/layout/header/user-menu/user-menu.tsx>) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)。store表示の補助検証済み、最終確認中 |
+| DS-COMP-002 | P1 | ヘッダー展開部品（P1） | [src/components/store/layout/header/search/search.tsx](<../../../src/components/store/layout/header/search/search.tsx>) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)。store表示の補助検証済み、最終確認中 |
+| DS-COMP-003 | P1 | ヘッダー展開部品（P1） | [src/components/store/layout/header/search/suggestions.tsx](<../../../src/components/store/layout/header/search/suggestions.tsx>) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)。store表示の補助検証済み、最終確認中 |
+| DS-COMP-004 | P1 | ヘッダー展開部品（P1） | [src/components/store/layout/header/country-lang-curr-selector.tsx](<../../../src/components/store/layout/header/country-lang-curr-selector.tsx>) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)。store表示の補助検証済み、最終確認中 |
+| DS-COMP-005 | P1 | ヘッダー展開部品（P1） | [src/components/shared/country-selector.tsx](<../../../src/components/shared/country-selector.tsx>) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)。store表示の補助検証済み、最終確認中 |
 | DS-COMP-006 | P1 | 基本操作・フォーム（P1） | [src/components/store/ui/button.tsx](<../../../src/components/store/ui/button.tsx>) | TODO | 未実施 |
 | DS-COMP-007 | P1 | 基本操作・フォーム（P1） | [src/components/store/ui/input.tsx](<../../../src/components/store/ui/input.tsx>) | TODO | 未実施 |
 | DS-COMP-008 | P1 | 基本操作・フォーム（P1） | [src/components/store/ui/select.tsx](<../../../src/components/store/ui/select.tsx>) | TODO | 未実施 |
@@ -349,6 +349,11 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-231 | P4 | オファータグ専用フォーム | [offer-tag-form.tsx](../../../src/components/dashboard/admin/offer-tag-form.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-232 | P4 | 取得失敗・stale対策・編集/作成dialog | [master-dialog.tsx](../../../src/components/dashboard/admin/master-dialog.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-233 | P4 | 同期pending guard・状態通知 | [save-state.tsx](../../../src/components/dashboard/admin/save-state.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
+
+| DS-COMP-234 | P1 | Store header frame | [header-frame.tsx](../../../src/components/store/layout/header/header-frame.tsx) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、公開/補助検証済み、最終同期中 |
+| DS-COMP-235 | P1 | Account menu presentation | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 保留 | 実装あり、signed補助検証済み、実Clerk受け入れ保留 |
+| DS-COMP-236 | P1 | Store panel tokens/styles | [panels.module.css](../../../src/components/store/layout/header/panels.module.css) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、補助axe済み |
+| DS-COMP-237 | P1 | Country picker styles | [country-selector.module.css](../../../src/components/shared/country-selector.module.css) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、store opt-in補助検証済み |
 
 ## 前セッションの確認結果
 
@@ -888,3 +893,17 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 型検査exit0、本番build成功、lint0 errors/既存10 warnings、Playwright harness成功。認証後6実ルート・実Clerk/Cloudinaryは専用test DBと管理者テスト認証未設定で保留。補助検証の成功を実DBの受け入れに加算しない。
 
 最終文書監査: 66画面/233部品IDの一意性、追加ローカル参照、状態件数、git diff --checkを確認。dashboard371 test files/383 lcov/18/80セルへ再生成した。計画・6画面・最終監査の8段階コミット。
+
+## 購入導線優先6画面移行記録
+
+- 2026-10-06。[保存計画](../../../plans/layout-design/priority-six-purchase-design-system-plan.md)。承認済み対象: DS-PAGE-017/006/019/037/007/008。共通対象DS-COMP-001〜005とDS-BASE-001のstore subset。
+- 共通UI Red: header-search/country-selectorの新要件8件失敗（link/status/stale-response/expanded/unique-ID/keyboard）。Green: 3 suites・24/24。国保存pending/failure/retry/fixed EN/USDは新実装の回帰確認として3件追加。
+- ブラウザーRed: 3幅でsearch triggerが19px（44px要件違反）。続いてsearch statusのcontrast違反を確認。最小修正後Chromium3/3・header内axe AA違反0（account/search/country）。
+- Server identity lookupからproduction HeaderFrame/AccountMenu表示を分離し、fixtureも同じ表示部品を使用。旧nested Link/Buttonを解消、Clerk hydration wrapperは保持。native検索リンク、query保持、abort/stale/unmount、国選択keyboard/ARIAとAPI保存retry、store専用token/CSSを適用。
+- 既存共通fixture serverのesbuild出力名をpreviewへ固定し、別名entryでも共通配信を再利用。config/serverを新設しない。listen EPERMとentry出力名不一致は環境/ハーネス不備で、TDD Redに含めない。
+- 認証後Clerk実描画と商品あり実ルートは未確認。実Nextは既存DBのProduct.searchKeywords欠落を再確認（read-only）。DB変更なし。画面全体とDS-BASE-001は完了にしない。各画面の証跡を以下へ追記する。
+
+### 共通UI最終確認
+
+- Refactor後RTL24/24・Chromium5/5。signed provider adapterで既存account links/controlsを確認、native suggestion Enterの遷移を確認。1440/768/390pxのaccount/search/country screenshotとaxe AAを取得。実Clerk lifecycleは別途保留。
+- SDD requirements/architecture/interfaces/testingとテスト設計/QAを同期。overview/data-modelは既存product scope/DB/moneyに変更なしのため変更不要。採用計画の共通部品全体チェックは実認証/他callerの受け入れ完了まで維持する。

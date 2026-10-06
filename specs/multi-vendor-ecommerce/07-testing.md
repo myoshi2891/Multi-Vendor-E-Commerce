@@ -1300,3 +1300,7 @@ Final six-screen audit (2026-10-05): supplemental Chromium six37/37 and existing
 admin-p4-pagesの9新要件RTLとカテゴリ390px heading browserのRedを確認してから実装。各フォームと共通dialog回帰で引数/ID/createdAt/scope/階層制限/pending/値保持/retry/stale応答/削除を検証する。p4-design.spec.tsは37ケース（6画面×3幅×2theme＋native親選択/作成dialog/Tab/reduced motion）でproduction部品とAction/SDK adaptersを使用する。既存P3管理者とseller couponはp3 suiteで回帰する。p4は既存P3 fixture serverをDESIGN_SUITEによりname/port（3126）を切替えて再利用し、config/serverを新設しない。
 
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+## Purchase six-screen shared UI verification
+
+[Saved plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md). Header RTL covers link navigation, query retention, pending/empty/error, stale responses, country keyboard/ARIA, cookie-save failure/retry/pending. DESIGN_SUITE=purchase reuses production HeaderFrame/AccountMenu with provider adapters through the existing priority server; DESIGN_SUITE=purchase-public checks real guest routes. Browser matrix uses 1440/768/390px and axe AA. DB/provider acceptance is distinct from fixture evidence; browse requires a schema-current dedicated E2E database.

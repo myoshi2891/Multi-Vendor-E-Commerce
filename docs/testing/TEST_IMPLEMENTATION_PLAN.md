@@ -1126,3 +1126,8 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - Step 6 DS-PAGE-046 オファータグ作成: ✅ Completed (2026-10-06)
 
 受け入れ完了とは区別する。認証後6実ルートと実SDKの保留条件は[QA正本](QA_HANDOFF.md#ds-p4-six-browser)。画面/部品/状態と先行Red/最終回帰は[証跡](../design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+## Purchase six-screen shared UI — 2026-10-06
+
+- ✅ Completed (2026-10-06): header search/country keyboard, state and branded panel tests. Initial 8 RTL Red; Green 24/24. Browser trigger/contrast Red fixed; supplemental Chromium5/5.
+- Screen-specific regression and real-route environment limits: [saved plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md), [evidence](../design/design-system/PROGRESS.md#購入導線優先6画面移行記録).

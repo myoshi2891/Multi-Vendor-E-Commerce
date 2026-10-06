@@ -30,6 +30,19 @@ type DesignSuite = {
 };
 
 const DESIGN_SUITES = {
+    purchase: {
+        testMatch: "purchase-design.spec.ts",
+        port: 3110,
+        kind: "fixture",
+        command: "node tests/fixtures/priority/server.mjs",
+    },
+    "purchase-public": {
+        testMatch: "purchase-public-design.spec.ts",
+        port: 3128,
+        kind: "route",
+        command: "NEXT_DEV_DIST_DIR=.next/purchase-public bun run dev -- --webpack --port 3128",
+        timeout: 120000,
+    },
     p4: {
         testMatch: "p4-design.spec.ts",
         port: 3126,

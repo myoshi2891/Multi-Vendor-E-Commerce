@@ -717,3 +717,16 @@ DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通C
 - [ ] DS-PAGE-046 認証後実ルート/実SDK受け入れ（実装あり・保留）。
 
 P4専用部品DS-COMP-226〜233と共通CouponFormFieldsのadmin opt-inは補助検証済み。認証後受け入れ保留のため部品全体の完了チェックは付けない。旧フォーム/旧列の利用監査と属性3画面は別対象。
+
+### 購入導線優先6画面・共通UI（2026-10-06）
+
+[保存計画](priority-six-purchase-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入導線優先6画面移行記録)。DS-PAGE-017/006/019/037/007/008の共通ヘッダーと残存状態を対象とする。画面全体の既存保留と件数は実受け入れ確認まで維持する。
+
+- [x] 共通UIの先行RTL Redとbrowser寸法/contrast Red、Green/Refactor、仕様同期。
+- [ ] 6画面の最終回帰と検証範囲の同期。
+- [ ] DS-COMP-234 [HeaderFrame](../../src/components/store/layout/header/header-frame.tsx)。
+- [ ] DS-COMP-235 [AccountMenu](../../src/components/store/layout/header/user-menu/account-menu.tsx)。
+- [ ] DS-COMP-236 [store panel CSS](../../src/components/store/layout/header/panels.module.css)。
+- [ ] DS-COMP-237 [country CSS](../../src/components/shared/country-selector.module.css)。
+
+DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/他callerは別検証を必要とする。

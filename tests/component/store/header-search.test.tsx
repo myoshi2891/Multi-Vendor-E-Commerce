@@ -16,7 +16,6 @@ jest.mock("next/navigation", () => ({
 jest.mock("next/image", () => ({
     __esModule: true,
     default: ({ src, alt }: { src: string; alt: string }) => (
-        // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt} />
     ),
 }));
@@ -99,10 +98,11 @@ describe("ヘッダー検索 Search", () => {
 
         // Act
         await typeQuery("coat");
-        fireEvent.click(screen.getByRole("img", { name: "Wool Coat" }));
+        const link = screen.getByRole("link", { name: "Wool Coat" });
 
         // Assert
-        expect(mockPush).toHaveBeenCalledWith(
+        expect(link).toHaveAttribute(
+            "href",
             "/product/wool-coat/wool-coat-black"
         );
     });
@@ -123,9 +123,7 @@ describe("ヘッダー検索 Search", () => {
         await typeQuery("(w");
 
         // Assert — 一致部分は強調され、描画は維持される
-        expect(
-            screen.getByRole("img", { name: "Coat (Wool)" })
-        ).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /Coat/ })).toBeInTheDocument();
         expect(screen.getByText("(W")).toHaveProperty("tagName", "STRONG");
     });
 
@@ -143,5 +141,77 @@ describe("ヘッダー検索 Search", () => {
         // Assert
         expect(screen.queryByRole("img")).not.toBeInTheDocument();
         errorSpy.mockRestore();
+    });
+    it("suggestions are keyboard reachable links", async () => {
+        respondWith([
+            {
+                name: "Wool Coat",
+                link: "/product/coat/black",
+                image: "/coat.png",
+            },
+        ]);
+        renderSearch();
+        await typeQuery("coat");
+        expect(screen.getByRole("link", { name: "Wool Coat" })).toHaveAttribute(
+            "href",
+            "/product/coat/black"
+        );
+    });
+    it("announces loading then empty results", async () => {
+        let resolve!: (value: unknown) => void;
+        mockFetch.mockReturnValue(
+            new Promise((r) => {
+                resolve = r;
+            })
+        );
+        renderSearch();
+        await typeQuery("coat");
+        expect(screen.getByRole("status")).toHaveTextContent("Searching");
+        await act(async () => resolve({ ok: true, json: async () => [] }));
+        expect(screen.getByRole("status")).toHaveTextContent("No pieces");
+    });
+    it("announces failure without preventing full search", async () => {
+        respondWith([], false);
+        renderSearch();
+        await typeQuery("coat");
+        expect(screen.getByRole("alert")).toHaveTextContent(
+            "Search suggestions are unavailable"
+        );
+        fireEvent.submit(screen.getByRole("textbox").closest("form")!);
+        expect(mockPush).toHaveBeenCalledWith("/browse?search=coat");
+    });
+    it("ignores stale responses even if fetch ignores abort", async () => {
+        let resolve!: (value: unknown) => void;
+        mockFetch.mockReturnValueOnce(
+            new Promise((r) => {
+                resolve = r;
+            })
+        );
+        renderSearch();
+        await typeQuery("coat");
+        respondWith([]);
+        await typeQuery("hat");
+        await act(async () =>
+            resolve({
+                ok: true,
+                json: async () => [
+                    { name: "Old Coat", link: "/old", image: "/old.png" },
+                ],
+            })
+        );
+        expect(screen.queryByText("Old Coat")).not.toBeInTheDocument();
+    });
+    it("browse submission retains other URL conditions", () => {
+        renderSearch();
+        (usePathname as jest.Mock).mockReturnValue("/browse");
+        (useSearchParams as jest.Mock).mockReturnValue(
+            new URLSearchParams("category=art&sort=latest")
+        );
+        // Re-render to reflect the router-provided params.
+        const view = render(<Search />);
+        fireEvent.submit(view.container.querySelector("form")!);
+        expect(mockReplace).toHaveBeenCalledWith(
+            "/browse?category=art&sort=latest"
+        );
     });
 });

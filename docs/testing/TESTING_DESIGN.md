@@ -491,3 +491,7 @@ bun run test -- --testPathPatterns="tests/component/ui" -u
 ### P4管理マスタのfixture再利用
 
 P4 specはtests/browser/p4-design.spec.ts、DESIGN_SUITE=p4で実行する。既存tests/fixtures/p3/server.mjs/preview.tsxを拡張し、DESIGN_SUITEでserver name/portをP4（p4/3126）とP3（p3/3124）に切替える。共通startFixtureServerを維持し、config/serverを新設しない。Action/Next/Clerk/画像SDK adapterを使用するため、認証後実ルート・実DB・実SDKの成功とは区別する。[証跡](../design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+### Shared header design fixtures
+
+Purchase design fixtures use the existing priority server and production HeaderFrame/AccountMenu. Identity lookup remains in the server component; provider controls are adapters in fixtures. The shared bundler pins its output basename to `preview`, allowing multiple entry filenames without duplicating servers. Screenshot paths use Playwright outputPath. Real browse/checkout data acceptance requires the existing dedicated test DB setup; adapters do not prove Clerk lifecycle or SSR data retrieval.

@@ -1,0 +1,75 @@
+.root {
+    position: relative;
+}
+.trigger {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid #777;
+    border-radius: 6px;
+    background: white;
+    color: #17251d;
+    text-align: left;
+}
+.trigger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.trigger img {
+    height: 16px;
+    width: auto;
+}
+.picker {
+    position: absolute;
+    z-index: 60;
+    width: 100%;
+    margin-top: 6px;
+    border: 1px solid #777;
+    background: white;
+    color: #17251d;
+    box-shadow: 0 12px 24px #0002;
+}
+.picker input {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px;
+    background: transparent;
+    border-bottom: 1px solid #777;
+}
+.list {
+    max-height: min(240px, 35vh);
+    overflow-y: auto;
+}
+.list li {
+    min-height: 44px;
+    padding: 10px 12px;
+    cursor: pointer;
+}
+.list li:hover,
+.list li:focus {
+    background: #eee;
+}
+.root :is(button, input, [role="option"]):focus-visible {
+    outline: 2px solid #786035;
+    outline-offset: -3px;
+}
+.store .trigger,
+.store .picker {
+    background: #f3f0e8;
+    border-color: #ccc7b9;
+    border-radius: 0;
+}
+.store .list li:hover,
+.store .list li:focus {
+    background: #e4dfd2;
+}
+.store [aria-selected="true"] {
+    font-weight: 700;
+    color: #786035;
+}
+.empty {
+    padding: 12px;
+}

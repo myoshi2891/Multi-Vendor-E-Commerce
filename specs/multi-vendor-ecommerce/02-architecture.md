@@ -77,3 +77,7 @@ Following remains a force-dynamic Server route and injects the existing followSt
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
 
 管理者クーポン一覧はServer ComponentでCouponのスカラー項目とstore.nameだけに投影してClientへ渡す。Storeの配送Decimalや不要な店舗内部情報を境界へ持ち込まない。
+
+## Store header presentation boundary
+
+StoreHeader loads cookie and Clerk identity on the server, then supplies the existing country and a minimal avatar/name projection to HeaderFrame/AccountMenu. Search and shipping-country clients continue using existing API endpoints. Shared CountrySelector keeps its controlled contract and adds optional `variant: "default" | "store"`; legacy address callers retain default appearance. No action or database contract changes.

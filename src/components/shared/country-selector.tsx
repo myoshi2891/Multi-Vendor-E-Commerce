@@ -1,18 +1,19 @@
-import COUNTRIES from '@/data/countries.json'
-import { SelectMenuOption } from '@/lib/types'
-import { AnimatePresence, motion } from 'framer-motion'
-import Image from 'next/image'
-import React, { MutableRefObject, useEffect, useRef, useState } from 'react'
+"use client";
+import COUNTRIES from "@/data/countries.json";
+import type { SelectMenuOption } from "@/lib/types";
+import Image from "next/image";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import styles from "./country-selector.module.css";
 
 export interface CountrySelectorProps {
-    id: string
-    open: boolean
-    disabled?: boolean
-    onToggle: () => void
-    onChange: (value: SelectMenuOption['name']) => void
-    selectedValue: SelectMenuOption
+    id: string;
+    open: boolean;
+    disabled?: boolean;
+    onToggle: () => void;
+    onChange: (value: SelectMenuOption["name"]) => void;
+    selectedValue: SelectMenuOption;
+    variant?: "default" | "store";
 }
-
 export default function CountrySelector({
     id,
     open,
@@ -20,181 +21,150 @@ export default function CountrySelector({
     onToggle,
     onChange,
     selectedValue,
+    variant = "default",
 }: CountrySelectorProps) {
-    const ref = useRef<HTMLDivElement>(null)
-
+    const ref = useRef<HTMLDivElement>(null);
+    const trigger = useRef<HTMLButtonElement>(null);
+    const [query, setQuery] = useState("");
+    const [active, setActive] = useState(-1);
+    const countries = COUNTRIES.filter((country) =>
+        country.name.toLowerCase().startsWith(query.toLowerCase())
+    );
     useEffect(() => {
-        const mutableRef = ref as MutableRefObject<HTMLDivElement | null>
-
-        const handleClickOutside = (event: any) => {
+        const dismiss = (event: MouseEvent) => {
             if (
-                mutableRef.current &&
-                !mutableRef.current.contains(event.target) &&
-                open
+                open &&
+                !disabled &&
+                event.target instanceof Node &&
+                !ref.current?.contains(event.target)
             ) {
-                onToggle()
-                setQuery('')
+                onToggle();
+                setQuery("");
+                setActive(-1);
             }
+        };
+        document.addEventListener("mousedown", dismiss);
+        return () => document.removeEventListener("mousedown", dismiss);
+    }, [open, disabled, onToggle]);
+    const close = () => {
+        onToggle();
+        setQuery("");
+        setActive(-1);
+        trigger.current?.focus();
+    };
+    const choose = (name: string) => {
+        if (!disabled) {
+            onChange(name);
+            close();
         }
-
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside)
+    };
+    const navigate = (event: KeyboardEvent) => {
+        if (disabled) return;
+        if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopPropagation();
+            close();
+            return;
         }
-    }, [ref, open, onToggle])
-
-    const [query, setQuery] = useState('')
-
+        if (event.key === "Enter" && active >= 0 && countries[active]) {
+            event.preventDefault();
+            choose(countries[active].name);
+            return;
+        }
+        const last = countries.length - 1;
+        let next = active;
+        if (event.key === "ArrowDown") next = Math.min(active + 1, last);
+        else if (event.key === "ArrowUp")
+            next = active < 0 ? last : Math.max(active - 1, 0);
+        else if (
+            event.key === "Home" &&
+            event.target instanceof HTMLElement &&
+            event.target.getAttribute("role") === "option"
+        )
+            next = 0;
+        else if (
+            event.key === "End" &&
+            event.target instanceof HTMLElement &&
+            event.target.getAttribute("role") === "option"
+        )
+            next = last;
+        else return;
+        event.preventDefault();
+        setActive(next);
+        document
+            .getElementById(`${id}-option-${countries[next]?.code}`)
+            ?.focus();
+    };
     return (
-        <div ref={ref}>
-            <div className="relative mt-1">
-                <button
-                    type="button"
-                    className={`${
-                        disabled ? 'bg-neutral-100' : 'bg-white'
-                    } relative w-full cursor-default rounded-md border border-black/20 py-2 pl-3 pr-10 text-left focus:outline-none focus:ring-1 sm:text-sm`}
-                    aria-haspopup="listbox"
-                    aria-expanded="true"
-                    aria-labelledby="listbox-label"
-                    onClick={onToggle}
-                    disabled={disabled}
-                >
-                    <span className="flex items-center truncate">
-                        <Image
-                            alt={`${selectedValue.name}`}
-                            src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${selectedValue.code}.svg`}
-                            className="mr-2 inline size-auto h-4 rounded-sm"
-                            priority
-                            width={20}
-                            height={20}
-                        />
-                        {selectedValue.name}
-                    </span>
-                    <span
-                        className={`pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 ${
-                            disabled ? 'hidden' : ''
-                        }`}
+        <div
+            ref={ref}
+            className={`${styles.root} ${variant === "store" ? styles.store : ""}`}
+        >
+            <button
+                ref={trigger}
+                type="button"
+                className={styles.trigger}
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                aria-controls={open ? `${id}-list` : undefined}
+                aria-label={`Ship to: ${selectedValue.name}`}
+                onClick={onToggle}
+                disabled={disabled}
+            >
+                <Image
+                    alt={selectedValue.name}
+                    src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${selectedValue.code}.svg`}
+                    width={20}
+                    height={16}
+                />
+                {selectedValue.name}
+                <span aria-hidden="true">▾</span>
+            </button>
+            {open && (
+                <div className={styles.picker} onKeyDown={navigate}>
+                    <input
+                        type="search"
+                        aria-label="Search a country"
+                        placeholder="Search a country"
+                        value={query}
+                        disabled={disabled}
+                        onChange={(event) => {
+                            setQuery(event.target.value);
+                            setActive(-1);
+                        }}
+                    />
+                    <ul
+                        id={`${id}-list`}
+                        role="listbox"
+                        aria-label="Shipping country"
+                        className={styles.list}
                     >
-                        <svg
-                            className="size-5 text-gray-400"
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                            aria-hidden="true"
-                        >
-                            <path
-                                fillRule="evenodd"
-                                d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                clipRule="evenodd"
-                            />
-                        </svg>
-                    </span>
-                </button>
-
-                <AnimatePresence>
-                    {open && (
-                        <motion.ul
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.1 }}
-                            className="absolute z-10 mt-1 max-h-80 w-full rounded-md bg-white text-base shadow-sm ring-1 ring-black/5 focus:outline-none sm:text-sm"
-                            tabIndex={-1}
-                            role="listbox"
-                            aria-labelledby="listbox-label"
-                            aria-activedescendant="listbox-option-3"
-                        >
-                            <div className="sticky top-0 z-10 bg-white">
-                                <li className="relative cursor-default select-none px-3 py-2 text-gray-900">
-                                    <input
-                                        type="search"
-                                        name="search"
-                                        autoComplete={'off'}
-                                        className="block w-full rounded-md outline-none sm:text-sm"
-                                        placeholder={'Search a country'}
-                                        onChange={(e) =>
-                                            setQuery(e.target.value)
-                                        }
-                                    />
-                                </li>
-                                <hr />
-                            </div>
-
-                            <div
-                                // eslint-disable-next-line tailwindcss/no-custom-classname
-                                className={
-                                    'scrollbar scrollbar-track-gray-100 scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-600 scrollbar-thumb-rounded scrollbar-thin max-h-64 overflow-y-scroll'
+                        {countries.map((country) => (
+                            <li
+                                key={country.code}
+                                id={`${id}-option-${country.code}`}
+                                role="option"
+                                aria-selected={
+                                    country.name === selectedValue.name
                                 }
+                                aria-disabled={disabled}
+                                tabIndex={-1}
+                                onFocus={() =>
+                                    setActive(countries.indexOf(country))
+                                }
+                                onClick={() => choose(country.name)}
                             >
-                                {COUNTRIES.filter((country) =>
-                                    country.name
-                                        .toLowerCase()
-                                        .startsWith(query.toLowerCase())
-                                ).length === 0 ? (
-                                    <li className="relative cursor-default select-none py-2 pl-3 pr-9 text-gray-900">
-                                        No countries found
-                                    </li>
-                                ) : (
-                                    COUNTRIES.filter((country) =>
-                                        country.name
-                                            .toLowerCase()
-                                            .startsWith(query.toLowerCase())
-                                    ).map((value, index) => {
-                                        return (
-                                            <li
-                                                key={`${id}-${index}`}
-                                                className="relative flex cursor-default select-none items-center py-2 pl-3 pr-9 text-gray-900 transition hover:bg-gray-50"
-                                                id="listbox-option-0"
-                                                role="option"
-                                                aria-selected="false"
-                                                onClick={() => {
-                                                    onChange(value.name)
-                                                    setQuery('')
-                                                    onToggle()
-                                                }}
-                                            >
-                                                <Image
-                                                    alt={`${value.name}`}
-                                                    src={`https://purecatamphetamine.github.io/country-flag-icons/3x2/${value.code}.svg`}
-                                                    className="mr-2 inline h-4 rounded-sm"
-                                                    width={20}
-                                                    height={20}
-                                                    priority
-                                                    style={{ width: 'auto' }}
-                                                />
-
-                                                <span className="truncate font-normal">
-                                                    {value.name}
-                                                </span>
-                                                {value.name ===
-                                                selectedValue.name ? (
-                                                    <span className="absolute inset-y-0 right-0 flex items-center pr-8 text-blue-600">
-                                                        <svg
-                                                            className="size-5"
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            viewBox="0 0 20 20"
-                                                            fill="currentColor"
-                                                            aria-hidden="true"
-                                                            width={5}
-                                                            height={5}
-                                                        >
-                                                            <path
-                                                                fillRule="evenodd"
-                                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                                                clipRule="evenodd"
-                                                            />
-                                                        </svg>
-                                                    </span>
-                                                ) : null}
-                                            </li>
-                                        )
-                                    })
-                                )}
-                            </div>
-                        </motion.ul>
+                                {country.name}
+                            </li>
+                        ))}
+                    </ul>
+                    {countries.length === 0 && (
+                        <p role="status" className={styles.empty}>
+                            No countries found
+                        </p>
                     )}
-                </AnimatePresence>
-            </div>
+                </div>
+            )}
         </div>
-    )
+    );
 }
