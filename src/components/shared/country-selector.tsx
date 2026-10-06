@@ -66,7 +66,16 @@ export default function CountrySelector({
             close();
             return;
         }
-        if (event.key === "Enter" && active >= 0 && countries[active]) {
+        // 検索欄の Enter では確定しない（クリックで検索欄へ戻った後の古い active で誤選択するため）
+        const onOption =
+            event.target instanceof HTMLElement &&
+            event.target.getAttribute("role") === "option";
+        if (
+            event.key === "Enter" &&
+            onOption &&
+            active >= 0 &&
+            countries[active]
+        ) {
             event.preventDefault();
             choose(countries[active].name);
             return;
@@ -76,18 +85,8 @@ export default function CountrySelector({
         if (event.key === "ArrowDown") next = Math.min(active + 1, last);
         else if (event.key === "ArrowUp")
             next = active < 0 ? last : Math.max(active - 1, 0);
-        else if (
-            event.key === "Home" &&
-            event.target instanceof HTMLElement &&
-            event.target.getAttribute("role") === "option"
-        )
-            next = 0;
-        else if (
-            event.key === "End" &&
-            event.target instanceof HTMLElement &&
-            event.target.getAttribute("role") === "option"
-        )
-            next = last;
+        else if (event.key === "Home" && onOption) next = 0;
+        else if (event.key === "End" && onOption) next = last;
         else return;
         event.preventDefault();
         setActive(next);

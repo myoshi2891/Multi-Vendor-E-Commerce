@@ -219,8 +219,26 @@ describe("CountrySelector", () => {
         const search = screen.getByRole("searchbox");
         fireEvent.change(search, { target: { value: "United States" } });
         fireEvent.keyDown(search, { key: "ArrowDown" });
-        fireEvent.keyDown(search, { key: "Enter" });
+        const option = screen.getByRole("option", { name: "United States" });
+        expect(option).toHaveFocus();
+        fireEvent.keyDown(option, { key: "Enter" });
         expect(mockOnChange).toHaveBeenCalledWith("United States");
+    });
+    it("does not select a country when Enter is pressed in the search input", () => {
+        render(
+            <CountrySelector
+                id="delivery"
+                open
+                onToggle={mockOnToggle}
+                onChange={mockOnChange}
+                selectedValue={selectedValue}
+            />
+        );
+        const search = screen.getByRole("searchbox");
+        fireEvent.change(search, { target: { value: "United States" } });
+        fireEvent.keyDown(search, { key: "ArrowDown" });
+        fireEvent.keyDown(search, { key: "Enter" });
+        expect(mockOnChange).not.toHaveBeenCalled();
     });
     it("Escape closes only the country picker and returns focus", () => {
         render(
