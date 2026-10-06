@@ -1143,3 +1143,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-06): Step5 cart操作/通知寸法のTDD、購入開始/同期失敗と新header統合回帰。
 
 - ✅ Completed (2026-10-06): Step6 checkout既存業務UIと新header/dialogの統合回帰。実認証後受け入れはQA参照。
+
+- ✅ Completed (2026-10-06): purchase25/25・commerce14/14、6画面/共通部品の自己レビュー。既存UserMenu期待の追随漏れを修正し13/13。実環境保留と全体実測はQA正本参照。

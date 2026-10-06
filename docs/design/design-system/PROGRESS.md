@@ -350,7 +350,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-232 | P4 | 取得失敗・stale対策・編集/作成dialog | [master-dialog.tsx](../../../src/components/dashboard/admin/master-dialog.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-233 | P4 | 同期pending guard・状態通知 | [save-state.tsx](../../../src/components/dashboard/admin/save-state.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[P4証跡](#p4優先6画面移行記録) |
 
-| DS-COMP-234 | P1 | Store header frame | [header-frame.tsx](../../../src/components/store/layout/header/header-frame.tsx) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、公開/補助検証済み、最終同期中 |
+| DS-COMP-234 | P1 | Store header frame | [header-frame.tsx](../../../src/components/store/layout/header/header-frame.tsx) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、公開/補助検証済み、商品あり実route保留 |
 | DS-COMP-235 | P1 | Account menu presentation | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 保留 | 実装あり、signed補助検証済み、実Clerk受け入れ保留 |
 | DS-COMP-236 | P1 | Store panel tokens/styles | [panels.module.css](../../../src/components/store/layout/header/panels.module.css) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、補助axe済み |
 | DS-COMP-237 | P1 | Country picker styles | [country-selector.module.css](../../../src/components/shared/country-selector.module.css) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、store opt-in補助検証済み |
@@ -940,3 +940,13 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - 既存Checkout本体の住所/coupon/pending/retryを維持し、production共通headerを既存commerce fixtureへ統合。既存実装の回帰確認として関連Jest20/20（3 suites）とChromium14/14（既存11件＋header/dialog 3幅）を確認。新機能Redは主張しない。
 - Account→address dialogのkeyboard/focus、refresh failure/retry、全体axe AA違反0とoverflowなしを確認。型検査exit0。実Clerk顧客認証後checkout/決済SDKは専用環境待ちで、画面全体の保留状態を維持する。
+
+### 最終自己レビュー・検証（購入導線）
+
+- 6画面×共通header×状態の仕様表を照合。purchase25/25、commerce14/14、公開route7 passed/3 skipped（schema-current専用DBなしのbrowseは明示skip）。1440/768/390pxのaxe AA（contrast含む）、keyboard/focus、overflowを確認。PC/mobileの6画面・住所dialog画像を目視確認した。fixtureのbrowse/product画像は対象部品の構成であり、実商品ページ全体の画像検証を代替しない。
+- 全体回帰で旧UserMenuのbutton/画像alt期待4件が残っていたため、native signin linkのhrefと新altへ期待を同期。UserMenu13/13で成功。これは既存テスト追随漏れの修正で、新要件TDD Redには加算しない。
+- lint0 errors/8 warnings、tsc exit0、Playwright harness成功。新規clientの直接Server Action importなし、API/DB/金額/在庫/認可変更なし。CountrySelector/Paginationの既存Propsとdefault variant、既存Clerk hydration wrapperを維持。
+- 66画面/238部品IDの一意性と追加ローカルリンクを確認。検証済み15・周辺確認12・保留28・未適用3・placeholder1・redirect7の66画面分類は維持。実環境の未確認を成功件数へ加算しない。共通tokenの全体移行・実Clerk/他callerの移行は別受け入れとして残す。
+- overview/data-modelと既存画面の業務設計は契約不変のため変更不要。関連requirements/architecture/interfaces/testing、cart/checkout仕様、画面別受け入れ、計画/QA/テスト計画を同期。[次の実受け入れ](../../testing/QA_HANDOFF.md#ds-purchase-six2026-10-06)。
+
+最終全体Jest: 2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）。Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells。計画・共通UI・6画面・最終同期の9段階コミット。

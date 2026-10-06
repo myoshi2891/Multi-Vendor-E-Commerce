@@ -16,7 +16,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2903 passed / 2906 total、3 skipped、127 snapshots passed、299 スイート（298 passed／1 skipped、failed 0）** — 2026-10-06 P4最終全体実測。Integration222／17 suitesは既存実測を維持。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）** — 2026-10-06 購入導線最終全体実測。Integration222／17 suitesは既存実測を維持。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **222テスト / 17スイート** — 2026-10-04実測を維持（今回未実行）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5305,3 +5305,9 @@ New Code カバレッジ 70.5% の主因（0% の sidebar 2 ファイル、selle
 ## P4管理マスタ6画面の移行（2026-10-06）
 
 商品分類・割引・オファーへの影響からカテゴリ/管理者クーポン/オファータグ各2画面を選び、画面ごとにTDD・検証・コミットした。共通theme/Action Props/dialogを再利用し、更新ID・カテゴリ階層・coupon scope・既存遷移を維持した。実装済み55・未適用3、受け入れ保留28。[証跡と自己レビュー](./design/design-system/PROGRESS.md#p4優先6画面移行記録)、[認証後受け入れ](./testing/QA_HANDOFF.md#ds-p4-six-browser)。
+
+## 購入導線優先6画面（2026-10-06）
+
+home/browse/product/store/cart/checkoutの共通header、検索/国選択、sort、数量/review paging、店舗card、cart操作/通知を新デザインシステムへ適用。先行RTL/browser Red→Greenと画面ごとの回帰/仕様同期を段階コミット。補助purchase25/25・commerce14/14、公開route7 passed/3 skipped。実商品routeとClerk認証後/SDKは専用環境待ち。画面全体の受け入れと補助検証を区別する。[計画](../plans/layout-design/priority-six-purchase-design-system-plan.md)・[証跡](design/design-system/PROGRESS.md#購入導線優先6画面移行記録)・[QA](testing/QA_HANDOFF.md#ds-purchase-six2026-10-06)。
+
+最終全体coverage: Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells。lint0 errors/8 warnings・tsc/harness成功。QA正本の実測値を同期。

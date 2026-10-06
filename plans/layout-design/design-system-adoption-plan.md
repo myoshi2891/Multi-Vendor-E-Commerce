@@ -723,7 +723,7 @@ P4専用部品DS-COMP-226〜233と共通CouponFormFieldsのadmin opt-inは補助
 [保存計画](priority-six-purchase-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入導線優先6画面移行記録)。DS-PAGE-017/006/019/037/007/008の共通ヘッダーと残存状態を対象とする。画面全体の既存保留と件数は実受け入れ確認まで維持する。
 
 - [x] 共通UIの先行RTL Redとbrowser寸法/contrast Red、Green/Refactor、仕様同期。
-- [ ] 6画面の最終回帰と検証範囲の同期。
+- [x] 6画面の最終回帰と検証範囲の同期（補助検証・実環境保留を区別）。
 - [ ] DS-COMP-234 [HeaderFrame](../../src/components/store/layout/header/header-frame.tsx)。
 - [ ] DS-COMP-235 [AccountMenu](../../src/components/store/layout/header/user-menu/account-menu.tsx)。
 - [ ] DS-COMP-236 [store panel CSS](../../src/components/store/layout/header/panels.module.css)。

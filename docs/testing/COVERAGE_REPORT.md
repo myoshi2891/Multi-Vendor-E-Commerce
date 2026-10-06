@@ -11,15 +11,15 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-06） | **2903 passed / 2906 total、3 skipped、127 snapshots passed、299 スイート（298 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| 全体coverage（2026-10-06） | Statements86.81%（10190/11738）／Branches77.32%（6356/8220）／Functions82.72%（1983/2397）／Lines87.25%（9285/10641）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テストファイル総数 | **371ファイル**（2026-10-06 dashboard実測）。 |
-| Jest スイート総数（unit/component のみ） | **299スイート**（298 passed／1 skipped、2026-10-06全体実測）。 |
-| テスト総数 | **2903 unit/component passed**（2906 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
+| Jestテスト総数（2026-10-06） | **2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| 全体coverage（2026-10-06） | Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| テストファイル総数 | **375ファイル**（2026-10-06 dashboard実測）。 |
+| Jest スイート総数（unit/component のみ） | **301スイート**（300 passed／1 skipped、2026-10-06全体実測）。 |
+| テスト総数 | **2916 unit/component passed**（2919 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **383**（2026-10-06全体coverage/dashboard実測）。 |
+| lcov エントリ数 | **387**（2026-10-06全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
 | 型エラー | **0件**（2026-10-06実測）。 |
 
@@ -633,3 +633,7 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 ### 2026-10-06 — P4管理マスタ6画面
 
 **2903 passed / 2906 total、3 skipped、127 snapshots passed、299 スイート（298 passed／1 skipped、failed 0）**。Statements86.81%（10190/11738）／Branches77.32%（6356/8220）／Functions82.72%（1983/2397）／Lines87.25%（9285/10641）。dashboard371 files／383 lcov／18/80 cells、heatmapの状態は不変。6画面の認証後受け入れを補助fixtureと区別して継続する理由は実DB/Clerk/Cloudinaryの境界が未検証のため。[QA正本](./QA_HANDOFF.md#ds-p4-six-browser)。
+
+### 2026-10-06 購入導線6画面・共通UIの最終全体実測
+
+2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）。Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells、分類セルの状態は不変。補助purchase25/25・commerce14/14と公開route7 passed/3 skippedを確認。実商品route/Clerk SDKの保留解除条件は[QA正本](QA_HANDOFF.md#ds-purchase-six2026-10-06)。初回全体で旧UserMenu期待4件の追随漏れを確認して同期し、再実行で失敗0。
