@@ -834,3 +834,7 @@ coupon: cart.coupon
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
 
 共通枠の受け入れ追記: 実Sidebar/Headerを3幅とlight/darkで確認し、avatar未取得時もAA contrastを維持、長いemailを折り返す。P4既定DataTableのtoolbarをtheme scope内で折り返し、検索と既存作成URLを保持する。既定UserInfoとP4本文の全面移行は含めない。
+
+### P4カテゴリ一覧移行（2026-10-06）
+
+DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な階層一覧、Action Props経由の編集/作成/削除を使用する。validation・送信ロック・値保持retry・statusとPortal themeを提供する。業務制約と認可・DBは変更なし。補助検証済み・認証後受け入れ保留。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。

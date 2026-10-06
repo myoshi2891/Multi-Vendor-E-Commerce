@@ -92,3 +92,7 @@
 
 - [ ] platform-wide クーポンの按分（端数の最終グループ吸収）が会計要件と合致するか（Phase 5）。
 - [ ] `paymentStatus` 手動変更が DB のみ（決済 API 非連携）で運用上問題ないか（Phase 1 の後続 UI）。
+
+### P4カテゴリ一覧移行（2026-10-06）
+
+DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な階層一覧、Action Props経由の編集/作成/削除を使用する。validation・送信ロック・値保持retry・statusとPortal themeを提供する。業務制約と認可・DBは変更なし。補助検証済み・認証後受け入れ保留。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。

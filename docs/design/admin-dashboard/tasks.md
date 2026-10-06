@@ -247,3 +247,7 @@ Phase 5: F3-第2段 platform-wide [safe-migration・破壊的・決済波及] �
 - [ ] 認証後実ルートと必要なSDKの受け入れ確認（補助検証と区別）。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+### P4カテゴリ一覧移行（2026-10-06）
+
+DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な階層一覧、Action Props経由の編集/作成/削除を使用する。validation・送信ロック・値保持retry・statusとPortal themeを提供する。業務制約と認可・DBは変更なし。補助検証済み・認証後受け入れ保留。[証跡](../design-system/PROGRESS.md#p4優先6画面移行記録)。

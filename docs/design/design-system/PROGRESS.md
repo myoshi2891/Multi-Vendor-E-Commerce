@@ -84,7 +84,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-040 | `/dashboard/admin/attributes/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 未実施 |
 | DS-PAGE-041 | `/dashboard/admin/attributes` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 未実施 |
 | DS-PAGE-042 | `/dashboard/admin/categories/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | 未実施 |
-| DS-PAGE-043 | `/dashboard/admin/categories` | 未適用 | P4 | TODO | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | 未実施 |
+| DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-044 | `/dashboard/admin/coupons/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | 未実施 |
 | DS-PAGE-045 | `/dashboard/admin/coupons` | 未適用 | P4 | TODO | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | 未実施 |
 | DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | 未実施 |
@@ -817,3 +817,12 @@ Refactor後Chromium p3 37/37（6画面、3幅/light/dark、実Sidebar展開、P4
 次の新規移行は未適用9画面（P4）から選定する。認証後受け入れ保留22画面は専用テストDBとClerk情報を用意して別途解除する。SDD architecture/data-model/open-questionsは境界・DB・未解決仕様を変更しないため据え置き、requirements/interfaces/workflows/quality/testingに適用範囲と検証限界を同期した。
 
 最終文書監査：66画面／225部品IDの一意性、追加ローカル参照49件（anchor含む）、状態件数、`git diff --check`を確認。DB schema／queriesの変更なし。dashboard生成器の関連Jest12/12・型検査・lint成功、統計同期後にdashboardを再生成（361／375／18/80）。
+
+## P4優先6画面移行記録
+
+- 日付: 2026-10-06。[承認済み保存計画](../../../plans/layout-design/priority-six-p4-design-system-plan.md)。対象DS-PAGE-043/042/045/044/047/046。自己レビュー・画面別コミット。
+- 認証後実ルート/Clerk/実Cloudinaryは専用環境の確認まで保留。補助fixtureの成功を実ルート検証済みとしない。
+
+### Step 1 — DS-PAGE-043 カテゴリ一覧
+
+先行RTL2件（region/h1/searchboxと取得失敗）と390px browser見出し欠落のRedを確認。CategoryForm・Action Props列factory・MasterDialog・SaveFeedbackを導入。旧CategoryDetails/旧列は未使用の旧scopeとして別管理。Refactor後関連Jest112/112（6 suites）、Chromium6/6（1440/768/390 × light/dark、検索/空/load失敗/retry/保存pending・close lock/error/入力保持/retry/success/Delete cancel/Escape focus復帰、axe AA contrast含む）、390px dark画像目視。tsc成功、lint0 errors/既存10 warnings、harness成功。カテゴリ階層・サブツリー制約・正準slug・更新createdAt維持を回帰確認。認証後実ルートは実装あり・保留。

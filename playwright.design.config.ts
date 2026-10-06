@@ -30,6 +30,12 @@ type DesignSuite = {
 };
 
 const DESIGN_SUITES = {
+    p4: {
+        testMatch: "p4-design.spec.ts",
+        port: 3124,
+        kind: "fixture",
+        command: "node tests/fixtures/p3/server.mjs",
+    },
     "p3-public": {
         testMatch: "p3-public-design.spec.ts",
         port: 3125,

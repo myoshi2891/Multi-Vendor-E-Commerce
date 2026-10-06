@@ -1,6 +1,7 @@
 import Link from "next/link";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import CategoriesPage from "@/app/dashboard/admin/categories/page";
 import LegalPage from "@/app/(store)/legal/page";
 import NewCouponPage from "@/app/dashboard/seller/stores/[storeUrl]/coupons/new/page";
 import CouponsPage from "@/app/dashboard/seller/stores/[storeUrl]/coupons/page";
@@ -23,7 +24,9 @@ async function preview() {
         </nav>
     );
     const content =
-        screen === "legacy" ? (
+        screen === "categories" ? (
+            await CategoriesPage()
+        ) : screen === "legacy" ? (
             <section aria-label="Legacy P4 content">
                 <DataTable
                     data={[{ name: "Example category" }]}
