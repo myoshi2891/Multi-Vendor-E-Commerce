@@ -18,7 +18,7 @@ async function addItemToCart(
 
     await page.getByTestId("add-to-cart").click();
     // Zustand persist が localStorage に書き込むのを待つ
-    await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+    await expect(page.getByText(/Added to your bag/i)).toBeVisible({
         timeout: 5000,
     });
 
@@ -77,7 +77,7 @@ test.describe("購入フルフロー", () => {
 
         await page.getByTestId("add-to-cart").click();
         // カート追加成功の toast を待つ（Out of stock はテスト失敗とする）
-        await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+        await expect(page.getByText(/Added to your bag/i)).toBeVisible({
             timeout: 5000,
         });
 

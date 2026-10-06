@@ -35,7 +35,7 @@ async function addItemToCart(
         { timeout: 5000 }
     );
     await page.getByTestId("add-to-cart").click();
-    await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+    await expect(page.getByText(/Added to your bag/i)).toBeVisible({
         timeout: 5000,
     });
     // Zustand persist が localStorage に書き終えるのを待つ

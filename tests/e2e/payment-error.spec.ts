@@ -22,7 +22,7 @@ test.describe("決済異常系", () => {
   test("未認証でチェックアウトページにアクセスするとサインインにリダイレクトされる", async ({ page }) => {
     await setupClerkTestingToken({ page });
     await page.goto("/checkout");
-    // /checkout はミドルウェアで保護されているため、未認証ではサインインにリダイレクト
+    // /checkout はページ側（auth() + redirectToSignIn()）で保護されているため、未認証ではサインインにリダイレクト
     await page.waitForURL(/sign-in/, { timeout: 10000 });
   });
 
@@ -72,7 +72,7 @@ test.describe("決済異常系", () => {
       await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
       await page.getByTestId("add-to-cart").click();
       // Zustand persist が localStorage に書き込むのを待つ
-      await expect(page.getByText(/Product added to cart/i)).toBeVisible({ timeout: 5000 });
+      await expect(page.getByText(/Added to your bag/i)).toBeVisible({ timeout: 5000 });
       await waitForCartPersist(page);
 
       // /cart 経由で Checkout を押し DB Cart に同期する。
@@ -90,7 +90,11 @@ test.describe("決済異常系", () => {
       const placeOrderBtn = page.getByRole("button", { name: /Place order/i });
       await expect(placeOrderBtn).toBeVisible();
       await placeOrderBtn.click();
-      await expect(page.getByText(/Select a shipping address/i)).toBeVisible({ timeout: 5000 });
+      // 同じ文言の注記（place-order.tsx の <p>）は住所未選択の間クリック前から出ているため、
+      // クリックの結果であるエラートースト（role="alert"）に絞って検証する。
+      await expect(
+        page.getByRole("alert").filter({ hasText: /Select a shipping address/i })
+      ).toBeVisible({ timeout: 5000 });
     });
   });
 

@@ -51,7 +51,7 @@ test.describe("モバイルレスポンシブ", () => {
     await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
     await page.getByTestId("add-to-cart").click();
     // Zustand persist が localStorage に書き込むのを待つ
-    await expect(page.getByText(/Product added to cart/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Added to your bag/i)).toBeVisible({ timeout: 5000 });
 
     // Zustand persistがlocalStorageに書き込むのを待つ
     await waitForCartPersist(page);
@@ -86,7 +86,7 @@ test.describe("モバイルレスポンシブ", () => {
     await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
     await page.getByTestId("add-to-cart").click();
     // Zustand persist が localStorage に書き込むのを待つ
-    await expect(page.getByText(/Product added to cart/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/Added to your bag/i)).toBeVisible({ timeout: 5000 });
 
     // 共通ヘルパーで localStorage 書き込み完了を待つ
     await waitForCartPersist(page);

@@ -23,19 +23,19 @@ const clerk = clerkSecretKey
  * 前提データであり、注文履歴は「注文した → 後から確認できる」という取引の基本保証で、
  * どちらもブラウザ導線でしか固定できない。
  *
- * **国リストについて**: profileはDB対応国のnative selectを使用する。
- * 本specの国fixtureは既存checkoutの共有フォームとの互換性のため実国名を維持する。
- * 共有CountrySelectorの静的リスト/名前照合はshipping-form componentテストで確認する。
+ * **国リストについて**: profile の住所フォームは DB の Country を id で選ぶ native select なので、
+ * seed が project ごとに作る国（"United States CHROMIUM-W0" 等）をそのまま選べる。
+ * 実国名の行を自前で作ると `Country.name` の UNIQUE に衝突する（実国名の行がある DB、
+ * および 3 project の並列実行で同名を作る場合。OI-18）。共有 CountrySelector の
+ * 静的リスト/名前照合は shipping-form の component テストで確認する。
  */
 test.describe.serial("プロフィール（住所管理 / 注文履歴）", () => {
     let seed: ReturnType<typeof buildE2ESeed>;
     let userEmail: string;
     let userPassword: string;
     let clerkUserId: string;
+    /** seed が project ごとに作る国。住所フォームの選択肢にもそのまま現れる */
     let seedCountryId: string;
-    /** 本spec専用のDB対応国fixture（checkoutの共有フォームにも対応） */
-    let selectableCountryId: string;
-    let selectableCountryName: string;
 
     test.setTimeout(120000);
 
@@ -60,16 +60,6 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
             );
         }
         seedCountryId = country.id;
-
-        // DB対応国を用意する。codeはseedと分離し、実国名はcheckout互換のため保持する。
-        selectableCountryName = "United States";
-        const selectableCode = `PS-${testInfo.project.name.slice(0, 3).toUpperCase()}`;
-        const selectable = await prisma.country.upsert({
-            where: { code: selectableCode },
-            update: { name: selectableCountryName },
-            create: { name: selectableCountryName, code: selectableCode },
-        });
-        selectableCountryId = selectable.id;
 
         // 3 プロジェクト（chromium / firefox / webkit）は並列に beforeAll へ入るため、
         // Date.now() だけでは同一ミリ秒で衝突し、Clerk 側で重複ユーザーの作成に化ける。
@@ -123,11 +113,6 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
                 if (clerk && clerkUserId) {
                     await clerk.users.deleteUser(clerkUserId).catch(() => {});
                 }
-                if (selectableCountryId) {
-                    await prisma.country
-                        .delete({ where: { id: selectableCountryId } })
-                        .catch(() => {});
-                }
             } catch (cleanupError: unknown) {
                 if (primaryError === undefined) primaryError = cleanupError;
                 else console.error("[afterAll] cleanup も失敗:", cleanupError);
@@ -173,7 +158,7 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
             await page.getByLabel(label, { exact: true }).fill(value);
         await page
             .getByRole("combobox", { name: "Country" })
-            .selectOption(selectableCountryId);
+            .selectOption(seedCountryId);
         await page.getByRole("button", { name: "Save address" }).click();
 
         // Assert: 一覧に**その固有の Street** がちょうど 1 件現れる
@@ -227,7 +212,7 @@ test.describe.serial("プロフィール（住所管理 / 注文履歴）", () =
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();
-        await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+        await expect(page.getByText(/Added to your bag/i)).toBeVisible({
             timeout: 5000,
         });
         await waitForCartPersist(page);
