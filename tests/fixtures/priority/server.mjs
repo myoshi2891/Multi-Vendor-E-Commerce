@@ -2,13 +2,23 @@
 // 共通処理（bundle・配信・終了処理）は ../shared/fixture-server.mjs に集約している。
 import { startFixtureServer } from "../shared/fixture-server.mjs";
 
+// port は playwright.design.config.ts が DESIGN_FIXTURE_PORT で渡す（purchase / priority で別 port）。
+// 単体起動時は従来の priority 用 port にフォールバックする
+const portEnv = process.env.DESIGN_FIXTURE_PORT?.trim();
+const port = portEnv ? Number(portEnv) : 3110;
+if (!Number.isInteger(port) || port <= 0) {
+    throw new Error(
+        `Invalid DESIGN_FIXTURE_PORT: ${process.env.DESIGN_FIXTURE_PORT}`
+    );
+}
+
 await startFixtureServer({
     name: "priority",
     entry:
         process.env.DESIGN_SUITE === "purchase"
             ? "tests/fixtures/priority/purchase-preview.tsx"
             : "tests/fixtures/priority/preview.tsx",
-    port: 3110,
+    port,
     title: "Priority design browser fixture",
     mocks: {
         "@/queries/product": `import {products} from "./tests/fixtures/priority/purchase-data"; export async function getProducts(){return {products:new URLSearchParams(location.search).has("pieces") ? products : []}}`,

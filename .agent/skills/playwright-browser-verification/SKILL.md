@@ -34,7 +34,7 @@ Playwright の `webServer` は config 単位でしか指定できない。その
 ## 2. suite を追加する
 
 1. `playwright.design.config.ts` の `DESIGN_SUITES` に 1 行追加する（`testMatch`・`port`・`kind`・`command`）。
-   - **port**: 表に無い番号を選ぶ（現在 3107 / 3109 / 3110 / 3121 / 3122）。本体 E2E の 3000 は使わない。
+   - **port**: 表に無い番号を選ぶ（現在 3107 / 3109 / 3110 / 3121〜3128）。本体 E2E の 3000 は使わない。
    - route 型で別の dev サーバーと並行起動する場合は `NEXT_DEV_DIST_DIR=.next/<suite>` で distDir を分ける（`seven-public` 参照）。
 2. spec は `tests/browser/<suite>-design.spec.ts` に置く。**`tests/e2e/` には置かない**（本体に拾われる）。
 3. fixture 型の場合は `tests/fixtures/<suite>/preview.tsx` と、次の形の `server.mjs` だけを作る。
