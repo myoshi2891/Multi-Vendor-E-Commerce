@@ -72,7 +72,7 @@
 - `plans/README.md`（Status 行）
 
 **Out of scope**:
-- 6 → 7（別プラン 082。末尾に概要）と 8
+- 6 → 7（後続プラン・未起票。番号は起票時に採番する。082 は E2E セレクター・マイグレーション補正で使用済み。末尾に概要）と 8
 - `prisma.config.ts` の導入、接続アダプター、新しい generator（いずれも 7 の範囲）
 - 本番 DB への `migrate deploy`（オペレーターが行う）
 
@@ -202,7 +202,7 @@ bun run erd:generate
   （`DROP CONSTRAINT "..._AB_pkey"` + `CREATE UNIQUE INDEX "..._AB_unique"`）を新規に作る。
   主キー化したままでも 5.22 のクライアントは動くため、DB の巻き戻しは必須ではない
 
-## 第 2 段（6 → 7）の概要 — 別プラン 082 で詳細化する
+## 第 2 段（6 → 7）の概要 — 後続プラン（未起票・番号は起票時に採番）で詳細化する
 
 - 接続 URL を `schema.prisma` の `datasource` から `prisma.config.ts` へ移す
 - 接続アダプター（`@prisma/adapter-pg` など）の導入と、Accelerate（`withAccelerate()`）との組み合わせ方

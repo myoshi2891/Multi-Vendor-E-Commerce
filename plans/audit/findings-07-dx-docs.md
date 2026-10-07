@@ -13,10 +13,10 @@
 
 ### [DX-02] 完全に stale な `docs/archive/unimplemented-screens-plan.md` の退役
 
-- **Evidence**: `docs/archive/unimplemented-screens-plan.md` は約19ルートを「ディレクトリ未作成 / プレースホルダー / ルート未定義」として列挙。`src/app/` 配下の実 `page.tsx` と突合すると、**列挙された全ルートが現存**: `/dashboard/admin/orders`（`src/app/dashboard/admin/orders/page.tsx`、100行）、`/dashboard/admin/coupons`、`/dashboard/seller/stores/[storeUrl]/inventory`、`/dashboard/admin`（41行 — 文書が引用する `<div>Admin DashboardPage</div>` プレースホルダーはもう無い）、`/dashboard/seller/stores/[storeUrl]`、`/profile/messages`・`/profile/settings`、さらに `/about /contact /compare /faq /faqs /track-order /customer-service /returns-exchange /product-support /legal /offers /dispute /report-problem`。**有効なエントリはゼロ**。注: これは recon の Direction ヒント（admin/orders・admin/coupons・seller inventory が「残り候補/要確認」）も無効化 — 3つとも `page.tsx` あり。
+- **Evidence**: `docs/archive/unimplemented-screens-plan.md` は約19ルートを「ディレクトリ未作成 / プレースホルダー / ルート未定義」として列挙。`src/app/` 配下の実 `page.tsx` と突合すると、**列挙された全ルートが現存**: `/dashboard/admin/orders`（`src/app/dashboard/admin/orders/page.tsx`、100行）、`/dashboard/admin/coupons`、`/dashboard/seller/stores/[storeUrl]/inventory`、`/dashboard/admin`（41行 — 文書が引用する `<div>Admin DashboardPage</div>` プレースホルダーはもう無い）、`/dashboard/seller/stores/[storeUrl]`、`/profile/messages`・`/profile/settings`、さらに `/about /contact /compare /faq /faqs /track-order /customer-service /returns-exchange /product-support /legal /offers /dispute /report-problem`。**ルート（`page.tsx`）の欠落という意味での有効なエントリはゼロ**。ただし `page.tsx` の存在は実装完了を意味しない（2026-10-07 追記）: `/legal` は利用規約・プライバシー・特商法表記の各節が、`/product-support` は初期設定・トラブルシューティング・保証の各節が「（プレースホルダ）」本文のまま（`src/components/store/static/content/` 配下）であり、**この 2 ルートはコンテンツ未完として扱う**。注: これは recon の Direction ヒント（admin/orders・admin/coupons・seller inventory が「残り候補/要確認」）も無効化 — 3つとも `page.tsx` あり。
 - **Impact**: プレイブックは「actively wrong な stale doc は欠落より悪い」とする。本文書はロードマップ/Direction 判断のソースであり（recon が Direction 源として引用）、読者は出荷済み作業をスケジュールしてしまう。埋め込み Gantt の日付（2026-06-08…2026-07-02）も過去。
 - **Effort**: S / **Risk**: LOW（削除/アーカイブのみ。ダッシュボード*コンテンツ*の薄さは別途検証してよいが、ルートはもはや未実装ではない） / **Confidence**: HIGH
-- **Fix sketch**: 削除するか `docs/archive/` へ「superseded — 全画面 2026-06 実装済み」ヘッダ付きで移動。真に未完の作業（ダッシュボードウィジェットの充実度等）が残るなら `specs/.../08-open-questions.md` へ記載。
+- **Fix sketch**: 削除するか `docs/archive/` へ「superseded — 全ルート 2026-06 作成済み（`/legal`・`/product-support` は本文プレースホルダで未完）」ヘッダ付きで移動。真に未完の作業（ダッシュボードウィジェットの充実度等）が残るなら `specs/.../08-open-questions.md` へ記載。
 
 ### [DX-03] README セットアップの必須環境変数リストを補完
 

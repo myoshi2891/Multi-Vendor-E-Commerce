@@ -150,7 +150,11 @@ RATE_LIMIT_COOKIE_PER_MIN=
 Vercel ダッシュボード → Project → Firewall → Configure → New Rule:
 - If: `Request Path` が `/api/index-products` で始まる **OR** `Request Path` が `/api/search-products` で始まる
 - Then: Rate Limit / Fixed Window / 60s / **30** requests / Key: IP / Action: Too Many Requests (429)
-- 保存してから Publish する
+- 保存してから **Publish** する（保存だけではルールは本番に適用されない。Publish 済みであることをダッシュボードの公開状態で確認する）
+
+**検索経路のレート制限は、次の 2 点がそろうまで「提供済み」と扱わない**:
+(1) オペレーターがルールを Publish したこと（保存のみは不可）、(2) 下記 Verify の結果を「実施結果」節に記録したこと。
+どちらかが欠ける間、本プランの Status は `IN PROGRESS（WAF 待ち）` のままとする。
 
 **Verify（オペレーター）**: 本番 URL へ
 `for i in $(seq 1 35); do curl -s -o /dev/null -w "%{http_code}\n" "https://<prod>/api/search-products?search=a"; done | sort | uniq -c`
@@ -185,5 +189,5 @@ Vercel ダッシュボード → Project → Firewall → Configure → New Rule
 - E2E `country-selector.spec.ts`（chromium）は 2 件失敗したが、**いずれも cookie API への POST より前で失敗**しており、429 ではない
   （テスト 1 は cookie 直接注入で API を呼ばない / テスト 2 は `getByText("Ship to")` の strict mode 違反）。:3000 で Docker アプリが
   動作している環境起因の既存失敗とみなし、本プランの範囲外とする。同 spec のコメントの `route.ts:49` 行番号参照はファイル名参照へ修正。
-- **Step 6（Vercel WAF ルール）は未実施** — オペレーターの設定と確認待ち。
+- **Step 6（Vercel WAF ルール）は未実施** — オペレーターの Publish と検証記録の両方が未確認のため、検索経路のレート制限は**未提供**扱い。
 
