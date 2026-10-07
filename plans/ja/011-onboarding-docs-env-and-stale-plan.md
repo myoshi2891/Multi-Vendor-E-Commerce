@@ -19,7 +19,7 @@
 - **Depends on**: none
 - **Category**: docs
 - **Planned at**: commit `f9752c0`, 2026-07-03
-- **Status**: DONE（2026-10-07・未コミット）
+- **Status**: DONE（2026-10-07・`6a424cd2`。アーカイブへの移動は `078e9be6`）
 
 ## なぜ重要か
 
@@ -548,12 +548,12 @@ README のセットアップ手順に、bare-metal ユーザーをそこへ導�
 
 以下すべてを満たすこと:
 
-- [ ] `docs/unimplemented-screens-plan.md` が（SUPERSEDED ヘッダー付きで `docs/archive/` へ移動して）アーカイブされている、または削除されており、生きたドキュメントが旧パスにリンクしていない
-- [ ] README の env ブロックが、`STRIPE_WEBHOOK_SECRET`、`PAYPAL_API_BASE`、`PAYPAL_WEBHOOK_ID`、`IPINFO_TOKEN`、`NEXT_PUBLIC_APP_URL`、`NEXT_PUBLIC_CLOUDINARY_*` を含む、ソース参照済みの全変数を列挙している
-- [ ] `.env.example` がリポジトリルートに存在し、git で track 可能であり（`git check-ignore` が何も出力しない）、**実際のシークレット値を含まない**
-- [ ] README がセットアップ手順内で `.env.example` を参照している
-- [ ] ソースファイルや既存の `.env*.example` ファイルが変更されていない（`git status`）
-- [ ] `plans/README.md` の 011 のステータス行が更新されている
+- [x] `docs/unimplemented-screens-plan.md` が（SUPERSEDED ヘッダー付きで `docs/archive/` へ移動して）アーカイブされている、または削除されており、生きたドキュメントが旧パスにリンクしていない
+- [x] README の env ブロックが、`STRIPE_WEBHOOK_SECRET`、`PAYPAL_API_BASE`、`PAYPAL_WEBHOOK_ID`、`IPINFO_TOKEN`、`NEXT_PUBLIC_APP_URL`、`NEXT_PUBLIC_CLOUDINARY_*` を含む、ソース参照済みの全変数を列挙している
+- [x] `.env.example` がリポジトリルートに存在し、git で track 可能であり（`git check-ignore` が何も出力しない）、**実際のシークレット値を含まない**
+- [x] README がセットアップ手順内で `.env.example` を参照している
+- [x] ソースファイルや既存の `.env*.example` ファイルが変更されていない（`git status`）
+- [x] `plans/README.md` の 011 のステータス行が更新されている
 
 ## STOP conditions
 

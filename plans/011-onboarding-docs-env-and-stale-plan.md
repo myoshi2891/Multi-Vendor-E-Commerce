@@ -17,7 +17,7 @@
 - **Depends on**: none
 - **Category**: docs
 - **Planned at**: commit `f9752c0`, 2026-07-03
-- **Status**: DONE（2026-10-07・未コミット）
+- **Status**: DONE（2026-10-07・`6a424cd2`。アーカイブへの移動は `078e9be6`）
 
 ## Why this matters
 
@@ -439,12 +439,12 @@ Add one line in the README setup steps pointing bare-metal users at it, e.g. `cp
 
 ALL must hold:
 
-- [ ] `docs/unimplemented-screens-plan.md` is archived (moved to `docs/archive/` with the SUPERSEDED header) or deleted, and no live doc links to the old path
-- [ ] README env block lists all source-referenced vars incl. `STRIPE_WEBHOOK_SECRET`, `PAYPAL_API_BASE`, `PAYPAL_WEBHOOK_ID`, `IPINFO_TOKEN`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_CLOUDINARY_*`
-- [ ] `.env.example` exists at repo root, is git-trackable (`git check-ignore` prints nothing), and contains **no real secret values**
-- [ ] README references `.env.example` in the setup steps
-- [ ] No source files or existing `.env*.example` files modified (`git status`)
-- [ ] `plans/README.md` status row for 011 updated
+- [x] `docs/unimplemented-screens-plan.md` is archived (moved to `docs/archive/` with the SUPERSEDED header) or deleted, and no live doc links to the old path
+- [x] README env block lists all source-referenced vars incl. `STRIPE_WEBHOOK_SECRET`, `PAYPAL_API_BASE`, `PAYPAL_WEBHOOK_ID`, `IPINFO_TOKEN`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_CLOUDINARY_*`
+- [x] `.env.example` exists at repo root, is git-trackable (`git check-ignore` prints nothing), and contains **no real secret values**
+- [x] README references `.env.example` in the setup steps
+- [x] No source files or existing `.env*.example` files modified (`git status`)
+- [x] `plans/README.md` status row for 011 updated
 
 ## STOP conditions
 
