@@ -33,11 +33,11 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | — | TODO |
 | [085](085-implement-public-endpoint-rate-limit.md) | 公開エンドポイントのレート制限（cookie = アプリ内 / 検索 = Vercel WAF・ADR-009） | security | P3 | 025 | IN PROGRESS（2026-10-07・アプリ側完了・未コミット / WAF 待ち） |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
-| [086](086-implement-notification-foundation.md) | 通知基盤（Outbox + sweeper）と店舗単位の発送通知（021 の後続実装・Resend 導入はユーザー承認後） | direction | P3 | 021 | TODO |
+| [086](086-implement-notification-foundation.md) | 通知基盤（Outbox + sweeper）と店舗単位の発送通知（021 の後続実装・Resend 導入はユーザー承認後） | direction | P3 | 021 | IN PROGRESS（2026-10-07・Resend 承認待ち・未コミット） |
 
 - **085**: アプリ側（cookie limiter）は実装・検証済み。**Vercel WAF ルール（Step 6）はオペレーター作業待ち**。
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
-- **086**: 設計は [`notification-foundation/design.md`](../docs/design/notification-foundation/design.md) と ADR-010（Proposed）。`resend` SDK の追加は Step 9 でユーザーの承認を得てから。
+- **086**: Step 1〜8・10 は実装・検証済み（stub プロバイダで in-app 通知と送信まで動く）。**Step 9（`resend` SDK の追加）はユーザー判断で見送り**。cron のスケジュール設定とリモート DB への適用はオペレーター作業。設計は [`notification-foundation/design.md`](../docs/design/notification-foundation/design.md) と ADR-010（Proposed）。
 - Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（020・016・017 は独立）。
 
 ## 完了済みのプラン

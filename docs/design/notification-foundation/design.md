@@ -340,6 +340,11 @@ export type NotificationType = keyof typeof NOTIFICATION_MAPPING;
 - チャットの新着メール: §1 で除外した。メールが要るようになったら、`buildNotificationWrites` を `sendMessage` の配列 tx に足す。
 - 通知一覧ページの無限スクロールやリアルタイム更新（SSE / ポーリング）: 初期はページを開いたときに読み込むだけ。
 
+## 8.5 実装で確定した差分（plan 086・2026-10-07）
+
+- §1 の「seller の group 更新を条件付き `updateMany` にする」は採らなかった。同じ `update` を `$transaction` に入れ、遷移の判定は tx の外で読んだ更新前の状態で行う。並行する更新で両方が遷移と判定しても、§2.2 の一意制約で行は 1 つになる。
+- §3.1 の `buildNotificationWrites`（配列形式の tx 向け）は実装しない。配列形式では、重複でスキップされた通知の ID を配信行へ渡せず、FK 違反で主処理ごと失敗するため。必要になったら呼び出し元を interactive tx に移す。
+
 ## 9. 後続
 
 - 実装プラン: [plans/086-implement-notification-foundation.md](../../../plans/086-implement-notification-foundation.md)

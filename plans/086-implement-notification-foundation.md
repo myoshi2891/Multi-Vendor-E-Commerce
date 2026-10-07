@@ -220,6 +220,18 @@ design §2.1 のモデルをそのまま追加する（`dedupeKey String @unique
 - メールのプロバイダを冪等キー非対応のものへ替えるときは、design §4.4 と ADR-010 を先に改訂する
 - cron のスケジュール設定（デプロイ先のダッシュボードや `vercel.json`）はオペレーターの作業。設定するまで、取りこぼしは回収されない（`after()` の経路だけで送られる）
 
-## 実施結果
+## 実施結果（2026-10-07・未コミット・HEAD `4cc3a287` 上の作業ツリー）
 
-（未着手）
+- **Step 0**: Drift check の差分なし。デプロイ先の cron の制約は**未確定**（`vercel.json` なし。Vercel Hobby なら 1 日 1 回が上限の見込み）。design のとおり `after()` の速い経路があるので、頻度が粗くても成り立つ。
+- **Step 1**: マイグレーション `20261007140000_add_notifications`（追加のみ・DROP なし）。`--create-only` で生成された `20261007092539_…` は既存の `20261007130000_…` より前に並ぶため、**未適用のうちに**フォルダ名を付け替えてから適用した。適用先はユーザー選択でローカル Docker DB（`.env` の Neon には触れていない）。リモートは未適用。ERD 再生成で 12 ページ・37 モデル、orphan WARNING 0（ページ「11. Notifications」を追加し Enums を 12 へ繰り下げ。overrides は page id 基準なので影響なし）。
+- **Step 2〜7**: 各 Step で空の実装を置き、アサーションの失敗で Red を確認してから Green（Step 2: 11/12 失敗 / Step 3: 5/5 / Step 4: 15/15 / Step 5 配線: order-events・schedule 9/10、order.test 4 件 / Step 6: 14/15 / Step 7: 8/8。成立していた分はいずれも空の実装でも満たす否定系）。モジュール未作成の失敗は Red に数えていない。
+- **design からの差分（2 点。決定そのものは変えていない）**:
+  1. seller の `updateOrderGroupStatus` は条件付き `updateMany` にせず、**同じ `update` を `$transaction` に入れ、遷移の判定は tx の外で読んだ更新前の状態で行う**ようにした。並行する更新で両方が「遷移した」と判定しても、`dedupeKey` の一意制約で行は 1 つに収まるので、通知の重複は起きない。既存の戻り値・例外の文言・テストの呼び出し形を保てる。
+  2. `buildNotificationWrites`（配列形式の tx 向け）は**実装しなかった**。配列形式では、重複でスキップされた通知の ID を配信行の作成に渡せず、FK 違反で主処理ごと失敗するため。呼び出し元も無い。チャットのメール通知を足すときに `sendMessage` を interactive tx へ移す形で扱う。
+- 追加の補助モジュール: `order-events.ts`（OrderGroup の遷移 → 通知）、`schedule.ts`（`after()` による送信予約。リクエスト外で `after()` が使えない場合もログだけで throw しない）。`toNotificationParams` は `templates.ts` に集約。
+- **Step 8**: 通知一覧・ヘッダーの未読件数・サイドバーのリンク。`priority` design suite に通知一覧の scenario を追加して 9/9（1440 / 768 / 390px・axe 0・横スクロールなし）。認証後の実ルートとヘッダーの未読バッジのブラウザー表示は未確認（[進捗ノート](../docs/design/design-system/PROGRESS.md#通知一覧の新設2026-10-07plan-086未コミット)）。
+- **Step 9**: ユーザーの判断で**見送り**（`resend` は未追加・`package.json` 変更なし）。Status は `IN PROGRESS（Resend 承認待ち）`。
+- **Step 10**: `tests/integration/notification-outbox.test.ts` 3 件（実装後の実 DB 検証のため Red なし）。`order-lifecycle.test.ts` は jsdom に `Request` が無く `next/server` を読めないため `after` をモック。
+- 最終実測: Jest 3023/3026（3 skipped）・316 スイート・127 snapshots、Integration 228/228・18 スイート、tsc 0、lint 0 errors（既存 warnings 8）、`bun run check:playwright` pass。統計は QA_HANDOFF（SSOT）→ 07-testing / COVERAGE_REPORT / PROGRESS に同期し、ダッシュボードを再生成。
+- `tech.md` への追記の**提案**（判断はユーザー）: 「新しい状態遷移を足すときは `src/lib/notifications/mapping.ts` の `NOTIFICATION_MAPPING` の更新を検討し、記録は主処理と同じ tx、送信は commit 後の `scheduleDispatch` で行う」。
+- 残り: Step 9（Resend）、cron のスケジュール設定（オペレーター）、リモート DB へのマイグレーション適用（`migrate deploy`）、認証後の実ルートでの受け入れ確認。
