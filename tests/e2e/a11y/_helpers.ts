@@ -46,6 +46,12 @@ export async function runA11yScan(
                     impact: v.impact,
                     help: v.help,
                     nodes: v.nodes.length,
+                    // 件数だけでは原因箇所を特定できないため、ノードの
+                    // セレクタと判定データ（color-contrast なら fg/bg/比率）を出す。
+                    targets: v.nodes.map((n) => ({
+                        target: n.target,
+                        data: n.any[0]?.data,
+                    })),
                 })),
                 null,
                 2

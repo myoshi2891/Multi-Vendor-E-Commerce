@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-06） | **2919 passed / 2922 total、3 skipped、127 snapshots passed、302 スイート（301 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| Jestテスト総数（2026-10-07） | **2942 passed / 2945 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | 全体coverage（2026-10-06・レビュー指摘対応後） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **376ファイル**（2026-10-06 レビュー指摘対応後の dashboard実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| Jest スイート総数（unit/component のみ） | **302スイート**（301 passed／1 skipped、2026-10-06 レビュー指摘対応後の全体実測）。 |
-| テスト総数 | **2919 unit/component passed**（2922 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
+| Jest スイート総数（unit/component のみ） | **305スイート**（304 passed／1 skipped、2026-10-07 全体実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| テスト総数 | **2942 unit/component passed**（2945 total／3 skipped）。Integration225／17 suites（2026-10-07実測・plan 082 レビュー対応後）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
 | lcov エントリ数 | **387**（2026-10-06全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0件**（2026-10-06実測）。 |
+| 型エラー | **0件**（2026-10-07実測）。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -60,7 +60,7 @@
 | API / Contract | 1/10 | 10% | route.test.ts のみ |
 | Security | 2/10 | **20%** | A1 完了: queries（IDOR認可テスト）+ lib（middleware/sanitize） |
 | Visual / Snapshot | 1/10 | **10%** | A2 完了: pages（cart/checkout spec — baseline 未コミット） |
-| Accessibility | 1/10 | **10%** | A3 完了: pages（sign-in / seller-apply、WCAG 2.1 AA スキャン）。2026-08-09 の plan 052 で同じ pages 列に **browse / 商品詳細 / cart** を追加（計 7 spec）。スキャンは **chromium 限定**で実行し、`color-contrast` ルールは既知負債 **OI-10** として `disabledRules` で除外している（[QA_HANDOFF.md OI-10](./QA_HANDOFF.md#active-open-issues) 参照）。**カバー率が 10% のままなのは列（ドメイン）が増えていないため**であり、テスト本数は 4 → 7 に増えている |
+| Accessibility | 1/10 | **10%** | A3 完了: pages（sign-in / seller-apply、WCAG 2.1 AA スキャン）。2026-08-09 の plan 052 で同じ pages 列に **browse / 商品詳細 / cart** を追加（計 7 spec）。スキャンは **chromium 限定**で実行する。`color-contrast` の抑制（`disabledRules`）は 2026-10-07 に OI-10 解消（plan 084）で解除済みで、全ルール有効で違反 0（[QA_HANDOFF.md](./QA_HANDOFF.md#active-open-issues) 参照）。**カバー率が 10% のままなのは列（ドメイン）が増えていないため**であり、テスト本数は 4 → 7 に増えている |
 | Performance | 0/10 | **0%** | 全列未対応 |
 
 ### ドメイン別 (列) のホットスポット
@@ -506,6 +506,12 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-04 | **PR #187 レビュー対応: サジェストの画像適格条件と browse の属性チップ — Integration +2（219 → 221・17 スイート不変）、Jest +2（2723 → 2725 passed / 2728 total・254 スイート不変）**（HEAD `86b9c786` 上の作業ツリー分・コミット前）: `/api/search-products` が `variantImage` 空・関連画像も無い商品を返し空の `src` を UI へ渡していたため、`LIMIT` 前に「表示できる画像を持つバリアント」を条件化し、hydrate も同じ条件で選んで `variantImage` が空なら関連画像の url で代替。`search-products.test.ts` にシナリオ 11b / 11c。`/browse` が `attr.*` の選択を `FiltersHeader` に渡しておらず、カテゴリ未選択（ファセット無し）や集計失敗時に絞り込みが表示・解除できなかったため、`page.test.tsx` +2。いずれも修正前で Red を確認。`parse-models.test.ts` は optional Decimal の `?` 欠落を追認していた期待値を修正（件数不変）。全体実測で Jest **2725 / 2728**・Integration **221/221**。 |
 | 2026-10-04 | **PR #187 レビュー対応: 並行バリアント追加のデッドロックと空の属性キー — Integration +1（221 → 222・17 スイート不変）、Jest +1（2725 → 2726 passed / 2729 total・254 スイート不変）**（HEAD `65f9f3c0` 上の作業ツリー分・コミット前）: `recomputeProductDerivedColumns` が Product の `FOR UPDATE` を子行の INSERT（FK の `FOR KEY SHARE`）の後に取っていたため、同一商品への `handleVariantCreate` 並行実行がデッドロックしていた。`lockProductRow` に切り出し、`handleVariantCreate` / `handleProductAndVariantUpdate` の `lockAttributeCategoryPath` 直後へ移動。`product-update.test.ts` に並行追加シナリオ（修正前で 1 件 rejected の Red を確認）。`extractAttributeParams` が `?attr.=x` の空キーを捨て `getProducts` が全件を返していたため、空キーを残して `parseProductFilters` で invalid にさせる（`utils.test.ts` +1・Red 確認）。テストファイル数を 317（ダッシュボード実測）に統一。 |
 | 2026-10-05 | **plan 079: UserMenu の Clerk `UserButton` hydration 不一致修正 — Jest +2（2766 → 2768 passed / 2771 total・263 → 264 スイート）**（HEAD `10f41af4` 上の作業ツリー分・コミット前）: `tests/component/store/client-user-button.test.tsx` 新設（SSR で `UserButton` を出力しない／SSR HTML の `hydrateRoot` で recoverable error 0・hydration 後に描画）。Red は `UserButton` 直描画スタブで SSR アサーション失敗を確認。旧 coverage 83.16/69.26/77.45/83.24% → 83.17/69.27/77.5/83.25%、dashboard 329 → 330 files / lcov 349 → 350。 |
+| 2026-10-07 | **plan 082: 適用済みマイグレーション編集の是正 + E2E セレクター追従 — Integration +1（222 → 223・17 スイート不変）、Jest 不変（2919 passed / 2922 total・302 スイート）**（HEAD `05047e90` 上の作業ツリー分・コミット前）: `0ffb72b8` が適用済みの `20260901223148_category_tree_phase_b_resync` へ url 交換用の一時退避を追記していたため、`5c4b2501` の内容へ戻し（チェックサム `bd3152ca…` がローカル DB の記録と一致）、補正マイグレーション `20261007120000_category_tree_resync_url_swap` を新設。統合テストは元に戻した状態で url 交換ケースの Red を確認し、補正区間へ移して「067 でずれた行を補正が直す」「補正は冪等」の 2 件で Green。E2E は `d3e87f64` / `21924e9d` のデザイン移行に追従（トースト `Added to your bag`・`Follow boutique`・注文詳細の `<dl>`・住所未選択トーストを `role=alert` で限定）。 |
+| 2026-10-07 | **plan 082 追補: OI-17 / OI-18 — Jest +2（2919 → 2921 passed / 2922 → 2924 total・302 → 303 スイート）、Integration 不変（223）**（作業ツリー・コミット前）: 未認証の `/checkout` をサインインへ送るよう `checkout/page.tsx` を `auth()` + `redirectToSignIn()` に変更し、`tests/component/store/checkout-page-auth.test.tsx` を新設（旧実装で `/cart` へ redirect される Red を確認）。profile E2E は実国名の Country fixture をやめ seed の project 別の国を選ぶ。Chromium で payment-error / profile / platform-coupon / purchase-flow 10 passed。 |
+| 2026-10-07 | **plan 083: OI-11 seller 商品フォームの SSR `self is not defined` — Jest +1（2921 → 2922 passed / 2924 → 2925 total・303 → 304 スイート）、Integration 不変（223）**（HEAD `7edcb20b` 上の作業ツリー・コミット前）: 原因は OI-11 の推定（`CldUploadWidget`）ではなく、`product-details.tsx` が静的 import していた `jodit-react` の UMD（評価時に `self` を参照）。`next/dynamic` の `ssr: false` へ変更し、`tests/component/dashboard/product-details-ssr.test.tsx`（`@jest-environment node`）を新設（旧実装で `self is not defined` により reject する Red を確認）。既存 `product-details.test.tsx` はエディタ取得を `findByTestId` へ。`bun run build` 後のサーバーチャンクから jodit が消えたことを確認。 |
+| 2026-10-07 | **plan 085: 公開エンドポイントのレート制限（ADR-009）— Jest +19（2922 → 2941 passed / 2925 → 2944 total・304 → 305 スイート）、Integration 不変（223）**（作業ツリー・コミット前）: インメモリ Fixed Window limiter `src/lib/rate-limit.ts` を新設（`rate-limit.test.ts` +14）し、`setUserCountryInCookies` に組み込み（`route.test.ts` +5: 6 回目 429 + `Retry-After`、パース前判定、`x-real-ip` 無しは fail-open、`x-forwarded-for` 非信頼、環境変数上書き）。検索 2 本は Vercel WAF（オペレーター作業待ち）。いずれも Red 確認済み。 |
+| 2026-10-07 | **plan 085 レビュー対応 — Jest +1（2941 → 2942 passed / 2944 → 2945 total・305 スイート不変）**（作業ツリー・コミット前）: `setUserCountryInCookies` の判定を `rateLimitResponse` ヘルパーへ抽出し、Vercel 上（`VERCEL=1`）で `x-real-ip` が欠落したときだけ IP を含まない構造化警告を出す（ローカル / CI は無警告・fail-open は不変）。`route.test.ts` +1。 |
+| 2026-10-07 | **plan 082 レビュー対応 — Integration +2（223 → 225・17 スイート不変）、Jest unit 不変**（作業ツリー・コミット前）: `_category_tree_resync_url_swap` は url を変えた depth 1 ノードの子孫 path を付け替えていなかった。適用済みのため編集せず、補正マイグレーション `20261007130000_category_tree_rebase_descendant_paths`（ルートから辿って各ノードの path を「親の path + 自分の末尾セグメント」で作り直す・冪等）を新設。`category-tree-resync.test.ts` +2（商品の無い中間ノード配下を含む付け替え / 冪等）。Red はアサーション失敗で確認。 |
 
 ### 2026-09-30 compareデザイン移行
 

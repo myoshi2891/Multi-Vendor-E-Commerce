@@ -1,7 +1,7 @@
 # Offers — 設計書
 
 > ディスカウント・オファー一覧画面（`/offers`）。プラットフォーム全体のキャンペーン（OfferTag）を一覧し、各タグの対象商品へ誘導する。
-> 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」（user-menu「Discounts & Offers」）優先度=低。
+> 出典: [`docs/archive/unimplemented-screens-plan.md`](../../archive/unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」（user-menu「Discounts & Offers」）優先度=低。
 
 ---
 

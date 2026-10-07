@@ -849,7 +849,7 @@ zero-context executor 向けに自己完結・カテゴリ網羅（セキュリ�
   > 本ファイルに一覧を再掲していたが、README 側と**二重管理**になり、片方だけ更新されて
   > ドリフトしていた（例: `/dashboard/admin/orders`・`/dashboard/admin/coupons`・
   > seller inventory は「要実在確認」と書かれていたが、後続ラウンドの再監査で
-  > **3 画面とも実装済み**と確認され、`docs/unimplemented-screens-plan.md` ごと
+  > **3 画面とも実装済み**と確認され、`docs/archive/unimplemented-screens-plan.md` ごと
   > DX-02 の退役対象になっている — [`audit/recon.md`](audit/recon.md) の残存候補行を参照）。
   > 残候補の追加・削除は **`DEFERRED.md` の Deferred 節だけを更新**すること。
 

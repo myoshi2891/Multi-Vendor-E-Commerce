@@ -2,7 +2,7 @@
 
 > 静的コンテンツ画面群（`/about` / `/legal` / `/faq`+`/faqs` / `/customer-service` / `/product-support`）。
 > DB・フォームを持たない server component で、コンテンツは TSX 定数 + 共有レイアウト部品で構成する。
-> 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」優先度=低〜中。
+> 出典: [`docs/archive/unimplemented-screens-plan.md`](../../archive/unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」優先度=低〜中。
 
 ---
 

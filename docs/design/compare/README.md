@@ -1,7 +1,7 @@
 # Compare — 設計書
 
 > 商品比較画面（`/compare`）。複数商品（バリアント）を横並びで比較するクライアント主体の画面。
-> 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」優先度=低。
+> 出典: [`docs/archive/unimplemented-screens-plan.md`](../../archive/unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」優先度=低。
 
 ---
 

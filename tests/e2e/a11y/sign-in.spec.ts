@@ -20,8 +20,10 @@ test.describe("a11y: /sign-in", () => {
     test("WCAG 2.1 AA 違反が無いこと", async ({ page }) => {
         // Clerk のフォームは shadow DOM 風の構造になる場合があるため、
         // data-clerk-component または素の form のどちらかが可視になれば準備完了とみなす。
+        // main に限定する: ヘッダーの検索 form（非表示）が先頭に一致して待ちが詰まるため。
         await runA11yScan(page, "/sign-in", {
             readinessLocator: page
+                .getByRole("main")
                 .locator("[data-clerk-component], form")
                 .first(),
         });

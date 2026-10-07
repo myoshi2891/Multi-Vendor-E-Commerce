@@ -59,7 +59,7 @@ test.describe("a11y: /checkout", () => {
             .click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();
-        await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+        await expect(page.getByText(/Added to your bag/i)).toBeVisible({
             timeout: 5000,
         });
         await waitForCartPersist(page);
@@ -75,9 +75,6 @@ test.describe("a11y: /checkout", () => {
         // /checkout の Axe スキャン（DB Cart 同期済みでリダイレクトされない）
         await runA11yScan(page, "/checkout", {
             readinessLocator: page.getByRole("main"),
-            // color-contrast は既知のデザイン負債。配色是正は別タスク。
-            // 追跡: docs/testing/QA_HANDOFF.md「a11y color-contrast 負債」
-            disabledRules: ["color-contrast"],
         });
     });
 });

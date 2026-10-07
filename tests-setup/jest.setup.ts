@@ -1,4 +1,17 @@
 import "@testing-library/jest-dom";
+import {
+    clearImmediate as nodeClearImmediate,
+    setImmediate as nodeSetImmediate,
+} from "timers";
+
+// jest-environment-jsdom は setImmediate / clearImmediate を global から外す。Prisma 6 の
+// LibraryEngine は $disconnect() の内部で setImmediate を使うため、jsdom で動く Integration
+// テスト（jest.integration.config.js）の disconnectTestDb() が ReferenceError で落ちる（plan 081）。
+// node 環境では既に定義済みなので何もしない。
+if (typeof globalThis.setImmediate === "undefined") {
+    globalThis.setImmediate = nodeSetImmediate;
+    globalThis.clearImmediate = nodeClearImmediate;
+}
 
 // jsdom は ResizeObserver を実装していないため、Radix UI の useSize 系
 // (Slider / Popover / Tooltip / HoverCard / ScrollArea 等) を含む snapshot テスト用に

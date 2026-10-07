@@ -24,7 +24,6 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 
 | Plan | Title | Category | Priority | Depends on | Status |
 |------|-------|----------|----------|------------|--------|
-| [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | — | TODO |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | — | TODO |
 | [016](016-spike-seller-onboarding-catalog-approval.md) | **Spike**: 出品審査ワークフロー（商品公開制御）設計 | direction | P3 | — | TODO |
 | [017](017-spike-recommendation-foundation.md) | **Spike**: ルールベース・レコメンド基盤 v1 設計 | direction | P3 | — | TODO |
@@ -33,16 +32,17 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [020](020-spike-promotion-engine.md) | **Spike**: プロモーション・キャンペーンエンジン設計 | direction | P3 | — | TODO |
 | [021](021-spike-notification-foundation.md) | **Spike**: 通知・トランザクショナルメッセージ基盤設計 | direction | P3 | — | TODO |
 | [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | — | TODO |
-| [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限 | security | P3 | — | TODO |
+| [085](085-implement-public-endpoint-rate-limit.md) | 公開エンドポイントのレート制限（cookie = アプリ内 / 検索 = Vercel WAF・ADR-009） | security | P3 | 025 | IN PROGRESS（2026-10-07・アプリ側完了・未コミット / WAF 待ち） |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
 
+- **085**: アプリ側（cookie limiter）は実装・検証済み。**Vercel WAF ルール（Step 6）はオペレーター作業待ち**。
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
 - Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（020・016・017 は独立）。
 
 ## 完了済みのプラン
 
 <details>
-<summary>DONE（62 件）— 実行記録はアーカイブと各プラン本文</summary>
+<summary>DONE（68 件）— 実行記録はアーカイブと各プラン本文</summary>
 
 | Plan | Title | Category | Priority | Depends on | Status |
 |------|-------|----------|----------|------------|--------|
@@ -108,5 +108,11 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [074](074-product-search-vector-column.md) | 重み付き検索ベクトル列（brand・keywords）+ GIN（ADR-008・015 の後続実装 1/3） | migration | P2 | 073 | DONE（2026-10-03・43b401d5〜86b9c786） |
 | [075](075-unify-browse-search-and-type-filters.md) | ブラウズ検索の検索ベクトル統合 + `ProductFilters` 型付け + slug 並列解決（015 の後続実装 2/3） | direction | P2 | 074 | DONE（2026-10-03・43b401d5〜86b9c786） |
 | [076](076-facet-counts-and-min-price.md) | 属性ファセット件数 + `minPrice` 非正規化で価格ソートを全件に適用（015 の後続実装 3/3） | direction | P2 | 075 | DONE（2026-10-03・43b401d5〜86b9c786） |
+| [081](081-prisma-6-upgrade.md) | Prisma 5.22 → 6.x（段階移行の第 1 段。多対多の主キー化マイグレーション 1 本） | dependencies | P3 | — | DONE（2026-10-06・未コミット） |
+| [082](082-fix-stale-e2e-selectors-and-migration-edit.md) | E2E のセレクターをデザイン移行へ追従 + 適用済みマイグレーション編集（`0ffb72b8`）を補正マイグレーションへ移す | bug | P2 | 081 | DONE（2026-10-07・未コミット） |
+| [083](083-fix-seller-ssr-jodit-self.md) | seller 商品フォームの SSR `self is not defined`（OI-11。原因は jodit-react の UMD） | bug | P2 | — | DONE（2026-10-07・未コミット） |
+| [084](084-fix-a11y-color-contrast-oi10.md) | a11y `color-contrast` 負債の是正と抑制解除（OI-10。a11y 6 spec） | a11y | P3 | — | DONE（2026-10-07・未コミット） |
+| [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | — | DONE（2026-10-07・6a424cd2〜69f6f0be） |
+| [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限（ADR-009 で決定・後続 085） | security | P3 | — | DONE（2026-10-07・未コミット） |
 
 </details>

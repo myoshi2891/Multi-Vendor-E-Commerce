@@ -40,9 +40,6 @@ test.describe("a11y: /profile", () => {
             // /profile はリダイレクトで /profile/orders などに飛ぶ可能性があるため、
             // 共通レイアウトに含まれる main ランドマークの存在で「準備完了」と判定
             readinessLocator: page.getByRole("main"),
-            // color-contrast は既知のデザイン負債。配色是正は別タスク。
-            // 追跡: docs/testing/QA_HANDOFF.md「a11y color-contrast 負債」
-            disabledRules: ["color-contrast"],
         });
     });
 });

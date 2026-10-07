@@ -159,7 +159,7 @@ test.describe.serial("在庫減算 購入フロー（F3）", () => {
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();
-        await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+        await expect(page.getByText(/Added to your bag/i)).toBeVisible({
             timeout: 5000,
         });
         await waitForCartPersist(page);

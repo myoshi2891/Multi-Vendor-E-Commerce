@@ -1,6 +1,6 @@
 # 管理者ダッシュボード 3 機能 — 設計ドキュメント
 
-> **このディレクトリの入口**。`docs/unimplemented-screens-plan.md`「A. 管理者ダッシュボード」に挙がった 3 つの未実装画面を、後続セッション（Sonnet 可）が **迷わず実装できる粒度** で設計したものです。
+> **このディレクトリの入口**。`docs/archive/unimplemented-screens-plan.md`「A. 管理者ダッシュボード」に挙がった 3 つの未実装画面を、後続セッション（Sonnet 可）が **迷わず実装できる粒度** で設計したものです。
 
 ---
 
@@ -90,7 +90,7 @@ Phase 5: F3-第2段 platform-wide 発行（safe-migration / 破壊的 / 決済�
 | 種別 | パス | 関連内容 |
 | --- | --- | --- |
 | プラン原本 | `sonnet-docs-a-quirky-meteor.md`（リポジトリ未追跡・ローカル限定。`.gitignore` で意図的に除外） | 本設計群の入力（メタ仕様）。共有リポジトリには含めないため、参照は各自のローカル作業ツリーでのみ有効 |
-| 未実装画面一覧 | [docs/unimplemented-screens-plan.md](../../unimplemented-screens-plan.md) | 「A. 管理者ダッシュボード」 |
+| 未実装画面一覧 | [docs/archive/unimplemented-screens-plan.md](../../archive/unimplemented-screens-plan.md) | 「A. 管理者ダッシュボード」 |
 | 認可ガード規約 | [.claude/steering/tech.md](../../../.claude/steering/tech.md) | "認可ガード" 項（`requireAdmin` 必須） |
 | 動的レンダリング規約 | [.claude/steering/tech.md](../../../.claude/steering/tech.md) | DB 依存ページは `force-dynamic` |
 | TDD・コミット規律 | [.claude/rules/02-tdd-step-commit.md](../../../.claude/rules/02-tdd-step-commit.md) | Red→Green→Refactor・コミット粒度 |

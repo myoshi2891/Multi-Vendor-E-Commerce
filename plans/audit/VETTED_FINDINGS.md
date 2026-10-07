@@ -63,7 +63,7 @@
 | 18 | PERF-01 cart/checkout の per-item N+1（product+shipping+country） | perf | N アイテムで 3N〜4N 往復 | M | MED | HIGH | `user.ts:124,449,799,996` |
 | 19 | PERF-05 参照データ（categories/countries/offer tags）のキャッシュ化 | perf | 全 force-dynamic ページで再クエリ | S–M | LOW-MED | HIGH | `category.ts:99`, `country.ts:7`, `offer-tag.ts:98` |
 | 20 | SECURITY-05 index-products が生 `error.message` を返す | security | 内部/Prisma エラー詳細の開示 | S | LOW | MED | `index-products/route.ts:134,403` |
-| 21 | DX-02 stale doc `unimplemented-screens-plan.md` の退役 | docs | 出荷済み作業を再スケジュールし得る | S | LOW | HIGH | `docs/unimplemented-screens-plan.md` |
+| 21 | DX-02 stale doc `unimplemented-screens-plan.md` の退役 | docs | 出荷済み作業を再スケジュールし得る | S | LOW | HIGH | `docs/archive/unimplemented-screens-plan.md` |
 | 22 | DX-03/04 README env 変数リスト補完 + `.env.example` 追加 | dx | オンボーディング時に部分起動 | S | LOW | HIGH | `README.md:486-496`, `.gitignore` |
 | 23 | DX-01 CI 依存/Prisma/ビルドキャッシュ追加（=PERF-09） | dx | 全 CI 実行で回避可能な時間浪費 | S | LOW | HIGH | `.github/workflows/ci.yml` |
 | 24 | DEPS-04 Prisma 5.22 → 6.x メジャーラグ（spike） | migration | サポート窓外へ | M | MED | MED | `package.json:24,135` |

@@ -950,3 +950,11 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - overview/data-modelと既存画面の業務設計は契約不変のため変更不要。関連requirements/architecture/interfaces/testing、cart/checkout仕様、画面別受け入れ、計画/QA/テスト計画を同期。[次の実受け入れ](../../testing/QA_HANDOFF.md#ds-purchase-six2026-10-06)。
 
 最終全体Jest: 2916 passed / 2919 total、3 skipped、127 snapshots passed、301 スイート（300 passed／1 skipped、failed 0）。Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。dashboard375 files/387 lcov/18 of 80 cells。計画・共通UI・6画面・最終同期の9段階コミット。
+
+## OI-10 color-contrast 是正（2026-10-07・plan 084、未コミット）
+
+- [計画](../../../plans/084-fix-a11y-color-contrast-oi10.md)。対象: DS-PAGE-006 Browse・DS-PAGE-019 Product の CSS Module 配色のみ。画面の状態分類は変更しない。
+- **Red**: E2E a11y 6 spec の `disabledRules:["color-contrast"]` を解除し、Chromium で `/browse` 6 ノード・`/product` 22 ノードの color-contrast 違反を実測（クリーム背景 `#f2f0e9`〜`#f8f7f2` 上のゴールド/セージ系の小さい文字、比 2.36〜4.47）。`/checkout`・`/profile`・`/seller/apply`・`/cart` は違反 0（移行時点で解消済み）。
+- **Green**: `browse.module.css`・`product.module.css` の該当ルールの文字色だけを、色相・彩度を保ったまま明度を下げた色へ置換（最も暗い淡色背景 `#edf0e8` 比 4.6:1 以上、`.catalogIntro h2 em` は大きな見出しなので 3:1 以上）。ヒーロー（ダーク背景）と共有の `.eyebrow` は変えず、`.catalogIntro .eyebrow` で上書き。グローバルトークンは変更なし。
+- 検証: Chromium a11y 7/7 pass（抑制なし。checkout/profile は Docker DB 接続でテスト実行）、関連 Jest 23/23（5 suites）、tsc exit0、lint 0 errors／8 warnings。1440／390px の Browse・Product をスクリーンショットで確認し、配色の印象（ゴールド/セージ）を維持。
+- 仕様: 配色の微調整で要件・インターフェース・ワークフローの変更はないため `specs/` は変更不要。全体 Jest／coverage 統計は部分実行のため更新しない。

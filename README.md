@@ -485,16 +485,51 @@ make logs         # http://localhost:3000
 
 ### 必要な環境変数
 
+ホスト上で `bun run dev` する場合は、テンプレートをコピーして値を埋める（`.env*.local` は `.gitignore` 対象）:
+
+```bash
+cp .env.example .env.local
+```
+
 ```env
-DATABASE_URL=                    # Prisma Accelerate 接続 URL
-DIRECT_URL=                      # マイグレーション用の直接 PostgreSQL URL
+# --- Database (Prisma + Accelerate) ---
+DATABASE_URL=                       # Prisma Accelerate 接続 URL
+DIRECT_URL=                         # マイグレーション用の直接 PostgreSQL URL
+
+# --- Clerk (auth) ---
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
 CLERK_SECRET_KEY=
-WEBHOOK_SECRET=                  # Clerk Webhook 署名
+WEBHOOK_SECRET=                     # Clerk Webhook 署名 (Svix)
+# 任意 (未設定なら Clerk の既定値)。src/ は参照せず Clerk がライブラリ設定として読む。
+# 下記 3 つは Clerk の既定値と同一だが、既定値の変更に依存しないよう明示的にピンする。
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+
+# --- Stripe ---
 STRIPE_SECRET_KEY=
 NEXT_PUBLIC_STRIPE_PUBLIC_KEY=
+STRIPE_WEBHOOK_SECRET=              # Stripe Webhook 署名検証
+
+# --- PayPal ---
 PAYPAL_SECRET=
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=
+PAYPAL_API_BASE=https://api-m.sandbox.paypal.com   # 本番は https://api-m.paypal.com
+PAYPAL_WEBHOOK_ID=
+
+# --- Cloudinary (画像) ---
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
+NEXT_PUBLIC_CLOUDINARY_PRESET_NAME=
+
+# --- Rate limit (ADR-009) ---
+# 任意。cookie 書き込み API の 1 分あたり上限（IP ごと・インスタンスごと）。未設定なら 5
+# 制限はリクエストに x-real-ip ヘッダーがある場合にのみ掛かる（環境は問わない）。ヘッダーの無いリクエスト
+# （ローカル / CI など）は制限しない（fail-open）
+RATE_LIMIT_COOKIE_PER_MIN=
+
+# --- その他 ---
+IPINFO_TOKEN=                       # 地域判定 (userCountry)
+NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000
 ```
 
 ### 主な開発コマンド

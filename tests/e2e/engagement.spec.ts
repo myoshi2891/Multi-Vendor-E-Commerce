@@ -110,20 +110,23 @@ test.describe("顧客エンゲージメント導線", () => {
         await gotoStable(page, productUrl);
         await waitForClerkLoaded(page);
 
-        // StoreCard は商品詳細ページに描画される。フォロー要素はキーボード操作可能な
-        // `<button type="button">`（store-card.tsx）なので role で取る。
+        // 商品詳細ページは StoreCard の editorial 版を描画する（d3e87f64）。フォロー要素は
+        // キーボード操作可能な `<button type="button">`（store-card.tsx）なので role で取る。
         const followControl = page.getByRole("button", {
-            name: "Follow",
+            name: "Follow boutique",
             exact: true,
         });
         await expect(followControl).toBeVisible({ timeout: 15000 });
 
         // Followers 数はクリック前に読んでおき、+1 されることを確認する。
-        const followersCount = page.locator("strong", {
-            hasText: /^\d+$/,
-        });
+        // editorial 版は `<span>N followers</span>` で表示する。
+        const followersCount = page
+            .getByRole("region", { name: `About ${seed.store.name}` })
+            .getByText(/^\d+ followers$/);
         const before = Number(
-            (await followersCount.first().textContent())?.trim()
+            /^(\d+) followers$/.exec(
+                (await followersCount.textContent())?.trim() ?? ""
+            )?.[1]
         );
         expect(Number.isFinite(before)).toBe(true);
 
@@ -135,7 +138,7 @@ test.describe("顧客エンゲージメント導線", () => {
         await expect(
             page.getByRole("button", { name: "Following", exact: true })
         ).toBeVisible();
-        await expect(followersCount.first()).toHaveText(String(before + 1));
+        await expect(followersCount).toHaveText(`${before + 1} followers`);
 
         await gotoStable(page, "/profile/following/1");
         await expect(
@@ -157,7 +160,7 @@ test.describe("顧客エンゲージメント導線", () => {
             page.getByText(`You unfollowed ${seed.store.name}`)
         ).toBeVisible({ timeout: 10000 });
         await expect(
-            page.getByRole("button", { name: "Follow", exact: true })
+            page.getByRole("button", { name: "Follow boutique", exact: true })
         ).toBeVisible();
     });
 

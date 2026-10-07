@@ -2,7 +2,7 @@
 
 > サポート系フォーム画面群（`/contact` / `/returns-exchange` / `/dispute` / `/report-problem`）。
 > 単一の `SupportTicket` Prisma モデルに統合し、1 本の server action `createSupportTicket(input)`（`input.category` で 4 種を識別）で受ける。
-> 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」優先度=高（contact）〜低。
+> 出典: [`docs/archive/unimplemented-screens-plan.md`](../../archive/unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」優先度=高（contact）〜低。
 
 ---
 

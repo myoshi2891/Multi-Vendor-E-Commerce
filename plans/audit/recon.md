@@ -143,7 +143,7 @@
 
 ## Direction（将来機能）の根拠ソース
 
-- `docs/unimplemented-screens-plan.md` — ただし**一部 stale**: seller/admin ダッシュボードトップ・profile settings/messages・track-order・support-forms・offers・compare・静的ページ群は 2026-06 に実装済み（QA_HANDOFF 参照）。
+- `docs/archive/unimplemented-screens-plan.md` — ただし**一部 stale**: seller/admin ダッシュボードトップ・profile settings/messages・track-order・support-forms・offers・compare・静的ページ群は 2026-06 に実装済み（QA_HANDOFF 参照）。
   **残り候補だったもの: `/dashboard/admin/orders`・`/dashboard/admin/coupons`・seller inventory**
   > **追記（後続ラウンドの確認結果と同期）**: この 3 画面は
   > [`findings-08-direction.md`](findings-08-direction.md) 起票時の再監査で
@@ -151,7 +151,7 @@
   > （admin coupons は `src/app/dashboard/admin/coupons/` が存在し、
   > admin 専用 CRUD `getAllCoupons` / `upsertCouponAsAdmin` / `deleteCouponAsAdmin` /
   > `toggleCouponActive` が揃っている — [`findings-10-direction-operations-growth.md`](findings-10-direction-operations-growth.md) 参照）。
-  > → **「残り候補」は現存しない**。`docs/unimplemented-screens-plan.md` は
+  > → **「残り候補」は現存しない**。`docs/archive/unimplemented-screens-plan.md` は
   > **全体が stale** であり、**DX-02（stale doc 退役）の退役対象**として
   > plan 011 で扱う（[`findings-07-dx-docs.md`](findings-07-dx-docs.md) DX-02）。
   > 本行を「未実装画面の一覧」として参照しないこと。

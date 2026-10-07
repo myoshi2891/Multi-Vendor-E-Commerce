@@ -1,3 +1,10 @@
+> **SUPERSEDED (2026-10): すべてのルートは実装済み（ルート単位）。** この計画書に列挙された未実装画面
+> （admin orders/coupons、seller inventory、dashboard トップ、profile settings/messages、
+> track-order、support-forms、offers、compare、静的ページ群）のルートは 2026-06 までに実装された
+> （2026-10-07 に全 20 ルートの `page.tsx` 実在を再確認・plans/011）。
+> ただし `/legal` と `/product-support` の本文はプレースホルダのままで、正式文面への差し替えが未完了。
+> 未解決の作業がある場合は specs/multi-vendor-ecommerce/08-open-questions.md を参照。
+
 # 未実装画面の洗い出しと開発計画 (Next Tasks Plan)
 
 本プロジェクト（マルチベンダーEコマース）において、画面上にリンクや導線が定義されているものの、実際にはルートディレクトリやページファイル（`page.tsx`）が存在しない、あるいはプレースホルダーのままになっている画面を洗い出しました。これらを今後の開発タスクとして整理し、計画を提示します。
@@ -23,33 +30,33 @@
 
 ### C. 顧客アカウント・メニュー (Profile / Customer Menu)
 
-> 📐 設計書あり: [`docs/design/profile-messages/`](./design/profile-messages/) / [`docs/design/profile-settings/`](./design/profile-settings/)（Sonnet 実装可能な詳細設計・TDD タスク・SKILL シーケンス）。
+> 📐 設計書あり: [`docs/design/profile-messages/`](../design/profile-messages/) / [`docs/design/profile-settings/`](../design/profile-settings/)（Sonnet 実装可能な詳細設計・TDD タスク・SKILL シーケンス）。
 
 | リンク/ルート       | 現状                                                                                                  | 必要な機能・説明                                                                                   | 優先度 |
 | ------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------ |
-| `/profile/messages` | **ディレクトリ未作成**<br>（ユーザーメニューにリンクあり）<br>📐 [設計書](./design/profile-messages/) | 購入者と販売者、または運営サポートとの間でメッセージのやり取りを行うチャット・メッセージ画面。     | 中     |
-| `/profile/settings` | **ルート未定義**<br>（ユーザーメニューで `/` にリンク）<br>📐 [設計書](./design/profile-settings/)    | 会員情報（メールアドレス、氏名）の編集、パスワード変更、多要素認証設定、およびアカウント削除機能。 | 中     |
+| `/profile/messages` | **ディレクトリ未作成**<br>（ユーザーメニューにリンクあり）<br>📐 [設計書](../design/profile-messages/) | 購入者と販売者、または運営サポートとの間でメッセージのやり取りを行うチャット・メッセージ画面。     | 中     |
+| `/profile/settings` | **ルート未定義**<br>（ユーザーメニューで `/` にリンク）<br>📐 [設計書](../design/profile-settings/)    | 会員情報（メールアドレス、氏名）の編集、パスワード変更、多要素認証設定、およびアカウント削除機能。 | 中     |
 
 ### D. 静的ページ・補助画面・カスタマーサービス (Storefront Support & Policies)
 
 これらの画面は、フッター（`Footer`）やユーザーメニュー（`UserMenu`）のリスト内に定義されていますが、リンク先が空文字（`""`）であるか、トップページ（`/`）にフォールバック、あるいはディレクトリが存在しない状態です。
 
-> 📐 設計書あり: アーキタイプ別に 5 フォルダへ集約（各画面は design.md 内の個別セクションで詳述）。[`storefront-static-pages`](./design/storefront-static-pages/)（about / legal / faq+faqs / customer-service / product-support）/ [`support-forms`](./design/support-forms/)（contact / returns-exchange / dispute / report-problem・統合 `SupportTicket` モデル）/ [`track-order`](./design/track-order/) / [`compare`](./design/compare/) / [`offers`](./design/offers/)。いずれも Sonnet 実装可能な詳細設計・TDD タスク・SKILL シーケンスを含む。
+> 📐 設計書あり: アーキタイプ別に 5 フォルダへ集約（各画面は design.md 内の個別セクションで詳述）。[`storefront-static-pages`](../design/storefront-static-pages/)（about / legal / faq+faqs / customer-service / product-support）/ [`support-forms`](../design/support-forms/)（contact / returns-exchange / dispute / report-problem・統合 `SupportTicket` モデル）/ [`track-order`](../design/track-order/) / [`compare`](../design/compare/) / [`offers`](../design/offers/)。いずれも Sonnet 実装可能な詳細設計・TDD タスク・SKILL シーケンスを含む。
 
 | リンク/ルート                                              | 現状                                                                                              | 必要な機能・説明                                                               | 優先度 |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------ |
-| `/about`                                                   | ディレクトリ未作成<br>📐 [設計書](./design/storefront-static-pages/)                              | 運営会社情報、プラットフォームの紹介などの静的情報ページ。                     | 低     |
-| `/contact`                                                 | ディレクトリ未作成<br>📐 [設計書](./design/support-forms/)                                        | ユーザーから運営へのお問い合わせフォーム。                                     | 高     |
-| `/compare`                                                 | ディレクトリ未作成<br>📐 [設計書](./design/compare/)                                              | 複数商品のスペックや価格をグリッド形式で並べて比較する機能画面。               | 低     |
-| `/faq` / `/faqs`                                           | ディレクトリ未作成<br>📐 [設計書](./design/storefront-static-pages/)                              | よくある質問（FAQ）の一覧・検索ページ。                                        | 低     |
-| `/track-order`                                             | ディレクトリ未作成<br>📐 [設計書](./design/track-order/)                                          | 注文番号とメールアドレスを入力して、配送状況を追跡する画面。                   | 中     |
-| `/customer-service`                                        | ディレクトリ未作成<br>📐 [設計書](./design/storefront-static-pages/)                              | ヘルプセンター、お問い合わせ、返品などのサポート窓口の総合ポータル。           | 低     |
-| `/returns-exchange`<br>（または `Return & Refund Policy`） | ディレクトリ未作成<br>（ユーザーメニューで `/` にリンク）<br>📐 [設計書](./design/support-forms/) | 返品・交換ポリシーの規約ページ。および返品リクエストフォーム。                 | 中     |
-| `/product-support`                                         | ディレクトリ未作成<br>📐 [設計書](./design/storefront-static-pages/)                              | 購入後の商品に関する技術サポートやトラブルシューティング情報。                 | 低     |
-| `Legal & Privacy`（`/legal`など）                          | リンク空文字<br>📐 [設計書](./design/storefront-static-pages/)                                    | 利用規約、特定商取引法に基づく表記、プライバシーポリシーなどの法的文書ページ。 | 中     |
-| `Discounts & Offers`（`/offers`など）                      | リンク空文字<br>📐 [設計書](./design/offers/)                                                     | プラットフォーム全体で実施中のキャンペーンや割引対象商品の一覧ページ。         | 低     |
-| `Order Dispute Resolution`（`/dispute`）                   | リンク空文字<br>📐 [設計書](./design/support-forms/)                                              | 注文に関するトラブル（商品未着、破損など）の紛争解決手続きと申請フォーム。     | 低     |
-| `Report a Problem`（`/report-problem`）                    | リンク空文字<br>📐 [設計書](./design/support-forms/)                                              | バグ報告やガイドライン違反ユーザーの通報フォーム。                             | 低     |
+| `/about`                                                   | ディレクトリ未作成<br>📐 [設計書](../design/storefront-static-pages/)                              | 運営会社情報、プラットフォームの紹介などの静的情報ページ。                     | 低     |
+| `/contact`                                                 | ディレクトリ未作成<br>📐 [設計書](../design/support-forms/)                                        | ユーザーから運営へのお問い合わせフォーム。                                     | 高     |
+| `/compare`                                                 | ディレクトリ未作成<br>📐 [設計書](../design/compare/)                                              | 複数商品のスペックや価格をグリッド形式で並べて比較する機能画面。               | 低     |
+| `/faq` / `/faqs`                                           | ディレクトリ未作成<br>📐 [設計書](../design/storefront-static-pages/)                              | よくある質問（FAQ）の一覧・検索ページ。                                        | 低     |
+| `/track-order`                                             | ディレクトリ未作成<br>📐 [設計書](../design/track-order/)                                          | 注文番号とメールアドレスを入力して、配送状況を追跡する画面。                   | 中     |
+| `/customer-service`                                        | ディレクトリ未作成<br>📐 [設計書](../design/storefront-static-pages/)                              | ヘルプセンター、お問い合わせ、返品などのサポート窓口の総合ポータル。           | 低     |
+| `/returns-exchange`<br>（または `Return & Refund Policy`） | ディレクトリ未作成<br>（ユーザーメニューで `/` にリンク）<br>📐 [設計書](../design/support-forms/) | 返品・交換ポリシーの規約ページ。および返品リクエストフォーム。                 | 中     |
+| `/product-support`                                         | ディレクトリ未作成<br>📐 [設計書](../design/storefront-static-pages/)                              | 購入後の商品に関する技術サポートやトラブルシューティング情報。                 | 低     |
+| `Legal & Privacy`（`/legal`など）                          | リンク空文字<br>📐 [設計書](../design/storefront-static-pages/)                                    | 利用規約、特定商取引法に基づく表記、プライバシーポリシーなどの法的文書ページ。 | 中     |
+| `Discounts & Offers`（`/offers`など）                      | リンク空文字<br>📐 [設計書](../design/offers/)                                                     | プラットフォーム全体で実施中のキャンペーンや割引対象商品の一覧ページ。         | 低     |
+| `Order Dispute Resolution`（`/dispute`）                   | リンク空文字<br>📐 [設計書](../design/support-forms/)                                              | 注文に関するトラブル（商品未着、破損など）の紛争解決手続きと申請フォーム。     | 低     |
+| `Report a Problem`（`/report-problem`）                    | リンク空文字<br>📐 [設計書](../design/support-forms/)                                              | バグ報告やガイドライン違反ユーザーの通報フォーム。                             | 低     |
 
 ---
 

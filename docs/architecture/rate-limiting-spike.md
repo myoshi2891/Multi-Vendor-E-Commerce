@@ -1,7 +1,7 @@
 # Rate-limiting design spike for public endpoints
 
-- **Status**: Design ready for maintainer decision
-- **Date**: 2026-07-16
+- **Status**: Decided — see [ADR-009](decisions/009-public-endpoint-rate-limiting.md) (2026-10-07)
+- **Date**: 2026-07-16 (maintainer answers and drift re-check added 2026-10-07)
 - **Related plan**: [`plans/025-spike-rate-limit-public-endpoints.md`](../../plans/025-spike-rate-limit-public-endpoints.md)
 
 ## Problem and surface
@@ -51,8 +51,25 @@ unrelated `@prisma/extension-accelerate`; Prisma Accelerate over Neon provides
 connection pooling and has its own limits, but it is not a request-level
 rate-limiter.
 
-The runtime is Next.js 16 App Router and the documented deployment model is
-Vercel-style serverless.  Consequently, process-local state is not shared by
+### Re-check on 2026-10-07 (before the maintainer decision)
+
+The same drift command against HEAD `7edcb20b` is **no longer empty**: 13 files
+under `src/app/api` and `next.config.mjs` changed (864 insertions, 191
+deletions) since `78397dc`.  The changes harden existing handlers (plan 023
+bounds the `index-products` `GET` `limit` to 50 with `normalizePositiveIntParam`;
+plan 024 validates the cookie write with `isCountry` and a 100-character field
+cap; plan 061 adds response headers in `next.config.mjs`; plan 062 stops leaking
+search error messages).  **The route set is unchanged**: `find` still lists the
+same six handlers, no new unauthenticated route was added, and
+`grep -rniE "ratelimit|rate-limit|upstash|throttle" src` still returns no
+matches.  The surface table above remains accurate.
+
+The runtime is Next.js 16 App Router.  The production deployment target is
+**Vercel** (app) + Neon (DB); the evidence is
+[`docs/development/docker-dev.md`](../development/docker-dev.md) line 6
+("本番 (Vercel + Neon)"), confirmed by the maintainer on 2026-10-07.  The Docker
+stack in the repository is local development only.  The deployment model is
+therefore Vercel serverless.  Consequently, process-local state is not shared by
 serverless instances.  Any design that relies only on memory is not a global
 limit when the platform scales out.
 
@@ -394,9 +411,31 @@ the implementation plan.  This spike is not itself that decision.
 5. What search and cookie-write quotas/bursts are acceptable after considering
    expected traffic and plan 023's pagination bound?
 
-No follow-up implementation plan has been created.  Plan 025 requires these
-answers before an implementation option, limits, or dependencies can be
-selected.
+### Maintainer answers (2026-10-07)
+
+1. **Scope**: in scope for the current phase, **within free tiers only**.
+2. **Option**: **C + A**.  The two search routes use one Vercel WAF rate-limit
+   rule; the Hobby plan allows one rule per project with Fixed Window only.  The
+   cookie-write route uses an in-memory Fixed Window limiter in the application.
+   That limiter is per instance and is explicitly a secondary safety net, not a
+   global guarantee.  Option B (Upstash) is not adopted; on the free tier it
+   allows about 250k checks per month (500k commands per month at roughly two
+   commands per check).
+3. **Failure behavior**: **fail-open**.  If the client IP is unavailable or the
+   limiter cannot decide, the request passes and a structured warning is logged.
+4. **Hosting and client-IP contract**: Vercel.  The WAF rule keys on the
+   platform-derived client IP.  The application limiter trusts only the
+   platform-set `x-real-ip` header and never the raw `x-forwarded-for` value.
+   When `x-real-ip` is absent (local, Docker, CI), the request is not limited.
+5. **Quotas** (the stricter set): search **30 requests per minute per IP** (WAF
+   rule); cookie write **5 requests per minute per IP** (application, can be
+   overridden with `RATE_LIMIT_COOKIE_PER_MIN`).
+
+Recorded in [ADR-009](decisions/009-public-endpoint-rate-limiting.md); the
+implementation plan is
+[`plans/085`](../../plans/085-implement-public-endpoint-rate-limit.md).
+Re-evaluate when the project moves to a commercial launch: the Hobby plan is
+for non-commercial use only, and the Pro plan relaxes the one-rule constraint.
 
 ## Verification performed
 

@@ -11,13 +11,13 @@
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-06実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-07実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2919 passed / 2922 total、3 skipped、127 snapshots passed、302 スイート（301 passed／1 skipped、failed 0）** — 2026-10-06 購入導線レビュー指摘対応後の全体実測。Integration222／17 suitesは既存実測を維持。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
-| Jest Integration テスト | **222テスト / 17スイート** — 2026-10-04実測を維持（今回未実行）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
+| Jestユニットテスト | **2942 passed / 2945 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）** — 2026-10-07 plan 085（レート制限）後の全体実測。Integration225／17 suitesは2026-10-07実測（plan 082 レビュー対応後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jest Integration テスト | **225テスト / 17スイート** — 2026-10-07実測（plan 082 レビュー対応後・225/225 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |
@@ -5320,4 +5320,81 @@ home/browse/product/store/cart/checkoutの共通header、検索/国選択、sort
 |------|--------|--------|
 | テスト総数 | 2916 passed / 2919 total | **2919 passed / 2922 total** |
 | スイート数 | 301 | **302** |
+| 型エラー | 0 件 | **0 件** |
+
+### [plan 082](../plans/082-fix-stale-e2e-selectors-and-migration-edit.md): E2E セレクター追従 + 適用済みマイグレーション編集の是正 (2026-10-07)
+
+plan 081 で「既存の失敗」とされた E2E 7 件の原因は、デザイン移行（`d3e87f64` / `21924e9d`）の文言・構造変更に E2E が追従していなかったこと。あわせて、適用済みマイグレーションを `0ffb72b8` で編集していた件を、元の版への復元と補正マイグレーションの新設で是正した（未コミット）。
+
+| 対象 | 変更内容 |
+|------|---------|
+| `prisma/migrations/20260901223148_category_tree_phase_b_resync/` | `5c4b2501` の内容へ復元（チェックサムを適用済み DB と一致させる） |
+| `prisma/migrations/20261007120000_category_tree_resync_url_swap/` | 一時退避付きの再同期を補正として新設（`RESYNC_URL_SWAP` 区間） |
+| `tests/integration/category-tree-resync.test.ts` | url 交換テストを補正区間へ移設、冪等性 +1 |
+| `tests/e2e/*.spec.ts`（7 ファイル） | トースト・フォローボタン・注文詳細・住所エラーの各セレクターを現行 UI へ |
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Integration | 222 / 17 | **223 / 17** |
+| Jest | 2919 passed / 2922 total | **2919 passed / 2922 total** |
+| 型エラー | 0 件 | **0 件** |
+
+#### plan 082 追補: OI-17 / OI-18 (2026-10-07)
+
+未認証の `/checkout` を `/cart` ではなくサインインへ送るよう、`checkout/page.tsx` を `auth()` + `redirectToSignIn()` へ変更（OI-17、RTL +2・Red 確認済み）。profile E2E の国 fixture が `Country.name` の UNIQUE に衝突していた件は、seed の project 別の国を選ぶ形に変更（OI-18）。いずれも未コミット。
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2919 passed / 2922 total・302 スイート | **2921 passed / 2924 total・303 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 083: seller 商品フォームの SSR `self is not defined`（OI-11）(2026-10-07)
+
+完了したプラン: [plans/083-fix-seller-ssr-jodit-self.md](../plans/083-fix-seller-ssr-jodit-self.md)
+
+OI-11 の原因は推定されていた `next-cloudinary` の `CldUploadWidget` ではなく、`product-details.tsx` が静的 import していた `jodit-react` だった（UMD がモジュール評価時に `self` を参照）。`next/dynamic` の `ssr: false` で読み込むよう変更した（未コミット）。
+
+| 対象 | 変更内容 |
+|------|---------|
+| `src/components/dashboard/forms/product-details.tsx` | `jodit-react` を `dynamic(() => import("jodit-react"), { ssr: false })` へ |
+| `tests/component/dashboard/product-details-ssr.test.tsx` | 新設。`self` の無い node 環境で import できることを固定（Red: `self is not defined`） |
+| `tests/component/dashboard/product-details.test.tsx` | エディタの取得を `findByTestId` へ（動的 import は非同期に解決） |
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2921 passed / 2924 total・303 スイート | **2922 passed / 2925 total・304 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 085: 公開エンドポイントのレート制限（ADR-009）(2026-10-07)
+
+plan 025（spike）のゲートをメンテナー回答で通過し、ADR-009 を Accepted にした（検索 = Vercel WAF の rule 1 本・30 回/分、cookie 書き込み = アプリ内インメモリ 5 回/分、fail-open）。アプリ側を TDD で実装（未コミット）。WAF ルールの設定はオペレーター作業として残る。
+
+| 対象 | 変更内容 |
+|------|---------|
+| `src/lib/rate-limit.ts` | 新設。Fixed Window limiter（`maxKeys` で古いキーを捨てる）+ `parseLimitEnv` |
+| `src/app/api/setUserCountryInCookies/route.ts` | `x-real-ip` のみをキーに判定、超過時 429 + `Retry-After`（IP はログに出さない） |
+| `src/lib/rate-limit.test.ts` / `route.test.ts` | +14 / +5（Red 確認済み） |
+| `.env.example` | `RATE_LIMIT_COOKIE_PER_MIN` を追記 |
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2922 passed / 2925 total・304 スイート | **2941 passed / 2944 total・305 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 085 レビュー対応 (2026-10-07)
+
+`setUserCountryInCookies` の判定を `rateLimitResponse` ヘルパーへ抽出（POST の認知的複雑度を削減）し、Vercel 上で `x-real-ip` が欠落したときだけ IP を含まない構造化警告を出すようにした（fail-open は不変）。あわせて README・plan 081/085・audit DX-02・COVERAGE_REPORT のレビュー指摘を反映（未コミット）。
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2941 passed / 2944 total・305 スイート | **2942 passed / 2945 total・305 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 082 レビュー対応: url 交換後の子孫 path 付け替え (2026-10-07)
+
+`_category_tree_resync_url_swap` は url が変わった depth 1 ノードの子孫（depth 2 以上）の path を書き換えておらず、子孫がサブツリー検索から落ちる状態だった。適用済みマイグレーションは編集できないため、補正 `20261007130000_category_tree_rebase_descendant_paths` を新設した（未コミット・**本番は `bunx prisma migrate deploy` での適用が必要**）。
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Integration | 223 / 17 スイート | **225 / 17 スイート** |
 | 型エラー | 0 件 | **0 件** |

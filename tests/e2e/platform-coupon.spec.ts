@@ -156,7 +156,7 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();
-        await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+        await expect(page.getByText(/Added to your bag/i)).toBeVisible({
             timeout: 5000,
         });
         await waitForCartPersist(page);
@@ -166,7 +166,7 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         await page.locator('[data-testid^="size-option-"]').first().click();
         await page.waitForURL(/.*\?size=.*/, { timeout: 5000 });
         await page.getByTestId("add-to-cart").click();
-        await expect(page.getByText(/Product added to cart/i)).toBeVisible({
+        await expect(page.getByText(/Added to your bag/i)).toBeVisible({
             timeout: 5000,
         });
         await waitForCartPersist(page);
@@ -194,10 +194,19 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         await page.waitForURL(/\/order\//, { timeout: 15000 });
 
         // 両ストアの OrderGroup が存在し、それぞれにクーポン割引が反映されていることを確認
-        await expect(page.locator("p", { hasText: "Order Id:" })).toHaveCount(2);
-        const couponRows = page.locator("p", {
-            hasText: `Coupon (${seed.platformCoupon.code})`,
-        });
+        // グループは `<article aria-label="Order group <id>">`、明細は `<dl>` の
+        // dt（ラベル）/ dd（金額）で描画される（group-table.tsx・21924e9d）。
+        const groups = page.getByRole("article", { name: /^Order group / });
+        await expect(groups).toHaveCount(2);
+
+        /** グループ内で、ラベルが一致する dt に対応する dd（金額）を返す。 */
+        const amountRows = (label: string): Locator =>
+            groups
+                .locator("dl > div")
+                .filter({ has: page.locator("dt", { hasText: label }) })
+                .locator("dd");
+
+        const couponRows = amountRows(`Coupon (${seed.platformCoupon.code})`);
         await expect(couponRows).toHaveCount(2);
 
         // --- 金額明細の検証（TESTS-31）---------------------------------------
@@ -205,9 +214,9 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
         // (3) 全体合計との一致 を検証する。比較はセント整数の完全一致（許容誤差なし）。
 
         // (1) 構造: グループ毎の明細行が 2 グループ分そろっている
-        const subtotalRows = page.locator("p", { hasText: "Subtotal:" });
-        const shippingRows = page.locator("p", { hasText: "Shipping Fees:" });
-        const totalRows = page.locator("p", { hasText: "Total price:" });
+        const subtotalRows = amountRows("Subtotal");
+        const shippingRows = amountRows("Shipping Fees");
+        const totalRows = amountRows("Total price");
         await expect(subtotalRows).toHaveCount(2);
         await expect(shippingRows).toHaveCount(2);
         await expect(totalRows).toHaveCount(2);
@@ -229,9 +238,9 @@ test.describe.serial("PLATFORM クーポン購入フロー", () => {
 
         // (3) 全体合計カード（cards/order/total.tsx）。
         // 決済待ちの注文では左カラムと支払いカラムの 2 箇所に描画されるため first() を使う。
-        // 値の p は金額列のみが `$` を含むので、ラベル列と機械的に分離できる。
+        // 金額は dd にだけ入るので、ラベル（dt）と機械的に分離できる。
         const totalCard = page.getByTestId("order-total").first();
-        const totalCardAmounts = totalCard.locator("p").filter({ hasText: "$" });
+        const totalCardAmounts = totalCard.locator("dd");
         // Subtotal / Shipping Fee / Taxes / Total の 4 行
         await expect(totalCardAmounts).toHaveCount(4);
 

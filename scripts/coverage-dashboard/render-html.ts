@@ -292,16 +292,9 @@ const NEXT_ACTIONS: readonly NextAction[] = [
     //  QA_HANDOFF.md の 067-B 節)。いずれもテストタスクではないため
     // NEXT_ACTIONS には載せない。
     // 2026-10-03 セッション（plans 073〜076）の残作業と、実施中に見つけた既存の問題。
-    // QA_HANDOFF「次回着手用 依頼プロンプト」の FS-COMMIT / OI-13 / FS-CHIPS / OI-14 /
+    // QA_HANDOFF「次回着手用 依頼プロンプト」の OI-13 / FS-CHIPS / OI-14 /
     // E2E-AUTH / PRICE-FILTER と一対一対応（二重 SSOT）。完了時は両方から同時に削除すること。
-    {
-        priority: "high",
-        title: "FS-COMMIT: plans 073〜076 の未コミット作業をコミット分割して PR にする",
-        target: "作業ツリー全体（HEAD 86b9c786 上・マイグレーション 4 本はローカルのみ適用）",
-        tool: "git（.claude/rules/02-tdd-step-commit.md の分割規約）",
-        cost: "M",
-        impact: "サジェスト復旧・並び順の決定性・検索ベクトル・全件の価格ソート・属性ファセットを main へ届ける。PR にデプロイ時の migrate deploy 必須を明記",
-    },
+    // FS-COMMIT は PR #187（2026-10-04 マージ）で完了したため削除した。
     {
         priority: "medium",
         title: "OI-13: VRT ベースライン 3 スペック（cart / checkout / product）が空の DB で一致しない",
@@ -350,16 +343,8 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "S",
         impact: "前提だった OI-9 は解消済み (2026-06-06 c196e3d5 / 2026-07-26 に E2E で SSR 200 を実測)。計測 URL に / を追加するだけで売上導線トップを LCP/CLS/TBT で予算化できる",
     },
-    {
-        // OI-11 (2026-06-19 発見): 本番 SSR で seller ルートが ReferenceError: self
-        // is not defined。OI-9 と同族の client-only ref 問題。
-        priority: "medium",
-        title: "OI-11: seller ルートの本番 SSR クラッシュ修正",
-        target: "src/components/dashboard/.../image-upload.tsx (CldUploadWidget)",
-        tool: "next/dynamic ssr:false 遅延 import",
-        cost: "S",
-        impact: "/dashboard/seller 系の本番 SSR ReferenceError: self を解消",
-    },
+    // OI-11（seller ルートの SSR `self is not defined`）は 2026-10-07 に plan 083 で解消したため削除した。
+    // 原因は CldUploadWidget ではなく jodit-react の UMD。QA_HANDOFF の同名プロンプトも同時に削除。
     // 073〜076（plan 015 ファセット検索の後続）は 2026-10-03 に実装完了（未コミット）のため削除した。
     // QA_HANDOFF「次回着手用 依頼プロンプト」の 073〜076 も同時に削除済み（二重 SSOT）。
     // 実施中に見つけた既存の問題は OI-13（VRT 3 スペックのベースラインが DB の状態に依存）と
@@ -372,6 +357,7 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         cost: "S",
         impact: "絞り込みと表示・価格ソートの意味を一致させる（08-open-questions の解消）",
     },
+    // DEP-PRISMA6（plans/081）は 2026-10-06 に完了したため削除した（QA_HANDOFF の同名プロンプトも同時に削除）。
     {
         priority: "low",
         title: "Bundle Size の継続監視",
@@ -379,16 +365,6 @@ const NEXT_ACTIONS: readonly NextAction[] = [
         tool: "@next/bundle-analyzer + size-limit",
         cost: "S",
         impact: "依存追加による初期ロードの膨張を抑制",
-    },
-    {
-        // OI-10 (2026-06-19 発見): a11y color-contrast 負債。E2E では
-        // disabledRules:["color-contrast"] で追跡のため意図的に抑制中。
-        priority: "low",
-        title: "OI-10: a11y color-contrast 負債の是正",
-        target: "/checkout・/profile・/seller/apply のグレー/ブルー系テキスト",
-        tool: "配色是正 + runA11yScan の disabledRules 解除",
-        cost: "S",
-        impact: "WCAG 2.1 AA 4.5:1 を満たし color-contrast 抑制を撤去",
     },
 ];
 

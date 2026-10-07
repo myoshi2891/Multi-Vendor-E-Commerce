@@ -92,6 +92,7 @@ Round 1 の「Areas checked and found clean」に加え、本ラウンドで**�
 > **✅ spike 完了（plan 025）**: 設計文書は [`../../docs/architecture/rate-limiting-spike.md`](../../docs/architecture/rate-limiting-spike.md)。
 > spike の性質上、**レート制限の実装自体は未導入**（`ratelimit`/`upstash`/`throttle` は現 HEAD でも 0 件）。
 > 導入可否はこの設計文書の推奨に基づくメンテナ判断。
+> **2026-10-07 決定**: メンテナ回答により [ADR-009](../../docs/architecture/decisions/009-public-endpoint-rate-limiting.md)（検索 = Vercel WAF / cookie = アプリ内インメモリ・fail-open）。実装は [`../085-implement-public-endpoint-rate-limit.md`](../085-implement-public-endpoint-rate-limit.md)。
 
 - **Evidence**: `src` 全体で `ratelimit`/`upstash`/`throttle` の実装 **0 件**（grep 空）。
   未認証で重いクエリを実行する公開経路: `index-products`（POST/GET, `to_tsvector`/`plainto_tsquery`/`findMany`）・

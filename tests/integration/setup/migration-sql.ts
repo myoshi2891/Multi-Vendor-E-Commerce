@@ -7,7 +7,7 @@
  *
  * 利用者:
  * - `category-tree-migration.test.ts`（Phase A / `PHASE_A_DATA_MOVE`）
- * - `category-tree-resync.test.ts`（Phase B / `PHASE_B_RESYNC`）
+ * - `category-tree-resync.test.ts`（Phase B / `PHASE_B_RESYNC`、補正 / `ALIAS_OWNER_PRESERVE`・`RESYNC_URL_SWAP`・`REBASE_DESCENDANT_PATHS`）
  */
 
 import { readdirSync, readFileSync } from "node:fs";
