@@ -25,6 +25,21 @@ describe("ProfileSidebar", () => {
     });
 });
 
+describe("ProfileSidebar notifications (plan 086)", () => {
+    it('renders a Notifications entry pointing to "/profile/notifications"', () => {
+        // Arrange
+        mockPathname = "/profile/notifications";
+
+        // Act
+        render(<ProfileSidebar />);
+
+        // Assert
+        const link = screen.getByRole("link", { name: "Notifications" });
+        expect(link).toHaveAttribute("href", "/profile/notifications");
+        expect(link).toHaveAttribute("aria-current", "page");
+    });
+});
+
 describe("Profile account navigation", () => {
     it.each([
         "/profile",
@@ -46,13 +61,13 @@ describe("Profile account navigation", () => {
               : path;
         expect(current[0]).toHaveAttribute("href", expected);
     });
-    it("preserves all ten existing account destinations", () => {
+    it("preserves all ten existing account destinations plus Notifications (plan 086)", () => {
         mockPathname = "/profile";
         render(<ProfileSidebar />);
         expect(
             screen
                 .getByRole("navigation", { name: "Account navigation" })
                 .querySelectorAll("a")
-        ).toHaveLength(10);
+        ).toHaveLength(11);
     });
 });

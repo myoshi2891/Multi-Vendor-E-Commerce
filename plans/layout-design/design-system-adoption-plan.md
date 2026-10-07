@@ -108,6 +108,7 @@
 | `/profile/messages` | 検証済み | P2 | [src/app/(store)/profile/messages/page.tsx](<../../src/app/(store)/profile/messages/page.tsx>) |
 | `/profile/orders/[filter]` | 検証済み | P2 | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../src/app/(store)/profile/orders/[filter]/page.tsx>) |
 | `/profile/orders` | 検証済み | P2 | [src/app/(store)/profile/orders/page.tsx](<../../src/app/(store)/profile/orders/page.tsx>) |
+| `/profile/notifications` | 実装済み（2026-10-07・plan 086、認証後実ルート未確認） | P2 | [src/app/(store)/profile/notifications/page.tsx](<../../src/app/(store)/profile/notifications/page.tsx>) |
 | `/profile` | 本体適用・周辺確認 | P2 | [src/app/(store)/profile/page.tsx](<../../src/app/(store)/profile/page.tsx>) |
 | `/profile/payment` | 検証済み | P2 | [src/app/(store)/profile/payment/page.tsx](<../../src/app/(store)/profile/payment/page.tsx>) |
 | `/profile/reviews` | 検証済み | P2 | [src/app/(store)/profile/reviews/page.tsx](<../../src/app/(store)/profile/reviews/page.tsx>) |

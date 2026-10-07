@@ -34,6 +34,7 @@ model User {
   conversations     Conversation[]    @relation("UserConversations")
   messages          Message[]         @relation("UserMessages")
   supportTickets    SupportTicket[]   @relation("SupportTicketToUser")
+  notifications     Notification[]    @relation("NotificationToUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -219,7 +220,7 @@ model Product {
   // （GENERATED ALWAYS AS ... STORED）。式と GIN インデックス Product_searchVector_idx は
   // マイグレーション SQL にのみ存在する（Prisma は生成式と tsvector の GIN を表現できない）。
   searchKeywords String                   @default("")
-  searchVector   Unsupported("tsvector")?  @default(dbgenerated("(((setweight(to_tsvector('simple'::regconfig, name), 'A'::\"char\") || setweight(to_tsvector('simple'::regconfig, brand), 'B'::\"char\")) || setweight(to_tsvector('simple'::regconfig, \"searchKeywords\"), 'C'::\"char\")) || setweight(to_tsvector('simple'::regconfig, COALESCE(description, ''::text)), 'D'::\"char\"))"))
+  searchVector   Unsupported("tsvector")? @default(dbgenerated("(((setweight(to_tsvector('simple'::regconfig, name), 'A'::\"char\") || setweight(to_tsvector('simple'::regconfig, brand), 'B'::\"char\")) || setweight(to_tsvector('simple'::regconfig, \"searchKeywords\"), 'C'::\"char\")) || setweight(to_tsvector('simple'::regconfig, COALESCE(description, ''::text)), 'D'::\"char\"))"))
 
   // 割引後の最小価格（plan 076）。全バリアント・全サイズの price * (1 - discount/100) の最小値を
   // 小数 2 桁に丸めた非正規化列で、価格ソートに使う。サイズが 1 件も無い商品は NULL。
@@ -967,4 +968,64 @@ enum SupportTicketCategory {
   RETURN_REQUEST
   DISPUTE
   PROBLEM_REPORT
+}
+
+/// アプリ内通知（in-app の SSOT）。設計: docs/design/notification-foundation/design.md §2。
+/// 主処理と同じ $transaction の中で記録する（原子的 Outbox・design §4.2）。
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation("NotificationToUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  /// NotificationType（src/lib/notifications/mapping.ts のキー）
+  type    String
+  /// テンプレートの差し込み値。宛先・住所・決済情報などの PII は入れない（design §7.2）
+  params  Json
+  /// アプリ内の相対パスのみ
+  linkUrl String?
+
+  /// 発生源へのポリモーフィック参照（"OrderGroup" / "Order" / "Store" など）
+  sourceType String
+  sourceId   String
+
+  /// 冪等性キー。NOT NULL 必須 —— NULL は一意制約をすり抜けるため（design §2.2）
+  dedupeKey String @unique
+
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  deliveries NotificationDelivery[]
+
+  @@index([userId, isRead, createdAt]) // ベルの未読件数と一覧（新しい順）
+  @@index([sourceType, sourceId]) // 発生源からの逆引き
+}
+
+/// チャネルごとの配信状態（email）。送信は tx の外でリース方式で行う（design §4.3）。
+model NotificationDelivery {
+  id             String       @id @default(uuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  channel           String
+  status            DeliveryStatus @default(PENDING)
+  attemptCount      Int            @default(0)
+  leaseExpiresAt    DateTime?
+  firstAttemptAt    DateTime?
+  sentAt            DateTime?
+  providerMessageId String?
+  /// エラー種別のみ。宛先・本文は入れない
+  lastError         String?
+  createdAt         DateTime       @default(now())
+
+  @@unique([notificationId, channel])
+  @@index([status, leaseExpiresAt]) // sweeper が拾う対象の抽出
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  SKIPPED
 }

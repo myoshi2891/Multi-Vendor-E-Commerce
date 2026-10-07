@@ -587,8 +587,22 @@ const PAGES: PageDef[] = [
         },
     },
     {
+        id: "notifications",
+        name: "11. Notifications",
+        title: "Notifications Domain",
+        fill: "#FFF8E1",
+        stroke: "#FF8F00",
+        detail: "full",
+        models: ["User", "Notification", "NotificationDelivery"],
+        cells: {
+            User: [0, 0],
+            Notification: [1, 0],
+            NotificationDelivery: [2, 0],
+        },
+    },
+    {
         id: "enums",
-        name: "11. Enums",
+        name: "12. Enums",
         title: "Enums",
         fill: "#ECEFF1",
         stroke: "#455A64",

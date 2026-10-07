@@ -77,6 +77,13 @@
 6) Seller opens `/dashboard/seller/stores/[storeUrl]/messages` (force-dynamic; `getStoreConversations()` seeds the list, identifying each conversation by the buyer `user` name/picture) and selects a conversation.
 7) Seller replies from that page using the same `sendMessage()` (participant check authorizes the store owner) and the same reused `conversation-thread.tsx`, closing the loop. The buyer's 5s polling then surfaces the reply.
 
+## Order Shipping Notification Flow (plan 086)
+1) A seller (`updateOrderGroupStatus`) or admin (`updateOrderGroupStatusAsAdmin`) changes an `OrderGroup` to `Shipped` or `Delivered`.
+2) In the same `$transaction` as the status update, `recordOrderGroupStatusNotification` writes one `Notification` for the order's customer and one `NotificationDelivery(PENDING)` for email. Re-setting the same status, or repeating the same transition, does not add rows (`dedupeKey` unique). If the write fails, the status update rolls back and the caller gets the existing generic error.
+3) After commit, `scheduleDispatch` sends the email via `after()` (stub provider unless `EMAIL_PROVIDER` is set). A send failure never changes the status update result.
+4) Deliveries that were not sent (provider down, process exit, timeout) are retried by `GET /api/cron/notifications` until 23h after the first attempt, then marked `FAILED`; the in-app notification remains.
+5) The customer sees an unread count on the header account menu and opens `/profile/notifications`; opening an unread item, or "Mark all as read", clears it.
+
 ## Seller Store and Catalog Flow
 1) Apply for seller role and access the seller dashboard.
 2) Create a store and configure default shipping settings.

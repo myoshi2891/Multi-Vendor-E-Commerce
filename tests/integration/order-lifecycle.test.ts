@@ -41,6 +41,13 @@ jest.mock("@clerk/nextjs/server", () => ({
     currentUser: jest.fn(),
 }));
 
+// order.ts は通知の送信予約で next/server の after() を読む（plan 086）。jsdom には
+// Request が無く next/server を読み込めないため差し替える。送信の検証は
+// notification-outbox.test.ts が受け持つので、ここでは予約を捨てる。
+jest.mock("next/server", () => ({
+    after: jest.fn(),
+}));
+
 // ----------------------------------------------------------------------------
 
 import { cpus } from "node:os";

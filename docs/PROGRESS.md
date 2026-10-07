@@ -16,8 +16,8 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2942 passed / 2945 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）** — 2026-10-07 plan 085（レート制限）後の全体実測。Integration225／17 suitesは2026-10-07実測（plan 082 レビュー対応後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
-| Jest Integration テスト | **225テスト / 17スイート** — 2026-10-07実測（plan 082 レビュー対応後・225/225 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
+| Jestユニットテスト | **3028 passed / 3031 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）** — 2026-10-07 plan 086（通知基盤）後の全体実測。Integration228／18 suitesは2026-10-07実測（plan 086 後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jest Integration テスト | **228テスト / 18スイート** — 2026-10-07実測（plan 086 後・228/228 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |
@@ -5397,4 +5397,55 @@ plan 025（spike）のゲートをメンテナー回答で通過し、ADR-009 �
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | Integration | 223 / 17 スイート | **225 / 17 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### [plan 086](../plans/086-implement-notification-foundation.md): 通知基盤（原子的 Outbox + sweeper）と店舗単位の発送通知 (2026-10-07)
+
+#### 概要
+
+spike 021 の設計（[design.md](./design/notification-foundation/design.md)・ADR-010 Proposed）を実装した。注文の発送状態の更新と同じ tx で通知を記録し、commit 後に `after()` で送信、取りこぼしは cron の sweeper が回収する。Resend の導入（Step 9）はユーザー判断で見送り、`IN PROGRESS（Resend 承認待ち）`。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` / `prisma/migrations/20261007140000_add_notifications/` | `Notification`・`NotificationDelivery`・`DeliveryStatus`（ローカル Docker DB に適用済み・リモート未適用） | 未コミット |
+| `src/lib/notifications/` | dedupeKey・マッピング・テンプレート・記録・送信・EmailProvider / stub・発送イベント・送信予約 | 未コミット |
+| `src/queries/order.ts` | seller / admin の OrderGroup 更新に通知の記録（tx 内）と送信予約（commit 後）を配線 | 未コミット |
+| `src/queries/notification.ts` / `src/app/api/cron/notifications/route.ts` | 一覧・未読件数・既読化 / sweeper | 未コミット |
+| `/profile/notifications`・ヘッダー・サイドバー | 通知一覧 UI と未読表示 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2942 passed / 2945 total・305 スイート | **3026 passed / 3029 total・316 スイート** |
+| Integration | 225 / 17 スイート | **228 / 18 スイート** |
+| design suite priority | 6 | **9** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 086 レビュー対応（第 2 巡） (2026-10-07)
+
+#### 概要
+
+admin の注文グループ更新に行ロックを追加し、リンク先の無い通知の既読化を失敗時に再試行できるようにした（作業ツリー・コミット前、HEAD `2a1cb1e1`）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/order.ts` | `updateOrderGroupStatusAsAdmin` で更新前状態を読む前に `SELECT … FOR UPDATE` | 未コミット |
+| `src/components/store/profile/notifications/notification-list.tsx` | `markOne` に `optimistic` オプション。リンク無し通知は成功後に既読表示 | 未コミット |
+| `specs/multi-vendor-ecommerce/03-data-model.md` | ER 図ページ表に Notifications（11）を追加、Enums を 12・13 個へ | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3026 passed / 3029 total | **3028 passed / 3031 total** |
+| スイート数 | 316 | **316** |
 | 型エラー | 0 件 | **0 件** |

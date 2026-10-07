@@ -10,16 +10,27 @@ import styles from "../panels.module.css";
 export default function AccountMenu({
     user,
     disclosureName,
+    unreadNotifications = 0,
 }: Readonly<{
     user: { imageUrl: string; fullName: string | null } | null;
     disclosureName?: string;
+    /** 未読の通知件数（plan 086）。0 なら件数を出さない */
+    unreadNotifications?: number;
 }>) {
+    const hasUnread = user !== null && unreadNotifications > 0;
     return (
         <DismissibleDetails
             className={`${styles.theme} ${styles.account}`}
             name={disclosureName}
         >
-            <summary aria-label="Account menu" className={styles.trigger}>
+            <summary
+                aria-label={
+                    hasUnread
+                        ? `Account menu, ${unreadNotifications} unread notifications`
+                        : "Account menu"
+                }
+                className={styles.trigger}
+            >
                 {user ? (
                     <Image
                         src={user.imageUrl}
@@ -31,12 +42,29 @@ export default function AccountMenu({
                 ) : (
                     <UserIcon color="#f3f0e8" aria-hidden="true" />
                 )}
+                {hasUnread ? (
+                    <span className={styles.badge} aria-hidden="true">
+                        {unreadNotifications > 99 ? "99+" : unreadNotifications}
+                    </span>
+                ) : null}
             </summary>
             <div className={`${styles.panel} ${styles.accountPanel}`}>
                 <h2 className={styles.heading}>Your account</h2>
                 {user ? (
                     <>
                         <ClientUserButton />
+                        <Link
+                            href="/profile/notifications"
+                            className={styles.notifications}
+                        >
+                            <span>Notifications</span>
+                            {hasUnread ? (
+                                <span>
+                                    <span className="sr-only">, </span>
+                                    {unreadNotifications} unread
+                                </span>
+                            ) : null}
+                        </Link>
                         <SignOutButton>
                             <button type="button" className={styles.secondary}>
                                 Sign out

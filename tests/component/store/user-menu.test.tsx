@@ -42,7 +42,14 @@ jest.mock("next/link", () => ({
     ),
 }));
 
+// 未読件数（plan 086）。既定は 0 件
+jest.mock("@/queries/notification", () => ({
+    getUnreadNotificationCount: jest.fn().mockResolvedValue(0),
+}));
+
 const mockCurrentUser = currentUser as jest.Mock;
+const mockUnreadCount = jest.requireMock("@/queries/notification")
+    .getUnreadNotificationCount as jest.Mock;
 
 describe("UserMenu", () => {
     beforeEach(() => {
@@ -227,5 +234,79 @@ describe("UserMenu", () => {
             "/sign-in"
         );
         consoleSpy.mockRestore();
+    });
+
+    describe("通知（plan 086）", () => {
+        const signedIn = {
+            imageUrl: "https://cdn.example/avatar.png",
+            fullName: "Jane Doe",
+        };
+
+        it("未読があると、件数付きの通知リンクと開閉ボタンの読み上げを出す", async () => {
+            // Arrange
+            mockCurrentUser.mockResolvedValueOnce(signedIn);
+            mockUnreadCount.mockResolvedValueOnce(3);
+
+            // Act
+            render(await UserMenu());
+
+            // Assert
+            expect(
+                // jsdom は要素の境目に空白を入れるので、カンマ前後の空白を許容する
+                screen.getByRole("link", {
+                    name: /^Notifications\s*,\s*3 unread$/,
+                })
+            ).toHaveAttribute("href", "/profile/notifications");
+            expect(
+                screen.getByLabelText("Account menu, 3 unread notifications")
+            ).toBeInTheDocument();
+        });
+
+        it("未読が 0 件なら件数を出さず、通知リンクだけを出す", async () => {
+            // Arrange
+            mockCurrentUser.mockResolvedValueOnce(signedIn);
+
+            // Act
+            render(await UserMenu());
+
+            // Assert
+            expect(
+                screen.getByRole("link", { name: "Notifications" })
+            ).toHaveAttribute("href", "/profile/notifications");
+            expect(screen.getByLabelText("Account menu")).toBeInTheDocument();
+        });
+
+        it("未読件数の取得に失敗してもメニューは描画し、件数を出さない", async () => {
+            // Arrange
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => {});
+            mockCurrentUser.mockResolvedValueOnce(signedIn);
+            mockUnreadCount.mockRejectedValueOnce(new Error("db down"));
+
+            // Act
+            render(await UserMenu());
+
+            // Assert
+            expect(
+                screen.getByRole("link", { name: "Notifications" })
+            ).toBeInTheDocument();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                "[UserMenu] Failed to fetch unread notification count",
+                expect.objectContaining({ error: "db down" })
+            );
+            consoleSpy.mockRestore();
+        });
+
+        it("未認証では未読件数を取得せず、通知リンクも出さない", async () => {
+            // Act
+            render(await UserMenu());
+
+            // Assert
+            expect(mockUnreadCount).not.toHaveBeenCalled();
+            expect(
+                screen.queryByRole("link", { name: /Notifications/ })
+            ).not.toBeInTheDocument();
+        });
     });
 });

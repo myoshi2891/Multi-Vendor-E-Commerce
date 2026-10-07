@@ -87,6 +87,16 @@
   copied onto each value row so that composite FKs to the definition enforce them
   at the DB level (D-5〜D-7; see Indexing and Uniqueness).
 
+- Notification, NotificationDelivery: in-app notifications and per-channel delivery
+  state (plan 086 / [design](../../docs/design/notification-foundation/design.md)).
+  Notification belongs to a User (`onDelete: Cascade`) and references its source
+  polymorphically (`sourceType` / `sourceId`, no FK). `dedupeKey String @unique`
+  (NOT NULL) prevents duplicate rows for the same transition; `isRead` / `readAt`
+  follow the `Message` pattern. NotificationDelivery (cascades with its
+  Notification) holds `channel`, `status`, `attemptCount`, `leaseExpiresAt`,
+  `firstAttemptAt`, `sentAt`, `providerMessageId`, `lastError` (error kind only, no
+  recipient or body). Added via additive migration `add_notifications`.
+
 ## Enumerations
 - Role: USER, ADMIN, SELLER
 - StoreStatus: PENDING, ACTIVE, BANNED, DISABLED
@@ -96,6 +106,7 @@
 - SupportTicketCategory: CONTACT, RETURN_REQUEST, DISPUTE, PROBLEM_REPORT
 - AttributeType: TEXT, NUMBER, BOOLEAN, ENUM
 - AttributeScope: PRODUCT, VARIANT
+- DeliveryStatus: PENDING, SENDING, SENT, FAILED, SKIPPED
 
 ## Money Field Convention
 - All monetary amounts use `Decimal(12,2)` (Prisma `@db.Decimal(12,2)`) for
@@ -133,6 +144,10 @@
     column matching `type` is non-null (D-6); `multiValued` only for `ENUM` (D-7),
     which together keep `optionId` non-null on multi-valued rows so the partial
     unique never treats NULLs as distinct.
+- Notification (plan 086): `dedupeKey` unique; `(userId, isRead, createdAt)` for the
+  unread count and newest-first list; `(sourceType, sourceId)` for reverse lookup.
+  NotificationDelivery: unique `(notificationId, channel)`; `(status, leaseExpiresAt)`
+  for the sweeper.
 - Search (plans 074/075, [ADR-008](../../docs/architecture/decisions/008-product-search-vector.md)): `Product.searchVector` is a stored generated `tsvector` — `setweight` of name (A), brand (B), `searchKeywords` (C) and description (D) with the `'simple'` config — indexed by GIN `Product_searchVector_idx`. `Product.searchKeywords` is a denormalized text column holding every variant's `variantName`, `variantDescription` and `keywords`. The old expression index `Product_fulltext_idx` was dropped.
 - `Product.minPrice` `Decimal(12,2)?` (plan 076): lowest discounted size price `round(min(price * (1 - discount::numeric / 100)), 2)`, NULL without sizes; indexed `(minPrice, id)` for price sorting.
 - Both denormalized columns are derived by one SQL in `src/lib/product-derived-columns.ts`: `upsertProduct` runs it for the product inside its transaction, and the E2E / luxury seeds run it for every product (they write rows directly).
@@ -141,7 +156,7 @@
 
 - 図ファイル: [`docs/architecture/data-model.drawio`](../../docs/architecture/data-model.drawio)
   （draw.io / diagrams.net / VS Code "Draw.io Integration" 拡張で開ける）。
-- **図の構成（11 ページ）**: `data-model.drawio` は機能ドメインごとに 11 タブに分割されている。
+- **図の構成（12 ページ）**: `data-model.drawio` は機能ドメインごとに 12 タブに分割されている。
   クロスドメインエッジを同一ページ内に収めるため、関連モデルは複数ページに重複掲載される。
 
   | Page | タブ名 | 掲載エンティティ数 | 概要 |
@@ -156,7 +171,8 @@
   | 8 | Messaging | 5 | 購入者↔販売者メッセージング（Conversation / Message / User / Store / Order） |
   | 9 | Support | 3 | サポート受付（SupportTicket / User / Order） |
   | 10 | Attributes | 7 | カテゴリ別属性（AttributeDefinition / AttributeOption / Product・VariantAttributeValue。plan 069 / ADR-007） |
-  | 11 | Enums | 12 | 全 enum 定義の参照ページ（エッジなし） |
+  | 11 | Notifications | 3 | アプリ内通知と配信状態（User / Notification / NotificationDelivery。plan 086） |
+  | 12 | Enums | 13 | 全 enum 定義の参照ページ（エッジなし） |
 
 - **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
 - **再生成・調整手順**:
