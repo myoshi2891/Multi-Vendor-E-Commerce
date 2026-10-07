@@ -521,6 +521,10 @@ PAYPAL_WEBHOOK_ID=
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
 NEXT_PUBLIC_CLOUDINARY_PRESET_NAME=
 
+# --- Rate limit (ADR-009) ---
+# 任意。cookie 書き込み API の 1 分あたり上限（IP ごと・インスタンスごと）。未設定なら 5
+RATE_LIMIT_COOKIE_PER_MIN=
+
 # --- その他 ---
 IPINFO_TOKEN=                       # 地域判定 (userCountry)
 NEXT_PUBLIC_APP_URL=                # 例: http://localhost:3000

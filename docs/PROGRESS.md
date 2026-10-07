@@ -11,12 +11,12 @@
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-06実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-07実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2922 passed / 2925 total、3 skipped、127 snapshots passed、304 スイート（303 passed／1 skipped、failed 0）** — 2026-10-07 plan 083（OI-11）後の全体実測。Integration223／17 suitesは2026-10-07実測（plan 082）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **2941 passed / 2944 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）** — 2026-10-07 plan 085（レート制限）後の全体実測。Integration223／17 suitesは2026-10-07実測（plan 082）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **223テスト / 17スイート** — 2026-10-07実測（plan 082・223/223 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5322,7 +5322,7 @@ home/browse/product/store/cart/checkoutの共通header、検索/国選択、sort
 | スイート数 | 301 | **302** |
 | 型エラー | 0 件 | **0 件** |
 
-### plan 082: E2E セレクター追従 + 適用済みマイグレーション編集の是正 (2026-10-07)
+### [plan 082](../plans/082-fix-stale-e2e-selectors-and-migration-edit.md): E2E セレクター追従 + 適用済みマイグレーション編集の是正 (2026-10-07)
 
 plan 081 で「既存の失敗」とされた E2E 7 件の原因は、デザイン移行（`d3e87f64` / `21924e9d`）の文言・構造変更に E2E が追従していなかったこと。あわせて、適用済みマイグレーションを `0ffb72b8` で編集していた件を、元の版への復元と補正マイグレーションの新設で是正した（未コミット）。
 
