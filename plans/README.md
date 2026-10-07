@@ -112,7 +112,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [082](082-fix-stale-e2e-selectors-and-migration-edit.md) | E2E のセレクターをデザイン移行へ追従 + 適用済みマイグレーション編集（`0ffb72b8`）を補正マイグレーションへ移す | bug | P2 | 081 | DONE（2026-10-07・未コミット） |
 | [083](083-fix-seller-ssr-jodit-self.md) | seller 商品フォームの SSR `self is not defined`（OI-11。原因は jodit-react の UMD） | bug | P2 | — | DONE（2026-10-07・未コミット） |
 | [084](084-fix-a11y-color-contrast-oi10.md) | a11y `color-contrast` 負債の是正と抑制解除（OI-10。a11y 6 spec） | a11y | P3 | — | DONE（2026-10-07・未コミット） |
-| [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | — | DONE（2026-10-07・未コミット） |
+| [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | — | DONE（2026-10-07・6a424cd2〜69f6f0be） |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限（ADR-009 で決定・後続 085） | security | P3 | — | DONE（2026-10-07・未コミット） |
 
 </details>

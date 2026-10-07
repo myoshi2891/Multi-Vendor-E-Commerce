@@ -49,7 +49,7 @@ plan 081 の E2E 確認で 7 件の失敗が「HEAD でも同じく失敗する�
 2. **Green**: 補正マイグレーションを追加し、テストを補正区間へ向けて `bun run test:integration` が全件 pass
 3. ローカル Docker DB で `bunx prisma migrate status` がチェックサム不一致を報告しないこと、
    `bunx prisma migrate deploy` で補正 1 本が適用されること
-4. E2E を修正し、`bun run test:e2e:local -- --project=chromium <7 spec>` が pass（OI-13 / OI-14 / E2E-AUTH 該当は区別）
+4. E2E を修正し、`bun run test:e2e:local -- --project=chromium tests/e2e/purchase-flow.spec.ts tests/e2e/engagement.spec.ts tests/e2e/platform-coupon.spec.ts` が pass（OI-13 / OI-14 / E2E-AUTH 該当は区別）
 5. `bunx tsc --noEmit` / `bun run lint` / `bun run test`
 
 ## Done criteria
