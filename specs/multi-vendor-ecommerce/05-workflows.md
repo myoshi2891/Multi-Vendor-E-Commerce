@@ -84,6 +84,13 @@
 4) Deliveries that were not sent (provider down, process exit, timeout) are retried by `GET /api/cron/notifications` until 23h after the first attempt, then marked `FAILED`; the in-app notification remains.
 5) The customer sees an unread count on the header account menu and opens `/profile/notifications`; opening an unread item, or "Mark all as read", clears it.
 
+## Order Cancellation and Restock Flow (plan 087)
+1) Stock decremented by `placeOrder` is restored through any of five paths: order (`updateOrderPaymentStatus` → `Cancelled`/`Refunded`), group (admin `updateOrderGroupStatusAsAdmin` / seller `updateOrderGroupStatus` → `Canceled`/`Refunded`), or item (admin `updateOrderItemStatusAsAdmin` / seller `updateOrderItemStatus` → `Canceled`/`Refunded`/`Returned`).
+2) Every path moves only the items that are not yet terminal into a terminal `ProductStatus`, inside the caller's `$transaction`, and restores stock only for the items that actually moved. Whatever the order or concurrency of the paths, each item's stock is restored exactly once.
+3) A terminal item is absorbing: moving it back to a non-terminal status is rejected with `"Order item is already settled."` (shown via the existing toast). Relabeling between terminal statuses (e.g. `Canceled → Refunded`) is allowed and does not restock again. An order-level refund does not overwrite items that were already terminal.
+4) Reopening a group (e.g. `Canceled → Processing`) updates only the group; its items stay terminal. Re-shipping is handled as a new order (exchange), not by reopening.
+5) If the ordered `Size` row no longer exists (recreated by a product edit), the cancellation still completes and the restock for that item is skipped with a structured warning. Design: [`inventory-restock/design.md`](../../docs/design/inventory-restock/design.md).
+
 ## Seller Store and Catalog Flow
 1) Apply for seller role and access the seller dashboard.
 2) Create a store and configure default shipping settings.
