@@ -168,8 +168,15 @@ describe("notification queries", () => {
             const count = await getUnreadNotificationCount();
 
             // Assert
+            // 一覧に出ない未知の種別は数えない（バッジと一覧の件数を揃える）
             expect(mockDb.notification.count).toHaveBeenCalledWith({
-                where: { userId: "user-1", isRead: false },
+                where: {
+                    userId: "user-1",
+                    isRead: false,
+                    type: {
+                        in: expect.arrayContaining(["order.group.shipped"]),
+                    },
+                },
             });
             expect(count).toBe(3);
         });

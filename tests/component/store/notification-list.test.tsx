@@ -163,4 +163,43 @@ describe("NotificationList", () => {
             screen.getByRole("link", { name: "Older notifications" })
         ).toHaveAttribute("href", "/profile/notifications?cursor=n-1");
     });
+
+    it("一覧が空でも次のページがあれば、古い通知へのリンクを出す", () => {
+        // Act —— 未知の種別だけのページは items が空でも nextCursor が立つ
+        setup([], { nextCursor: "n-9" });
+
+        // Assert
+        expect(screen.getByText("No notifications yet.")).toBeInTheDocument();
+        expect(
+            screen.getByRole("link", { name: "Older notifications" })
+        ).toHaveAttribute("href", "/profile/notifications?cursor=n-9");
+    });
+
+    it("リンク先の無い未読の通知は、ボタンで 1 件ずつ既読にできる", async () => {
+        // Arrange
+        const { markReadAction, user } = setup([
+            item({ linkUrl: null }),
+            item({
+                id: "n-2",
+                linkUrl: null,
+                isRead: true,
+                title: "Delivered",
+            }),
+        ]);
+
+        // Act
+        await user.click(
+            screen.getByRole("button", { name: /Your items have shipped/ })
+        );
+
+        // Assert
+        expect(markReadAction).toHaveBeenCalledWith("n-1");
+        await waitFor(() =>
+            expect(screen.queryByText("Unread")).not.toBeInTheDocument()
+        );
+        // 既読の通知はボタンにしない
+        expect(
+            screen.queryByRole("button", { name: /Delivered/ })
+        ).not.toBeInTheDocument();
+    });
 });

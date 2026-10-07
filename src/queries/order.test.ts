@@ -55,6 +55,8 @@ jest.mock("@/lib/db", () => ({
         size: {
             update: jest.fn(),
         },
+        // updateOrderGroupStatus が tx 内で更新前の状態をロックして読む（plan 086）
+        $queryRaw: jest.fn().mockResolvedValue([]),
         $transaction: jest.fn(),
     },
 }));
@@ -1620,8 +1622,34 @@ describe("OrderGroup の発送状態の通知（plan 086）", () => {
             );
         });
 
+        it("更新前の状態は tx の中で行ロックを取って読み直した値を使う（tx 外の古い値は使わない）", async () => {
+            // Arrange —— tx 外の読み取りでは Shipped だったが、その後 Processing へ差し戻された
+            mockDb.orderGroup.findUnique.mockResolvedValueOnce(
+                createMockOrderGroup({ status: "Shipped" })
+            );
+            mockDb.$queryRaw.mockResolvedValueOnce([{ status: "Processing" }]);
+
+            // Act
+            await updateOrderGroupStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "order-group-001",
+                "Shipped" as never
+            );
+
+            // Assert
+            expect(mockDb.$queryRaw).toHaveBeenCalledTimes(1);
+            const sql = (mockDb.$queryRaw.mock.calls[0][0] as string[]).join("?");
+            expect(sql).toContain("FOR UPDATE");
+            expect(mockRecordGroupNotification).toHaveBeenCalledWith(mockDb, {
+                groupId: "order-group-001",
+                previousStatus: "Processing",
+                nextStatus: "Shipped",
+            });
+        });
+
         it("tx の中で更新前の状態を渡して記録し、commit 後に送信を予約する", async () => {
             // Arrange
+            mockDb.$queryRaw.mockResolvedValueOnce([{ status: "Processing" }]);
             const order: string[] = [];
             mockRecordGroupNotification.mockImplementationOnce(async () => {
                 order.push("record");
