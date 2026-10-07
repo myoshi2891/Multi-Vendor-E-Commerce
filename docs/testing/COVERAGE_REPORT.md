@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-07） | **2921 passed / 2924 total、3 skipped、127 snapshots passed、303 スイート（302 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| Jestテスト総数（2026-10-07） | **2941 passed / 2944 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | 全体coverage（2026-10-06・レビュー指摘対応後） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **376ファイル**（2026-10-06 レビュー指摘対応後の dashboard実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | Jest スイート総数（unit/component のみ） | **302スイート**（301 passed／1 skipped、2026-10-06 レビュー指摘対応後の全体実測）。 |
-| テスト総数 | **2921 unit/component passed**（2924 total／3 skipped）。Integration223／17 suites（2026-10-07実測・plan 082）。 |
+| テスト総数 | **2941 unit/component passed**（2944 total／3 skipped）。Integration223／17 suites（2026-10-07実測・plan 082）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
 | lcov エントリ数 | **387**（2026-10-06全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0件**（2026-10-06実測）。 |
+| 型エラー | **0件**（2026-10-07実測）。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -508,6 +508,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-05 | **plan 079: UserMenu の Clerk `UserButton` hydration 不一致修正 — Jest +2（2766 → 2768 passed / 2771 total・263 → 264 スイート）**（HEAD `10f41af4` 上の作業ツリー分・コミット前）: `tests/component/store/client-user-button.test.tsx` 新設（SSR で `UserButton` を出力しない／SSR HTML の `hydrateRoot` で recoverable error 0・hydration 後に描画）。Red は `UserButton` 直描画スタブで SSR アサーション失敗を確認。旧 coverage 83.16/69.26/77.45/83.24% → 83.17/69.27/77.5/83.25%、dashboard 329 → 330 files / lcov 349 → 350。 |
 | 2026-10-07 | **plan 082: 適用済みマイグレーション編集の是正 + E2E セレクター追従 — Integration +1（222 → 223・17 スイート不変）、Jest 不変（2919 passed / 2922 total・302 スイート）**（HEAD `05047e90` 上の作業ツリー分・コミット前）: `0ffb72b8` が適用済みの `20260901223148_category_tree_phase_b_resync` へ url 交換用の一時退避を追記していたため、`5c4b2501` の内容へ戻し（チェックサム `bd3152ca…` がローカル DB の記録と一致）、補正マイグレーション `20261007120000_category_tree_resync_url_swap` を新設。統合テストは元に戻した状態で url 交換ケースの Red を確認し、補正区間へ移して「067 でずれた行を補正が直す」「補正は冪等」の 2 件で Green。E2E は `d3e87f64` / `21924e9d` のデザイン移行に追従（トースト `Added to your bag`・`Follow boutique`・注文詳細の `<dl>`・住所未選択トーストを `role=alert` で限定）。 |
 | 2026-10-07 | **plan 082 追補: OI-17 / OI-18 — Jest +2（2919 → 2921 passed / 2922 → 2924 total・302 → 303 スイート）、Integration 不変（223）**（作業ツリー・コミット前）: 未認証の `/checkout` をサインインへ送るよう `checkout/page.tsx` を `auth()` + `redirectToSignIn()` に変更し、`tests/component/store/checkout-page-auth.test.tsx` を新設（旧実装で `/cart` へ redirect される Red を確認）。profile E2E は実国名の Country fixture をやめ seed の project 別の国を選ぶ。Chromium で payment-error / profile / platform-coupon / purchase-flow 10 passed。 |
+| 2026-10-07 | **plan 083: OI-11 seller 商品フォームの SSR `self is not defined` — Jest +1（2921 → 2922 passed / 2924 → 2925 total・303 → 304 スイート）、Integration 不変（223）**（HEAD `7edcb20b` 上の作業ツリー・コミット前）: 原因は OI-11 の推定（`CldUploadWidget`）ではなく、`product-details.tsx` が静的 import していた `jodit-react` の UMD（評価時に `self` を参照）。`next/dynamic` の `ssr: false` へ変更し、`tests/component/dashboard/product-details-ssr.test.tsx`（`@jest-environment node`）を新設（旧実装で `self is not defined` により reject する Red を確認）。既存 `product-details.test.tsx` はエディタ取得を `findByTestId` へ。`bun run build` 後のサーバーチャンクから jodit が消えたことを確認。 |
+| 2026-10-07 | **plan 085: 公開エンドポイントのレート制限（ADR-009）— Jest +19（2922 → 2941 passed / 2925 → 2944 total・304 → 305 スイート）、Integration 不変（223）**（作業ツリー・コミット前）: インメモリ Fixed Window limiter `src/lib/rate-limit.ts` を新設（`rate-limit.test.ts` +14）し、`setUserCountryInCookies` に組み込み（`route.test.ts` +5: 6 回目 429 + `Retry-After`、パース前判定、`x-real-ip` 無しは fail-open、`x-forwarded-for` 非信頼、環境変数上書き）。検索 2 本は Vercel WAF（オペレーター作業待ち）。いずれも Red 確認済み。 |
 
 ### 2026-09-30 compareデザイン移行
 

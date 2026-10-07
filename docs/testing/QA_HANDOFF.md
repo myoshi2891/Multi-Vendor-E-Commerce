@@ -18,14 +18,14 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2921 passed / 2924 total、3 skipped、127 snapshots passed、303 スイート（302 passed／1 skipped、failed 0）**。2026-10-07 `bun run test --silent` の全体実測（plan 082 の OI-17 で `tests/component/store/checkout-page-auth.test.tsx` +2・+1 スイート。lcov は 2026-10-06 のまま）。 |
+| Jest テスト総数 (unit/component) | **2941 passed / 2944 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）**。2026-10-07 `bun run test -- --no-coverage` の全体実測（plan 085 のレート制限で `src/lib/rate-limit.test.ts` +14・+1 スイート、`setUserCountryInCookies/route.test.ts` +5。lcov は 2026-10-06 のまま）。 |
 | カバレッジ全体（2026-10-06実測） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
 | Jest Integration テスト総数 | **223** / **17 スイート**（**2026-10-07 実測: 223/223 pass**・`bun run test:integration`。plan 082 で `category-tree-resync.test.ts` に補正マイグレーション `RESYNC_URL_SWAP` の 2 件を追加し、旧 url 交換テスト 1 件をそこへ移設）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**7 spec すべて passed**。2026-08-09 実測（`bash scripts/e2e/run-local.sh tests/e2e/a11y --project=chromium` が 7 passed / 58.3s）。home（`/`）は OI-9（本番ビルドで SSR 500）が未解消のため対象外。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-06 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-07 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
 | テストファイル総数（ダッシュボード集計） | **376** / lcovエントリ **387** / マトリクス18/80セル（23%）。2026-10-06 レビュー指摘対応後の `bun run coverage:dashboard` 実測。 |
@@ -167,15 +167,15 @@
 
 ### 🔴 現在アクティブな残課題（優先度順・2026-10-05 時点） {#active-open-issues}
 
-> 解消済み OI（OI-1〜OI-9）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下（OI-11 / OI-10 / OI-12 / OI-13 / OI-14 / C2）。**
+> 解消済み OI（OI-1〜OI-9）は下表に取り消し線付きで監査証跡として残す。**着手すべきは以下（OI-12 / OI-13 / OI-14 / C2）。**
 
 | 優先 | ID | 課題 | 期限 / 状態 | 次の一手 |
 |---|---|---|---|---|
 | P3移行 | **DS-P3-SIX-BROWSER** | 管理者3画面・販売者クーポン2画面の認証後実ルート／Clerk検証 | 実装済み・専用DB／認証情報待ち | [解除条件・証跡](#ds-p3-six-browser) |
 | P1移行 | **DS-PURCHASE-BROWSER** | Checkout・注文詳細の認証後実ルート／SDK検証 | 実装あり・専用DB環境待ち | [解除条件・次着手](#ds-purchase-browser) |
 | ~~1~~ | ~~**OI-9**~~ | ~~ホーム `/` が SSR で 500（`featured.tsx` の `window` 初期化子参照）~~ | ✅ **解消済み（2026-06-06 / `c196e3d5`）** | 実装は `useState<number>(1200)` の安全な既定値 + `useEffect` での実測反映済み（`featured.tsx:19,30`）。**実測（2026-07-26）**: `security-headers.spec.ts` の `/` が 3 ブラウザとも `status < 400` で pass。**次の一手は D2** — `.lighthouserc.json` / `lhci.yml` の計測 URL へ `/` を追加できる状態になった。 |
-| **1（最優先）** | **OI-11** | `/dashboard/seller` 系ルートが本番 SSR で `ReferenceError: self is not defined`（`next-cloudinary` の `CldUploadWidget` をサーバ評価）。OI-9 と同族の client-only ref 問題。現状テストは落ちていない（ログのみ）が本番でも再現の可能性 | 🟡 未着手 | `image-upload.tsx` の `CldUploadWidget` を `next/dynamic` の `ssr:false` で遅延 import する。発見: 2026-06-19（E2E 本番ビルド化で顕在化） |
-| 2 | **OI-10** | a11y `color-contrast` 負債: `/checkout`・`/profile`・`/seller/apply` でグレー/ブルー系テキストが 4.5:1 未満。E2E では `runA11yScan` の `disabledRules:["color-contrast"]` で抑制中（追跡のため意図的） | 🟢 低 | 配色（テキスト色）を是正して `disabledRules` を解除する。発見: 2026-06-19（a11y readiness 修正で axe 到達後に検出） |
+| ~~1~~ | ~~**OI-11**~~ | ~~`/dashboard/seller` 系ルートが本番 SSR で `ReferenceError: self is not defined`~~ | ✅ 解消（2026-10-07・plan 083、未コミット） | **原因の訂正**: `next-cloudinary` の `CldUploadWidget` ではなく、`product-details.tsx` が静的 import していた `jodit-react` の UMD（モジュール評価時に `}(self, …)` を実行）。`next-cloudinary` 6.16.0 と依存の dist に `self` 参照は無い。`next/dynamic(() => import("jodit-react"), { ssr: false })` へ変更し、`product-details-ssr.test.tsx`（`@jest-environment node` で import が `self is not defined` で reject する Red → Green）を追加。`bun run build` 後のサーバーチャンクから jodit が消え、クライアントチャンクのみに含まれることを確認。認証後の実ルート表示は Clerk 認証情報が要るため未確認 |
+| ~~2~~ | ~~**OI-10**~~ | ~~a11y `color-contrast` 負債（E2E a11y 6 spec を `disabledRules:["color-contrast"]` で抑制）~~ | ✅ 解消（2026-10-07・plan 084、未コミット） | 実測で違反は `/browse`（6 ノード）と `/product`（22 ノード）のデザイン移行 CSS Module（クリーム背景上のゴールド/セージ文字）だけだった。`/checkout`・`/profile`・`/seller/apply`・`/cart` は既に違反 0。`browse.module.css`・`product.module.css` の該当色を色相を保ったまま明度だけ下げ、`#edf0e8` 比 4.6:1 以上（大きな見出しの `em` は 3:1 以上）へ是正。6 spec の抑制を解除し、Chromium a11y 7/7 pass（Docker DB 接続）。同時に `sign-in.spec.ts` の準備完了待ちがヘッダーの非表示検索 form を掴む不具合を `main` 限定で修正 |
 | 3 | **OI-12** | E2E のローカル Firefox 実行で navigation が hang する（dev サーバの HMR 起因と推定）。`tests/e2e/profile.spec.ts`（住所追加 / 注文履歴）と `tests/e2e/mobile-responsive.spec.ts` の計 3 件を `testInfo.project.name === "firefox" && !process.env.CI` で skip 中。**CI は本番ビルドで実行されるため skip されず**、3 ブラウザのカバレッジは CI 側で維持されている | 🟢 低 / 🟡 未着手（**見直し期限: 2026-10-31**） | **解消条件**: ローカル dev サーバ（`bun run dev`）で当該 3 件が Firefox 連続 2 回 pass すること。**次の一手**: dev の Turbopack HMR クライアントが Firefox で navigation を保留させているかを `PWDEBUG=1` + `--project=firefox` で切り分け、再現したら `webServer` を本番ビルド（`next build && next start`）へ寄せる案を検討する。発見: 2026-08-23（plan 049 / TESTS-37） |
 | 4 | **OI-13** | VRT `visual/cart.spec.ts`（空 / 商品追加後）・`visual/checkout.spec.ts`・`visual/product.spec.ts` が**新しい空の DB + `seed:e2e`** では高さが一致せず失敗する（1405→1375 / 1841→1811 / 5931→5525px）。2026-10-03 に**変更前の HEAD `3277d8a5` を git worktree で同条件実行して同じ差分を再現**（plans 073〜076 とは無関係）。ベースライン撮影時の DB に他スペック由来のデータ（レビュー・カテゴリ等）が混ざっていたと推定 | 🟡 未着手 | クリーン DB + `seed:e2e` 直後の状態でベースラインを撮り直すか、データ依存部分（フッターのカテゴリ一覧・レビュー）を `mask` する。撮り直す場合は「意図した見た目」であることを差分画像で確認してから。 |
 | 5 | **OI-14** | `tests/e2e/mobile-responsive.spec.ts:119`（タブレットのレイアウト切替）が `h1` に旧ブランド名 `GoShop` を期待して全ブラウザで失敗（現行は `Luxuries`）。リブランド時の取り残し | 🟢 低 | 期待値を現行ブランドへ更新するか、ブランド名に依存しないランドマーク検証へ置き換える。 |
@@ -225,7 +225,7 @@
 
 ### 残課題
 
-- 現在、アクティブな残課題は **OI-11 / OI-10 / OI-12 / OI-13 / OI-14 / C2** の 6 件です（優先度・次の一手は[アクティブな残課題テーブル](#active-open-issues)を SSOT として参照）。**OI-9（ホーム `/` の SSR 500）は 2026-06-06 に解消済み**（`c196e3d5`。2026-07-26 に E2E 実測でクローズ確認）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
+- 現在、アクティブな残課題は **OI-12 / OI-13 / OI-14 / C2** の 4 件です（OI-11 は 2026-10-07 に plan 083、OI-10 は同日 plan 084 で解消）（優先度・次の一手は[アクティブな残課題テーブル](#active-open-issues)を SSOT として参照）。**OI-9（ホーム `/` の SSR 500）は 2026-06-06 に解消済み**（`c196e3d5`。2026-07-26 に E2E 実測でクローズ確認）。**OI-8（CI flake）は 2026-06-14 に解消済み**（真因 = `size.test.ts` の Prisma 接続リーク `83ef06c` + modal-provider un-skip `49fa32d`。経緯: [`docs/ci/archive/unit-tests-run-reactive.md`](../ci/archive/unit-tests-run-reactive.md)）。
 - 中長期タスクは [`COVERAGE_REPORT.md §3`](./COVERAGE_REPORT.md#3-next-actions-カバレッジ観点の戦略台帳) の B / C グループに集約。
 
 ### 🟢 中長期（COVERAGE_REPORT §3 B/C グループ）
@@ -496,7 +496,7 @@ tests/e2e/a11y/home.spec.ts を新規作成し、home（/）の WCAG 2.1 AA ス�
 方針:
 1. tests/e2e/a11y/browse.spec.ts を雛形にする（runA11yScan / chromium 限定の test.skip）。
 2. readinessLocator は home の SSR 済み要素を 1 つ選ぶ（seed 依存を増やさない）。
-3. color-contrast は既知負債 OI-10 なので disabledRules で抑制し、TODO(OI-10) を明記する。
+3. color-contrast は OI-10 解消済み（plan 084）のため抑制しない。違反が出たら下記 4 と同様に STOP して報告する。
 4. 初回スキャンで実違反が出た場合は勝手に src/ を直さず STOP して報告する
    （052 では critical 3 種 / serious 2 種が出た）。
 
@@ -533,27 +533,6 @@ tests/e2e/a11y/home.spec.ts を新規作成し、home（/）の WCAG 2.1 AA ス�
 - コミット規約: .claude/rules/02-tdd-step-commit.md
 ```
 
-#### OI-11: seller ルートの本番 SSR クラッシュ修正
-
-```text
-/dashboard/seller 系ルートが本番 SSR で ReferenceError: self is not defined を投げる問題
-（OI-11）を修正してください。next-cloudinary の CldUploadWidget がサーバ評価される client-only
-コンポーネントであることが原因です（OI-9 と同族）。
-
-実装方針:
-1. image-upload.tsx の CldUploadWidget を next/dynamic の { ssr: false } で遅延 import する。
-2. 本番ビルド（next build → next start）で /dashboard/seller 系が SSR 200 を返すことを確認。
-
-完了条件:
-1. seller ルートが本番 SSR で 200、OI-11 を QA_HANDOFF.md 残課題からクローズ（取り消し線）。
-2. bunx tsc --noEmit / bun run lint グリーン。
-3. render-html.ts の NEXT_ACTIONS から OI-11 を削除し、本プロンプトも削除（二重 SSOT 同期）。
-
-参考:
-- OI-11 詳細: docs/testing/QA_HANDOFF.md「現在アクティブな残課題」OI-11 行
-- 同族先行例: OI-9（featured.tsx の SSR window 参照）
-```
-
 ### 🟢 Mid–Long Term (low)
 
 SaaS ロードマップ範囲 (docs/architecture/saas-roadmap.md) で別ストリーム扱い。
@@ -581,26 +560,6 @@ docs/design/faceted-search/design.md §0-9 / §2-Q4。
 1. 単体 / 統合 / tsc / lint グリーン。
 2. 08-open-questions.md の当該項目を Resolved Issues へ移し、04-interfaces.md の /browse の説明を更新。
 3. render-html.ts の NEXT_ACTIONS から PRICE-FILTER を削除し、本プロンプトも削除 → bun run coverage:dashboard。
-```
-
-#### OI-10: a11y color-contrast 負債の是正
-
-```text
-/checkout・/profile・/seller/apply のグレー/ブルー系テキストが WCAG 2.1 AA の 4.5:1 を
-満たさない a11y 負債（OI-10）を是正してください。現在 E2E では runA11yScan の
-disabledRules:["color-contrast"] で追跡のため意図的に抑制中です。
-
-実装方針:
-1. 対象ページのテキスト色を 4.5:1 以上を満たす配色へ是正する。
-2. runA11yScan の disabledRules から "color-contrast" を解除する。
-
-完了条件:
-1. axe color-contrast 違反ゼロ、OI-10 を QA_HANDOFF.md 残課題からクローズ（取り消し線）。
-2. E2E a11y spec グリーン（disabledRules 解除後）。
-3. render-html.ts の NEXT_ACTIONS から OI-10 を削除し、本プロンプトも削除（二重 SSOT 同期）。
-
-参考:
-- OI-10 詳細: docs/testing/QA_HANDOFF.md「現在アクティブな残課題」OI-10 行
 ```
 
 <!--
@@ -729,7 +688,7 @@ C1 (Lighthouse CI でパフォーマンス予算化) は 2026-05-30 に完了済
 - 実装あり／検証保留。[保存計画](../../plans/layout-design/checkout-order-design-system-plan.md)、[証跡](../design/design-system/PROGRESS.md#checkout-order移行記録)。部分検証はJest420/420（18 suites）、supplemental Chromium11/11、lint0 errors／既存12 warnings、tsc成功。
 - **次着手**: 専用テストDB（既存schemaあり）とアプリ接続先の一致を確認し、Clerkテスト顧客の住所・cart・order fixtureのみ作成／後処理して `/checkout` と `/order/[orderId]` の1440／768／390pxを確認する。注文確定・実決済・外部送信はmock。seed・DB初期化・既存データ変更なし。SDK実描画、未認証転送、cart/product/profile住所のブラウザー回帰を確認後に2画面を検証済みへ進める。
 - 現環境には専用test DBがない。通常 `.env` は非local・非test、`.env.docker` は開発DBのためfixtureを書き込まなかった。独立ブラウザーモックの結果を認証後E2Eの実績に合算しない。
-- OI-10のcheckout contrastは新部品のfixture axeで違反0だが、実ルートの既存a11y specは未再実行のため、まだ抑制解除済みと扱わない。第三者SDKの実表示も未検証。
+- OI-10のcheckout contrastは2026-10-07（plan 084）に実ルートの既存a11y specで抑制なし違反0を確認し解除済み。第三者SDKの実表示は未検証。
 - ダッシュボード走査321 files／lcov328／18/80セルを実測。全体Jest／Integration／通常E2E／coverageの既存統計は部分実行から更新しない。
 
 #### DS-PURCHASE（medium）次回着手用プロンプト

@@ -49,7 +49,7 @@ Dashboard:
 - `/dashboard/admin/attributes` manage category attribute definitions (`/new`, and `/[id]/options` for ENUM allowed values) — plan 069
 
 ## API Routes
-- `POST /api/setUserCountryInCookies` set user country cookie
+- `POST /api/setUserCountryInCookies` set user country cookie. Rate-limited per `x-real-ip` (in-memory, per instance; default 5/min, `RATE_LIMIT_COOKIE_PER_MIN`) → `429` + `Retry-After`; no limit when the header is absent ([ADR-009](../../docs/architecture/decisions/009-public-endpoint-rate-limiting.md)). The search routes are rate-limited by the Vercel WAF, not in the app.
 - `GET /api/index-products` paginated search results
 - `POST /api/index-products` search suggestions for autocomplete
 - `GET /api/search-products?q=` header search suggestions (plan 073): up to 8 `SearchResult` items (`id`, `name`, `link` = `/product/<productSlug>/<first displayable variant slug>`, `image` = that variant's `variantImage` (primary), or the URL of its oldest related `ProductVariantImage` with a non-empty `url` when `variantImage` is empty) ordered by `ts_rank` on `searchVector` then `id`; products without a displayable variant (non-empty `variantImage` or a related image with a non-empty `url`) are excluded inside the SQL (before `LIMIT`). `search` is accepted as a legacy alias. Input without letters or digits returns `[]`.

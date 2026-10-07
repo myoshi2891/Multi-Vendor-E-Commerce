@@ -16,7 +16,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2921 passed / 2924 total、3 skipped、127 snapshots passed、303 スイート（302 passed／1 skipped、failed 0）** — 2026-10-07 plan 082（OI-17）後の全体実測。Integration223／17 suitesは2026-10-07実測（plan 082）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **2922 passed / 2925 total、3 skipped、127 snapshots passed、304 スイート（303 passed／1 skipped、failed 0）** — 2026-10-07 plan 083（OI-11）後の全体実測。Integration223／17 suitesは2026-10-07実測（plan 082）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **223テスト / 17スイート** — 2026-10-07実測（plan 082・223/223 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5346,4 +5346,35 @@ plan 081 で「既存の失敗」とされた E2E 7 件の原因は、デザイ�
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | Jest | 2919 passed / 2922 total・302 スイート | **2921 passed / 2924 total・303 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 083: seller 商品フォームの SSR `self is not defined`（OI-11）(2026-10-07)
+
+OI-11 の原因は推定されていた `next-cloudinary` の `CldUploadWidget` ではなく、`product-details.tsx` が静的 import していた `jodit-react` だった（UMD がモジュール評価時に `self` を参照）。`next/dynamic` の `ssr: false` で読み込むよう変更した（未コミット）。
+
+| 対象 | 変更内容 |
+|------|---------|
+| `src/components/dashboard/forms/product-details.tsx` | `jodit-react` を `dynamic(() => import("jodit-react"), { ssr: false })` へ |
+| `tests/component/dashboard/product-details-ssr.test.tsx` | 新設。`self` の無い node 環境で import できることを固定（Red: `self is not defined`） |
+| `tests/component/dashboard/product-details.test.tsx` | エディタの取得を `findByTestId` へ（動的 import は非同期に解決） |
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2921 passed / 2924 total・303 スイート | **2922 passed / 2925 total・304 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 085: 公開エンドポイントのレート制限（ADR-009）(2026-10-07)
+
+plan 025（spike）のゲートをメンテナー回答で通過し、ADR-009 を Accepted にした（検索 = Vercel WAF の rule 1 本・30 回/分、cookie 書き込み = アプリ内インメモリ 5 回/分、fail-open）。アプリ側を TDD で実装（未コミット）。WAF ルールの設定はオペレーター作業として残る。
+
+| 対象 | 変更内容 |
+|------|---------|
+| `src/lib/rate-limit.ts` | 新設。Fixed Window limiter（`maxKeys` で古いキーを捨てる）+ `parseLimitEnv` |
+| `src/app/api/setUserCountryInCookies/route.ts` | `x-real-ip` のみをキーに判定、超過時 429 + `Retry-After`（IP はログに出さない） |
+| `src/lib/rate-limit.test.ts` / `route.test.ts` | +14 / +5（Red 確認済み） |
+| `.env.example` | `RATE_LIMIT_COOKIE_PER_MIN` を追記 |
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2922 passed / 2925 total・304 スイート | **2941 passed / 2944 total・305 スイート** |
 | 型エラー | 0 件 | **0 件** |
