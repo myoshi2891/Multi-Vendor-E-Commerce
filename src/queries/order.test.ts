@@ -70,11 +70,12 @@ jest.mock("@/lib/notifications/schedule", () => ({
 }));
 
 const mockDb = require("@/lib/db").db;
-const { recordOrderGroupStatusNotification: mockRecordGroupNotification } =
-    require("@/lib/notifications/order-events");
-const { scheduleDispatch: mockScheduleDispatch } = require(
-    "@/lib/notifications/schedule"
-);
+const {
+    recordOrderGroupStatusNotification: mockRecordGroupNotification,
+} = require("@/lib/notifications/order-events");
+const {
+    scheduleDispatch: mockScheduleDispatch,
+} = require("@/lib/notifications/schedule");
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -141,7 +142,10 @@ describe("getOrder", () => {
                 shippingAddress: {
                     ...createMockShippingAddress(),
                     country: { id: "country-001", name: "Japan", code: "JP" },
-                    user: { id: TEST_CONFIG.DEFAULT_USER_ID, name: "Test User" },
+                    user: {
+                        id: TEST_CONFIG.DEFAULT_USER_ID,
+                        name: "Test User",
+                    },
                 },
                 paymentDetails: createMockPaymentDetails(),
             };
@@ -204,9 +208,7 @@ describe("getOrder", () => {
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
-            errSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
         });
         afterEach(() => errSpy.mockRestore());
 
@@ -282,9 +284,7 @@ describe("updateOrderGroupStatus", () => {
                     "order-group-001",
                     "Confirmed" as never
                 )
-            ).rejects.toThrow(
-                "Unauthorized to update order group status."
-            );
+            ).rejects.toThrow("Unauthorized to update order group status.");
 
             expect(mockDb.store.findUnique).toHaveBeenCalledWith({
                 where: {
@@ -325,9 +325,7 @@ describe("updateOrderGroupStatus", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "SELLER" },
             });
-            errSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
         });
         afterEach(() => errSpy.mockRestore());
 
@@ -495,9 +493,7 @@ describe("updateOrderItemStatus", () => {
                     "order-item-001",
                     "Processing" as never
                 )
-            ).rejects.toThrow(
-                "Unauthorized to update order item status."
-            );
+            ).rejects.toThrow("Unauthorized to update order item status.");
         });
 
         it("他店舗の OrderItem は更新できない（count 0 → not found）", async () => {
@@ -758,9 +754,7 @@ describe("getAllOrders", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "ADMIN" },
             });
-            errSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
         });
         afterEach(() => errSpy.mockRestore());
 
@@ -830,9 +824,7 @@ describe("getOrderForAdmin", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "ADMIN" },
             });
-            errSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
         });
         afterEach(() => errSpy.mockRestore());
 
@@ -1048,9 +1040,7 @@ describe("updateOrderGroupStatusAsAdmin", () => {
                 privateMetadata: { role: "ADMIN" },
             });
             setupTransaction();
-            errSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
         });
         afterEach(() => errSpy.mockRestore());
 
@@ -1124,9 +1114,7 @@ describe("updateOrderItemStatusAsAdmin", () => {
                 id: TEST_CONFIG.DEFAULT_USER_ID,
                 privateMetadata: { role: "ADMIN" },
             });
-            errSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
         });
         afterEach(() => errSpy.mockRestore());
 
@@ -1237,10 +1225,7 @@ describe("updateOrderPaymentStatus", () => {
         });
 
         it("Refundedへの変更で子をRefundedに連動する", async () => {
-            await updateOrderPaymentStatus(
-                "order-001",
-                PaymentStatus.Refunded
-            );
+            await updateOrderPaymentStatus("order-001", PaymentStatus.Refunded);
 
             // 親 Order は条件付き updateMany（非終端ガード）で paymentStatus と
             // orderStatus を原子的に整合更新する
@@ -1271,10 +1256,7 @@ describe("updateOrderPaymentStatus", () => {
 
         // AC-F2-6: 外部決済 API（Stripe/PayPal）を呼ばない
         it("子連動は同一$transaction内で実行される（決済APIは呼ばない）", async () => {
-            await updateOrderPaymentStatus(
-                "order-001",
-                PaymentStatus.Refunded
-            );
+            await updateOrderPaymentStatus("order-001", PaymentStatus.Refunded);
 
             expect(mockDb.$transaction).toHaveBeenCalledTimes(1);
         });
@@ -1288,9 +1270,7 @@ describe("updateOrderPaymentStatus", () => {
                 privateMetadata: { role: "ADMIN" },
             });
             setupTransaction();
-            errSpy = jest
-                .spyOn(console, "error")
-                .mockImplementation(() => {});
+            errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
         });
         afterEach(() => errSpy.mockRestore());
 
@@ -1442,7 +1422,10 @@ describe("在庫復元（F3-5・restock on cancel/refund）", () => {
                 { sizeId: "size-001", quantity: 2 },
             ]);
 
-            await updateOrderPaymentStatus("order-001", PaymentStatus.Cancelled);
+            await updateOrderPaymentStatus(
+                "order-001",
+                PaymentStatus.Cancelled
+            );
 
             AssertionHelpers.expectNotCalled(mockDb.size.update);
         });
@@ -1580,7 +1563,9 @@ describe("trackOrder", () => {
         // Act / Assert: null ではなく汎用メッセージで throw
         await expect(
             trackOrder({ orderId: "order-001", email: OWNER_EMAIL })
-        ).rejects.toThrow("注文の照会に失敗しました。時間をおいて再度お試しください。");
+        ).rejects.toThrow(
+            "注文の照会に失敗しました。時間をおいて再度お試しください。"
+        );
         expect(errSpy).toHaveBeenCalled();
 
         // PII 不漏洩契約の固定: ログ引数（第2引数の { error, stack } 等を含む
@@ -1638,7 +1623,9 @@ describe("OrderGroup の発送状態の通知（plan 086）", () => {
 
             // Assert
             expect(mockDb.$queryRaw).toHaveBeenCalledTimes(1);
-            const sql = (mockDb.$queryRaw.mock.calls[0][0] as string[]).join("?");
+            const sql = (mockDb.$queryRaw.mock.calls[0][0] as string[]).join(
+                "?"
+            );
             expect(sql).toContain("FOR UPDATE");
             expect(mockRecordGroupNotification).toHaveBeenCalledWith(mockDb, {
                 groupId: "order-group-001",
@@ -1759,6 +1746,32 @@ describe("OrderGroup の発送状態の通知（plan 086）", () => {
                 nextStatus: OrderStatus.Delivered,
             });
             expect(mockScheduleDispatch).toHaveBeenCalledWith(["d-2"]);
+        });
+
+        it("更新前の状態を読む前に tx の中で行ロックを取る（seller 経路と同じ FOR UPDATE）", async () => {
+            // Arrange
+            const calls: string[] = [];
+            mockDb.$queryRaw.mockImplementationOnce(async () => {
+                calls.push("lock");
+                return [{ status: OrderStatus.Processing }];
+            });
+            mockDb.orderGroup.findUnique.mockImplementationOnce(async () => {
+                calls.push("read");
+                return { status: OrderStatus.Processing, items: [] };
+            });
+
+            // Act
+            await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Delivered
+            );
+
+            // Assert
+            expect(calls).toEqual(["lock", "read"]);
+            const sql = (mockDb.$queryRaw.mock.calls[0][0] as string[]).join(
+                "?"
+            );
+            expect(sql).toContain("FOR UPDATE");
         });
 
         it("記録が失敗したら更新も失敗する（送信予約もしない）", async () => {

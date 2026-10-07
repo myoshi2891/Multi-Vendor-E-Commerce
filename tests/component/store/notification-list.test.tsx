@@ -202,4 +202,37 @@ describe("NotificationList", () => {
             screen.queryByRole("button", { name: /Delivered/ })
         ).not.toBeInTheDocument();
     });
+
+    it("リンク先の無い通知の既読化が失敗したら未読のまま残し、もう一度押せる", async () => {
+        // Arrange
+        const markReadAction = jest
+            .fn()
+            .mockRejectedValueOnce(new Error("db down"))
+            .mockResolvedValueOnce({ count: 1 });
+        const { user } = setup([item({ linkUrl: null })], { markReadAction });
+        const errorSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => undefined);
+
+        // Act
+        await user.click(
+            screen.getByRole("button", { name: /Your items have shipped/ })
+        );
+
+        // Assert —— 失敗しても印とボタンが残る
+        await waitFor(() => expect(errorSpy).toHaveBeenCalled());
+        expect(screen.getByText("Unread")).toBeInTheDocument();
+
+        // Act —— 再試行は成功する
+        await user.click(
+            screen.getByRole("button", { name: /Your items have shipped/ })
+        );
+
+        // Assert
+        expect(markReadAction).toHaveBeenCalledTimes(2);
+        await waitFor(() =>
+            expect(screen.queryByText("Unread")).not.toBeInTheDocument()
+        );
+        errorSpy.mockRestore();
+    });
 });
