@@ -60,25 +60,32 @@ export default function NotificationList({
     };
 
     // 開いた通知を既読にする。画面遷移を止めないよう待たずに投げ、失敗はログに残す
-    // （未読のまま残るだけで、次に開いたときにもう一度既読化される）
-    const markOne = (id: string) => {
-        setItems((prev) =>
-            prev.map((item) =>
-                item.id === id ? { ...item, isRead: true } : item
-            )
-        );
-        void markReadAction(id).catch((err: unknown) => {
-            if (err instanceof Error) {
-                console.error("[NotificationList:markOne] Failed", {
-                    error: err.message,
-                    stack: err.stack,
-                });
-            } else {
-                console.error("[NotificationList:markOne] Unknown error", {
-                    error: err,
-                });
+    // （未読のまま残るだけで、次に開いたときにもう一度既読化される）。
+    // リンク先の無い通知は遷移しないので optimistic: false で成功後に既読表示へ切り替え、
+    // 失敗時は未読のボタンを残して押し直せるようにする
+    const markOne = (id: string, { optimistic = true } = {}) => {
+        const applyRead = () =>
+            setItems((prev) =>
+                prev.map((item) =>
+                    item.id === id ? { ...item, isRead: true } : item
+                )
+            );
+        if (optimistic) applyRead();
+        void markReadAction(id).then(
+            optimistic ? undefined : applyRead,
+            (err: unknown) => {
+                if (err instanceof Error) {
+                    console.error("[NotificationList:markOne] Failed", {
+                        error: err.message,
+                        stack: err.stack,
+                    });
+                } else {
+                    console.error("[NotificationList:markOne] Unknown error", {
+                        error: err,
+                    });
+                }
             }
-        });
+        );
     };
 
     return (
@@ -161,7 +168,11 @@ export default function NotificationList({
                                         <button
                                             type="button"
                                             className={`${styles.link} ${styles.asButton}`}
-                                            onClick={() => markOne(item.id)}
+                                            onClick={() =>
+                                                markOne(item.id, {
+                                                    optimistic: false,
+                                                })
+                                            }
                                         >
                                             {content}
                                         </button>
