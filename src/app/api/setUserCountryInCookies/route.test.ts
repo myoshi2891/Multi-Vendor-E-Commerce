@@ -76,7 +76,9 @@ describe("POST /api/setUserCountryInCookies", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("set-cookie")).not.toContain("evil");
-        expect(response.headers.get("set-cookie")).not.toContain("untrusted-data");
+        expect(response.headers.get("set-cookie")).not.toContain(
+            "untrusted-data"
+        );
     });
 
     it("returns 400 and does not set a cookie for an oversized country field", async () => {
@@ -93,5 +95,133 @@ describe("POST /api/setUserCountryInCookies", () => {
 
         expect(response.status).toBe(400);
         expect(response.headers.get("set-cookie")).toBeNull();
+    });
+});
+
+describe("POST /api/setUserCountryInCookies — rate limit (ADR-009)", () => {
+    const validBody = {
+        userCountry: {
+            name: "Japan",
+            code: "JP",
+            city: "Tokyo",
+            region: "Tokyo",
+        },
+    };
+
+    // モジュールレベルの limiter はテスト間で共有されるため、テストごとに別の IP を使う
+    const requestFrom = (
+        headers: Record<string, string>,
+        body: unknown = validBody
+    ) =>
+        new Request(url, {
+            method: "POST",
+            body: typeof body === "string" ? body : JSON.stringify(body),
+            headers: { "Content-Type": "application/json", ...headers },
+        });
+
+    let warnSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        warnSpy.mockRestore();
+    });
+
+    it("同じ x-real-ip からの 6 回目は 429 + Retry-After を返し、cookie を設定しない", async () => {
+        // Arrange
+        const headers = { "x-real-ip": "203.0.113.1" };
+        for (let i = 0; i < 5; i++) {
+            expect((await POST(requestFrom(headers))).status).toBe(200);
+        }
+
+        // Act
+        const response = await POST(requestFrom(headers));
+
+        // Assert
+        expect(response.status).toBe(429);
+        expect(
+            Number(response.headers.get("retry-after"))
+        ).toBeGreaterThanOrEqual(1);
+        expect(response.headers.get("set-cookie")).toBeNull();
+        // IP は個人情報に当たり得るためログに出さない
+        expect(JSON.stringify(warnSpy.mock.calls)).not.toContain("203.0.113.1");
+    });
+
+    it("不正な JSON も回数に数える（パース前に判定する）", async () => {
+        // Arrange
+        const headers = { "x-real-ip": "203.0.113.2" };
+        for (let i = 0; i < 5; i++) {
+            expect((await POST(requestFrom(headers, "not-json"))).status).toBe(
+                400
+            );
+        }
+
+        // Act
+        const response = await POST(requestFrom(headers));
+
+        // Assert
+        expect(response.status).toBe(429);
+    });
+
+    it("x-real-ip が無い場合は制限しない（fail-open）", async () => {
+        // Arrange
+        const statuses: number[] = [];
+
+        // Act
+        for (let i = 0; i < 10; i++) {
+            statuses.push((await POST(requestFrom({}))).status);
+        }
+
+        // Assert
+        expect(statuses.every((s) => s === 200)).toBe(true);
+    });
+
+    it("x-forwarded-for を変えても x-real-ip が同じなら回数はリセットされない", async () => {
+        // Arrange
+        for (let i = 0; i < 5; i++) {
+            await POST(
+                requestFrom({
+                    "x-real-ip": "203.0.113.3",
+                    "x-forwarded-for": `198.51.100.${i}`,
+                })
+            );
+        }
+
+        // Act
+        const response = await POST(
+            requestFrom({
+                "x-real-ip": "203.0.113.3",
+                "x-forwarded-for": "198.51.100.99",
+            })
+        );
+
+        // Assert
+        expect(response.status).toBe(429);
+    });
+
+    it("RATE_LIMIT_COOKIE_PER_MIN で上限を上書きできる", async () => {
+        // Arrange
+        const original = process.env.RATE_LIMIT_COOKIE_PER_MIN;
+        process.env.RATE_LIMIT_COOKIE_PER_MIN = "2";
+        try {
+            await jest.isolateModulesAsync(async () => {
+                const { POST: isolatedPost } = await import("./route");
+                const headers = { "x-real-ip": "203.0.113.4" };
+                await isolatedPost(requestFrom(headers));
+                await isolatedPost(requestFrom(headers));
+
+                // Act
+                const response = await isolatedPost(requestFrom(headers));
+
+                // Assert
+                expect(response.status).toBe(429);
+            });
+        } finally {
+            if (original === undefined)
+                delete process.env.RATE_LIMIT_COOKIE_PER_MIN;
+            else process.env.RATE_LIMIT_COOKIE_PER_MIN = original;
+        }
     });
 });

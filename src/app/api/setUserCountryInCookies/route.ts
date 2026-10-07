@@ -1,9 +1,32 @@
 import { NextResponse } from "next/server";
 import { isCountry } from "@/lib/utils";
+import { createFixedWindowLimiter, parseLimitEnv } from "@/lib/rate-limit";
 
 const MAX_FIELD_LEN = 100;
 
+// インスタンスごとの補助的な安全網（ADR-009）。検索経路は Vercel WAF で制限する
+const cookieLimiter = createFixedWindowLimiter({
+    limit: parseLimitEnv(process.env.RATE_LIMIT_COOKIE_PER_MIN, 5),
+    windowMs: 60_000,
+});
+
 export async function POST(request: Request) {
+    // キーは Vercel がプラットフォーム側で設定する x-real-ip のみ。偽装可能な
+    // x-forwarded-for は使わない。ヘッダーが無い環境（ローカル / CI）は fail-open
+    const clientIp = request.headers.get("x-real-ip")?.trim();
+    if (clientIp) {
+        const decision = cookieLimiter.check(clientIp);
+        if (!decision.allowed) {
+            console.warn("[setUserCountryInCookies:POST] Rate limited", {
+                retryAfterSec: decision.retryAfterSec,
+            });
+            return new NextResponse("Too many requests.", {
+                status: 429,
+                headers: { "Retry-After": String(decision.retryAfterSec) },
+            });
+        }
+    }
+
     let body: unknown;
     try {
         body = await request.json();

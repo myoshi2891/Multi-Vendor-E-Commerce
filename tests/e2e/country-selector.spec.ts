@@ -70,7 +70,7 @@ test.describe("国選択セレクタ（Ship to）", () => {
         // WebKit は `Secure` cookie を安全でないオリジンで破棄する。Chromium /
         // Firefox は localhost を信頼できるオリジンとして例外扱いするが、WebKit は
         // しない。ローカル E2E は本番ビルド（NODE_ENV=production）を **http** で
-        // 配信するため、`route.ts:49` の `secure: NODE_ENV === "production"` が
+        // 配信するため、`setUserCountryInCookies/route.ts` の `secure: NODE_ENV === "production"` が
         // 立ち、WebKit だけ cookie が保存されずヘッダーが更新されない。
         // 実測: POST は 200 を返し `Secure; HttpOnly; SameSite=lax` を送っている。
         // これはアプリの欠陥ではなく配信スキームの問題なので、https 配信時は実行する。
