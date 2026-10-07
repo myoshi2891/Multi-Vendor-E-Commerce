@@ -212,3 +212,11 @@ double-restocking.
 - Keep this restock design consistent with the DIRECTION-01 refund-execution design if that is also pursued — they touch the same cancellation/refund transition and should compose (restock on fulfillment status; refund on payment status), not conflict.
 - The eventual implementation reuses `restockOrderItems` (`order.ts:23`) — do not duplicate the increment logic.
 - Reviewer of the follow-up implementation should scrutinize the exactly-once guard hardest: an integration test proving stock increments **exactly once** when an item is cancelled item-level and then the order is refunded order-level is the key acceptance gate.
+
+## 実施結果（2026-10-07・HEAD `cfbcd9a6`）
+
+- 成果物: [`docs/design/inventory-restock/design.md`](../docs/design/inventory-restock/design.md) / 後続の実装プラン [087](087-implement-item-level-restock.md)
+- STOP 条件の判定: item 単位の遷移で在庫は戻らない（TODO は `order.ts:583` に残っている）。spike は有効。
+- 決定: (b)。印は `OrderItem.status ∈ {Canceled, Refunded, Returned}` に置く。全経路を `settleOrderItems`（`updateManyAndReturn` による条件付き遷移と、遷移した行だけの復元）に通す。終端は吸収状態にする。seller の経路も含める。復元は返金の確定を待たない。
+- 起票後の変化: admin の group 単位の復元経路（`updateOrderGroupStatusAsAdmin`）が追加されていた。この経路と order 単位の経路のあいだで**二重復元がすでに起こりうる**（design F-1）。group の再オープンによる二重復元（F-2）と、Size の作り直しによる取り消しの失敗（F-3）も見つかった。いずれも認可の欠陥ではない。修正は 087 に含めた。
+- ソース・スキーマは未変更。
