@@ -148,15 +148,23 @@ design §0 の事実表が正本である。要点だけ抜き出す。
 
 ## Done criteria
 
-- [ ] `grep -n "TODO(在庫連動" src/queries/order.ts` が 0 件
-- [ ] `grep -c "settleOrderItems(" src/queries/order.ts` が 6 以上（定義 1 + 経路 A〜E の 5）
-- [ ] `grep -n "tx.size.update(" src/queries/order.ts` が 0 件（`updateMany` に置き換わっている）
-- [ ] 統合テスト「item を取り消したあと注文を返金しても在庫がちょうど 1 回だけ戻る」（Step 1-3）が green
-- [ ] 統合テスト F-1 / F-2 / 並行 / F-3 / 吸収状態 / seller の IDOR が green
-- [ ] `bunx tsc --noEmit` 0 エラー、`bun run lint` 0 エラー、`bun run test` 全件 pass
-- [ ] `git diff --stat cfbcd9a6 -- prisma/` が空（スキーマ変更なし）
-- [ ] テスト統計の同期ドキュメントが実測値で更新されている
-- [ ] `plans/README.md` の 087 の行を更新した
+- [x] `grep -n "TODO(在庫連動" src/queries/order.ts` が 0 件
+- [x] `grep -c "settleOrderItems(" src/queries/order.ts` が 6 以上（定義 1 + 経路 A〜E の 5）— **実測 4**。経路 C / D は共通の `applyOrderItemStatus` 経由で 1 か所に集約、定義は `settleOrderItems = async (` で grep に掛からない。全 5 経路が通ることは「実施結果」参照
+- [x] `grep -n "tx.size.update(" src/queries/order.ts` が 0 件（`updateMany` に置き換わっている）
+- [x] 統合テスト「item を取り消したあと注文を返金しても在庫がちょうど 1 回だけ戻る」（Step 1-3）が green
+- [x] 統合テスト F-1 / F-2 / 並行 / F-3 / 吸収状態 / seller の IDOR が green
+- [x] `bunx tsc --noEmit` 0 エラー、`bun run lint` 0 エラー、`bun run test` 全件 pass
+- [x] `git diff --stat cfbcd9a6 -- prisma/` が空（スキーマ変更なし）
+- [x] テスト統計の同期ドキュメントが実測値で更新されている
+- [x] `plans/README.md` の 087 の行を更新した
+
+## 実施結果（2026-10-08・HEAD `b7b3333e` 上の作業ツリー・未コミット）
+
+- **Step 0**: drift 無し。`updateManyAndReturn` は Accelerate 拡張済み tx で型・実行時とも利用可。統合 baseline 8/8 green。STOP 条件の事前確認: seller の `product-status-select.tsx` は全 enum を選択肢に出すが、終端 → 非終端に**依存する**処理は無い（拒否は既存の toast に出る）。
+- **Step 1（Red）**: 統合 +10。8 件が意図どおりの理由で失敗（F-1 = 在庫 11、F-2 = item が Pending のまま、item 経路 / seller = 在庫 5、吸収状態 = 拒否されない、F-3 = P2025）。並行と IDOR の 2 件は回帰ガードで実装前から green（Verify の Red 対象外）。
+- **Step 2〜3（Green）**: plan どおり。差分は 1 点 —— 経路 C / D の遷移表（design §2.1）を非公開ヘルパー `applyOrderItemStatus` に共通化した。経路 D は判定結果（`not_found` / `settled`）を tx から返し、throw を try/catch の外に置いて汎用メッセージで潰さない。`isRestockTerminalOrderStatus` を型ガード化し、`toSettledItemStatus` で group → item の終端を写す。
+- **Step 4**: ユニット 84 → 94。旧呼び出し形を固定していた 11 件（経路 A の無条件 `orderItem.updateMany`、経路 C の `orderItem.update`、経路 D の単発 `updateMany`、経路 B の `prev.items`）を新しい形へ更新。いずれも呼び出し形の固定で、「先に Canceled の item が Refunded に上書きされる」挙動に依存するテスト・画面は 0 件（STOP 条件の閾値 3 未満）。
+- **実測**: Jest 3038/3041（3 skipped）・316 スイート、Integration 238/238・18 スイート、tsc 0、lint 0 errors（既存 warnings 8）。
 
 ## STOP conditions
 
