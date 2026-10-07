@@ -18,7 +18,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3023 passed / 3026 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）**。2026-10-07 `bun run test` の全体実測（plan 086 の通知基盤で新規 11 スイート〔`src/lib/notifications/*` 8・`src/queries/notification.test.ts`・`src/app/api/cron/notifications/route.test.ts`・`tests/component/store/notification-list.test.tsx`〕、既存の `order.test.ts`・`user-menu.test.tsx`・`profile-sidebar.test.tsx` に追加。lcov は 2026-10-06 のまま）。 |
+| Jest テスト総数 (unit/component) | **3026 passed / 3029 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）**。2026-10-07 `bun run test` の全体実測（plan 086 の通知基盤で新規 11 スイート〔`src/lib/notifications/*` 8・`src/queries/notification.test.ts`・`src/app/api/cron/notifications/route.test.ts`・`tests/component/store/notification-list.test.tsx`〕、既存の `order.test.ts`・`user-menu.test.tsx`・`profile-sidebar.test.tsx` に追加。lcov は 2026-10-06 のまま）。 |
 | カバレッジ全体（2026-10-06実測） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
 | Jest Integration テスト総数 | **228** / **18 スイート**（**2026-10-07 実測: 228/228 pass**・`bun run test:integration`。plan 086 で `notification-outbox.test.ts` +3〔通知と配信行の記録・送信 / dedupeKey による重複抑止 / 記録失敗時の状態更新ロールバック〕。`order-lifecycle.test.ts` は jsdom で `next/server` を読めないため `after` をモック）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
@@ -34,7 +34,7 @@
 
 - 対象: `Notification` / `NotificationDelivery` / `DeliveryStatus`（マイグレーション `20261007140000_add_notifications`・ローカル Docker DB に適用済み・リモート未適用）、`src/lib/notifications/`、`src/queries/notification.ts`、`GET /api/cron/notifications`、`/profile/notifications`、ヘッダーの未読バッジ、店舗単位の発送（Shipped / Delivered）の配線。
 - TDD: 各 Step で空の実装を置き、アサーションの失敗で Red を確認してから Green（モジュール未作成の失敗は Red に数えていない）。統合テスト 3 件は実装後の実 DB 検証で Red なし。
-- 実測: Jest 3023/3026（3 skipped）・316 スイート、Integration 228/228・18 スイート、`DESIGN_SUITE=priority bun run test:design` 9/9（通知一覧 1440/768/390・axe 0・横スクロールなし）、`bun run check:playwright` pass、tsc 0、lint 0 errors（既存 warnings 8）。
+- 実測: Jest 3026/3029（3 skipped）・316 スイート、Integration 228/228・18 スイート、`DESIGN_SUITE=priority bun run test:design` 9/9（通知一覧 1440/768/390・axe 0・横スクロールなし）、`bun run check:playwright` pass、tsc 0、lint 0 errors（既存 warnings 8）。
 - 残り: Resend SDK の導入（Step 9）はユーザー判断で見送り＝ `IN PROGRESS（Resend 承認待ち）`。cron のスケジュール設定はデプロイ先が決まってからオペレーターが行う。ヘッダーの未読バッジは RTL のみで、ブラウザーでの表示確認は未実施（Clerk 認証後のヘッダーを描画する fixture が無いため）。
 
 ### `/profile/wishlist/[page]` デザイン移行の検証（2026-09-30、未コミット）

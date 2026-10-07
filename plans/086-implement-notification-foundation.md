@@ -232,6 +232,6 @@ design §2.1 のモデルをそのまま追加する（`dedupeKey String @unique
 - **Step 8**: 通知一覧・ヘッダーの未読件数・サイドバーのリンク。`priority` design suite に通知一覧の scenario を追加して 9/9（1440 / 768 / 390px・axe 0・横スクロールなし）。認証後の実ルートとヘッダーの未読バッジのブラウザー表示は未確認（[進捗ノート](../docs/design/design-system/PROGRESS.md#通知一覧の新設2026-10-07plan-086未コミット)）。
 - **Step 9**: ユーザーの判断で**見送り**（`resend` は未追加・`package.json` 変更なし）。Status は `IN PROGRESS（Resend 承認待ち）`。
 - **Step 10**: `tests/integration/notification-outbox.test.ts` 3 件（実装後の実 DB 検証のため Red なし）。`order-lifecycle.test.ts` は jsdom に `Request` が無く `next/server` を読めないため `after` をモック。
-- 最終実測: Jest 3023/3026（3 skipped）・316 スイート・127 snapshots、Integration 228/228・18 スイート、tsc 0、lint 0 errors（既存 warnings 8）、`bun run check:playwright` pass。統計は QA_HANDOFF（SSOT）→ 07-testing / COVERAGE_REPORT / PROGRESS に同期し、ダッシュボードを再生成。
+- 最終実測: Jest 3026/3029（3 skipped）・316 スイート・127 snapshots、Integration 228/228・18 スイート、tsc 0、lint 0 errors（既存 warnings 8）、`bun run check:playwright` pass。統計は QA_HANDOFF（SSOT）→ 07-testing / COVERAGE_REPORT / PROGRESS に同期し、ダッシュボードを再生成。
 - `tech.md` への追記の**提案**（判断はユーザー）: 「新しい状態遷移を足すときは `src/lib/notifications/mapping.ts` の `NOTIFICATION_MAPPING` の更新を検討し、記録は主処理と同じ tx、送信は commit 後の `scheduleDispatch` で行う」。
 - 残り: Step 9（Resend）、cron のスケジュール設定（オペレーター）、リモート DB へのマイグレーション適用（`migrate deploy`）、認証後の実ルートでの受け入れ確認。
