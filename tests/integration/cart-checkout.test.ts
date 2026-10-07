@@ -11,7 +11,7 @@
  *     ミドルウェアによる localStorage hydration
  *   - DB の Cart / CartItem / Coupon テーブル (testcontainers PostgreSQL)
  *   - Server actions (`applyCoupon` from `src/queries/coupon.ts`)
- *   - Checkout page の未認証時 redirect ロジック
+ *   - Checkout page の未認証時 redirect ロジック（sign-in へ送る）
  *
  * 設計判断: 本テストでは React Testing Library によるコンポーネント描画を**意図的に
  * 避ける**。理由は ADR-003 で報告されている jsdom + RTL + userEvent + waitFor の
@@ -28,8 +28,10 @@
 // Mocks (must be declared before importing the modules they affect)
 // ----------------------------------------------------------------------------
 
-// Scenario 4 用: Clerk の currentUser をテストごとに差し替え可能にする
+// Clerk をテストごとに差し替え可能にする。currentUser は server action（applyCoupon 等）、
+// auth は Scenario 4 の CheckoutPage（リソース側の認証。1523af61）が使う
 jest.mock("@clerk/nextjs/server", () => ({
+    auth: jest.fn(),
     currentUser: jest.fn(),
 }));
 
@@ -51,7 +53,7 @@ jest.mock("next/headers", () => ({
 // ----------------------------------------------------------------------------
 
 import { Prisma, ShippingFeeMethod } from "@prisma/client";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { useCartStore } from "@/cart-store/useCartStore";
 import { computeShippingTotal } from "@/lib/shipping-utils";
@@ -125,6 +127,7 @@ beforeEach(async () => {
 
     // mocks をリセット
     (currentUser as unknown as jest.Mock).mockReset();
+    (auth as unknown as jest.Mock).mockReset();
     (redirect as unknown as jest.Mock).mockClear();
 });
 
@@ -450,18 +453,27 @@ describe("Scenario 3: Coupon application", () => {
 // Scenario 4: Checkout page unauth redirect
 // ============================================================================
 
-describe("Scenario 4: Unauth checkout redirects to /cart", () => {
-    it("calls redirect('/cart') when currentUser returns null", async () => {
-        // Arrange: currentUser を null に。CheckoutPage はその場合 redirect('/cart') を呼ぶ。
-        (currentUser as unknown as jest.Mock).mockResolvedValue(null);
+describe("Scenario 4: Unauth checkout redirects to sign-in", () => {
+    it("calls redirectToSignIn (not redirect('/cart')) when auth has no userId", async () => {
+        // Arrange: auth() が userId を返さない。CheckoutPage は redirectToSignIn を呼ぶ
+        // （/cart へ逃がすとサインイン後に checkout へ戻れない。1523af61 / OI-17）。
+        // redirectToSignIn は実際には never（NEXT_REDIRECT を throw）なので同じ振る舞いを模す。
+        const redirectToSignIn = jest.fn(() => {
+            throw new Error("NEXT_REDIRECT:sign-in");
+        });
+        (auth as unknown as jest.Mock).mockResolvedValue({
+            userId: null,
+            redirectToSignIn,
+        });
 
         // Dynamic import: CheckoutPage は default export
         const { default: CheckoutPage } = await import(
             "@/app/(store)/checkout/page"
         );
 
-        // Act + Assert: redirect は throw する設計 (NEXT_REDIRECT:/cart)
-        await expect(CheckoutPage()).rejects.toThrow(/NEXT_REDIRECT:\/cart/);
-        expect(redirect).toHaveBeenCalledWith("/cart");
+        // Act + Assert
+        await expect(CheckoutPage()).rejects.toThrow(/NEXT_REDIRECT:sign-in/);
+        expect(redirectToSignIn).toHaveBeenCalledTimes(1);
+        expect(redirect).not.toHaveBeenCalled();
     });
 });
