@@ -117,4 +117,42 @@ for (const width of [1440, 768, 390]) {
         ).toBeVisible();
         await accessible(page);
     });
+    test(`notification list states at ${width}px (plan 086)`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=notifications");
+        await expect(page.getByRole("heading", { level: 1 })).toHaveCSS(
+            "font-family",
+            /Georgia/
+        );
+        await expect(page.getByText("Unread", { exact: true })).toHaveCount(2);
+        await expect(
+            page.getByRole("link", { name: "Older notifications" })
+        ).toHaveAttribute("href", "/profile/notifications?cursor=n3");
+        await accessible(page);
+        await page.screenshot({
+            path: info.outputPath(`notifications-${width}.png`),
+            fullPage: true,
+        });
+        const markAll = page.getByRole("button", { name: "Mark all as read" });
+        await markAll.focus();
+        await expect(markAll).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await expect(page.getByText("Unread", { exact: true })).toHaveCount(0);
+        await expect(markAll).toBeDisabled();
+        await accessible(page);
+
+        await page.goto("/?scenario=notifications-error");
+        await page.getByRole("button", { name: "Mark all as read" }).click();
+        await expect(page.getByRole("alert")).toHaveText(
+            "Couldn't update notifications. Please try again."
+        );
+        await expect(page.getByText("Unread", { exact: true })).toHaveCount(2);
+        await accessible(page);
+
+        await page.goto("/?scenario=notifications-empty");
+        await expect(page.getByText("No notifications yet.")).toBeVisible();
+        await accessible(page);
+    });
 }

@@ -59,7 +59,20 @@ jest.mock("@/lib/db", () => ({
     },
 }));
 
+// 通知（plan 086）。記録は tx の中、送信予約は commit 後に呼ばれることを検証する
+jest.mock("@/lib/notifications/order-events", () => ({
+    recordOrderGroupStatusNotification: jest.fn().mockResolvedValue([]),
+}));
+jest.mock("@/lib/notifications/schedule", () => ({
+    scheduleDispatch: jest.fn(),
+}));
+
 const mockDb = require("@/lib/db").db;
+const { recordOrderGroupStatusNotification: mockRecordGroupNotification } =
+    require("@/lib/notifications/order-events");
+const { scheduleDispatch: mockScheduleDispatch } = require(
+    "@/lib/notifications/schedule"
+);
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -213,6 +226,13 @@ describe("getOrder", () => {
 // updateOrderGroupStatus
 // ==================================================
 describe("updateOrderGroupStatus", () => {
+    // 更新は $transaction の中で行う（通知の記録と原子的にするため・plan 086）
+    beforeEach(() => {
+        mockDb.$transaction.mockImplementation(
+            async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb)
+        );
+    });
+
     describe("認証・権限エラー", () => {
         it("未認証ユーザーの場合エラーをスローする", async () => {
             (currentUser as jest.Mock).mockResolvedValue(null);
@@ -1568,5 +1588,165 @@ describe("trackOrder", () => {
         expect(loggedPayload).not.toContain("order-001");
 
         errSpy.mockRestore();
+    });
+});
+
+// ==================================================
+// 発送状態の通知（plan 086）
+// ==================================================
+describe("OrderGroup の発送状態の通知（plan 086）", () => {
+    let errSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+        errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+        mockDb.$transaction.mockImplementation(
+            async (cb: (tx: typeof mockDb) => Promise<unknown>) => cb(mockDb)
+        );
+    });
+    afterEach(() => errSpy.mockRestore());
+
+    describe("seller: updateOrderGroupStatus", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "SELLER" },
+            });
+            mockDb.store.findUnique.mockResolvedValue(createMockStore());
+            mockDb.orderGroup.findUnique.mockResolvedValue(
+                createMockOrderGroup({ status: "Processing" })
+            );
+            mockDb.orderGroup.update.mockResolvedValue(
+                createMockOrderGroup({ status: "Shipped" })
+            );
+        });
+
+        it("tx の中で更新前の状態を渡して記録し、commit 後に送信を予約する", async () => {
+            // Arrange
+            const order: string[] = [];
+            mockRecordGroupNotification.mockImplementationOnce(async () => {
+                order.push("record");
+                return ["d-1"];
+            });
+            mockDb.$transaction.mockImplementationOnce(
+                async (cb: (tx: typeof mockDb) => Promise<unknown>) => {
+                    const value = await cb(mockDb);
+                    order.push("commit");
+                    return value;
+                }
+            );
+            mockScheduleDispatch.mockImplementationOnce(() => {
+                order.push("schedule");
+            });
+
+            // Act
+            const result = await updateOrderGroupStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "order-group-001",
+                "Shipped" as never
+            );
+
+            // Assert
+            expect(result).toBe("Shipped");
+            expect(mockRecordGroupNotification).toHaveBeenCalledWith(mockDb, {
+                groupId: "order-group-001",
+                previousStatus: "Processing",
+                nextStatus: "Shipped",
+            });
+            expect(mockScheduleDispatch).toHaveBeenCalledWith(["d-1"]);
+            expect(order).toEqual(["record", "commit", "schedule"]);
+        });
+
+        it("記録が失敗したら更新も失敗し、既存の汎用メッセージで返す（送信予約もしない）", async () => {
+            // Arrange
+            mockRecordGroupNotification.mockRejectedValueOnce(
+                new Error("notification write failed")
+            );
+
+            // Act & Assert
+            await expect(
+                updateOrderGroupStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "order-group-001",
+                    "Shipped" as never
+                )
+            ).rejects.toThrow("Failed to update order group status.");
+            expect(mockScheduleDispatch).not.toHaveBeenCalled();
+        });
+
+        it("送信の予約が失敗しても、更新は成功して新しい状態を返す", async () => {
+            // Arrange
+            mockRecordGroupNotification.mockResolvedValueOnce(["d-1"]);
+            mockScheduleDispatch.mockImplementationOnce(() => {
+                throw new Error("provider down");
+            });
+
+            // Act
+            const result = await updateOrderGroupStatus(
+                TEST_CONFIG.DEFAULT_STORE_ID,
+                "order-group-001",
+                "Shipped" as never
+            );
+
+            // Assert
+            expect(result).toBe("Shipped");
+        });
+    });
+
+    describe("admin: updateOrderGroupStatusAsAdmin", () => {
+        beforeEach(() => {
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+                privateMetadata: { role: "ADMIN" },
+            });
+            mockDb.orderGroup.findUnique.mockResolvedValue({
+                status: OrderStatus.Processing,
+                items: [],
+            });
+            mockDb.orderGroup.update.mockResolvedValue({
+                id: "order-group-001",
+                orderId: "order-001",
+                status: OrderStatus.Delivered,
+            });
+            mockDb.orderGroup.findMany.mockResolvedValue([
+                { status: OrderStatus.Delivered },
+            ]);
+            mockDb.order.update.mockResolvedValue({});
+        });
+
+        it("tx の中で更新前の状態を渡して記録し、commit 後に送信を予約する", async () => {
+            // Arrange
+            mockRecordGroupNotification.mockResolvedValueOnce(["d-2"]);
+
+            // Act
+            const result = await updateOrderGroupStatusAsAdmin(
+                "order-group-001",
+                OrderStatus.Delivered
+            );
+
+            // Assert
+            expect(result).toBe(OrderStatus.Delivered);
+            expect(mockRecordGroupNotification).toHaveBeenCalledWith(mockDb, {
+                groupId: "order-group-001",
+                previousStatus: OrderStatus.Processing,
+                nextStatus: OrderStatus.Delivered,
+            });
+            expect(mockScheduleDispatch).toHaveBeenCalledWith(["d-2"]);
+        });
+
+        it("記録が失敗したら更新も失敗する（送信予約もしない）", async () => {
+            // Arrange
+            mockRecordGroupNotification.mockRejectedValueOnce(
+                new Error("notification write failed")
+            );
+
+            // Act & Assert
+            await expect(
+                updateOrderGroupStatusAsAdmin(
+                    "order-group-001",
+                    OrderStatus.Delivered
+                )
+            ).rejects.toThrow("notification write failed");
+            expect(mockScheduleDispatch).not.toHaveBeenCalled();
+        });
     });
 });

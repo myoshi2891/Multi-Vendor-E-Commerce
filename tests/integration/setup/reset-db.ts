@@ -22,6 +22,8 @@ import type { PrismaClient } from "@prisma/client";
  * `resetDb(db, { includeReferenceData: true })` を渡す。
  */
 const APPLICATION_TABLES = [
+    "NotificationDelivery",
+    "Notification",
     "Wishlist",
     "Review",
     "ReviewImage",

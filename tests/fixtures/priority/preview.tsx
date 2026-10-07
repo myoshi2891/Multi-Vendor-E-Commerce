@@ -6,6 +6,9 @@ import HistoryContainer from "@/components/store/profile/history/container";
 import { DiscoveryHeading } from "@/components/store/profile/shared/discovery";
 import styles from "@/components/store/profile/shared/discovery.module.css";
 import type { ProductType } from "@/lib/types";
+import NotificationList from "@/components/store/profile/notifications/notification-list";
+import profileStyles from "@/components/store/profile/profile.module.css";
+import type { NotificationListItem } from "@/queries/notification";
 
 const parameters = new URLSearchParams(location.search);
 const scenario =
@@ -98,52 +101,104 @@ if (!scenario.includes("empty") && scenario.startsWith("history"))
     localStorage.setItem("productHistory", JSON.stringify(historyIds));
 if (scenario.includes("empty")) localStorage.removeItem("productHistory");
 
-createRoot(document.getElementById("root")!).render(
-    <main
-        className={styles.page}
-        style={{
-            background: "#f3f0e8",
-            maxWidth: 1050,
-            margin: "auto",
-            padding: "40px 6%",
-            minHeight: "100vh",
-        }}
-    >
-        <DiscoveryHeading
-            title={
-                scenario.startsWith("history")
-                    ? "Your product view history"
-                    : "Stores you follow"
-            }
-            description="A little space for your discoveries."
-        />
-        {scenario.startsWith("history") ? (
-            <HistoryContainer
-                page={page}
-                fetchHistoryAction={fetchHistoryAction}
-            />
-        ) : (
-            <FollowingContainer
-                stores={
-                    scenario.includes("empty")
-                        ? []
-                        : [
-                              {
-                                  id: "s1",
-                                  name: "A boutique with a very long name ".repeat(
-                                      5
-                                  ),
-                                  url: "boutique",
-                                  logo: "/assets/brand/star.svg",
-                                  followersCount: 12,
-                                  isUserFollowingStore: true,
-                              },
-                          ]
+// 通知一覧（plan 086）。?scenario=notifications | notifications-empty | notifications-error
+const notifications: NotificationListItem[] = [
+    {
+        id: "n1",
+        title: "Your items have shipped",
+        body: `Items from ${"A boutique with a very long name ".repeat(4)}in order-1 are on the way.`,
+        linkUrl: "/order/order-1",
+        isRead: false,
+        createdAt: "2026-10-07T09:30:00.000Z",
+    },
+    {
+        id: "n2",
+        title: "Your items were delivered",
+        body: "Items from Acme in order-2 were delivered.",
+        linkUrl: "/order/order-2",
+        isRead: false,
+        createdAt: "2026-10-06T18:00:00.000Z",
+    },
+    {
+        id: "n3",
+        title: "Your items have shipped",
+        body: "Items from Acme in order-2 are on the way.",
+        linkUrl: "/order/order-2",
+        isRead: true,
+        createdAt: "2026-10-05T08:15:00.000Z",
+    },
+];
+const notificationAction = async () => {
+    await delay(150);
+    if (scenario === "notifications-error") throw new Error("fixture failure");
+    return { count: 1 };
+};
+
+const root = createRoot(document.getElementById("root")!);
+if (scenario.startsWith("notifications")) {
+    root.render(
+        <div className={profileStyles.shell} style={{ minHeight: "100vh" }}>
+            <main
+                style={{ maxWidth: 1050, margin: "auto", padding: "40px 6%" }}
+            >
+                <NotificationList
+                    initialItems={
+                        scenario.includes("empty") ? [] : notifications
+                    }
+                    nextCursor={scenario.includes("empty") ? null : "n3"}
+                    markReadAction={notificationAction}
+                    markAllReadAction={notificationAction}
+                />
+            </main>
+        </div>
+    );
+} else
+    root.render(
+        <main
+            className={styles.page}
+            style={{
+                background: "#f3f0e8",
+                maxWidth: 1050,
+                margin: "auto",
+                padding: "40px 6%",
+                minHeight: "100vh",
+            }}
+        >
+            <DiscoveryHeading
+                title={
+                    scenario.startsWith("history")
+                        ? "Your product view history"
+                        : "Stores you follow"
                 }
-                page={page}
-                totalPages={scenario.includes("empty") ? 0 : 20}
-                followAction={followAction}
+                description="A little space for your discoveries."
             />
-        )}
-    </main>
-);
+            {scenario.startsWith("history") ? (
+                <HistoryContainer
+                    page={page}
+                    fetchHistoryAction={fetchHistoryAction}
+                />
+            ) : (
+                <FollowingContainer
+                    stores={
+                        scenario.includes("empty")
+                            ? []
+                            : [
+                                  {
+                                      id: "s1",
+                                      name: "A boutique with a very long name ".repeat(
+                                          5
+                                      ),
+                                      url: "boutique",
+                                      logo: "/assets/brand/star.svg",
+                                      followersCount: 12,
+                                      isUserFollowingStore: true,
+                                  },
+                              ]
+                    }
+                    page={page}
+                    totalPages={scenario.includes("empty") ? 0 : 20}
+                    followAction={followAction}
+                />
+            )}
+        </main>
+    );
