@@ -873,7 +873,7 @@ describe("ProductDetails", () => {
             const edited = "x".repeat(240);
 
             // Act
-            fireEvent.change(screen.getByTestId("jodit"), {
+            fireEvent.change(await screen.findByTestId("jodit"), {
                 target: { value: edited },
             });
             fireEvent.click(screen.getByRole("button", { name: /Save/i }));
@@ -900,7 +900,7 @@ describe("ProductDetails", () => {
             });
             fireEvent.mouseDown(variantTab);
             fireEvent.focus(variantTab);
-            fireEvent.change(screen.getByTestId("jodit"), {
+            fireEvent.change(await screen.findByTestId("jodit"), {
                 target: { value: "variant only note" },
             });
             fireEvent.click(screen.getByRole("button", { name: /Save/i }));

@@ -60,7 +60,9 @@ import type { ProductFormActions } from "@/lib/seller-products";
 import { WithOutContext as ReactTags } from "react-tag-input";
 
 // Jodit text editor
-import JoditEditor from "jodit-react";
+// UMD がモジュール評価時に `self` を参照するため、SSR では読み込まない（OI-11・plan 083）
+import dynamic from "next/dynamic";
+const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 // Utils
 import { v4 } from "uuid";
