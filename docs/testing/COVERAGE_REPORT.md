@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-07） | **2941 passed / 2944 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| Jestテスト総数（2026-10-07） | **2942 passed / 2945 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | 全体coverage（2026-10-06・レビュー指摘対応後） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **376ファイル**（2026-10-06 レビュー指摘対応後の dashboard実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| Jest スイート総数（unit/component のみ） | **302スイート**（301 passed／1 skipped、2026-10-06 レビュー指摘対応後の全体実測）。 |
-| テスト総数 | **2941 unit/component passed**（2944 total／3 skipped）。Integration223／17 suites（2026-10-07実測・plan 082）。 |
+| Jest スイート総数（unit/component のみ） | **305スイート**（304 passed／1 skipped、2026-10-07 全体実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| テスト総数 | **2942 unit/component passed**（2945 total／3 skipped）。Integration223／17 suites（2026-10-07実測・plan 082）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
@@ -60,7 +60,7 @@
 | API / Contract | 1/10 | 10% | route.test.ts のみ |
 | Security | 2/10 | **20%** | A1 完了: queries（IDOR認可テスト）+ lib（middleware/sanitize） |
 | Visual / Snapshot | 1/10 | **10%** | A2 完了: pages（cart/checkout spec — baseline 未コミット） |
-| Accessibility | 1/10 | **10%** | A3 完了: pages（sign-in / seller-apply、WCAG 2.1 AA スキャン）。2026-08-09 の plan 052 で同じ pages 列に **browse / 商品詳細 / cart** を追加（計 7 spec）。スキャンは **chromium 限定**で実行し、`color-contrast` ルールは既知負債 **OI-10** として `disabledRules` で除外している（[QA_HANDOFF.md OI-10](./QA_HANDOFF.md#active-open-issues) 参照）。**カバー率が 10% のままなのは列（ドメイン）が増えていないため**であり、テスト本数は 4 → 7 に増えている |
+| Accessibility | 1/10 | **10%** | A3 完了: pages（sign-in / seller-apply、WCAG 2.1 AA スキャン）。2026-08-09 の plan 052 で同じ pages 列に **browse / 商品詳細 / cart** を追加（計 7 spec）。スキャンは **chromium 限定**で実行する。`color-contrast` の抑制（`disabledRules`）は 2026-10-07 に OI-10 解消（plan 084）で解除済みで、全ルール有効で違反 0（[QA_HANDOFF.md](./QA_HANDOFF.md#active-open-issues) 参照）。**カバー率が 10% のままなのは列（ドメイン）が増えていないため**であり、テスト本数は 4 → 7 に増えている |
 | Performance | 0/10 | **0%** | 全列未対応 |
 
 ### ドメイン別 (列) のホットスポット
@@ -510,6 +510,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-07 | **plan 082 追補: OI-17 / OI-18 — Jest +2（2919 → 2921 passed / 2922 → 2924 total・302 → 303 スイート）、Integration 不変（223）**（作業ツリー・コミット前）: 未認証の `/checkout` をサインインへ送るよう `checkout/page.tsx` を `auth()` + `redirectToSignIn()` に変更し、`tests/component/store/checkout-page-auth.test.tsx` を新設（旧実装で `/cart` へ redirect される Red を確認）。profile E2E は実国名の Country fixture をやめ seed の project 別の国を選ぶ。Chromium で payment-error / profile / platform-coupon / purchase-flow 10 passed。 |
 | 2026-10-07 | **plan 083: OI-11 seller 商品フォームの SSR `self is not defined` — Jest +1（2921 → 2922 passed / 2924 → 2925 total・303 → 304 スイート）、Integration 不変（223）**（HEAD `7edcb20b` 上の作業ツリー・コミット前）: 原因は OI-11 の推定（`CldUploadWidget`）ではなく、`product-details.tsx` が静的 import していた `jodit-react` の UMD（評価時に `self` を参照）。`next/dynamic` の `ssr: false` へ変更し、`tests/component/dashboard/product-details-ssr.test.tsx`（`@jest-environment node`）を新設（旧実装で `self is not defined` により reject する Red を確認）。既存 `product-details.test.tsx` はエディタ取得を `findByTestId` へ。`bun run build` 後のサーバーチャンクから jodit が消えたことを確認。 |
 | 2026-10-07 | **plan 085: 公開エンドポイントのレート制限（ADR-009）— Jest +19（2922 → 2941 passed / 2925 → 2944 total・304 → 305 スイート）、Integration 不変（223）**（作業ツリー・コミット前）: インメモリ Fixed Window limiter `src/lib/rate-limit.ts` を新設（`rate-limit.test.ts` +14）し、`setUserCountryInCookies` に組み込み（`route.test.ts` +5: 6 回目 429 + `Retry-After`、パース前判定、`x-real-ip` 無しは fail-open、`x-forwarded-for` 非信頼、環境変数上書き）。検索 2 本は Vercel WAF（オペレーター作業待ち）。いずれも Red 確認済み。 |
+| 2026-10-07 | **plan 085 レビュー対応 — Jest +1（2941 → 2942 passed / 2944 → 2945 total・305 スイート不変）**（作業ツリー・コミット前）: `setUserCountryInCookies` の判定を `rateLimitResponse` ヘルパーへ抽出し、Vercel 上（`VERCEL=1`）で `x-real-ip` が欠落したときだけ IP を含まない構造化警告を出す（ローカル / CI は無警告・fail-open は不変）。`route.test.ts` +1。 |
 
 ### 2026-09-30 compareデザイン移行
 

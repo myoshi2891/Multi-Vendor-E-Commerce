@@ -18,7 +18,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **2941 passed / 2944 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）**。2026-10-07 `bun run test -- --no-coverage` の全体実測（plan 085 のレート制限で `src/lib/rate-limit.test.ts` +14・+1 スイート、`setUserCountryInCookies/route.test.ts` +5。lcov は 2026-10-06 のまま）。 |
+| Jest テスト総数 (unit/component) | **2942 passed / 2945 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）**。2026-10-07 `bun run test -- --no-coverage` の全体実測（plan 085 のレート制限で `src/lib/rate-limit.test.ts` +14・+1 スイート、`setUserCountryInCookies/route.test.ts` +6〔レビュー対応で Vercel 上の `x-real-ip` 欠落警告 +1 を含む〕。lcov は 2026-10-06 のまま）。 |
 | カバレッジ全体（2026-10-06実測） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
 | Jest Integration テスト総数 | **223** / **17 スイート**（**2026-10-07 実測: 223/223 pass**・`bun run test:integration`。plan 082 で `category-tree-resync.test.ts` に補正マイグレーション `RESYNC_URL_SWAP` の 2 件を追加し、旧 url 交換テスト 1 件をそこへ移設）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
