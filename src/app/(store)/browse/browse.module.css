@@ -20,22 +20,23 @@
 .catalog { max-width: 1600px; padding: 69px 6% 110px; margin: auto; }
 .catalogIntro { display: flex; justify-content: space-between; align-items: end; gap: 24px; border-bottom: 1px solid #bec0b2; padding-bottom: 36px; }
 .catalogIntro h2 { font: 400 clamp(36px, 4.2vw, 64px)/1.1 Georgia, 'Times New Roman', serif; letter-spacing: -.045em; margin-top: 14px; }
-.catalogIntro h2 em { color: #a68a56; font-weight: 400; }
-.catalogIntro > p { color: #68766b; font-size: 11px; white-space: nowrap; letter-spacing: .12em; text-transform: uppercase; }
+.catalogIntro .eyebrow { color: #7e683a; }
+.catalogIntro h2 em { color: #9a8050; font-weight: 400; }
+.catalogIntro > p { color: #616e64; font-size: 11px; white-space: nowrap; letter-spacing: .12em; text-transform: uppercase; }
 .catalogLayout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: clamp(28px, 4.6vw, 76px); padding-top: 31px; }
 .sectionLabel { border-bottom: 1px solid #bec0b2; padding: 0 0 18px; font-size: 10px; font-weight: 600; letter-spacing: .17em; }
 .filters { min-width: 0; }
 .filters :global(.scrollbar) { position: static; width: 100%; height: auto; max-height: none; padding: 0; overflow: visible; }
 .filters :global(.w-44) { width: 100%; border-color: #d2d2c5; }
 .filters :global(.text-main-primary) { color: var(--ink); }
-.filters :global(.text-main-secondary) { color: #68766b; }
-.filters :global(.text-orange-background) { color: #8b7346; }
+.filters :global(.text-main-secondary) { color: #616e64; }
+.filters :global(.text-orange-background) { color: #7d683f; }
 .filters :global(.bg-\[\#ffebed\]) { background: #e7e2d4; color: #6c5834; border-color: #a68a56; }
 .filters :global(button:focus-visible), .results :global(button:focus-visible), .results :global(a:focus-visible) { outline: 2px solid #a68a56; outline-offset: 3px; }
 .results { min-width: 0; }
 .resultsBar { min-height: 46px; display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; margin-bottom: 24px; border-bottom: 1px solid #bec0b2; padding-bottom: 12px; font-size: 10px; font-weight: 600; letter-spacing: .17em; }
 .resultsBar > span { padding-top: 10px; white-space: nowrap; }
-.resultNumber { color: #9a9d8d; }
+.resultNumber { color: #696c5d; }
 .pagination { margin-top: 65px; padding-top: 25px; border-top: 1px solid #bec0b2; }
 .pagination :global(button) { color: #536356; }
 .pagination :global(button[aria-current="page"]) { color: #846a3e; border-color: #a68a56; }
