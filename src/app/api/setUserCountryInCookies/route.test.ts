@@ -176,6 +176,29 @@ describe("POST /api/setUserCountryInCookies — rate limit (ADR-009)", () => {
 
         // Assert
         expect(statuses.every((s) => s === 200)).toBe(true);
+        // ローカル / CI（VERCEL 未設定）では欠落が正常なので警告しない
+        expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it("Vercel 上で x-real-ip が無い場合は IP を含まない警告を出し、fail-open する", async () => {
+        // Arrange
+        const original = process.env.VERCEL;
+        process.env.VERCEL = "1";
+
+        try {
+            // Act
+            const response = await POST(requestFrom({}));
+
+            // Assert
+            expect(response.status).toBe(200);
+            expect(warnSpy).toHaveBeenCalledWith(
+                "[setUserCountryInCookies:POST] x-real-ip missing; rate limit skipped",
+                { failOpen: true }
+            );
+        } finally {
+            if (original === undefined) delete process.env.VERCEL;
+            else process.env.VERCEL = original;
+        }
     });
 
     it("x-forwarded-for を変えても x-real-ip が同じなら回数はリセットされない", async () => {
