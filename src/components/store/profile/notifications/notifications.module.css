@@ -34,7 +34,16 @@
     padding: 18px 4px;
     min-height: 44px;
 }
-a.link:hover .title {
+.asButton {
+    width: 100%;
+    text-align: left;
+}
+.asButton:focus-visible {
+    outline: 2px solid var(--account-accent);
+    outline-offset: 4px;
+}
+a.link:hover .title,
+.asButton:hover .title {
     text-decoration: underline;
     text-underline-offset: 4px;
 }

@@ -152,25 +152,35 @@ export default function NotificationList({
                                         >
                                             {content}
                                         </Link>
-                                    ) : (
+                                    ) : item.isRead ? (
                                         <div className={styles.link}>
                                             {content}
                                         </div>
+                                    ) : (
+                                        // リンク先の無い未読は、開く代わりにボタンで既読にする
+                                        <button
+                                            type="button"
+                                            className={`${styles.link} ${styles.asButton}`}
+                                            onClick={() => markOne(item.id)}
+                                        >
+                                            {content}
+                                        </button>
                                     )}
                                 </li>
                             );
                         })}
                     </ul>
-                    {nextCursor ? (
-                        <Link
-                            href={`/profile/notifications?cursor=${encodeURIComponent(nextCursor)}`}
-                            className={styles.older}
-                        >
-                            Older notifications
-                        </Link>
-                    ) : null}
                 </>
             )}
+            {/* 未知の種別だけのページは items が空でも続きがあるので、空状態でも出す */}
+            {nextCursor ? (
+                <Link
+                    href={`/profile/notifications?cursor=${encodeURIComponent(nextCursor)}`}
+                    className={styles.older}
+                >
+                    Older notifications
+                </Link>
+            ) : null}
         </section>
     );
 }
