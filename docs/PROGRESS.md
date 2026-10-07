@@ -16,7 +16,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2941 passed / 2944 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）** — 2026-10-07 plan 085（レート制限）後の全体実測。Integration223／17 suitesは2026-10-07実測（plan 082）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **2942 passed / 2945 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）** — 2026-10-07 plan 085（レート制限）後の全体実測。Integration223／17 suitesは2026-10-07実測（plan 082）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **223テスト / 17スイート** — 2026-10-07実測（plan 082・223/223 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5377,4 +5377,13 @@ plan 025（spike）のゲートをメンテナー回答で通過し、ADR-009 �
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | Jest | 2922 passed / 2925 total・304 スイート | **2941 passed / 2944 total・305 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 085 レビュー対応 (2026-10-07)
+
+`setUserCountryInCookies` の判定を `rateLimitResponse` ヘルパーへ抽出（POST の認知的複雑度を削減）し、Vercel 上で `x-real-ip` が欠落したときだけ IP を含まない構造化警告を出すようにした（fail-open は不変）。あわせて README・plan 081/085・audit DX-02・COVERAGE_REPORT のレビュー指摘を反映（未コミット）。
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Jest | 2941 passed / 2944 total・305 スイート | **2942 passed / 2945 total・305 スイート** |
 | 型エラー | 0 件 | **0 件** |
