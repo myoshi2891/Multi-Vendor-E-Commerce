@@ -90,6 +90,7 @@ cp docs/architecture/decisions/template.md docs/architecture/decisions/00X-your-
 | [007](007-attribute-storage.md) | カテゴリ別属性値の格納方式 — 正規化テーブル（型別カラム） | Accepted | 2026-08-31 |
 | [008](008-product-search-vector.md) | 商品検索ベクトルの持ち方 — 非正規化キーワード列 + 重み付き生成列 | Accepted | 2026-10-03 |
 | [009](009-public-endpoint-rate-limiting.md) | 公開エンドポイントのレート制限 — Vercel WAF（検索）+ アプリ内インメモリ（cookie 書き込み） | Accepted | 2026-10-07 |
+| [010](010-transactional-email-provider.md) | トランザクショナルメールのプロバイダ — Resend（差し替え可能な seam の背後に置く） | Proposed | 2026-10-07 |
 
 <!--
 ### 将来の ADR 候補
