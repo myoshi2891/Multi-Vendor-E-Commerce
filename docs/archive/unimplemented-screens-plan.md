@@ -1,3 +1,9 @@
+> **SUPERSEDED (2026-10): すべての画面は実装済み。** この計画書に列挙された未実装画面
+> （admin orders/coupons、seller inventory、dashboard トップ、profile settings/messages、
+> track-order、support-forms、offers、compare、静的ページ群）は 2026-06 までに実装された
+> （2026-10-07 に全 20 ルートの `page.tsx` 実在を再確認・plans/011）。
+> 未解決の作業がある場合は specs/multi-vendor-ecommerce/08-open-questions.md を参照。
+
 # 未実装画面の洗い出しと開発計画 (Next Tasks Plan)
 
 本プロジェクト（マルチベンダーEコマース）において、画面上にリンクや導線が定義されているものの、実際にはルートディレクトリやページファイル（`page.tsx`）が存在しない、あるいはプレースホルダーのままになっている画面を洗い出しました。これらを今後の開発タスクとして整理し、計画を提示します。

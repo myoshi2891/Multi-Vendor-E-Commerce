@@ -1,7 +1,7 @@
 # Profile Messages（`/profile/messages`）— 設計書
 
 > 購入者↔販売者のメッセージ（チャット）画面。実装済みConversation/Messageと5秒ポーリング更新で構成する。
-> 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「C. 顧客アカウント・メニュー」優先度=中。
+> 出典: [`docs/archive/unimplemented-screens-plan.md`](../../archive/unimplemented-screens-plan.md) 「C. 顧客アカウント・メニュー」優先度=中。
 
 ---
 

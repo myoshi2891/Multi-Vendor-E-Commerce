@@ -1,7 +1,7 @@
 # Profile Settings（`/profile/settings`）— 設計書
 
 > 顧客アカウント設定画面。会員情報（メール・氏名）編集、パスワード変更、多要素認証（MFA）、アカウント削除を提供する。
-> 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「C. 顧客アカウント・メニュー」優先度=中。
+> 出典: [`docs/archive/unimplemented-screens-plan.md`](../../archive/unimplemented-screens-plan.md) 「C. 顧客アカウント・メニュー」優先度=中。
 
 ---
 

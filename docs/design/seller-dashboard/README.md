@@ -1,6 +1,6 @@
 # 販売者ダッシュボード 2 機能 — 設計ドキュメント
 
-> **このディレクトリの入口**。`docs/unimplemented-screens-plan.md`「B. 販売者ダッシュボード」に挙がった 2 つの未実装画面を、後続セッション（Sonnet 可）が **迷わず実装できる粒度** で設計したものです。
+> **このディレクトリの入口**。`docs/archive/unimplemented-screens-plan.md`「B. 販売者ダッシュボード」に挙がった 2 つの未実装画面を、後続セッション（Sonnet 可）が **迷わず実装できる粒度** で設計したものです。
 > 構成は [docs/design/admin-dashboard/](../admin-dashboard/) を踏襲します。
 
 ---
@@ -96,7 +96,7 @@ Phase 4: F3 placeOrder 在庫減算 + 不足ガード   [チェックアウト�
 | 種別 | パス | 関連内容 |
 | --- | --- | --- |
 | 先行設計（参照元） | [docs/design/admin-dashboard/](../admin-dashboard/) | 本設計群のフォーマット元。`dashboard.ts` 等の再利用元 |
-| 未実装画面一覧 | [docs/unimplemented-screens-plan.md](../../unimplemented-screens-plan.md) | 「B. 販売者ダッシュボード」 |
+| 未実装画面一覧 | [docs/archive/unimplemented-screens-plan.md](../../archive/unimplemented-screens-plan.md) | 「B. 販売者ダッシュボード」 |
 | 認可ガード規約 | [.claude/steering/tech.md](../../../.claude/steering/tech.md) | "認可ガード" 項（`requireStoreOwner` 必須） |
 | 動的レンダリング規約 | [.claude/steering/tech.md](../../../.claude/steering/tech.md) | DB 依存ページは `force-dynamic` |
 | 金額・数値精度規約 | [.claude/steering/tech.md](../../../.claude/steering/tech.md) | Decimal 一貫演算・`.toNumber()` は return 境界のみ |

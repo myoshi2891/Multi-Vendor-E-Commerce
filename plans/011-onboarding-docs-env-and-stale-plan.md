@@ -17,6 +17,7 @@
 - **Depends on**: none
 - **Category**: docs
 - **Planned at**: commit `f9752c0`, 2026-07-03
+- **Status**: DONE（2026-10-07・未コミット）
 
 ## Why this matters
 
@@ -331,7 +332,7 @@ expected=$(
   {
     grep -rho 'process\.env\.[A-Z_][A-Z0-9_]*' src/ next.config.mjs | sed 's/process\.env\.//'
     grep -oE '^[A-Z_][A-Z0-9_]*=' .env.docker.example | tr -d '='
-  } | sort -u | grep -vE '^(ELASTICSEARCH_[A-Z_]*|NODE_ENV|VERCEL_ENV|E2E_BASE_URL|SONAR_TOKEN|SONAR_HOST_URL|HSTS_[A-Z_]*)$'
+  } | sort -u | grep -vE '^(ELASTICSEARCH_[A-Z_]*|NODE_ENV|VERCEL_ENV|E2E_BASE_URL|SONAR_TOKEN|SONAR_HOST_URL|HSTS_[A-Z_]*|NEXT_DEV_DIST_DIR)$'
 )
 
 # README の env ブロック（```env フェンス）が列挙する変数名。
@@ -343,7 +344,7 @@ expected=$(
 # どちらも「抽出対象が黙って広がるのに検査は緑のまま」という同じ壊れ方をする。
 # 対策は 2 段構え: 節見出しで範囲を切り、その範囲内のフェンスが**ちょうど 1 個**
 # であることも assert する。
-section=$(awk '/^### 必要な環境変数$/{f=1; next} f && /^#{1,3} /{exit} f' README.md)
+section=$(awk '/^### 必要な環境変数$/{f=1; next} f && /^```/{fence=!fence} f && !fence && /^#{1,3} /{exit} f' README.md)
 
 open_count=$(printf '%s\n' "$section" | grep -c '^```env$')
 if [ "$open_count" -ne 1 ]; then
@@ -411,6 +412,7 @@ echo "PASS: README env block matches the superset exactly"
 | `E2E_BASE_URL` | E2E 実行専用。`docs/testing/` 側で扱う |
 | `SONAR_TOKEN` / `SONAR_HOST_URL` | ローカル静的解析（`docker-compose.sonar.yml` / ADR-005）。アプリのランタイム変数ではない |
 | `HSTS_*` | 本番ドメイン所有者向けの opt-in（plan 061）。ローカル開発の README ブロックには意図的に載せない |
+| `NEXT_DEV_DIST_DIR` | `next.config.mjs` が読む dev 出力先の切替。`playwright.design.config.ts` の design suite だけが設定する内部変数で、運用者は設定しない（2026-10-07 追加） |
 
 **実測（2026-07-26）**: この `expected` は Step 2 の目標ブロックが列挙する **19 変数と完全に一致**する
 （`diff` で差分ゼロ）。すなわちゲートの母数と Step 2 の指示が同一の集合を指しており、
@@ -458,3 +460,22 @@ Stop and report if:
 - Keep the README env block and `.env.example` in sync with `.env.docker.example`; ideally a future CI check greps `process.env.*` names against the template to prevent re-drift (a possible follow-up DX task).
 - Reviewer should scan the README diff and `.env.example` for any accidentally-pasted secret value (names/placeholders only).
 - If Elasticsearch is ever revived (currently commented out), add its vars then — not now.
+
+## 実施結果（2026-10-07）
+
+- **Drift check**: `README.md` / `.gitignore` / `.env.docker.example` に `f9752c0` 以降の差分はあるが、
+  env ブロック（9 変数）・`!.env.example` 許可・`.env.docker.example` の変数名集合はいずれも
+  "Current state" と一致。スタール文書の 20 ルートは全て `page.tsx` が実在（STOP 非該当）。
+- **ゲート母数の追従（1 件）**: `next.config.mjs` に `NEXT_DEV_DIST_DIR` が増えていた。design ハーネス
+  専用の内部変数なので除外表へ追加した（README / `.env.example` には載せない）。
+- **ゲート自体の欠陥を修正**: 節抽出の `awk` が `/^#{1,3} /` を見出しと判定していたため、
+  Step 2 の目標ブロック自身が含む `# --- Database ---` 等の**コメント行で節が打ち切られ**、
+  「フェンスが閉じていない」で FAIL していた（プランどおりに実施すると必ず失敗する）。
+  フェンス内（```` ``` ```` の開閉をトグル）では見出し判定しないよう修正した。
+- **Step 1**: `docs/archive/unimplemented-screens-plan.md` へ移動し SUPERSEDED ヘッダを付与。
+  `docs/design/*/README.md` 9 件・`plans/ADVISOR_STATE.md`・`plans/audit/` 3 件を再ポイント。
+  メインゲート PASS。audit 補助スキャンの残り 1 件（`VETTED_FINDINGS.md:66` の項目タイトル内の
+  ファイル名）は履歴上の引用として据え置き。
+- **Step 2–4**: README env ブロックを 19 変数へ。ゲートは HEAD の README で 10 件欠落の FAIL（Red）、
+  変更後に PASS（Green）。`.env.example` を新規作成（README と同一の変数集合・秘密は空欄・
+  コメントは行末ではなく独立行）。`git check-ignore .env.example` は無出力。

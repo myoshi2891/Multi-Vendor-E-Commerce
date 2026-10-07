@@ -1,7 +1,7 @@
 # Track Order — 設計書
 
 > 注文追跡画面（`/track-order`）。注文番号 + メールアドレスで配送状況を照会する公開フォーム。
-> 出典: [`docs/unimplemented-screens-plan.md`](../../unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」優先度=中。
+> 出典: [`docs/archive/unimplemented-screens-plan.md`](../../archive/unimplemented-screens-plan.md) 「D. 静的ページ・補助画面・カスタマーサービス」優先度=中。
 
 ---
 
