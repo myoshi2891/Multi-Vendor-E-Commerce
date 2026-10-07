@@ -56,6 +56,18 @@ async function runResyncUrlSwap(db: PrismaClient): Promise<void> {
     await runStatements(db, URL_SWAP_STATEMENTS);
 }
 
+const REBASE_DESCENDANT_STATEMENTS = splitStatements(
+    extractMarkedSection(
+        readMigrationSql("_category_tree_rebase_descendant_paths"),
+        "REBASE_DESCENDANT_PATHS"
+    )
+);
+
+/** 子孫 path の付け替え（補正マイグレーション）を 1 回実行する。 */
+async function runRebaseDescendantPaths(db: PrismaClient): Promise<void> {
+    await runStatements(db, REBASE_DESCENDANT_STATEMENTS);
+}
+
 /** 別名所有者の先着投入（補正マイグレーション）を 1 回実行する。 */
 async function runAliasOwnerPreserve(db: PrismaClient): Promise<void> {
     await runStatements(db, ALIAS_OWNER_STATEMENTS);
@@ -499,6 +511,66 @@ describe("カテゴリツリー — url 交換の補正再同期 (plan 082)", ()
         expect(first).toEqual([
             { id: "sub-a", url: "audio", path: "electronics/audio" },
             { id: "sub-b", url: "camera", path: "electronics/camera" },
+        ]);
+        expect(second).toEqual(first);
+    });
+
+    /**
+     * url が変わるノードの子孫を作る（depth 2 は商品を持たない中間ノード）。
+     * sub-a は交換前の path `electronics/camera` 配下に置く。
+     */
+    async function seedDescendantsOfSubA(): Promise<void> {
+        await db.$executeRaw`
+            INSERT INTO "Category" (id, name, image, url, featured, "parentId", "path", "depth", "sortOrder", "childCount", "createdAt", "updatedAt")
+            VALUES ('kit', 'Kit', 'https://example.test/c.png', 'kit', false,
+                    'sub-a', 'electronics/camera/kit', 2, 0, 0, NOW(), NOW())`;
+        await db.$executeRaw`
+            INSERT INTO "Category" (id, name, image, url, featured, "parentId", "path", "depth", "sortOrder", "childCount", "createdAt", "updatedAt")
+            VALUES ('lens', 'Lens', 'https://example.test/c.png', 'lens', false,
+                    'kit', 'electronics/camera/kit/lens', 3, 0, 0, NOW(), NOW())`;
+    }
+
+    /** kit / lens の path を id 順で読む。 */
+    async function readDescendantPaths() {
+        return db.category.findMany({
+            where: { id: { in: ["kit", "lens"] } },
+            orderBy: { id: "asc" },
+            select: { id: true, path: true },
+        });
+    }
+
+    it("url 交換で path が変わったノードの子孫（商品の無い中間ノード配下を含む）を付け替える", async () => {
+        // Arrange
+        await seedSwappedSubCategories();
+        await seedDescendantsOfSubA();
+
+        // Act
+        await runResyncUrlSwap(db);
+        await runRebaseDescendantPaths(db);
+
+        // Assert —— 祖先の前置だけが置き換わり、子孫自身のセグメントは保たれる
+        expect(await readDescendantPaths()).toEqual([
+            { id: "kit", path: "electronics/audio/kit" },
+            { id: "lens", path: "electronics/audio/kit/lens" },
+        ]);
+    });
+
+    it("子孫の付け替えは冪等（2 回目で結果が変わらない）", async () => {
+        // Arrange
+        await seedSwappedSubCategories();
+        await seedDescendantsOfSubA();
+        await runResyncUrlSwap(db);
+
+        // Act
+        await runRebaseDescendantPaths(db);
+        const first = await readDescendantPaths();
+        await runRebaseDescendantPaths(db);
+        const second = await readDescendantPaths();
+
+        // Assert
+        expect(first).toEqual([
+            { id: "kit", path: "electronics/audio/kit" },
+            { id: "lens", path: "electronics/audio/kit/lens" },
         ]);
         expect(second).toEqual(first);
     });
