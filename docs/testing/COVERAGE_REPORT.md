@@ -15,7 +15,7 @@
 | 全体coverage（2026-10-06・レビュー指摘対応後） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **376ファイル**（2026-10-06 レビュー指摘対応後の dashboard実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | Jest スイート総数（unit/component のみ） | **305スイート**（304 passed／1 skipped、2026-10-07 全体実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テスト総数 | **2942 unit/component passed**（2945 total／3 skipped）。Integration223／17 suites（2026-10-07実測・plan 082）。 |
+| テスト総数 | **2942 unit/component passed**（2945 total／3 skipped）。Integration225／17 suites（2026-10-07実測・plan 082 レビュー対応後）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
@@ -511,6 +511,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-07 | **plan 083: OI-11 seller 商品フォームの SSR `self is not defined` — Jest +1（2921 → 2922 passed / 2924 → 2925 total・303 → 304 スイート）、Integration 不変（223）**（HEAD `7edcb20b` 上の作業ツリー・コミット前）: 原因は OI-11 の推定（`CldUploadWidget`）ではなく、`product-details.tsx` が静的 import していた `jodit-react` の UMD（評価時に `self` を参照）。`next/dynamic` の `ssr: false` へ変更し、`tests/component/dashboard/product-details-ssr.test.tsx`（`@jest-environment node`）を新設（旧実装で `self is not defined` により reject する Red を確認）。既存 `product-details.test.tsx` はエディタ取得を `findByTestId` へ。`bun run build` 後のサーバーチャンクから jodit が消えたことを確認。 |
 | 2026-10-07 | **plan 085: 公開エンドポイントのレート制限（ADR-009）— Jest +19（2922 → 2941 passed / 2925 → 2944 total・304 → 305 スイート）、Integration 不変（223）**（作業ツリー・コミット前）: インメモリ Fixed Window limiter `src/lib/rate-limit.ts` を新設（`rate-limit.test.ts` +14）し、`setUserCountryInCookies` に組み込み（`route.test.ts` +5: 6 回目 429 + `Retry-After`、パース前判定、`x-real-ip` 無しは fail-open、`x-forwarded-for` 非信頼、環境変数上書き）。検索 2 本は Vercel WAF（オペレーター作業待ち）。いずれも Red 確認済み。 |
 | 2026-10-07 | **plan 085 レビュー対応 — Jest +1（2941 → 2942 passed / 2944 → 2945 total・305 スイート不変）**（作業ツリー・コミット前）: `setUserCountryInCookies` の判定を `rateLimitResponse` ヘルパーへ抽出し、Vercel 上（`VERCEL=1`）で `x-real-ip` が欠落したときだけ IP を含まない構造化警告を出す（ローカル / CI は無警告・fail-open は不変）。`route.test.ts` +1。 |
+| 2026-10-07 | **plan 082 レビュー対応 — Integration +2（223 → 225・17 スイート不変）、Jest unit 不変**（作業ツリー・コミット前）: `_category_tree_resync_url_swap` は url を変えた depth 1 ノードの子孫 path を付け替えていなかった。適用済みのため編集せず、補正マイグレーション `20261007130000_category_tree_rebase_descendant_paths`（ルートから辿って各ノードの path を「親の path + 自分の末尾セグメント」で作り直す・冪等）を新設。`category-tree-resync.test.ts` +2（商品の無い中間ノード配下を含む付け替え / 冪等）。Red はアサーション失敗で確認。 |
 
 ### 2026-09-30 compareデザイン移行
 

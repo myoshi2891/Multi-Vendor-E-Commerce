@@ -16,8 +16,8 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **2942 passed / 2945 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）** — 2026-10-07 plan 085（レート制限）後の全体実測。Integration223／17 suitesは2026-10-07実測（plan 082）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
-| Jest Integration テスト | **223テスト / 17スイート** — 2026-10-07実測（plan 082・223/223 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
+| Jestユニットテスト | **2942 passed / 2945 total、3 skipped、127 snapshots passed、305 スイート（304 passed／1 skipped、failed 0）** — 2026-10-07 plan 085（レート制限）後の全体実測。Integration225／17 suitesは2026-10-07実測（plan 082 レビュー対応後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jest Integration テスト | **225テスト / 17スイート** — 2026-10-07実測（plan 082 レビュー対応後・225/225 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |
@@ -5350,6 +5350,8 @@ plan 081 で「既存の失敗」とされた E2E 7 件の原因は、デザイ�
 
 ### plan 083: seller 商品フォームの SSR `self is not defined`（OI-11）(2026-10-07)
 
+完了したプラン: [plans/083-fix-seller-ssr-jodit-self.md](../plans/083-fix-seller-ssr-jodit-self.md)
+
 OI-11 の原因は推定されていた `next-cloudinary` の `CldUploadWidget` ではなく、`product-details.tsx` が静的 import していた `jodit-react` だった（UMD がモジュール評価時に `self` を参照）。`next/dynamic` の `ssr: false` で読み込むよう変更した（未コミット）。
 
 | 対象 | 変更内容 |
@@ -5386,4 +5388,13 @@ plan 025（spike）のゲートをメンテナー回答で通過し、ADR-009 �
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | Jest | 2941 passed / 2944 total・305 スイート | **2942 passed / 2945 total・305 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+### plan 082 レビュー対応: url 交換後の子孫 path 付け替え (2026-10-07)
+
+`_category_tree_resync_url_swap` は url が変わった depth 1 ノードの子孫（depth 2 以上）の path を書き換えておらず、子孫がサブツリー検索から落ちる状態だった。適用済みマイグレーションは編集できないため、補正 `20261007130000_category_tree_rebase_descendant_paths` を新設した（未コミット・**本番は `bunx prisma migrate deploy` での適用が必要**）。
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Integration | 223 / 17 スイート | **225 / 17 スイート** |
 | 型エラー | 0 件 | **0 件** |
