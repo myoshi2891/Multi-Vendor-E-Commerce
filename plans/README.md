@@ -33,7 +33,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
 | [086](086-implement-notification-foundation.md) | 通知基盤（Outbox + sweeper）と店舗単位の発送通知（021 の後続実装・Resend 導入はユーザー承認後） | direction | P3 | 021 | IN PROGRESS（2026-10-07・e83ead3d〜3aa15cf0 / Resend 承認待ち） |
 | [087](087-implement-item-level-restock.md) | 在庫復元を item status の遷移に一本化し、経路をまたぐ二重復元を解消（012 の後続実装） | direction | P3 | 012 | TODO |
-| [088](088-implement-returns-rma.md) | 返品 RMA（店舗単位の申請・承認・受け取り・解決、在庫の差し引き・通知の配線）（018 の後続実装） | direction | P3 | 087 | TODO |
+| [088](088-implement-returns-rma.md) | 返品 RMA（店舗単位の申請・承認・受け取り・解決、在庫の差し引き・通知の配線）（018 の後続実装） | direction | P3 | 086, 087 | TODO |
 
 - **085**: アプリ側（cookie limiter）は実装・検証済み。**Vercel WAF ルール（Step 6）はオペレーター作業待ち**。
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
@@ -118,7 +118,6 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | — | DONE（2026-10-07・6a424cd2〜69f6f0be） |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限（ADR-009 で決定・後続 085） | security | P3 | — | DONE（2026-10-07・未コミット） |
 | [021](021-spike-notification-foundation.md) | **Spike**: 通知・トランザクショナルメッセージ基盤設計（ADR-010 Proposed・後続 086） | direction | P3 | — | DONE（2026-10-07・89ea571c〜4cc3a287） |
-
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | — | DONE（2026-10-07・未コミット・後続 087） |
 | [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | — | DONE（2026-10-07・未コミット・後続 088） |
 </details>

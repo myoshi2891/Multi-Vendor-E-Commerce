@@ -90,7 +90,7 @@ design §0 の事実表が正本である。要点だけ抜き出す。
 `tests/integration/order-lifecycle.test.ts` に以下のシナリオを足す（既存の `seedPlacedOrder` / `stockOf` / `mockAuthAsAdmin` を再利用する）。
 
 1. **F-1**: `updateOrderGroupStatusAsAdmin(G, Canceled)` → `updateOrderPaymentStatus(order, Refunded)`。G の在庫が `INITIAL_STOCK` に**ちょうど**戻る（2 倍にならない）。G の item は `Canceled` のまま残る。
-2. **F-2**: group を `Canceled → Processing → Canceled`。在庫の復元は 1 回だけ。
+2. **F-2**: group を `Canceled → Processing → Canceled`。在庫の復元は 1 回だけ。各段階で状態も確かめる。再オープンの後は group が `Processing`、group 内の item は `Canceled` のまま（再活性化しない）。2 回目の取り消しの後は group が `Canceled`、item は `Canceled`。
 3. **item → order**（plan 012 の受け入れの要）: `updateOrderItemStatusAsAdmin(X, Canceled)` → `updateOrderPaymentStatus(order, Refunded)`。X の在庫は 1 回だけ戻り、他の item も 1 回だけ戻る。
 4. **item → group**: `updateOrderItemStatusAsAdmin(X, Canceled)` → `updateOrderGroupStatusAsAdmin(G, Canceled)`。
 5. **並行**: `updateOrderItemStatusAsAdmin(X, Canceled)` と `updateOrderPaymentStatus(order, Cancelled)` を `Promise.all` で同時に流す。在庫は 1 回だけ戻る（既存の並行シナリオ `:288` の書き方にならう）。
@@ -111,6 +111,10 @@ design §0 の事実表が正本である。要点だけ抜き出す。
 - 経路 C: `$transaction` で包み、吸収状態の判定と `settleOrderItems` を入れる。TODO コメントを削除する。監査ログ（`console.error` の `actor=`）は残す。
 - 経路 D: 経路 C と同じ形にする。`where` に `orderGroup: { storeId }` を必ず含める。所有店舗の判定（`!store`）と not found の判定は、現行どおり try/catch の外に置く。
 - 経路 B: 復元を `settleOrderItems(tx, { orderGroupId }, …)` に置き換える。通知の遷移判定（`recordOrderGroupStatusNotification`）はそのまま残す。
+  - **精算後の再オープン（終端 → 非終端。例: `Canceled → Processing`）の扱い**: group の状態の更新は**許可**する（design §7）。ただし group 内の item は**再活性化しない**。終端の item は吸収状態のまま残し、在庫の再減算もしない。
+  - このため、非終端への遷移では `settleOrderItems` も item の更新も呼ばない（group の行だけを更新する）。
+  - 再オープンした group の item を再び出荷したい場合は、新しい注文（交換）として扱う。group の再オープンを禁止するかどうかは design §7 の後続判断であり、本プランでは変えない。
+  - 検証は Step 1 の F-2（group と item の両方の状態を確認する）で行う。
 - 経路 E: 既存の tx の中に、経路 B と同じ 1 行を足す。
 - 経路 A: item の一括 `updateMany` と `findMany` → `restockOrderItems` を `settleOrderItems(tx, { orderGroup: { orderId } }, childItemStatus)` に置き換え、`didTransition` から切り離す。group の連動は `didTransition` のときだけにする。
 
