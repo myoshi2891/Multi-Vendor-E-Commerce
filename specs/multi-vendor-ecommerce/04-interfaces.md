@@ -25,6 +25,7 @@ Storefront:
 - `/profile/history` activity history
 - `/profile/settings` account settings (embeds Clerk `<UserProfile routing="hash" />`; no server action — edits sync to Prisma via the Clerk webhook)
 - `/profile/messages` buyer↔seller messaging (force-dynamic; two-pane list + thread with 5s polling)
+- `/profile/notifications` in-app notifications (force-dynamic; newest first, `?cursor=<notification id>` for older pages; mark one / mark all as read) — plan 086
 - `/seller/apply` seller application
 
 Auth:
@@ -53,6 +54,7 @@ Dashboard:
 - `GET /api/index-products` paginated search results
 - `POST /api/index-products` search suggestions for autocomplete
 - `GET /api/search-products?q=` header search suggestions (plan 073): up to 8 `SearchResult` items (`id`, `name`, `link` = `/product/<productSlug>/<first displayable variant slug>`, `image` = that variant's `variantImage` (primary), or the URL of its oldest related `ProductVariantImage` with a non-empty `url` when `variantImage` is empty) ordered by `ts_rank` on `searchVector` then `id`; products without a displayable variant (non-empty `variantImage` or a related image with a non-empty `url`) are excluded inside the SQL (before `LIMIT`). `search` is accepted as a legacy alias. Input without letters or digits returns `[]`.
+- `GET /api/cron/notifications` notification sweeper (plan 086): requires `Authorization: Bearer ${CRON_SECRET}` (constant-time compare; `401` otherwise, `503` when `CRON_SECRET` is unset). Dispatches up to 50 pending / lease-expired email deliveries and deletes read notifications older than 180 days; returns `{ dispatch, purged }`. Scheduling is configured on the deployment platform, not in the repo.
 - `POST /api/webhooks` Clerk webhook (user sync); uses Svix SDK-verified
   `evt.data` for payload extraction. User upsert uses immutable Clerk user
   ID as lookup key (not email). Deletion uses `deleteMany` for idempotent
@@ -62,7 +64,7 @@ Dashboard:
 - Domain modules live in `src/queries/*.ts`.
 - Notable modules: category, subCategory, offer-tag, product, store, order,
   home, profile, review, coupon, stripe, PayPal, user, size, dashboard, inventory,
-  store-dashboard, message, support, attribute.
+  store-dashboard, message, support, attribute, notification.
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
@@ -188,6 +190,19 @@ Four support form types (contact / return / dispute / problem-report) collapse i
 
 `SupportTicketSchema` / `SupportTicketCategoryEnum` / `SupportTicketInput` live in `src/lib/schemas.ts`. `superRefine` requires `orderId` only for `RETURN_REQUEST`/`DISPUTE`; empty strings are normalized to `undefined` via `z.preprocess` before the optional uuid check. UI: shared client form `src/components/store/support/support-form.tsx` (RHF + zodResolver, `useRef` double-submit guard, `requireOrderId` toggles the orderId field) rendered by public pages `/contact`, `/returns-exchange` (with `content/returns.ts` policy summary), `/dispute`, `/report-problem` — all stay `○ Static` (no `force-dynamic`; Prisma is only touched in the submit action).
 
+### notification module (`src/queries/notification.ts`) — in-app notifications (plan 086)
+
+Reads and marks the signed-in user's `Notification` rows. Every function calls `requireUser()` **outside** `try/catch` and scopes `where` by `userId: user.id` (IDOR: another user's id matches 0 rows). DB failures become `"Failed to load notifications."` / `"Failed to update notifications."` with a structured log.
+
+| Function | Description | Auth |
+|----------|-------------|------|
+| `getMyNotifications({ cursor?, limit? })` | Newest first (`createdAt desc, id desc`), `limit` clamped to 1–50 (default 20) via `normalizePositiveIntParam`; reads `limit + 1` to return `nextCursor`. Rows are rendered through `NOTIFICATION_TEMPLATES`; unknown `type` rows are skipped. `createdAt` is an ISO string. | `requireUser` |
+| `getUnreadNotificationCount()` | `count` of `isRead: false` (header badge). | `requireUser` |
+| `markNotificationRead(id)` | `updateMany({ id, userId, isRead: false })`; blank id throws `"Invalid notification id."` before DB. Idempotent. | `requireUser` |
+| `markAllNotificationsRead()` | `updateMany({ userId, isRead: false })`. | `requireUser` |
+
+Writing and sending live in `src/lib/notifications/` (design: [`notification-foundation/design.md`](../../docs/design/notification-foundation/design.md)): `recordNotifications(tx, events)` writes `Notification` + `NotificationDelivery(PENDING)` with `createManyAndReturn({ skipDuplicates: true })` **inside the caller's transaction** (a write failure rolls back the state change), `scheduleDispatch(ids)` sends after commit via `after()`, and `dispatchPendingDeliveries()` claims rows with a lease, sends through `EmailProvider` (`EMAIL_PROVIDER`; stub by default) with idempotency key `${dedupeKey}:email`, and stops retrying 23h after the first attempt. Wired today: `updateOrderGroupStatus` / `updateOrderGroupStatusAsAdmin` → `order.group.shipped` / `order.group.delivered` for the customer.
+
 ## External Services
 - Clerk for auth and user metadata.
 - Stripe and PayPal for payments.
@@ -202,6 +217,8 @@ Four support form types (contact / return / dispute / problem-report) collapse i
 - `NEXT_PUBLIC_PAYPAL_CLIENT_ID`
 - `PAYPAL_SECRET`
 - `WEBHOOK_SECRET`
+- `EMAIL_PROVIDER` (notifications; unset/`stub` = no real send)
+- `CRON_SECRET` (`/api/cron/notifications` bearer token)
 
 ### Order tracking presentation boundary (2026-10-01)
 
