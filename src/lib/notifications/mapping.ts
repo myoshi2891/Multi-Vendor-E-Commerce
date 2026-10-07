@@ -86,6 +86,11 @@ export const hasEmailChannel = (type: NotificationType): boolean =>
         NOTIFICATION_MAPPING[type].channels as readonly NotificationChannel[]
     ).includes("email");
 
+/** 既知の種別の一覧（DB の where で未知の種別を除くのに使う） */
+export const NOTIFICATION_TYPES = Object.keys(
+    NOTIFICATION_MAPPING
+) as NotificationType[];
+
 /** 文字列が既知の NotificationType かを判定する型ガード（DB から読んだ値の検証に使う） */
 export const isNotificationType = (value: string): value is NotificationType =>
     Object.prototype.hasOwnProperty.call(NOTIFICATION_MAPPING, value);

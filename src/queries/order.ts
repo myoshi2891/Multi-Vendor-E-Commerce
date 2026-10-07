@@ -228,6 +228,14 @@ export const updateOrderGroupStatus = async (
         // 状態の更新と通知の記録を同じ tx で行う（原子的 Outbox・plan 086）。
         // 記録が失敗したら更新もロールバックし、下の汎用メッセージで返す。
         result = await db.$transaction(async (tx) => {
+            // 遷移の判定に使う更新前の状態は、tx 内で行ロックを取って読み直す。
+            // tx 外の `order.status` は読んでから更新するまでに別リクエストが
+            // 動かせるため、差し戻し直後の遷移を「遷移なし」と誤判定しうる
+            // （updateStoreStatus の FOR UPDATE と同じ扱い）。
+            const lockedRows = await tx.$queryRaw<{ status: string }[]>`
+                SELECT "status" FROM "OrderGroup" WHERE "id" = ${groupId} FOR UPDATE
+            `;
+            const previousStatus = lockedRows[0]?.status;
             const updatedOrder = await tx.orderGroup.update({
                 where: {
                     id: groupId,
@@ -238,7 +246,7 @@ export const updateOrderGroupStatus = async (
             });
             const deliveryIds = await recordOrderGroupStatusNotification(tx, {
                 groupId,
-                previousStatus: order.status,
+                previousStatus,
                 nextStatus: status,
             });
             return { status: updatedOrder.status as OrderStatus, deliveryIds };

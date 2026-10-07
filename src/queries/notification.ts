@@ -4,7 +4,10 @@ import { db } from "@/lib/db";
 import { logError } from "@/lib/log";
 import { requireUser } from "@/lib/auth-guards";
 import { normalizePositiveIntParam } from "@/lib/utils";
-import { isNotificationType } from "@/lib/notifications/mapping";
+import {
+    isNotificationType,
+    NOTIFICATION_TYPES,
+} from "@/lib/notifications/mapping";
 import {
     NOTIFICATION_TEMPLATES,
     toNotificationParams,
@@ -106,13 +109,19 @@ export const getMyNotifications = async (
 /**
  * @function getUnreadNotificationCount
  * @description 自分の未読件数（@@index([userId, isRead, createdAt]) を使う）。
+ *              一覧と件数が食い違わないよう、既知の種別だけを数える。
  * @access USER
  */
 export const getUnreadNotificationCount = async (): Promise<number> => {
     const user = await requireUser();
     try {
+        // 一覧（getMyNotifications）が表示しない未知の種別は数えない
         return await db.notification.count({
-            where: { userId: user.id, isRead: false },
+            where: {
+                userId: user.id,
+                isRead: false,
+                type: { in: NOTIFICATION_TYPES },
+            },
         });
     } catch (error: unknown) {
         logError(
