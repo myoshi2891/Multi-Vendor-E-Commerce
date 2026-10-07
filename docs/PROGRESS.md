@@ -16,7 +16,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3026 passed / 3029 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）** — 2026-10-07 plan 086（通知基盤）後の全体実測。Integration228／18 suitesは2026-10-07実測（plan 086 後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3028 passed / 3031 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）** — 2026-10-07 plan 086（通知基盤）後の全体実測。Integration228／18 suitesは2026-10-07実測（plan 086 後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **228テスト / 18スイート** — 2026-10-07実測（plan 086 後・228/228 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5424,4 +5424,28 @@ spike 021 の設計（[design.md](./design/notification-foundation/design.md)・
 | Jest | 2942 passed / 2945 total・305 スイート | **3026 passed / 3029 total・316 スイート** |
 | Integration | 225 / 17 スイート | **228 / 18 スイート** |
 | design suite priority | 6 | **9** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 086 レビュー対応（第 2 巡） (2026-10-07)
+
+#### 概要
+
+admin の注文グループ更新に行ロックを追加し、リンク先の無い通知の既読化を失敗時に再試行できるようにした（作業ツリー・コミット前、HEAD `2a1cb1e1`）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/order.ts` | `updateOrderGroupStatusAsAdmin` で更新前状態を読む前に `SELECT … FOR UPDATE` | 未コミット |
+| `src/components/store/profile/notifications/notification-list.tsx` | `markOne` に `optimistic` オプション。リンク無し通知は成功後に既読表示 | 未コミット |
+| `specs/multi-vendor-ecommerce/03-data-model.md` | ER 図ページ表に Notifications（11）を追加、Enums を 12・13 個へ | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3026 passed / 3029 total | **3028 passed / 3031 total** |
+| スイート数 | 316 | **316** |
 | 型エラー | 0 件 | **0 件** |
