@@ -479,3 +479,5 @@ Stop and report if:
 - **Step 2–4**: README env ブロックを 19 変数へ。ゲートは HEAD の README で 10 件欠落の FAIL（Red）、
   変更後に PASS（Green）。`.env.example` を新規作成（README と同一の変数集合・秘密は空欄・
   コメントは行末ではなく独立行）。`git check-ignore .env.example` は無出力。
+  （2026-10-07 追記: plan 085 で任意の `RATE_LIMIT_COOKIE_PER_MIN`（既定 5）が加わり、README env ブロックと
+  `.env.example` は 20 変数。ゲートは追加前の README で 1 件欠落の FAIL、追加後に PASS を再確認）

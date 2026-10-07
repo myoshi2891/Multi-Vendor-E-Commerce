@@ -65,7 +65,7 @@
 
 **In scope**:
 - `package.json` / `bun.lock`（`prisma` / `@prisma/client` を 6 系に。Accelerate 拡張は互換が無い場合のみ更新）
-- `prisma/schema.prisma`（`previewFeatures` の削除。生成式の文字列が変わる場合は D-5 の方針で追従）
+- `prisma/schema.prisma`（`previewFeatures` の `fullTextSearch` → `fullTextSearchPostgres` への改名。生成式の文字列が変わる場合は D-5 の方針で追従）
 - `prisma/migrations/<新規>/migration.sql`（暗黙の多対多 2 テーブルの主キー化）
 - `docs/architecture/data-model.drawio`（再生成。[規約 03](../.claude/rules/03-data-model-diagram-sync.md) によりスキーマ変更と同じコミット）
 - 型・テストの追従（tsc / Jest で差分が出た場合のみ）
@@ -172,7 +172,7 @@ bun run erd:generate
 - [x] `bun run erd:generate` を実行（図の差分なし。差分が出た場合はスキーマ変更と同じコミットに含める）
 - [x] tsc exit 0 / lint 0 errors / Unit・Integration の件数が着手前と一致 / stub `DATABASE_URL` で build 成功
 - [x] 使い捨て DB への `migrate deploy` の通し適用が成功（Integration の testcontainers）
-- [ ] PR 本文に「本番で `migrate deploy` による多対多の主キー化 1 本の適用が必要」と明記
+- [ ] PR #194 の本文で本番オペレーターに「`bunx prisma migrate deploy` で多対多の主キー化マイグレーション 1 本を適用すること」を指示する（2026-10-07 時点で未記載。追記するまで未完了のまま）
 - [x] `plans/README.md` の 081 の行を更新し、Next Actions の DEP-PRISMA6 を `render-html.ts` と `QA_HANDOFF.md` の両方から削除
 
 ## STOP conditions
