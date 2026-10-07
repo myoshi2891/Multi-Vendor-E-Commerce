@@ -11,6 +11,8 @@ import {
     type TrackOrderInput,
 } from "@/lib/schemas";
 import { Prisma } from "@prisma/client";
+import { recordOrderGroupStatusNotification } from "@/lib/notifications/order-events";
+import { scheduleDispatch } from "@/lib/notifications/schedule";
 
 /**
  * 在庫復元（F3-5）の対象とみなす終端 OrderStatus 判定。
@@ -146,6 +148,18 @@ export const trackOrder = async (input: TrackOrderInput) => {
 };
 
 /**
+ * commit 後に通知の送信を予約する（tx の外）。送信の失敗は注文更新の結果を変えない
+ * —— 送れなかった配信は sweeper が拾い直す（plan 086・design §4.5）。
+ */
+const dispatchAfterCommit = (deliveryIds: string[], fn: string): void => {
+    try {
+        scheduleDispatch(deliveryIds);
+    } catch (error: unknown) {
+        logError(`[Order:${fn}] Failed to schedule notification dispatch`, error);
+    }
+};
+
+/**
  * @function updateOrderGroupStatus
  * @description - Updates the status of a specified order group.
  *              - Throws an error if the user is not authenticated or lacks seller privileges.
@@ -187,7 +201,7 @@ export const updateOrderGroupStatus = async (
         throw new Error("Unauthorized to update order group status.");
     }
 
-    let order: Awaited<ReturnType<typeof db.orderGroup.findUnique>>;
+    let order: Prisma.OrderGroupGetPayload<object> | null;
     try {
         // Retrieve the order to be updated
         order = await db.orderGroup.findUnique({
@@ -209,22 +223,33 @@ export const updateOrderGroupStatus = async (
         throw new Error("Order not found");
     }
 
+    let result: { status: OrderStatus; deliveryIds: string[] };
     try {
-        // Update the order status
-        const updatedOrder = await db.orderGroup.update({
-            where: {
-                id: groupId,
-            },
-            data: {
-                status,
-            },
+        // 状態の更新と通知の記録を同じ tx で行う（原子的 Outbox・plan 086）。
+        // 記録が失敗したら更新もロールバックし、下の汎用メッセージで返す。
+        result = await db.$transaction(async (tx) => {
+            const updatedOrder = await tx.orderGroup.update({
+                where: {
+                    id: groupId,
+                },
+                data: {
+                    status,
+                },
+            });
+            const deliveryIds = await recordOrderGroupStatusNotification(tx, {
+                groupId,
+                previousStatus: order.status,
+                nextStatus: status,
+            });
+            return { status: updatedOrder.status as OrderStatus, deliveryIds };
         });
-
-        return updatedOrder.status;
     } catch (error: unknown) {
         logError("[Order:updateOrderGroupStatus] Status update failed", error);
         throw new Error("Failed to update order group status.");
     }
+
+    dispatchAfterCommit(result.deliveryIds, "updateOrderGroupStatus");
+    return result.status;
 };
 
 /**
@@ -454,7 +479,7 @@ export const updateOrderGroupStatusAsAdmin = async (
 ): Promise<OrderStatus> => {
     const admin = await requireAdmin();
     try {
-        return await db.$transaction(async (tx) => {
+        const result = await db.$transaction(async (tx) => {
             // F3-5 在庫復元の遷移ガード用に、更新前の status と items を取得する
             const prev = await tx.orderGroup.findUnique({
                 where: { id: groupId },
@@ -488,8 +513,17 @@ export const updateOrderGroupStatusAsAdmin = async (
                 await restockOrderItems(tx, prev?.items ?? []);
             }
 
-            return group.status as OrderStatus;
+            // 発送状態の通知を同じ tx で記録する（plan 086）
+            const deliveryIds = await recordOrderGroupStatusNotification(tx, {
+                groupId,
+                previousStatus: prev?.status,
+                nextStatus: status,
+            });
+
+            return { status: group.status as OrderStatus, deliveryIds };
         });
+        dispatchAfterCommit(result.deliveryIds, "updateOrderGroupStatusAsAdmin");
+        return result.status;
     } catch (error: unknown) {
         logError("[Order:updateOrderGroupStatusAsAdmin] Error", error);
         throw error instanceof Error
