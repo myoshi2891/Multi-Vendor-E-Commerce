@@ -18,7 +18,9 @@ import { scheduleDispatch } from "@/lib/notifications/schedule";
  * 在庫復元（F3-5）の対象とみなす終端 OrderStatus 判定。
  * Canceled / Refunded への遷移時のみ在庫を戻す。
  */
-const isRestockTerminalOrderStatus = (status: OrderStatus | undefined): boolean =>
+const isRestockTerminalOrderStatus = (
+    status: OrderStatus | undefined
+): boolean =>
     status === OrderStatus.Canceled || status === OrderStatus.Refunded;
 
 /**
@@ -143,7 +145,9 @@ export const trackOrder = async (input: TrackOrderInput) => {
         // 一過性のインフラ障害を「見つからない(null)」に変換しない。
         // null は真の不一致/不存在/不正入力のみに限定し、DB 障害は呼び出し側へ伝播させる
         // （UI 側で not-found ではなく汎用の再試行メッセージを出すため）。PII は含めない。
-        throw new Error("注文の照会に失敗しました。時間をおいて再度お試しください。");
+        throw new Error(
+            "注文の照会に失敗しました。時間をおいて再度お試しください。"
+        );
     }
 };
 
@@ -155,7 +159,10 @@ const dispatchAfterCommit = (deliveryIds: string[], fn: string): void => {
     try {
         scheduleDispatch(deliveryIds);
     } catch (error: unknown) {
-        logError(`[Order:${fn}] Failed to schedule notification dispatch`, error);
+        logError(
+            `[Order:${fn}] Failed to schedule notification dispatch`,
+            error
+        );
     }
 };
 
@@ -342,9 +349,7 @@ export const updateOrderItemStatus = async (
  * @param filters paymentStatus / orderStatus / search / page / limit（limit は ≤100 にキャップ）
  * @returns { orders, total, page, limit }
  */
-export const getAllOrders = async (
-    filters?: Partial<AdminOrderFilter>
-) => {
+export const getAllOrders = async (filters?: Partial<AdminOrderFilter>) => {
     await requireAdmin();
     const f = AdminOrderFilterSchema.parse(filters ?? {});
     try {
@@ -488,6 +493,12 @@ export const updateOrderGroupStatusAsAdmin = async (
     const admin = await requireAdmin();
     try {
         const result = await db.$transaction(async (tx) => {
+            // 更新前の状態を読む前に行ロックを取る（updateOrderGroupStatus と同じ扱い）。
+            // ロック無しだと並行する更新の間で同じ previousStatus を読み、在庫の二重復元や
+            // 通知遷移の誤判定が起きうる
+            await tx.$queryRaw`
+                SELECT "id" FROM "OrderGroup" WHERE "id" = ${groupId} FOR UPDATE
+            `;
             // F3-5 在庫復元の遷移ガード用に、更新前の status と items を取得する
             const prev = await tx.orderGroup.findUnique({
                 where: { id: groupId },
@@ -530,7 +541,10 @@ export const updateOrderGroupStatusAsAdmin = async (
 
             return { status: group.status as OrderStatus, deliveryIds };
         });
-        dispatchAfterCommit(result.deliveryIds, "updateOrderGroupStatusAsAdmin");
+        dispatchAfterCommit(
+            result.deliveryIds,
+            "updateOrderGroupStatusAsAdmin"
+        );
         return result.status;
     } catch (error: unknown) {
         logError("[Order:updateOrderGroupStatusAsAdmin] Error", error);
