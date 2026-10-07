@@ -60,6 +60,10 @@ const menu = [
         link: "/profile/messages",
     },
     {
+        title: "Notifications",
+        link: "/profile/notifications",
+    },
+    {
         title: "History",
         link: "/profile/history/1",
     },

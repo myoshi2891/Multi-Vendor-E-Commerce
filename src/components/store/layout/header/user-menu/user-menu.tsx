@@ -1,4 +1,6 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { getUnreadNotificationCount } from "@/queries/notification";
+import { logError } from "@/lib/log";
 import AccountMenu from "./account-menu";
 
 export default async function UserMenu({
@@ -22,8 +24,22 @@ export default async function UserMenu({
         }
     }
 
+    // 未読件数（plan 086）。取得に失敗してもメニューは描画し、件数を出さない
+    let unreadNotifications = 0;
+    if (user) {
+        try {
+            unreadNotifications = await getUnreadNotificationCount();
+        } catch (error: unknown) {
+            logError(
+                "[UserMenu] Failed to fetch unread notification count",
+                error
+            );
+        }
+    }
+
     return (
         <AccountMenu
+            unreadNotifications={unreadNotifications}
             user={
                 user
                     ? { imageUrl: user.imageUrl, fullName: user.fullName }
