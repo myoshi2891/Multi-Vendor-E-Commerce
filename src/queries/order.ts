@@ -20,25 +20,120 @@ import { scheduleDispatch } from "@/lib/notifications/schedule";
  */
 const isRestockTerminalOrderStatus = (
     status: OrderStatus | undefined
-): boolean =>
+): status is OrderStatus.Canceled | OrderStatus.Refunded =>
     status === OrderStatus.Canceled || status === OrderStatus.Refunded;
 
 /**
  * 減算済み在庫を復元する（placeOrder の decrement の対）。
  * 各 OrderItem の quantity を対応する Size.quantity に increment で戻す。
- * 呼び出し側で「非終端 → 終端」の遷移ガードを通すこと（二重復元を防ぐ）。
+ * 直接呼ばず、遷移した item だけを渡す settleOrderItems 経由で呼ぶこと（二重復元を防ぐ）。
+ *
+ * Size が作り直し・削除で消えている場合（updateProduct の全置換・design F-3）は戻す先が無いので、
+ * 警告を残して続行する。update だと P2025 で取り消しそのものが失敗するため updateMany を使う。
  */
 const restockOrderItems = async (
     tx: OrderTransactionClient,
     items: { sizeId: string; quantity: number }[]
 ): Promise<void> => {
     for (const item of items) {
-        await tx.size.update({
+        const result = await tx.size.updateMany({
             where: { id: item.sizeId },
             data: { quantity: { increment: item.quantity } },
         });
+        if (result.count === 0) {
+            console.warn(
+                "[Order:restockOrderItems] Size not found, skip restock",
+                {
+                    sizeId: item.sizeId,
+                }
+            );
+        }
     }
 };
+
+/**
+ * 在庫復元の印になる OrderItem の終端 status（plan 087・design §3）。
+ * 終端は吸収状態で、終端 → 非終端の遷移は拒否する（I-2）。
+ */
+const RESTOCK_TERMINAL_ITEM_STATUSES = [
+    ProductStatus.Canceled,
+    ProductStatus.Refunded,
+    ProductStatus.Returned,
+] as const;
+
+type RestockTerminalItemStatus =
+    (typeof RESTOCK_TERMINAL_ITEM_STATUSES)[number];
+
+const isRestockTerminalItem = (
+    status: string
+): status is RestockTerminalItemStatus =>
+    (RESTOCK_TERMINAL_ITEM_STATUSES as readonly string[]).includes(status);
+
+/** OrderItem が「まだ終端でない」ことを表す条件 */
+const NOT_SETTLED_ITEM: Prisma.OrderItemWhereInput = {
+    status: { notIn: [...RESTOCK_TERMINAL_ITEM_STATUSES] },
+};
+
+/**
+ * 対象 item のうち「まだ終端でないもの」だけを終端へ遷移させ、遷移した行の在庫だけを戻す
+ * （design §2）。どの経路（order / group / item）もこの 1 か所を通すことで、経路をまたいでも、
+ * 並行しても、在庫はちょうど 1 回だけ戻る。並行時は UPDATE が行ロック後に WHERE を
+ * 評価し直すため、先に終端にされた行は RETURNING に出てこない。
+ *
+ * @param where 対象の絞り込み（{ id } / { orderGroupId } / { orderGroup: { orderId } }）
+ * @param options.restock false は「品物を回収しない返金」など在庫を戻さない精算（plan 088）
+ * @returns 実際に遷移した item
+ */
+const settleOrderItems = async (
+    tx: OrderTransactionClient,
+    where: Prisma.OrderItemWhereInput,
+    status: RestockTerminalItemStatus,
+    options: { restock: boolean } = { restock: true }
+): Promise<{ id: string; sizeId: string; quantity: number }[]> => {
+    const settled = await tx.orderItem.updateManyAndReturn({
+        where: { AND: [where, NOT_SETTLED_ITEM] },
+        data: { status },
+        select: { id: true, sizeId: true, quantity: true },
+    });
+    if (options.restock) await restockOrderItems(tx, settled);
+    return settled;
+};
+
+/**
+ * item 単位の status 更新（経路 C / D 共通・design §2.1 の遷移表）。
+ * - 非終端 → 終端: settleOrderItems で遷移し在庫を戻す
+ * - 終端 → 別の終端: 表示の付け替えのみ（在庫は戻さない）
+ * - 終端 → 非終端: "settled" を返す（呼び出し側で拒否）
+ * - 非終端 → 非終端: 「今も非終端」を条件に更新する（判定と書き込みの隙間を塞ぐ）
+ */
+const applyOrderItemStatus = async (
+    tx: OrderTransactionClient,
+    where: Prisma.OrderItemWhereInput,
+    currentStatus: string,
+    status: ProductStatus
+): Promise<"ok" | "settled"> => {
+    if (isRestockTerminalItem(status)) {
+        const settled = await settleOrderItems(tx, where, status);
+        if (settled.length === 0) {
+            await tx.orderItem.updateMany({ where, data: { status } });
+        }
+        return "ok";
+    }
+    if (isRestockTerminalItem(currentStatus)) return "settled";
+    const result = await tx.orderItem.updateMany({
+        where: { AND: [where, NOT_SETTLED_ITEM] },
+        data: { status },
+    });
+    return result.count === 0 ? "settled" : "ok";
+};
+
+/** group の終端 OrderStatus を、group 内 item に書く終端 ProductStatus へ写す */
+const toSettledItemStatus = (
+    status: OrderStatus.Canceled | OrderStatus.Refunded
+): RestockTerminalItemStatus =>
+    status === OrderStatus.Refunded
+        ? ProductStatus.Refunded
+        : ProductStatus.Canceled;
 
 /**
  * @Function getOrder
@@ -251,6 +346,15 @@ export const updateOrderGroupStatus = async (
                     status,
                 },
             });
+            // 在庫復元は group 内 item の遷移で 1 回だけ（plan 087・経路 E）。
+            // 非終端への遷移（再オープン）では item に触れない（design §7）
+            if (isRestockTerminalOrderStatus(status)) {
+                await settleOrderItems(
+                    tx,
+                    { orderGroupId: groupId },
+                    toSettledItemStatus(status)
+                );
+            }
             const deliveryIds = await recordOrderGroupStatusNotification(tx, {
                 groupId,
                 previousStatus,
@@ -309,15 +413,21 @@ export const updateOrderItemStatus = async (
     }
 
     // IDOR 防止: 対象 OrderItem を所有店舗にスコープする。
-    // OrderItem → OrderGroup.storeId の関係で絞り込み、検証と更新を単一の原子的更新にする。
-    let result: { count: number };
+    // OrderItem → OrderGroup.storeId の関係で絞り込み、読み取りと更新の両方に同じ where を使う。
+    const where: Prisma.OrderItemWhereInput = {
+        id: orderItemId,
+        orderGroup: { storeId },
+    };
+    let outcome: "ok" | "settled" | "not_found";
     try {
-        result = await db.orderItem.updateMany({
-            where: {
-                id: orderItemId,
-                orderGroup: { storeId },
-            },
-            data: { status },
+        // 在庫復元を item status の遷移と同じ tx で行う（plan 087・経路 D）
+        outcome = await db.$transaction(async (tx) => {
+            const current = await tx.orderItem.findFirst({
+                where,
+                select: { status: true },
+            });
+            if (!current) return "not_found";
+            return applyOrderItemStatus(tx, where, current.status, status);
         });
     } catch (error: unknown) {
         logError("[Order:updateOrderItemStatus] status update failed", error);
@@ -327,8 +437,11 @@ export const updateOrderItemStatus = async (
 
     // 他店舗のアイテムか不存在の場合は、副作用なしで拒否する。
     // DB 障害の汎用エラーと混同しないよう、判定は try/catch の外に置く。
-    if (result.count === 0) {
+    if (outcome === "not_found") {
         throw new Error("Order item not found");
+    }
+    if (outcome === "settled") {
+        throw new Error("Order item is already settled.");
     }
 
     return status;
@@ -499,13 +612,10 @@ export const updateOrderGroupStatusAsAdmin = async (
             await tx.$queryRaw`
                 SELECT "id" FROM "OrderGroup" WHERE "id" = ${groupId} FOR UPDATE
             `;
-            // F3-5 在庫復元の遷移ガード用に、更新前の status と items を取得する
+            // 通知の遷移判定用に、更新前の status を取得する
             const prev = await tx.orderGroup.findUnique({
                 where: { id: groupId },
-                select: {
-                    status: true,
-                    items: { select: { sizeId: true, quantity: true } },
-                },
+                select: { status: true },
             });
 
             const group = await tx.orderGroup.update({
@@ -522,14 +632,15 @@ export const updateOrderGroupStatusAsAdmin = async (
                 `[Admin:updateOrderGroupStatus] actor=${admin.id} target=${groupId} to=${status}`
             );
 
-            // F3-5: 非終端 → Canceled/Refunded の遷移時のみ在庫を復元（二重復元防止）
-            if (
-                !isRestockTerminalOrderStatus(
-                    prev?.status as OrderStatus | undefined
-                ) &&
-                isRestockTerminalOrderStatus(status)
-            ) {
-                await restockOrderItems(tx, prev?.items ?? []);
+            // F3-5 在庫復元は group status ではなく item status の遷移で 1 回だけ（plan 087・経路 B）。
+            // group の再オープン（終端 → 非終端）は許可するが item は再活性化しない（design §7）。
+            // そのため再度取り消しても、終端のままの item は戻らない（F-2）
+            if (isRestockTerminalOrderStatus(status)) {
+                await settleOrderItems(
+                    tx,
+                    { orderGroupId: groupId },
+                    toSettledItemStatus(status)
+                );
             }
 
             // 発送状態の通知を同じ tx で記録する（plan 086）
@@ -569,20 +680,31 @@ export const updateOrderItemStatusAsAdmin = async (
 ): Promise<ProductStatus> => {
     const admin = await requireAdmin();
     try {
-        const updated = await db.orderItem.update({
-            where: { id: orderItemId },
-            data: { status },
-            select: { status: true },
+        // 在庫復元を item status の遷移と同じ tx で行う（plan 087・経路 C）
+        return await db.$transaction(async (tx) => {
+            const current = await tx.orderItem.findUnique({
+                where: { id: orderItemId },
+                select: { status: true },
+            });
+            if (!current) throw new Error("Order item not found");
+
+            const outcome = await applyOrderItemStatus(
+                tx,
+                { id: orderItemId },
+                current.status,
+                status
+            );
+            if (outcome === "settled") {
+                throw new Error("Order item is already settled.");
+            }
+
+            // 監査ログ（NFR-5・判断5-3）
+            console.error(
+                `[Admin:updateOrderItemStatus] actor=${admin.id} target=${orderItemId} to=${status}`
+            );
+
+            return status;
         });
-
-        // 監査ログ（NFR-5・判断5-3）
-        console.error(
-            `[Admin:updateOrderItemStatus] actor=${admin.id} target=${orderItemId} to=${status}`
-        );
-
-        // TODO(在庫連動・スコープ外): status が Canceled/Returned のとき在庫復元フックをここに（判断5-2）
-
-        return updated.status as ProductStatus;
     } catch (error: unknown) {
         logError("[Order:updateOrderItemStatusAsAdmin] Error", error);
         throw error instanceof Error
@@ -617,7 +739,7 @@ export const updateOrderPaymentStatus = async (
                 status === PaymentStatus.Refunded
                     ? OrderStatus.Refunded
                     : OrderStatus.Canceled;
-            const childItemStatus: ProductStatus =
+            const childItemStatus: RestockTerminalItemStatus =
                 status === PaymentStatus.Refunded
                     ? ProductStatus.Refunded
                     : ProductStatus.Canceled;
@@ -654,30 +776,28 @@ export const updateOrderPaymentStatus = async (
                 });
             }
 
-            // 子連動・在庫復元は実際に遷移が起きた場合のみ（冪等・二重復元防止）
-            if (isCancelOrRefund && didTransition) {
-                await tx.orderGroup.updateMany({
-                    where: { orderId },
-                    data: { status: childOrderStatus },
-                });
-                await tx.orderItem.updateMany({
-                    where: { orderGroup: { orderId } },
-                    data: { status: childItemStatus },
-                });
+            if (isCancelOrRefund) {
+                // group の連動は実際に遷移が起きた場合のみ（冪等）
+                if (didTransition) {
+                    await tx.orderGroup.updateMany({
+                        where: { orderId },
+                        data: { status: childOrderStatus },
+                    });
+                }
+                // item の遷移と在庫復元は didTransition に依存させない（plan 087・経路 A）。
+                // まだ終端でない item だけが遷移して戻るので、group / item 経路で先に
+                // 戻した item は対象にならない（F-1）。先に Canceled の item は上書きしない
+                await settleOrderItems(
+                    tx,
+                    { orderGroup: { orderId } },
+                    childItemStatus
+                );
             }
 
             // 監査ログ（NFR-5・判断5-3）
             console.error(
                 `[Admin:updatePaymentStatus] actor=${admin.id} target=${orderId} to=${status}`
             );
-
-            if (isCancelOrRefund && didTransition) {
-                const items = await tx.orderItem.findMany({
-                    where: { orderGroup: { orderId } },
-                    select: { sizeId: true, quantity: true },
-                });
-                await restockOrderItems(tx, items);
-            }
 
             return status;
         });
