@@ -116,7 +116,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [011](011-onboarding-docs-env-and-stale-plan.md) | Retire stale screens doc; complete env docs; add `.env.example` | docs | P3 | — | DONE（2026-10-07・6a424cd2〜69f6f0be） |
 | [025](025-spike-rate-limit-public-endpoints.md) | **Spike**: 公開エンドポイントのレート制限（ADR-009 で決定・後続 085） | security | P3 | — | DONE（2026-10-07・未コミット） |
 | [021](021-spike-notification-foundation.md) | **Spike**: 通知・トランザクショナルメッセージ基盤設計（ADR-010 Proposed・後続 086） | direction | P3 | — | DONE（2026-10-07・89ea571c〜4cc3a287） |
-| [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | — | DONE（2026-10-07・未コミット・後続 087） |
-| [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | — | DONE（2026-10-07・未コミット・後続 088） |
+| [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | — | DONE（2026-10-07・1ef13d1d） |
+| [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | — | DONE（2026-10-07・37423cb9） |
 | [087](087-implement-item-level-restock.md) | 在庫復元を item status の遷移に一本化し、経路をまたぐ二重復元を解消（012 の後続実装） | direction | P3 | 012 | DONE（2026-10-08・c8d92913〜335d8031） |
 </details>
