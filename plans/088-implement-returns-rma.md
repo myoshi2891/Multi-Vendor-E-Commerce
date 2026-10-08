@@ -75,7 +75,7 @@ design §0 の事実表が正本である。要点だけ抜き出す。
 
 ### Step 0: 前提の確認
 
-- 087 が完了していること（`grep -c "settleOrderItems(" src/queries/order.ts` が 6 以上）。完了していなければ STOP する。
+- 087 が完了していること（`grep -c "settleOrderItems(" src/queries/order.ts` が 4 以上、かつ `grep -c "applyOrderItemStatus(" src/queries/order.ts` が 2 以上。087 の Done criteria に合わせる）。どちらかを満たさなければ STOP する。
 - UI の作業の前に、`.agent/skills/design-system-workflow/SKILL.md` を読む（`.claude/rules/04-design-system-workflow.md`）。
 
 ### Step 1: スキーマと ERD
