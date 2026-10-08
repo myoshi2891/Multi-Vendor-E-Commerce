@@ -733,3 +733,9 @@ P4専用部品DS-COMP-226〜233と共通CouponFormFieldsのadmin opt-inは補助
 DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/他callerは別検証を必要とする。
 
 - [ ] DS-COMP-238 [review pagination CSS](../../src/components/store/shared/pagination.module.css): product opt-in実装・補助検証済み、実route保留。他callerは別対象。
+
+### 購入導線残存部品6画面（2026-10-08）
+
+[保存計画](priority-six-purchase-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。共通tokensはstore限定。画面全体の認証後実受け入れと部品の他callerは別検証。
+
+- [x] 残存部品 Step 1 DS-PAGE-006 商品一覧: 実装・関連検証・仕様同期。

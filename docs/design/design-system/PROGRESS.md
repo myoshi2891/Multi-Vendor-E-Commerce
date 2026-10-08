@@ -981,3 +981,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Red: purchase Chromium1件、FilterPanelの面がtransparent（期待ivory）。最初のEPERMは環境エラーでRedに数えず、許可されたローカルサーバー実行で確認。
 - Green/Refactor: opt-in purchase-themeをFilterPanelにcompose。面/文字/状態/focus/44pxトークンと明示light scheme。Chromium1/1、focus/面/scheme確認。lint/tsc結果はコミット前に確認。
 - DS-BASE-001のstore subset追加。全体tokens移行の完了にはしない。
+
+### 残存部品 Step 1 — DS-PAGE-006 商品一覧
+
+- Red: variantリンクの名前/focusのRTL2件、カテゴリ操作36pxのChromium3件。Green/Refactor: カードvariant名/current/focus、editorial操作44px、filters/browse/sort Portalのtokens。Jest40/40、Chromium10/10（3幅/URL保持/variant Enter/axe AA）。途中のpointer後focus locatorはkeyboard modalityへ修正しRedに加算しない。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。

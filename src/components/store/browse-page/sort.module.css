@@ -1,4 +1,5 @@
 .sort {
+    composes: theme from "../shared/purchase-theme.module.css";
     width: min(100%, 270px);
     min-width: 0;
 }
@@ -13,7 +14,7 @@
     border: 1px solid #aeb5a6;
     background: transparent;
     padding: 0 13px;
-    color: #17251d;
+    color: var(--purchase-ink);
     text-align: left;
     font-size: 12px;
     letter-spacing: 0;
@@ -27,7 +28,7 @@
     background: #eae5d8;
 }
 .trigger:focus-visible {
-    outline: 2px solid #a68a56;
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 3px;
 }
 .label {
@@ -36,7 +37,7 @@
     align-self: stretch;
     border-right: 1px solid #bbc2b5;
     padding-right: 12px;
-    color: #536054;
+    color: var(--purchase-muted);
     font-size: 11px;
     font-weight: 400;
     white-space: nowrap;
@@ -57,12 +58,13 @@
     transform: rotate(180deg);
 }
 .menu {
+    composes: theme from "../shared/purchase-theme.module.css";
     width: var(--radix-dropdown-menu-trigger-width);
     max-width: calc(100vw - 32px);
     border-radius: 0;
     border-color: #c9c7b8;
-    background: #f3f0e8;
-    color: #17251d;
+    background: var(--purchase-page);
+    color: var(--purchase-ink);
     padding: 6px;
 }
 .option {
@@ -73,7 +75,7 @@
 }
 .option[data-highlighted] {
     background: #e4ddcb;
-    color: #17251d;
+    color: var(--purchase-ink);
 }
 @media (max-width: 540px) {
     .sort {

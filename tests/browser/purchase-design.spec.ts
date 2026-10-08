@@ -473,3 +473,41 @@ test("residual tokens: filter panel is an explicit light purchase surface", asyn
     await expect(toggle).toHaveCSS("outline-style", "solid");
     await expect(toggle.locator("..")).toHaveCSS("color-scheme", "light");
 });
+
+for (const width of [1440, 768, 390]) {
+    test(`residual browse ${width}: filter hit area and focus`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/browse?screen=browse&size=M&search=piece");
+        if (width < 851) await page.getByRole("button", { name: "Show filters" }).press("Enter");
+        const category = page.getByRole("button", { name: "Category", exact: true });
+        expect((await category.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        const art = page.getByRole("button", { name: "Art", exact: true });
+        expect((await art.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        await art.focus();
+        await expect(art).toHaveCSS("outline-style", "solid");
+        await art.press("Enter");
+        const params = new URL(page.url()).searchParams;
+        expect(params.get("category")).toBe("art");
+        expect(params.get("size")).toBe("M");
+        expect(params.get("search")).toBe("piece");
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`residual variants ${width}: keyboard preview, size and navigation`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=browse&pieces=1&variants=1");
+        const forest = page.getByRole("link", { name: "Choose Forest" });
+        await page.keyboard.press("Tab");
+        await forest.focus();
+        await expect(forest).toHaveAttribute("aria-current", "true");
+        expect((await forest.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        expect((await forest.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+        await expect(page.getByTestId("product-card-considered-piece")).toHaveAttribute("href", "/product/considered-piece/forest");
+        await expect(forest).toHaveCSS("outline-style", "solid");
+        expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+        await page.screenshot({ path: info.outputPath(`residual-variants-${width}.png`) });
+        await forest.press("Enter");
+        await expect(page).toHaveURL(/\/product\/considered-piece\/forest$/);
+    });
+}

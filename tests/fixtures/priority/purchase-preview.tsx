@@ -11,12 +11,14 @@ import StoreToaster from "@/components/store/shared/store-toaster";
 import { useCartStore } from "@/cart-store/useCartStore";
 import { createMockCartProduct } from "@/config/test-fixtures";
 import ProductList from "@/components/store/shared/product-list";
-import { products } from "./purchase-data";
+import { products, multiVariantProducts } from "./purchase-data";
 import StoreProducts from "@/components/store/store-page/store-products";
 import StoreDetails from "@/components/store/store-page/store-details";
 import QuantitySelector from "@/components/store/product-page/quantity-selector";
 import Pagination from "@/components/store/shared/pagination";
 import ReviewFilters from "@/components/store/product-page/reviews/filters";
+import CategoryFilter from "@/components/store/browse-page/filters/category/category-filter";
+import { createMockCategory } from "@/config/test-fixtures";
 import type { ReviewsFilterType } from "@/lib/types";
 import productStyles from "@/components/store/product-page/product.module.css";
 import browseStyles from "@/app/(store)/browse/browse.module.css";
@@ -145,12 +147,12 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
                     <h1>The collection</h1>
                     <ProductSort />
                     <FilterPanel>
-                        <Link href="/browse?category=art">Art</Link>
+                        <CategoryFilter categories={[{ ...createMockCategory({ name: "Art", url: "art" }), children: [] }]} />
                     </FilterPanel>
                     <ProductList
                         products={
                             new URLSearchParams(location.search).has("pieces")
-                                ? products
+                                ? (new URLSearchParams(location.search).has("variants") ? multiVariantProducts : products)
                                 : []
                         }
                         variant="editorial"

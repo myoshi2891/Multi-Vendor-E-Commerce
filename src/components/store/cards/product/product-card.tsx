@@ -109,6 +109,7 @@ export default function ProductCard({ product, variant: appearance }: { product:
                 >
                     {/* Variant switcher */}
                     <VariantSwitcher
+                        appearance={appearance}
                         images={variantImages}
                         variants={variants}
                         setVariant={setVariant}
