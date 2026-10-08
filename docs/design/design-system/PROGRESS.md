@@ -970,3 +970,14 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - 検証: `DESIGN_SUITE=priority bun run test:design` 9/9（通知一覧 1440 / 768 / 390px で axe AA 違反 0・横スクロールなし・ボタンの focus outline・一括既読・失敗 alert・空状態）、`bun run check:playwright` pass、関連 Jest 425/425、tsc exit0、lint 0 errors／8 warnings。1440 / 390px のスクリーンショットで長い店舗名の折り返しを確認。
 - 保留: Clerk 認証後の実ルート `/profile/notifications` と、ダークなヘッダー上の未読バッジのブラウザー表示は未確認（認証後のヘッダーを描画する fixture が無い）。解除条件: 認証後受け入れ環境（[QA_HANDOFF](../../testing/QA_HANDOFF.md#ds-p4-six-browser)）で確認する。
 - 仕様: `04-interfaces.md`（ルート・notification module・cron API）、`05-workflows.md`（発送通知フロー）、`03-data-model.md` を更新。
+
+## 購入導線残存部品6画面移行記録
+
+- 2026-10-08。[保存計画](../../../plans/layout-design/priority-six-purchase-residual-design-system-plan.md) / [受け入れ仕様](../purchase-residual/requirements.md)。対象DS-PAGE-006/037/019/007/008/003は対応中（既存の検証済み/保留と履歴を維持）。
+- 計画コミット: `43cafd89`。overview/data-modelは商品scope/DB契約不変のため変更不要。対象外callerとSDK受け入れは今回の補助検証へ含めない。
+
+### 共通トークン
+
+- Red: purchase Chromium1件、FilterPanelの面がtransparent（期待ivory）。最初のEPERMは環境エラーでRedに数えず、許可されたローカルサーバー実行で確認。
+- Green/Refactor: opt-in purchase-themeをFilterPanelにcompose。面/文字/状態/focus/44pxトークンと明示light scheme。Chromium1/1、focus/面/scheme確認。lint/tsc結果はコミット前に確認。
+- DS-BASE-001のstore subset追加。全体tokens移行の完了にはしない。

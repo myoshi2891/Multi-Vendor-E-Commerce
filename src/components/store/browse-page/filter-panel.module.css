@@ -1,3 +1,12 @@
+.panel {
+    composes: theme from "../shared/purchase-theme.module.css";
+    background: var(--purchase-page);
+    color: var(--purchase-ink);
+}
+.panel :is(a, button, input, select):focus-visible {
+    outline: 2px solid var(--purchase-focus);
+    outline-offset: 3px;
+}
 .toggle { display: none; }
 @media (max-width: 850px) {
     .toggle {

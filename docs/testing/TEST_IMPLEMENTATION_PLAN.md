@@ -1145,3 +1145,7 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-06): Step6 checkout既存業務UIと新header/dialogの統合回帰。実認証後受け入れはQA参照。
 
 - ✅ Completed (2026-10-06): purchase25/25・commerce14/14、6画面/共通部品の自己レビュー。既存UserMenu期待の追随漏れを修正し13/13。実環境保留と全体実測はQA正本参照。
+
+## 購入導線残存部品6画面（2026-10-08）
+
+[保存計画](../../plans/layout-design/priority-six-purchase-residual-design-system-plan.md)。共通tokens: ✅ Completed (2026-10-08)。purchase Chromiumの先行Red→Green。画面別検証は[進捗正本](../design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)に記録する。

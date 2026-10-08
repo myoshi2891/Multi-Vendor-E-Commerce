@@ -462,3 +462,14 @@ test("cart sync failure keeps local contents", async ({ page }) => {
         page.getByRole("alert").filter({ hasText: "Prices and" })
     ).toBeVisible();
 });
+
+// Residual migration: use rendered styles, rather than CSS-source assertions.
+test("residual tokens: filter panel is an explicit light purchase surface", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1000 });
+    await page.goto("/?screen=browse");
+    const toggle = page.getByRole("button", { name: "Show filters" });
+    await expect(toggle.locator("..")).toHaveCSS("background-color", "rgb(243, 240, 232)");
+    await toggle.focus();
+    await expect(toggle).toHaveCSS("outline-style", "solid");
+    await expect(toggle.locator("..")).toHaveCSS("color-scheme", "light");
+});
