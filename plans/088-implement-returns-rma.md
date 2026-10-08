@@ -155,7 +155,7 @@ tx をモックし、各 action について次を確かめる（AAA）: 認可�
 
 - [ ] 統合テスト「他人の OrderItem に対する RMA 申請が拒否され、副作用が無い」（IDOR 3 階層）が green
 - [ ] 統合テスト: 店舗のスコープ、自分では承認できない、R-1 の並行、R-2 の冪等性、在庫の差し引き（+3 ちょうど）が green
-- [ ] `grep -n "rma.refunded" src/` が 0 件（`rma.resolved` に改名済み）
+- [ ] `grep -rnF "rma.refunded" src/` が 0 件（`rma.resolved` に改名済み）
 - [ ] `grep -n "idempotencyKey" prisma/schema.prisma` が `String`（`?` なし）
 - [ ] `bun run erd:generate` を実行し、`docs/architecture/data-model.drawio` が同じコミットに含まれている
 - [ ] `bunx tsc --noEmit` 0 エラー、`bun run lint` 0 エラー、`bun run test` 全件 pass

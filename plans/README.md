@@ -32,20 +32,18 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [085](085-implement-public-endpoint-rate-limit.md) | 公開エンドポイントのレート制限（cookie = アプリ内 / 検索 = Vercel WAF・ADR-009） | security | P3 | 025 | IN PROGRESS（2026-10-07・アプリ側完了 541d4b58〜265f8ee2 / WAF 待ち） |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
 | [086](086-implement-notification-foundation.md) | 通知基盤（Outbox + sweeper）と店舗単位の発送通知（021 の後続実装・Resend 導入はユーザー承認後） | direction | P3 | 021 | IN PROGRESS（2026-10-07・e83ead3d〜3aa15cf0 / Resend 承認待ち） |
-| [087](087-implement-item-level-restock.md) | 在庫復元を item status の遷移に一本化し、経路をまたぐ二重復元を解消（012 の後続実装） | direction | P3 | 012 | DONE（2026-10-08・c8d92913〜335d8031） |
 | [088](088-implement-returns-rma.md) | 返品 RMA（店舗単位の申請・承認・受け取り・解決、在庫の差し引き・通知の配線）（018 の後続実装） | direction | P3 | 086, 087 | TODO |
 
 - **085**: アプリ側（cookie limiter）は実装・検証済み。**Vercel WAF ルール（Step 6）はオペレーター作業待ち**。
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
 - **086**: Step 1〜8・10 は実装・検証済み（stub プロバイダで in-app 通知と送信まで動く）。**Step 9（`resend` SDK の追加）はユーザー判断で見送り**。cron のスケジュール設定とリモート DB への適用はオペレーター作業。設計は [`notification-foundation/design.md`](../docs/design/notification-foundation/design.md) と ADR-010（Proposed）。
-- **087**: 実装・検証済み。コミット後に Status へコミット範囲を記入し、完了済みの表へ移す。
 - **088**: 087 の `settleOrderItems` を拡張する（部分返品の差し引き方式）。返金 API は呼ばない（DIRECTION-01）。
 - Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（018 まで完了）（020・016・017 は独立）。
 
 ## 完了済みのプラン
 
 <details>
-<summary>DONE（71 件）— 実行記録はアーカイブと各プラン本文</summary>
+<summary>DONE（72 件）— 実行記録はアーカイブと各プラン本文</summary>
 
 | Plan | Title | Category | Priority | Depends on | Status |
 |------|-------|----------|----------|------------|--------|
@@ -120,4 +118,5 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [021](021-spike-notification-foundation.md) | **Spike**: 通知・トランザクショナルメッセージ基盤設計（ADR-010 Proposed・後続 086） | direction | P3 | — | DONE（2026-10-07・89ea571c〜4cc3a287） |
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | — | DONE（2026-10-07・未コミット・後続 087） |
 | [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | — | DONE（2026-10-07・未コミット・後続 088） |
+| [087](087-implement-item-level-restock.md) | 在庫復元を item status の遷移に一本化し、経路をまたぐ二重復元を解消（012 の後続実装） | direction | P3 | 012 | DONE（2026-10-08・c8d92913〜335d8031） |
 </details>

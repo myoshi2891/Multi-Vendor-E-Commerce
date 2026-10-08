@@ -149,7 +149,7 @@ design §0 の事実表が正本である。要点だけ抜き出す。
 ## Done criteria
 
 - [x] `grep -n "TODO(在庫連動" src/queries/order.ts` が 0 件
-- [x] `grep -c "settleOrderItems(" src/queries/order.ts` が 6 以上（定義 1 + 経路 A〜E の 5）— **実測 4**。経路 C / D は共通の `applyOrderItemStatus` 経由で 1 か所に集約、定義は `settleOrderItems = async (` で grep に掛からない。全 5 経路が通ることは「実施結果」参照
+- [x] `grep -c "settleOrderItems(" src/queries/order.ts` が 4（経路 A / B / E の直接呼び出し 3 + 共通ヘルパー `applyOrderItemStatus` 内の 1）、かつ `grep -c "applyOrderItemStatus(" src/queries/order.ts` が 2（経路 C / D）。※ 当初の基準「6 以上（定義 1 + 経路 A〜E の 5）」からの逸脱: 経路 C / D を `applyOrderItemStatus` に集約し、定義 `settleOrderItems = async (` は grep に掛からないため（「実施結果」Step 2〜3 参照）
 - [x] `grep -n "tx.size.update(" src/queries/order.ts` が 0 件（`updateMany` に置き換わっている）
 - [x] 統合テスト「item を取り消したあと注文を返金しても在庫がちょうど 1 回だけ戻る」（Step 1-3）が green
 - [x] 統合テスト F-1 / F-2 / 並行 / F-3 / 吸収状態 / seller の IDOR が green
@@ -176,5 +176,5 @@ design §0 の事実表が正本である。要点だけ抜き出す。
 ## Maintenance notes
 
 - レビューで最も精査すべき点: (1) すべての「item を終端へ書く」経路が `settleOrderItems` を通っているか。(2) 経路 D のスコープ（`orderGroup: { storeId }`）が `where` に残っているか。
-- plan 018 の RMA は `settleOrderItems(tx, { id }, ProductStatus.Returned, { restock })` を呼ぶ。`restock = false` は「品物を回収しない返金」や「再販できない返品」に使う。ヘルパーの署名を変えるときは 018 / 088 と揃える。
+- plan 088 の RMA は `settleOrderItems(tx, { id }, ProductStatus.Returned, { restock })` を呼ぶ。`restock = false` は「品物を回収しない返金」や「再販できない返品」に使う。ヘルパーの署名を変えるときは 018 / 088 と揃える。
 - 終端 item の再出荷が必要になったら、再オープンではなく新しい OrderItem（交換）として扱う。
