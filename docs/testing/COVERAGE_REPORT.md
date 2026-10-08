@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21（**最終更新**: 2026-10-06）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-10-08）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -11,15 +11,15 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-08） | **3039 passed / 3042 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| 全体coverage（2026-10-06・レビュー指摘対応後） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テストファイル総数 | **376ファイル**（2026-10-06 レビュー指摘対応後の dashboard実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| Jest スイート総数（unit/component のみ） | **316スイート**（315 passed／1 skipped、2026-10-07 全体実測・plan 086 後）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テスト総数 | **3039 unit/component passed**（3042 total／3 skipped）。Integration238／18 suites（2026-10-08実測・plan 087 後）。 |
+| Jestテスト総数（2026-10-08） | **3075 passed / 3078 total、3 skipped、127 snapshots passed、317 スイート（316 passed／1 skipped、failed 0）**。2026-10-08 購入導線6画面移行後の全体coverage付き実測。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
+| 全体coverage（2026-10-08実測） | Statements87.83%（10739/12226）／Branches78.04%（6574/8423）／Functions84.1%（2096/2492）／Lines88.34%（9774/11064）。 |
+| テストファイル総数（dashboard） | **392ファイル**／lcov **400エントリ**／マトリクス18/80（23%）。2026-10-08再生成実測。 |
+| Jest スイート総数（unit/component） | **317スイート**（316 passed／1 skipped、2026-10-08実測）。 |
+| テスト総数 | **3075 unit/component passed**（3078 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **387**（2026-10-06全体coverage/dashboard実測）。 |
+| lcov エントリ数 | **400**（2026-10-08全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
 | 型エラー | **0件**（2026-10-07実測）。 |
 
@@ -654,3 +654,9 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 - 更新前: 2916 passed / 2919 total、301 suites。Statements87.09%（10273/11795）／Branches77.34%（6327/8180）／Functions83.21%（1998/2401）／Lines87.57%（9357/10685）。
 - 更新後: 2919 passed / 2922 total、302 suites（301 passed／1 skipped）、3 skipped、127 snapshots。Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。dashboard376 files/387 lcov/18 of 80 cells。型0、lint 0 errors（既存8 warnings）。
 - 追加: `tests/component/store/product-reviews.test.tsx`（新規 2 件: 端数ページの切り上げと最終短ページでのナビゲーション維持）、`tests/component/shared/country-selector.test.tsx`（+1 件: 検索欄の Enter で確定しない。既存 Enter テストは option 対象へ変更）。いずれも修正前コードで Red を確認。未コミット。
+
+## 購入導線6画面の残存部品移行（2026-10-08）
+
+[移行記録](../design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。browse・store・product・cart・checkout・orderのスコープ付きtokens、44px操作領域、focus、Portal、任意store状態タグを適用。全体Jestは前回比36件・1スイート増。coverage/dashboardを実測更新、マトリクス18/80は不変。Integrationは今回未実行。
+
+purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest checkoutの修正後再試行1件を確認。browse3件は専用E2E_DATABASE_URL不在でskip。初回guest失敗は既存のsign-in戻り先契約と古いテスト期待の不一致で、期待のみ修正。DB接続P1001が発生し、商品あり実ルート・認証後checkout/order・Cloudinary/決済SDKの受け入れは保留。次回は現行schemaの使い捨てDB・Clerk顧客・SDK検証環境を用意して解除する。fixture成功は実ルート受け入れの代用にしない。

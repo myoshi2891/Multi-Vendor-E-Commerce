@@ -11,12 +11,12 @@
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-07実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-08実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3039 passed / 3042 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）** — 2026-10-08 plan 087（在庫復元の item 単位一本化）後の全体実測。Integration238／18 suitesは2026-10-08実測（plan 087 後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3075 passed / 3078 total、3 skipped、127 snapshots passed、317 スイート（316 passed／1 skipped、failed 0）**。2026-10-08 購入導線6画面移行後の全体coverage付き実測。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5497,3 +5497,9 @@ admin の注文グループ更新に行ロックを追加し、リンク先の�
 | テスト総数 | 3038 passed / 3041 total | **3039 passed / 3042 total** |
 | スイート数 | 316 | **316** |
 | 型エラー | 0 件 | **0 件** |
+
+## 購入導線6画面の残存部品移行（2026-10-08）
+
+[移行記録](./design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。browse・store・product・cart・checkout・orderのスコープ付きtokens、44px操作領域、focus、Portal、任意store状態タグを適用。全体Jestは前回比36件・1スイート増。coverage/dashboardを実測更新、マトリクス18/80は不変。Integrationは今回未実行。
+
+purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest checkoutの修正後再試行1件を確認。browse3件は専用E2E_DATABASE_URL不在でskip。初回guest失敗は既存のsign-in戻り先契約と古いテスト期待の不一致で、期待のみ修正。DB接続P1001が発生し、商品あり実ルート・認証後checkout/order・Cloudinary/決済SDKの受け入れは保留。次回は現行schemaの使い捨てDB・Clerk顧客・SDK検証環境を用意して解除する。fixture成功は実ルート受け入れの代用にしない。

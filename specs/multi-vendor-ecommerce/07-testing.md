@@ -1309,3 +1309,9 @@ admin-p4-pagesの9新要件RTLとカテゴリ390px heading browserのRedを確�
 ## Purchase six-screen shared UI verification
 
 [Saved plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md). Header RTL covers link navigation, query retention, pending/empty/error, stale responses, country keyboard/ARIA, cookie-save failure/retry/pending. DESIGN_SUITE=purchase reuses production HeaderFrame/AccountMenu with provider adapters through the existing priority server; DESIGN_SUITE=purchase-public checks real guest routes. Browser matrix uses 1440/768/390px and axe AA. DB/provider acceptance is distinct from fixture evidence; browse requires a schema-current dedicated E2E database.
+
+## 購入導線6画面のデザイン残存部品（2026-10-08）
+
+[横断受け入れ仕様](../../docs/design/purchase-residual/requirements.md)を適用。browse/store/product/cart/checkout/orderのrootとPortalにスコープ付きpurchase themeを合成。共有住所フォームは既定配色fallbackを保持し、注文・支払い・商品状態タグは任意`variant="store"`のみ意味色を適用する。API・DB・認可・金額・在庫・決済遷移契約は変更なし。overview/data-modelの更新は不要。
+
+TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。全体Jest3075/3078（3 skipped）・317スイート（316 passed/1 skipped）、127 snapshots。購入補助ブラウザー68/68（purchase44、commerce24）とaxe AAを確認。専用DB/Clerk/外部SDKを伴う受け入れは保留。

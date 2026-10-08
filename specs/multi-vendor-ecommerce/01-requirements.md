@@ -105,3 +105,9 @@ Store creation has a standalone branded light/dark workspace with a main landmar
 The home, browse, product, store, cart and checkout surfaces share a scoped branded header. Account links, search suggestions and country selection remain operable with keyboard and touch. Search announces pending, empty and unavailable suggestions while preserving full-search navigation and URL conditions; stale responses never replace newer results. Shipping-country updates lock pending controls, retain the previous selection on failure and offer retry. Language English and currency USD remain fixed information. See [saved plan](../../plans/layout-design/priority-six-purchase-design-system-plan.md).
 
 Product quantity and review-filter controls provide 44px operation targets. Review paging uses named branded navigation with current-page indication and disabled boundaries. QuantitySelector waiting for size provides readable status instead of an indefinite animated placeholder; the product page retains its existing size-selection/out-of-stock hint and purchase guards.
+
+## 購入導線6画面のデザイン残存部品（2026-10-08）
+
+[横断受け入れ仕様](../../docs/design/purchase-residual/requirements.md)を適用。browse/store/product/cart/checkout/orderのrootとPortalにスコープ付きpurchase themeを合成。共有住所フォームは既定配色fallbackを保持し、注文・支払い・商品状態タグは任意`variant="store"`のみ意味色を適用する。API・DB・認可・金額・在庫・決済遷移契約は変更なし。overview/data-modelの更新は不要。
+
+TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。全体Jest3075/3078（3 skipped）・317スイート（316 passed/1 skipped）、127 snapshots。購入補助ブラウザー68/68（purchase44、commerce24）とaxe AAを確認。専用DB/Clerk/外部SDKを伴う受け入れは保留。

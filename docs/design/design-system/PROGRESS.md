@@ -1013,3 +1013,10 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - Red: store opt-inのRTL34件、角丸6pxのChromium6件。Green/Refactor: 注文/支払い/itemの任意store variantと共通意味色、header/group/itemに適用。関連Jest96/96、commerce24/24（全34状態×3幅×明暗祖先、axe AA、pending/paid/SDK-adapter失敗/retry、single total）。注文要件/設計/tasks同期。実SDK/認証後routeは保留。
 - 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 最終統合検証
+
+- 全体Jest coverage付き: 3075 passed / 3078 total、3 skipped、317 suites（316 passed/1 skipped）、127 snapshots。Statements87.83%、Branches78.04%、Functions84.1%、Lines88.34%。
+- purchase44/44、commerce24/24。1440/768/390px、明暗祖先、キーボード、Portal、overflow、reduced motion、axe AAと画像目視を確認。公開home/cart6件とguest sign-in戻り先1件を確認（初回の古いguest期待を修正して対象再試行）。browse3件は専用DB不在でskip。
+- 仕様・SDD・QA・全体進捗・coverage dashboard同期。台帳は通知追加分を含め67ページへ集計整合、全画面の検証済み判定は変更しない。SDKアップロード/投稿、認証後checkout/order、商品あり実DBの受け入れは保留。
+- 最終lint errors0／既存warnings8、tsc exit0、check:playwright pass、diff --check pass。追加文書リンク14件、台帳67ページ・242部品のID重複なしを確認。
