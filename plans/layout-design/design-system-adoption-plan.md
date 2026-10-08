@@ -739,3 +739,4 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-six-purchase-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。共通tokensはstore限定。画面全体の認証後実受け入れと部品の他callerは別検証。
 
 - [x] 残存部品 Step 1 DS-PAGE-006 商品一覧: 実装・関連検証・仕様同期。
+- [x] 残存部品 Step 2 DS-PAGE-037 店舗詳細: 実装・関連検証・仕様同期。

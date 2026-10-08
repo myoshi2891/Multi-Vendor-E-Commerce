@@ -1151,3 +1151,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 [保存計画](../../plans/layout-design/priority-six-purchase-residual-design-system-plan.md)。共通tokens: ✅ Completed (2026-10-08)。purchase Chromiumの先行Red→Green。画面別検証は[進捗正本](../design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)に記録する。
 
 - 残存部品 Step 1 DS-PAGE-006 商品一覧: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。
+
+- 残存部品 Step 2 DS-PAGE-037 店舗詳細: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。

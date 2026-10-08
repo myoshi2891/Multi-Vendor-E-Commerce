@@ -511,3 +511,17 @@ for (const width of [1440, 768, 390]) {
         await expect(page).toHaveURL(/\/product\/considered-piece\/forest$/);
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`residual store ${width}: empty surface and keyboard focus`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=store");
+        const empty = page.getByRole("link", { name: /Clear filters/ }).locator("..");
+        await expect(empty).toHaveCSS("background-color", "rgb(248, 246, 239)");
+        const clear = page.getByRole("link", { name: /Clear filters/ });
+        await page.keyboard.press("Tab");
+        await clear.focus();
+        await expect(clear).toHaveCSS("outline-color", "rgb(120, 96, 53)");
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+}

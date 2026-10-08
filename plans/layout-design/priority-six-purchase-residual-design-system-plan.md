@@ -38,7 +38,7 @@
 - [x] 計画保存・対象選定。
 - [x] 共通tokensの先行検証・実装・文書同期。
 - [x] Step 1 商品一覧。
-- [ ] Step 2 店舗詳細。
+- [x] Step 2 店舗詳細。
 - [ ] Step 3 商品詳細。
 - [ ] Step 4 cart。
 - [ ] Step 5 checkout。

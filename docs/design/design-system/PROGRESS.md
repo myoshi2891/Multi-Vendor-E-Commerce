@@ -986,3 +986,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - Red: variantリンクの名前/focusのRTL2件、カテゴリ操作36pxのChromium3件。Green/Refactor: カードvariant名/current/focus、editorial操作44px、filters/browse/sort Portalのtokens。Jest40/40、Chromium10/10（3幅/URL保持/variant Enter/axe AA）。途中のpointer後focus locatorはkeyboard modalityへ修正しRedに加算しない。
 - 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 2 — DS-PAGE-037 店舗詳細
+
+- Red: 修正済みlocatorで空カード背景transparentをChromium3幅で確認（最初の文言locatorミスはRedに含めない）。Green/Refactor: hero/results/emptyにtheme compose、空カードpanel面、light面focusは濃gold、dark heroは装飾gold。関連Jest27/27、Chromium9/9（3幅×長文/商品あり/空、axe AA、focus、URL）。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
