@@ -98,7 +98,7 @@ design §0 の事実表が正本である。要点だけ抜き出す。
 7. **F-3**: 注文後に Size を削除（`updateProduct` の全置換を模して `db.size.delete`）→ `updateOrderPaymentStatus(order, Cancelled)` が成功し、status が終端になる。
 8. **seller 経路**: seller の `updateOrderItemStatus(store, X, Canceled)` で在庫が戻る。他店舗の item を指定すると拒否され、在庫が変わらない（IDOR 3 階層・`docs/testing/SECURITY_GAP_REPORT.md` §5.2）。
 
-**Verify**: 追加したシナリオが**意図どおりの理由で**失敗する（1 / 2 は在庫が多すぎる、3 / 4 / 8 は在庫が戻らない、6 は拒否されない、7 は P2025）。環境エラーを Red として扱わない。
+**Verify**: 追加したシナリオが**意図どおりの理由で**失敗する（1 / 2 は在庫が多すぎる、3 / 8 は在庫が戻らない、4 は group の取り消しで在庫は戻るが group 内の他の item が `Canceled` にならない、6 は拒否されない、7 は P2025）。環境エラーを Red として扱わない。
 
 ### Step 2: Green — ヘルパーを入れる
 
