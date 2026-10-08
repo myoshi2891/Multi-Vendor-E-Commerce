@@ -114,10 +114,13 @@ const applyOrderItemStatus = async (
 ): Promise<"ok" | "settled"> => {
     if (isRestockTerminalItem(status)) {
         const settled = await settleOrderItems(tx, where, status);
-        if (settled.length === 0) {
-            await tx.orderItem.updateMany({ where, data: { status } });
-        }
-        return "ok";
+        if (settled.length > 0) return "ok";
+        // 遷移も付け替えも 0 件なら、書き込みは起きていないので成功扱いにしない
+        const relabeled = await tx.orderItem.updateMany({
+            where,
+            data: { status },
+        });
+        return relabeled.count === 0 ? "settled" : "ok";
     }
     if (isRestockTerminalItem(currentStatus)) return "settled";
     const result = await tx.orderItem.updateMany({

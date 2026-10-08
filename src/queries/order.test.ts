@@ -745,6 +745,24 @@ describe("updateOrderItemStatus", () => {
             });
             AssertionHelpers.expectNotCalled(mockDb.size.updateMany);
         });
+
+        it("終端への遷移も付け替えも 0 件なら成功扱いにしない", async () => {
+            // Arrange: 読んだ後に行が消えた（遷移 [] かつ付け替え count 0）
+            mockDb.orderItem.findFirst.mockResolvedValue({
+                status: ProductStatus.Canceled,
+            });
+            mockDb.orderItem.updateMany.mockResolvedValue({ count: 0 });
+
+            // Act & Assert
+            await expect(
+                updateOrderItemStatus(
+                    TEST_CONFIG.DEFAULT_STORE_ID,
+                    "order-item-001",
+                    ProductStatus.Refunded
+                )
+            ).rejects.toThrow("Order item is already settled.");
+            AssertionHelpers.expectNotCalled(mockDb.size.updateMany);
+        });
     });
 });
 
