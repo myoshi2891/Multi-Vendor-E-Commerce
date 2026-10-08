@@ -742,3 +742,4 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] 残存部品 Step 2 DS-PAGE-037 店舗詳細: 実装・関連検証・仕様同期。
 - [x] 残存部品 Step 3 DS-PAGE-019 商品詳細: 実装・関連検証・仕様同期。
 - [x] 残存部品 Step 4 DS-PAGE-007 Cart: 実装・関連検証・仕様同期。
+- [x] 残存部品 Step 5 DS-PAGE-008 Checkout: 実装・関連検証・仕様同期。

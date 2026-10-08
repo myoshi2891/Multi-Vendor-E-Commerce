@@ -41,7 +41,7 @@
 - [x] Step 2 店舗詳細。
 - [x] Step 3 商品詳細。
 - [x] Step 4 cart。
-- [ ] Step 5 checkout。
+- [x] Step 5 checkout。
 - [ ] Step 6 注文詳細。
 - [ ] 最終統合検証・仕様/QA同期。
 - [ ] 専用DB・Clerkによる実ルート/SDK受け入れ（環境が揃わなければ保留）。

@@ -272,3 +272,32 @@ for (const width of [1440, 768, 390]) {
         await accessible(page);
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`residual checkout ${width}: portal form uses purchase controls`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=checkout");
+        await expect(page.getByRole("button", { name: "Place order" })).toBeEnabled();
+        const trigger = page.getByRole("button", { name: "Add new address" });
+        await trigger.press("Enter");
+        const dialog = page.getByRole("dialog", { name: "Add new address" });
+        await expect(dialog).toHaveCSS("color-scheme", "light");
+        const save = dialog.getByRole("button", { name: "Save address" });
+        await expect(save).toHaveCSS("background-color", "rgb(212, 186, 131)");
+        await expect(save).toHaveCSS("color", "rgb(23, 37, 29)");
+        await expect(page.getByLabel("First name")).toBeFocused();
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`residual-checkout-dialog-${width}.png`), fullPage: true });
+        await page.keyboard.press("Escape");
+        await expect(trigger).toBeFocused();
+    });
+}
+
+test("residual checkout compatibility: account address form keeps its default palette", async ({ page }) => {
+    await page.goto("/?scenario=account-address-form");
+    const dialog = page.getByRole("dialog", { name: "Account address form" });
+    await expect(dialog.getByRole("button", { name: "Save address" })).toHaveCSS("background-color", "rgb(23, 37, 29)");
+    await expect(dialog.getByRole("button", { name: "Save address" })).toHaveCSS("color", "rgb(241, 238, 228)");
+    await expect(page.getByLabel("First name")).toHaveCSS("background-color", "rgb(255, 253, 247)");
+    await accessible(page);
+});

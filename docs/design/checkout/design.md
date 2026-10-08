@@ -8,3 +8,7 @@
 - Supplementalブラウザーはproduction部品・CSSをbundleし、NextナビゲーションとSDKだけをadapterへ差し替える。DB・Clerk・実決済は呼ばない。実ルートの認可は既存queryのRTL回帰まで確認し、認証後E2Eとは区別する。
 
 [要件](requirements.md) / [タスク](tasks.md) / [証跡](../design-system/PROGRESS.md#checkout-order移行記録)
+
+## 購入tokensの継承（2026-10-08）
+
+commerceのpageとRadix Portal dialogにpurchase-themeをcompose。共用AddressFormのCSSはpurchase tokensと従来値のfallbackを使用し、checkoutの保存buttonだけgold/inkへ統一。profile側のmarkup/Props/既定配色は保持。[受け入れ](../purchase-residual/requirements.md)。

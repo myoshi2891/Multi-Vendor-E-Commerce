@@ -1001,3 +1001,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - Red: select-all label18pxのChromium3件。Green/Refactor: page tokens、44px選択label/item label/bulk/retry、商品grid領域調整。Jest52/52、Chromium8/8（3幅・数量・失敗保持/retry・sync失敗・bulk→empty・axe AA）。cart要件/設計を同期。
 - 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 5 — DS-PAGE-008 Checkout
+
+- Red: Portal保存buttonが従来green（期待gold）のChromium3件。Green/Refactor: commerce page/dialogへのtheme composeと共用AddressFormのtoken fallback。Jest33/33、commerce17/17、account既定配色/axe互換1/1。住所保存pending/error/success/focus、coupon/order lock/retry、3幅/axe AA。checkout要件/設計/tasksと共有order要件を同期。実認証/SDKは保留。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
