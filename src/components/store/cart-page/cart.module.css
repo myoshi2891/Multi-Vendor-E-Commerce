@@ -1,19 +1,20 @@
 .page {
-    --cart-ink: #17251d;
-    --cart-gold: #d4ba83;
-    background: #f3f0e8;
+    composes: theme from "../shared/purchase-theme.module.css";
+    --cart-ink: var(--purchase-ink);
+    --cart-gold: var(--purchase-gold);
+    background: var(--purchase-page);
     color: var(--cart-ink);
     min-height: 65vh;
 }
 .page a:focus-visible,
 .page button:focus-visible,
 .page input:focus-visible {
-    outline: 2px solid #a68a56;
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 4px;
 }
 .hero {
-    background: #0b100e;
-    color: #f1eee4;
+    background: var(--purchase-dark);
+    color: var(--purchase-on-dark);
     padding: 28px max(6%, calc((100vw - 1440px) / 2));
 }
 .breadcrumb {
@@ -33,7 +34,7 @@
     font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #d4ba83;
+    color: var(--purchase-gold);
     margin-bottom: 16px;
 }
 .hero h1 {
@@ -64,7 +65,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    border-bottom: 1px solid #ccc7b9;
+    border-bottom: 1px solid var(--purchase-line);
     padding-bottom: 22px;
 }
 .header h2 {
@@ -88,7 +89,7 @@
 .page input[type="checkbox"] {
     width: 18px;
     height: 18px;
-    accent-color: #17251d;
+    accent-color: var(--purchase-ink);
     cursor: pointer;
 }
 .textButton {
@@ -97,7 +98,7 @@
     padding: 8px 0;
     text-decoration: underline;
     text-underline-offset: 4px;
-    color: #75613b;
+    color: var(--purchase-link);
     cursor: pointer;
 }
 .country {
@@ -107,7 +108,7 @@
     align-items: start;
     font-size: 12px;
     line-height: 1.7;
-    color: #536054;
+    color: var(--purchase-muted);
 }
 .country svg {
     flex-shrink: 0;
@@ -119,8 +120,8 @@
     top: 24px;
 }
 .summary {
-    background: #17251d;
-    color: #f3f0e8;
+    background: var(--purchase-ink);
+    color: var(--purchase-page);
     padding: 28px;
 }
 .summary h2 {
@@ -157,17 +158,17 @@
     gap: 12px;
     min-height: 48px;
     padding: 14px 24px;
-    background: #d4ba83;
-    color: #17251d;
+    background: var(--purchase-gold);
+    color: var(--purchase-ink);
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid #d4ba83;
+    border: 1px solid var(--purchase-gold);
     text-decoration: none;
     cursor: pointer;
     transition: background 0.2s;
 }
 .primary:hover {
-    background: #e4cca0;
+    background: var(--purchase-gold-hover);
 }
 .primary:disabled {
     cursor: wait;
@@ -178,12 +179,12 @@
 }
 .summaryNote {
     font-size: 11px;
-    color: #c4ccbf;
+    color: var(--purchase-muted-on-dark);
     line-height: 1.7;
     margin-top: 16px;
 }
 .assurance {
-    border-bottom: 1px solid #ccc7b9;
+    border-bottom: 1px solid var(--purchase-line);
     padding: 22px 0;
     display: flex;
     gap: 12px;
@@ -199,10 +200,10 @@
 .assurance p {
     font-size: 12px;
     line-height: 1.7;
-    color: #536054;
+    color: var(--purchase-muted);
 }
 .assurance a {
-    color: #75613b;
+    color: var(--purchase-link);
     text-decoration: underline;
     text-underline-offset: 4px;
 }
@@ -214,7 +215,7 @@
 }
 .emptyIcon {
     margin: 0 auto 24px;
-    color: #75613b;
+    color: var(--purchase-link);
 }
 .empty h2 {
     font:
@@ -222,7 +223,7 @@
         serif;
 }
 .empty p {
-    color: #536054;
+    color: var(--purchase-muted);
     line-height: 1.8;
     font-size: 14px;
     margin: 18px 0 30px;
@@ -239,12 +240,12 @@
 .error {
     padding: 14px 0;
     font-size: 13px;
-    color: #8a3028;
+    color: var(--purchase-danger);
     line-height: 1.6;
 }
 .product {
     padding: 28px 0;
-    border-bottom: 1px solid #ccc7b9;
+    border-bottom: 1px solid var(--purchase-line);
 }
 .unavailable {
     background: #f0e0d6;
@@ -252,7 +253,7 @@
 }
 .productRow {
     display: grid;
-    grid-template-columns: 20px 110px minmax(0, 1fr);
+    grid-template-columns: 44px 110px minmax(0, 1fr);
     align-items: start;
     gap: 18px;
 }
@@ -288,9 +289,9 @@
     justify-content: center;
     width: 44px;
     height: 44px;
-    border: 1px solid #ccc7b9;
+    border: 1px solid var(--purchase-line);
     background: transparent;
-    color: #17251d;
+    color: var(--purchase-ink);
     cursor: pointer;
 }
 .iconButton:hover {
@@ -302,7 +303,7 @@
 }
 .size {
     margin: 10px 0;
-    color: #536054;
+    color: var(--purchase-muted);
     font-size: 12px;
 }
 .priceRow {
@@ -316,7 +317,7 @@
 .quantity {
     display: inline-flex;
     align-items: center;
-    border: 1px solid #ccc7b9;
+    border: 1px solid var(--purchase-line);
 }
 .quantity .iconButton {
     border: 0;
@@ -327,13 +328,13 @@
     border: 0;
     text-align: center;
     font-size: 13px;
-    color: #17251d;
+    color: var(--purchase-ink);
 }
 .shipping {
     margin-top: 14px;
     font-size: 11px;
     line-height: 1.7;
-    color: #536054;
+    color: var(--purchase-muted);
     overflow-wrap: anywhere;
 }
 .shipping svg {
@@ -350,7 +351,7 @@
     }
     .productRow {
         gap: 12px;
-        grid-template-columns: 18px 80px minmax(0, 1fr);
+        grid-template-columns: 44px 80px minmax(0, 1fr);
     }
     .image {
         width: 80px;
@@ -394,3 +395,8 @@
         transition: none;
     }
 }
+
+.selection label { min-height: var(--purchase-touch); }
+.textButton { min-height: var(--purchase-touch); }
+.itemSelection { display: grid; place-items: center; width: var(--purchase-touch); height: var(--purchase-touch); cursor: pointer; }
+.hero a:focus-visible { outline-color: var(--purchase-gold); }

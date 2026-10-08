@@ -996,3 +996,8 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 - Red: review sort34pxのChromium3件。Green/Refactor: select44px/入力面/focus、review card/formとdropdown/errorのtokens、フォーム文字色/長文折返し。関連Jest20/20、product選択Chromium10/10、実card/form補助3/3（paint/draft/focus/overflow、Cloudinary/Action adapters）。フォーム全体のSDK/投稿実受け入れは別。初回fixtureのvariant空配列とlikes不足はテストfixture修正でRedには数えない。
 - 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 4 — DS-PAGE-007 Cart
+
+- Red: select-all label18pxのChromium3件。Green/Refactor: page tokens、44px選択label/item label/bulk/retry、商品grid領域調整。Jest52/52、Chromium8/8（3幅・数量・失敗保持/retry・sync失敗・bulk→empty・axe AA）。cart要件/設計を同期。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。

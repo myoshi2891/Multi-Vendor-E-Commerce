@@ -198,6 +198,7 @@ const CartProduct: FC<Props> = ({
         >
             <div className={styles.productRow}>
                 {stock > 0 ? (
+                    <label className={styles.itemSelection} htmlFor={unique_id}>
                     <input
                         type="checkbox"
                         id={unique_id}
@@ -205,6 +206,7 @@ const CartProduct: FC<Props> = ({
                         checked={selected}
                         onChange={handleSelectProduct}
                     />
+                    </label>
                 ) : (
                     <span />
                 )}

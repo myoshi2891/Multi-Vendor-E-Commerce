@@ -559,3 +559,21 @@ for (const width of [1440, 768, 390]) {
         await page.screenshot({ path: info.outputPath(`residual-review-surfaces-${width}.png`), fullPage: true });
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`residual cart ${width}: selection and bulk delete hit areas`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=cart");
+        const all = page.getByRole("checkbox", { name: "Select all products" });
+        await expect(all).toBeVisible();
+        expect((await all.locator("..").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        const item = page.getByRole("checkbox", { name: /^Select A considered/ });
+        expect((await item.locator("..").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        await all.press("Space");
+        await expect(all).toBeChecked();
+        const bulk = page.getByRole("button", { name: "Delete all selected products" });
+        expect((await bulk.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        await bulk.press("Enter");
+        await expect(page.getByRole("link", { name: "Explore items" })).toBeVisible();
+    });
+}
