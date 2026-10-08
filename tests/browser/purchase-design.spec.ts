@@ -525,3 +525,37 @@ for (const width of [1440, 768, 390]) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`residual product ${width}: review sort size, input surface and focus`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=product");
+        const sort = page.getByRole("combobox", { name: "Sort reviews" });
+        expect((await sort.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        await expect(sort).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await page.keyboard.press("Tab");
+        await sort.focus();
+        await expect(sort).toHaveCSS("outline-color", "rgb(120, 96, 53)");
+        await sort.selectOption("latest");
+        await expect(sort).toHaveValue("latest");
+        await sort.selectOption("default");
+        await expect(sort).toHaveValue("default");
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`residual review surfaces ${width}: real card and form paint`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=product&review-form=1");
+        const text = page.getByPlaceholder("Write your review here...");
+        await expect(text).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await expect(text).toHaveCSS("color", "rgb(23, 37, 29)");
+        await text.fill("A thoughtful review draft");
+        await expect(text).toHaveValue("A thoughtful review draft");
+        await page.keyboard.press("Tab");
+        await text.focus();
+        await expect(text).toHaveCSS("outline-color", "rgb(120, 96, 53)");
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({ path: info.outputPath(`residual-review-surfaces-${width}.png`), fullPage: true });
+    });
+}

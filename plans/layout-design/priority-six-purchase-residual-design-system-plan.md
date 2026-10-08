@@ -39,7 +39,7 @@
 - [x] 共通tokensの先行検証・実装・文書同期。
 - [x] Step 1 商品一覧。
 - [x] Step 2 店舗詳細。
-- [ ] Step 3 商品詳細。
+- [x] Step 3 商品詳細。
 - [ ] Step 4 cart。
 - [ ] Step 5 checkout。
 - [ ] Step 6 注文詳細。

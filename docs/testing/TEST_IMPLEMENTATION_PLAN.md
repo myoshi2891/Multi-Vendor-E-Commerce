@@ -1153,3 +1153,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - 残存部品 Step 1 DS-PAGE-006 商品一覧: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。
 
 - 残存部品 Step 2 DS-PAGE-037 店舗詳細: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。
+
+- 残存部品 Step 3 DS-PAGE-019 商品詳細: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。
