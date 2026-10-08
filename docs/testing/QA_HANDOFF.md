@@ -18,7 +18,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3038 passed / 3041 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）**。2026-10-08 `bun run test` の全体実測（plan 087 で `order.test.ts` +10〔item 経路 C/D の吸収状態・条件付き遷移・在庫復元、経路 B の再オープン、経路 E、経路 A の `didTransition` からの切り離し、Size 消失時の続行〕。lcov は 2026-10-06 のまま）。 |
+| Jest テスト総数 (unit/component) | **3039 passed / 3042 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）**。2026-10-08 `bun run test` の全体実測（レビュー対応で `order.test.ts` +1〔終端パスの付け替え 0 件を "settled" 扱い〕。plan 087 で `order.test.ts` +10〔item 経路 C/D の吸収状態・条件付き遷移・在庫復元、経路 B の再オープン、経路 E、経路 A の `didTransition` からの切り離し、Size 消失時の続行〕。lcov は 2026-10-06 のまま）。 |
 | カバレッジ全体（2026-10-06実測） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。[履歴](./COVERAGE_REPORT.md#7-履歴)。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 実測: 238/238 pass**・`bun run test:integration`。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

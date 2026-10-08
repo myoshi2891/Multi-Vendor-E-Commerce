@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-08） | **3038 passed / 3041 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
+| Jestテスト総数（2026-10-08） | **3039 passed / 3042 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）**。全体実測、正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | 全体coverage（2026-10-06・レビュー指摘対応後） | Statements87.42%（10315/11799）／Branches77.59%（6350/8183）／Functions83.42%（2003/2401）／Lines87.93%（9398/10687）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | テストファイル総数 | **376ファイル**（2026-10-06 レビュー指摘対応後の dashboard実測）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
 | Jest スイート総数（unit/component のみ） | **316スイート**（315 passed／1 skipped、2026-10-07 全体実測・plan 086 後）。正本[QA_HANDOFF](./QA_HANDOFF.md)。 |
-| テスト総数 | **3038 unit/component passed**（3041 total／3 skipped）。Integration238／18 suites（2026-10-08実測・plan 087 後）。 |
+| テスト総数 | **3039 unit/component passed**（3042 total／3 skipped）。Integration238／18 suites（2026-10-08実測・plan 087 後）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
@@ -516,6 +516,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-07 | **plan 086 レビュー対応 — Jest +3（3023 → 3026 passed / 3026 → 3029 total・316 スイート不変）、Integration 不変（228）**（作業ツリー・コミット前）: seller の `updateOrderGroupStatus` が遷移判定に tx 外の古い状態を使っていたのを、tx 内の `SELECT … FOR UPDATE` で読み直すよう修正（`order.test.ts` +1）。未読件数を既知の種別に限定し一覧と一致させた（既存テストの期待を更新）。通知一覧で、空のページでも続きのリンクを出す・リンク先の無い未読をボタンで既読化（`notification-list.test.tsx` +2）。いずれも修正前コードで Red を確認。 |
 | 2026-10-07 | **plan 086 レビュー対応（第 2 巡）— Jest +2（3026 → 3028 passed / 3029 → 3031 total・316 スイート不変）、Integration 不変（228）**（作業ツリー・コミット前、HEAD `2a1cb1e1`）: admin の `updateOrderGroupStatusAsAdmin` も更新前状態を読む前に tx 内で `SELECT … FOR UPDATE` を取るよう修正（`order.test.ts` +1）。リンク先の無い通知の既読化を非楽観更新にし、失敗時は未読のまま再試行できるよう修正（`notification-list.test.tsx` +1）。`03-data-model.md` の ER 図ページ表を 12 ページへ |
 | 2026-10-08 | **plan 087 在庫復元の item 単位一本化 — Jest +10（3028 → 3038 passed / 3031 → 3041 total・316 スイート不変）、Integration +10（228 → 238・18 スイート不変）**（作業ツリー・コミット前、HEAD `b7b3333e`）: `src/queries/order.ts` の在庫復元を `OrderItem.status` の条件付き遷移（`settleOrderItems`）に一本化し経路 A〜E を通した。`order-lifecycle.test.ts` に経路をまたぐ exactly-once（F-1 / F-2 / item→order / item→group / 並行）・吸収状態・Size 消失（F-3）・seller の復元と IDOR を追加。`order.test.ts` は旧呼び出し形の固定 11 件を更新し分岐 +10。ヒートマップ分類変更なし。 |
+| 2026-10-08 | **plan 087 レビュー対応 — Jest +1（3038 → 3039 passed / 3041 → 3042 total・316 スイート不変）、Integration 不変（238）**（作業ツリー・コミット前、HEAD `e03a45a7`）: `applyOrderItemStatus` の終端パスで、遷移も付け替えも 0 件のとき `"ok"` を返していたのを `"settled"` に修正（書き込みが起きていないのに成功扱いにしない）。`order.test.ts` に回帰 +1。 |
 
 ### 2026-09-30 compareデザイン移行
 

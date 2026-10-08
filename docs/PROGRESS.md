@@ -16,7 +16,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3038 passed / 3041 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）** — 2026-10-08 plan 087（在庫復元の item 単位一本化）後の全体実測。Integration238／18 suitesは2026-10-08実測（plan 087 後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3039 passed / 3042 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）** — 2026-10-08 plan 087（在庫復元の item 単位一本化）後の全体実測。Integration238／18 suitesは2026-10-08実測（plan 087 後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5473,4 +5473,27 @@ admin の注文グループ更新に行ロックを追加し、リンク先の�
 | テスト総数 | 3028 passed / 3031 total | **3038 passed / 3041 total** |
 | スイート数 | 316 | **316** |
 | Integration | 228 / 18 スイート | **238 / 18 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 087 レビュー対応: 終端パスの空振りを成功扱いにしない (2026-10-08)
+
+#### 概要
+
+`applyOrderItemStatus` の終端パスで、`settleOrderItems` の遷移も付け替えの `updateMany` も 0 件のとき `"ok"` を返していたため、`"settled"` を返すよう修正した（作業ツリー・未コミット、HEAD `e03a45a7`）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/order.ts` | 付け替えの `count` を見て 0 件なら `"settled"` | 未コミット |
+| `src/queries/order.test.ts` | 遷移 [] かつ付け替え count 0 で拒否される回帰 +1 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3038 passed / 3041 total | **3039 passed / 3042 total** |
+| スイート数 | 316 | **316** |
 | 型エラー | 0 件 | **0 件** |
