@@ -301,3 +301,21 @@ test("residual checkout compatibility: account address form keeps its default pa
     await expect(page.getByLabel("First name")).toHaveCSS("background-color", "rgb(255, 253, 247)");
     await accessible(page);
 });
+
+for (const width of [1440, 768, 390]) {
+    for (const ancestor of ["light", "dark"]) {
+        test(`residual order ${width} ${ancestor}: all statuses keep readable store surfaces`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?scenario=order-statuses");
+            await page.evaluate(theme => document.documentElement.classList.toggle("dark", theme === "dark"), ancestor);
+            const tags = page.getByTestId("status-matrix").locator("span");
+            await expect(tags).toHaveCount(34);
+            for (const tag of await tags.all()) {
+                await expect(tag).toHaveCSS("border-radius", "0px");
+                await expect(tag).toHaveCSS("color-scheme", "light");
+            }
+            await accessible(page);
+            await page.screenshot({ path: info.outputPath(`residual-statuses-${width}-${ancestor}.png`), fullPage: true });
+        });
+    }
+}

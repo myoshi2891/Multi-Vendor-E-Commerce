@@ -19,7 +19,7 @@ export default function ProductRow({ product }: { product: OrderItem }) {
                     Size: {product.size} · Qty: {product.quantity}
                 </p>
                 <p>Price: ${product.price.toFixed(2)}</p>
-                <ProductStatusTag status={product.status as ProductStatus} />
+                <ProductStatusTag variant="store" status={product.status as ProductStatus} />
             </div>
         </div>
     );

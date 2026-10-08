@@ -10,6 +10,10 @@ import OrderTotal from "@/components/store/cards/order/total";
 import OrderUser from "@/components/store/cards/order/user";
 import OrderInfo from "@/components/store/cards/order/info";
 import OrderPayment from "@/components/store/order-page/payment";
+import OrderStatusTag from "@/components/shared/order-status";
+import PaymentStatusTag from "@/components/shared/payment-status";
+import ProductStatusTag from "@/components/shared/product-status";
+import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
 import AddressForm from "@/components/store/profile/addresses/address-form";
 import addressStyles from "@/components/store/profile/addresses/addresses.module.css";
 import styles from "@/components/store/shared/commerce.module.css";
@@ -194,6 +198,11 @@ const order = {
     })),
 } as NonNullable<OrderFullType>;
 function App() {
+    if (scenario === "order-statuses") return <main className={styles.page}><h1>Order status presentation</h1><div className={styles.panel} data-testid="status-matrix">
+        <h2>Orders</h2><div className={styles.badges}>{Object.values(OrderStatus).map(status => <OrderStatusTag key={status} status={status} {...{ variant: "store" as const }} />)}</div>
+        <h2>Payments</h2><div className={styles.badges}>{Object.values(PaymentStatus).map(status => <PaymentStatusTag key={status} status={status} {...{ variant: "store" as const }} />)}</div>
+        <h2>Items</h2><div className={styles.badges}>{Object.values(ProductStatus).map(status => <ProductStatusTag key={status} status={status} {...{ variant: "store" as const }} />)}</div>
+    </div></main>;
     if (scenario === "account-address-form") return <main><h1>Account address</h1><div className={addressStyles.dialog} role="dialog" aria-label="Account address form"><h2>Edit address</h2><AddressForm countries={[country]} saveAddressAction={actions.saveAddressAction} onSaved={() => {}} onCancel={() => {}} onBusyChange={() => {}} /></div></main>;
     if (scenario.startsWith("order"))
         return (

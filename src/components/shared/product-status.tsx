@@ -1,8 +1,10 @@
+import storeStyles from "./store-status.module.css";
 import { ProductStatus } from "@/lib/types";
 import { Package } from "lucide-react"; // Lucide package icon
 
 interface ProductStatusTagProps {
     status: ProductStatus;
+    variant?: "store";
 }
 
 const productStatusStyles: {
@@ -84,13 +86,15 @@ const productStatusStyles: {
     },
 };
 
-const ProductStatusTag: React.FC<ProductStatusTagProps> = ({ status }) => {
+const ProductStatusTag: React.FC<ProductStatusTagProps> = ({ status, variant }) => {
     const styles = productStatusStyles[status];
 
     return (
         <div>
             <span
-                className={`inline-flex items-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ${styles.bgColor} ${styles.textColor}`}
+                data-appearance={variant}
+                data-status={variant === "store" ? status : undefined}
+                className={variant === "store" ? storeStyles.tag : `inline-flex items-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ${styles.bgColor} ${styles.textColor}`}
             >
                 <Package className="size-3 shrink-0" />{" "}
                 {/* Lucide Package Icon */}

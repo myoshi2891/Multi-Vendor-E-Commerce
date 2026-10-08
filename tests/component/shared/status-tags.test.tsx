@@ -96,3 +96,26 @@ describe('Status Tags', () => {
         })
     })
 })
+
+// Purchase variant is opt-in: every existing state retains a readable label.
+describe('store status presentation', () => {
+    it.each(Object.values(OrderStatus))('order %s opts in without losing its label', status => {
+        const { container } = render(<OrderStatusTag status={status} {...{ variant: 'store' as const }} />);
+        const tag = container.querySelector('span')!;
+        expect(tag).toHaveAttribute('data-appearance', 'store');
+        expect(tag).toHaveAttribute('data-status', status);
+        expect(tag.textContent?.trim()).not.toBe('');
+    });
+    it.each(Object.values(PaymentStatus))('payment %s opts in without losing its label', status => {
+        const { container } = render(<PaymentStatusTag status={status} {...{ variant: 'store' as const }} />);
+        expect(container.querySelector('span')).toHaveAttribute('data-appearance', 'store');
+        expect(container.querySelector('span')).toHaveAttribute('data-status', status);
+        expect(container.textContent).toContain(status);
+    });
+    it.each(Object.values(ProductStatus))('item %s opts in without losing its label', status => {
+        const { container } = render(<ProductStatusTag status={status} {...{ variant: 'store' as const }} />);
+        expect(container.querySelector('span')).toHaveAttribute('data-appearance', 'store');
+        expect(container.querySelector('span')).toHaveAttribute('data-status', status);
+        expect(container.textContent?.trim()).not.toBe('');
+    });
+});

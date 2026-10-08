@@ -2,9 +2,11 @@ import { OrderStatus } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { Truck } from 'lucide-react'
 import { FC } from 'react'
+import storeStyles from './store-status.module.css'
 
 interface OrderStatusTagProps {
     status: OrderStatus
+    variant?: "store"
 }
 
 const statusStyles: {
@@ -72,13 +74,15 @@ const statusStyles: {
     },
 }
 
-const OrderStatusTag: FC<OrderStatusTagProps> = ({ status }) => {
+const OrderStatusTag: FC<OrderStatusTagProps> = ({ status, variant }) => {
     const styles = statusStyles[status]
     const { bgColor, textColor, label } = styles
     return (
         <div>
             <span
-                className={cn(
+                data-appearance={variant}
+                data-status={variant === "store" ? status : undefined}
+                className={variant === "store" ? storeStyles.tag : cn(
                     'inline-flex items-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium',
                     bgColor,
                     textColor

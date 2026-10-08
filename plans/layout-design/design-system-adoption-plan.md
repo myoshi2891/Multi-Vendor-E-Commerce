@@ -743,3 +743,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] 残存部品 Step 3 DS-PAGE-019 商品詳細: 実装・関連検証・仕様同期。
 - [x] 残存部品 Step 4 DS-PAGE-007 Cart: 実装・関連検証・仕様同期。
 - [x] 残存部品 Step 5 DS-PAGE-008 Checkout: 実装・関連検証・仕様同期。
+- [x] 残存部品 Step 6 DS-PAGE-003 注文詳細: 実装・関連検証・仕様同期。
+
+- [ ] DS-COMP-241 [purchase theme](../../src/components/store/shared/purchase-theme.module.css): store限定tokens、補助検証済み・実受け入れ保留。
+- [ ] DS-COMP-242 [store status CSS](../../src/components/shared/store-status.module.css): store opt-in全34状態を補助検証、認証後order実ルート保留。

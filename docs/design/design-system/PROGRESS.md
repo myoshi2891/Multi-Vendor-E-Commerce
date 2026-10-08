@@ -359,6 +359,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-238 | P2 | Review pagination styles | [pagination.module.css](../../../src/components/store/shared/pagination.module.css) | 実装済み | product review opt-inの補助検証済み、実route保留 |
 | DS-COMP-239 | P2 | 通知一覧 | [notification-list.tsx](../../../src/components/store/profile/notifications/notification-list.tsx) | 検証済み | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット) |
 | DS-COMP-240 | P2 | ヘッダーの未読バッジ・通知リンク | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 実装済み | RTL のみ。ブラウザー表示は認証後ヘッダーの fixture が無く未確認 |
+| DS-COMP-241 | P1 | 購入theme tokens | [purchase-theme.module.css](../../../src/components/store/shared/purchase-theme.module.css) | 保留 | store限定・補助検証済み、認証後実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
+| DS-COMP-242 | P1 | store状態タグCSS | [store-status.module.css](../../../src/components/shared/store-status.module.css) | 保留 | 34状態/明暗祖先/3幅/AA補助検証済み、認証後order実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -1005,4 +1007,9 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 ### 残存部品 Step 5 — DS-PAGE-008 Checkout
 
 - Red: Portal保存buttonが従来green（期待gold）のChromium3件。Green/Refactor: commerce page/dialogへのtheme composeと共用AddressFormのtoken fallback。Jest33/33、commerce17/17、account既定配色/axe互換1/1。住所保存pending/error/success/focus、coupon/order lock/retry、3幅/axe AA。checkout要件/設計/tasksと共有order要件を同期。実認証/SDKは保留。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 6 — DS-PAGE-003 注文詳細
+
+- Red: store opt-inのRTL34件、角丸6pxのChromium6件。Green/Refactor: 注文/支払い/itemの任意store variantと共通意味色、header/group/itemに適用。関連Jest96/96、commerce24/24（全34状態×3幅×明暗祖先、axe AA、pending/paid/SDK-adapter失敗/retry、single total）。注文要件/設計/tasks同期。実SDK/認証後routeは保留。
 - 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。

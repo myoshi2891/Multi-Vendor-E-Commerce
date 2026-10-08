@@ -42,7 +42,7 @@ export default function OrderGroupTable({
                         <span>{group.store.name}</span>
                     </div>
                 </div>
-                <OrderStatusTag status={group.status as OrderStatus} />
+                <OrderStatusTag variant="store" status={group.status as OrderStatus} />
             </div>
             <p className={styles.note}>
                 {deliveryInfo.shippingService} · Expected Delivery Time:{" "}

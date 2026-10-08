@@ -15,3 +15,7 @@
 ## 残存部品の購入theme（2026-10-08）
 
 [6画面受け入れ](../purchase-residual/requirements.md)。共有購入面はpurchase-themeのstore専用tokensを使用。page/Portal rootsに明示適用し固定light schemeを維持。住所フォームは継承tokensを使い、account callerでは従来のfallback値を維持する。注文/住所/coupon/pending/失敗後retryの契約は変更しない。
+
+## ストア向け状態タグ（2026-10-08）
+
+注文全体・店舗group・商品item・支払いのタグは任意`variant="store"`を指定。state値/ラベル/アイコンを保持し、warning/success/danger/info/neutralの意味を持つ可読色と角丸なしの罫線を使用する。明暗祖先に依存せず固定light面でAAを満たす。指定なしの管理画面等は従来表示を維持する。
