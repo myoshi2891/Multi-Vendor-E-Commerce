@@ -1168,3 +1168,7 @@ SDD overview/data-modelは範囲・DB変更がないため更新不要、他SDD/
 ### Step 1: DS-PAGE-028 orders
 
 Red: supportの色が固定117/97/59で注入96/74/43へ追従せず失敗。Green/Refactor: postpurchase --grep orders 4/4（1440/768/390px、axe AA、pending/error/retry/empty/paging/focus）；RTL orders-table 10/10；tsc成功。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。
+
+### Step 2: DS-PAGE-030 payment
+
+Red: supportの固定色が注入したlinkへ追従せず失敗。Green/Refactor: postpurchase --grep payment 4/4（3幅、axe AA、empty/pending/error/retry/paging/focus）；RTL payments-table 10/10。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。

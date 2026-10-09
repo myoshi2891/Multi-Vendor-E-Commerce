@@ -3,6 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 const screens = [
     { key: "orders", heading: "My orders", empty: "No orders yet" },
+    { key: "payment", heading: "My payments", empty: "No payments yet" },
 ];
 
 async function accessible(page: Page) {
@@ -39,7 +40,12 @@ for (const screen of screens) {
         ).toHaveCSS("color", "rgb(96, 74, 43)");
         await expect(
             page
-                .getByRole("list", { name: "Your orders" })
+                .getByRole("list", {
+                    name:
+                        screen.key === "orders"
+                            ? "Your orders"
+                            : "Your payments",
+                })
                 .locator("li")
                 .first()
         ).toHaveCSS("background-color", "rgb(255, 253, 247)");

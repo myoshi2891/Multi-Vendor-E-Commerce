@@ -789,3 +789,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-six-p2-postpurchase-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入後p2-6画面移行記録)。既存本体適用と今回の変更受け入れを区別する。
 
 - [x] Step 1 DS-PAGE-028: ordersの残存表示統一・補助検証・仕様同期。
+
+- [x] Step 2 DS-PAGE-030: paymentの残存表示統一・補助検証・仕様同期。

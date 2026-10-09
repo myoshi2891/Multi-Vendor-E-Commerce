@@ -15,3 +15,8 @@
 | PP-9 | Server ComponentからqueriesのactionをPropsで渡す。amount number / updatedAt ISOの最小データを返し、所有者制約・認証失敗時DB未実行を維持。Clientの直接action importなし。 | query / RTL |
 
 対象外: 支払い実行/返金、DB/schema/認可変更、注文詳細、他profile本文。ページ内条件はClient stateで保持し、再読込時は初期条件へ戻る。通貨の変更は今回行わず、既存USD表示を保持する。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。共通purchaseトークンで面・文字・罫線・選択・focus・操作寸法を表示し、主操作はgold/inkとする。既存機能要件・URL・所有者制約は維持する。独立Portalはテーマを明示し、意味色は色だけに依存させない。
