@@ -156,3 +156,16 @@ for (const width of [1440, 768, 390]) {
         await accessible(page);
     });
 }
+
+// Theme inheritance must be observable in rendered UI, including account child screens.
+test("account shell inherits shared storefront tokens", async ({ page }) => {
+    await page.goto("/?scenario=notifications");
+    const title = page.getByRole("heading", { name: "Notifications" });
+    await page.locator("#root > div").evaluate((root) => {
+        (root as HTMLElement).style.setProperty("--purchase-ink", "#243b53");
+        (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b");
+    });
+    await expect(title).toHaveCSS("color", "rgb(36, 59, 83)");
+    await expect(page.getByRole("button", { name: "Mark all as read" }))
+        .toHaveCSS("color", "rgb(96, 74, 43)");
+});

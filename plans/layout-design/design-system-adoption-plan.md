@@ -750,3 +750,16 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [ ] DS-COMP-242 [store status CSS](../../src/components/shared/store-status.module.css): store opt-in全34状態を補助検証、認証後order実ルート保留。
 
 2026-10-08: plan 086で追加済みの通知ページを含めて台帳集計を67ページへ整合。購入導線6画面の今回の補助検証による全画面判定変更はない。
+
+### P2残存6画面（2026-10-09）
+
+[保存計画](priority-six-p2-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#p2残存6画面移行記録)。対象DS-PAGE-009/033/022/024/067/032。既存の適用済み本体・検証履歴を保持して残存表示を統一する。
+
+- [x] 共通基盤: store限定purchase themeとaccount aliasesの接続。
+- [ ] Step 1 比較。
+- [ ] Step 2 Wishlist。
+- [ ] Step 3 フォロー店舗。
+- [ ] Step 4 閲覧履歴。
+- [ ] Step 5 通知。
+- [ ] Step 6 設定。
+- [ ] 認証後実ルート/実Clerkの受け入れ。補助検証だけで全画面判定やDS-BASE-001の全体完了を変更しない。

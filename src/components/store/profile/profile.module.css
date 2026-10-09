@@ -1,15 +1,22 @@
 .shell {
-    --account-ink: #17251d;
-    --account-muted: #536356;
-    --account-gold: #d4ba83;
-    --account-accent: #75613b;
-    --account-line: #c9c7b8;
-    background: #f3f0e8;
+    composes: theme from "../shared/purchase-theme.module.css";
+    --account-ink: var(--purchase-ink);
+    --account-muted: var(--purchase-muted);
+    --account-gold: var(--purchase-gold);
+    --account-accent: var(--purchase-link);
+    --account-line: var(--purchase-line);
+    --account-panel: var(--purchase-panel);
+    --account-input: var(--purchase-input);
+    --account-selected: var(--purchase-selected);
+    --account-focus: var(--purchase-focus);
+    --account-danger: var(--purchase-danger);
+    --account-success: var(--purchase-success);
+    --account-touch: var(--purchase-touch);
+    background: var(--purchase-page);
     color: var(--account-ink);
-    color-scheme: light;
 }
 .shell a:focus-visible {
-    outline: 2px solid var(--account-accent);
+    outline: 2px solid var(--account-focus);
     outline-offset: 4px;
 }
 .hero {
@@ -79,11 +86,11 @@
 }
 .nav a:hover {
     color: var(--account-ink);
-    background: #eae6da;
+    background: var(--account-selected);
 }
 .nav a[aria-current="page"] {
     color: var(--account-ink);
-    background: #e6dfcf;
+    background: var(--account-selected);
     border-left: 2px solid var(--account-accent);
     padding-left: 8px;
 }
@@ -118,7 +125,7 @@
     gap: 36px;
 }
 .identity {
-    background: #faf8f2;
+    background: var(--account-panel);
     border: 1px solid var(--account-line);
     padding: 30px;
 }
@@ -218,7 +225,7 @@
 }
 .orderLink {
     border: 1px solid var(--account-line);
-    background: #faf8f2;
+    background: var(--account-panel);
     padding: 22px 14px;
     display: flex;
     flex-direction: column;
@@ -226,7 +233,7 @@
     min-width: 0;
 }
 .orderLink:hover {
-    background: #eae6da;
+    background: var(--account-selected);
 }
 .orderLink svg {
     color: var(--account-accent);
@@ -271,7 +278,7 @@
     line-height: 1.8;
 }
 .error {
-    background: #faf8f2;
+    background: var(--account-panel);
     border: 1px solid var(--account-line);
     padding: 28px;
     line-height: 1.8;

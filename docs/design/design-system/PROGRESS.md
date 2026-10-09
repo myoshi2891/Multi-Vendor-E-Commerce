@@ -1020,3 +1020,15 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - purchase44/44、commerce24/24。1440/768/390px、明暗祖先、キーボード、Portal、overflow、reduced motion、axe AAと画像目視を確認。公開home/cart6件とguest sign-in戻り先1件を確認（初回の古いguest期待を修正して対象再試行）。browse3件は専用DB不在でskip。
 - 仕様・SDD・QA・全体進捗・coverage dashboard同期。台帳は通知追加分を含め67ページへ集計整合、全画面の検証済み判定は変更しない。SDKアップロード/投稿、認証後checkout/order、商品あり実DBの受け入れは保留。
 - 最終lint errors0／既存warnings8、tsc exit0、check:playwright pass、diff --check pass。追加文書リンク14件、台帳67ページ・242部品のID重複なしを確認。
+
+## P2残存6画面移行記録
+
+- 2026-10-09。[保存計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)。DS-PAGE-009/033/022/024/067/032を対応中。既存の検証済み・保留・履歴は維持する。
+- 共通基盤はstore限定purchase themeとaccount aliases。dashboard・API・DB・認可は対象外。
+
+### 共通基盤
+
+- Red: `DESIGN_SUITE=priority bun run test:design -- --grep 'account shell inherits'`。tokenを上書きしてもheadingが旧固定inkのままで失敗。初回listen EPERMは環境エラーでRedに含めず、sandbox外で再実行して確認。
+- Green/Refactor: profile shellで既存purchase themeをcomposeし、account ink/muted/gold/accent/line/panel/selected/focus/状態色を役割で接続。既存profile bodyの面もaliasesへ統一。認可や子ページの機能契約は不変。
+- 基盤検証: 関連Jest197/197（18 suites）、tsc exit0、lint0 errors/既存8 warnings。新テストはCSS文字列ではなくheading/操作の計算済み配色を検証。色schemeの重複定義はRefactorで除去。
+- Refactor後補助Chromium10/10（既存9状態＋継承1）、3幅・axe AA違反0・overflowなし。harness/diff check成功。共通基盤はDS-BASE-001のstore/account subsetのみ。

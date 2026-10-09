@@ -19,3 +19,7 @@
 ## 対象外
 
 注文・購入・認可・DBスキーマ／API変更、実在しない注文統計、Coupons／creditの機能実装、プロフィール子ページ本文の全面移行、Clerk設定フォームの置き換え。
+
+## P2共通トークン接続（2026-10-09）
+
+profile shellは既存store限定purchase themeを合成し、accountの文字・面・罫線・focus・意味色を役割別に接続する。固定lightのaccount枠、ナビゲーションと既存子ページ機能は維持する。[計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)。
