@@ -1,4 +1,5 @@
 "use client";
+import { useMemo } from "react";
 import type { getAttributeDefinition } from "@/queries/attribute";
 import { getAttributeOptionColumns } from "@/app/dashboard/admin/attributes/[id]/options/columns";
 import DataTable from "@/components/ui/data-table";
@@ -13,6 +14,10 @@ export default function AdminAttributeOptions({
     definition: NonNullable<Awaited<ReturnType<typeof getAttributeDefinition>>>;
     actions: AttributeOptionActions;
 }) {
+    const columns = useMemo(
+        () => getAttributeOptionColumns(actions),
+        [actions]
+    );
     return (
         <div className={attributeStyles.surface}>
             <SellerPage
@@ -35,7 +40,7 @@ export default function AdminAttributeOptions({
                 <DataTable
                     design="seller"
                     data={definition.options}
-                    columns={getAttributeOptionColumns(actions)}
+                    columns={columns}
                     filterValue="label"
                     searchPlaceholder="Search option label..."
                 />
