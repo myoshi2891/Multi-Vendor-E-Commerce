@@ -105,6 +105,7 @@ for (const width of [1440, 768, 390]) {
 const screens = [
     { key: "orders", heading: "My orders", empty: "No orders yet" },
     { key: "payment", heading: "My payments", empty: "No payments yet" },
+    { key: "reviews", heading: "My reviews", empty: "No reviews yet" },
 ];
 
 async function accessible(page: Page) {
@@ -145,7 +146,9 @@ for (const screen of screens) {
                     name:
                         screen.key === "orders"
                             ? "Your orders"
-                            : "Your payments",
+                            : screen.key === "payment"
+                              ? "Your payments"
+                              : "Your reviews",
                 })
                 .locator("li")
                 .first()

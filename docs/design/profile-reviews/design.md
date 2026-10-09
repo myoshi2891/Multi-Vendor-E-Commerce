@@ -10,3 +10,8 @@
 - 通常/loadingのReviewsHeadingを共用。専用module CSSは先行paymentと同じaccount配色/余白/focus、44px操作、static skeleton。1000px以下でheading/検索を縦に、480px以下でカードmetadataを1列。長いvariant/本文はoverflow-wrap:anywhere、本文改行を保持。写真はwrap。
 
 実Clerkテスト顧客の認証/後処理と初期空の実queryを確認。通常/遅延/失敗はaction応答mock。レビューDB作成・投稿・購入・seed・外部送信を行わない。本文/axeのscopeはレビュー領域に限定し、Next.js route announcerをアプリの失敗通知と混同しない。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。既存CSS Moduleを役割別purchaseトークンへ接続。購入者scopeに限定し、API/DB/認可とデータ取得境界は変更しない。postpurchase suiteは既存priority serverから本番部品を描画し、トークン注入でcomputed style追従を検証する。

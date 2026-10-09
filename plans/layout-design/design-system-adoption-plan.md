@@ -793,3 +793,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 2 DS-PAGE-030: paymentの残存表示統一・補助検証・仕様同期。
 
 - [x] Step 3 DS-PAGE-021: addressesの残存表示統一・補助検証・仕様同期。
+
+- [x] Step 4 DS-PAGE-031: reviewsの残存表示統一・補助検証・仕様同期。
