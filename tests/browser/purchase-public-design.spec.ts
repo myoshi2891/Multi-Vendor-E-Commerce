@@ -85,9 +85,12 @@ for (const width of [1440, 768, 390]) {
             path: info.outputPath(`audit-real-home-${width}.png`),
             fullPage: true,
         });
-        await page.goto(
-            inventory.find((row) => row.id === "DS-PAGE-019")!.actualPath
-        );
+        const productRow = inventory.find((row) => row.id === "DS-PAGE-019");
+        expect(
+            productRow,
+            "inventory row DS-PAGE-019 is missing"
+        ).toBeDefined();
+        await page.goto(productRow!.actualPath);
         const category = page.getByRole("button", {
             name: "Browse categories",
         });

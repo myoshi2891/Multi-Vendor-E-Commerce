@@ -642,6 +642,7 @@ for (const width of [1440, 768, 390]) {
         await page.goto('/?screen=product&audit=1');
         const controls = [page.getByRole('button', {name: 'Browse categories'}), page.getByRole('button', {name: '5 stars (3)'}), page.getByRole('button', {name: 'Follow boutique'}), page.getByRole('button', {name: /SKU-001/}), page.getByRole('button', {name: 'Copy product link'}), ...['Facebook','X','WhatsApp','Pinterest'].map(name => page.getByRole('button', {name: `Share on ${name}`}))];
         for (const control of controls) {
+            await expect(control).toBeVisible();
             const box = await control.boundingBox();
             expect(box!.height).toBeGreaterThanOrEqual(44);
             expect(box!.width).toBeGreaterThanOrEqual(44);
