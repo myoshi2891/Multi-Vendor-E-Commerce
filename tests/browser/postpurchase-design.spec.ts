@@ -1,6 +1,78 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("overview recovery follows touch and focus tokens", async ({ page }) => {
+    await page.goto("/?screen=overview&state=error");
+    await expect(page.getByRole("alert")).toBeVisible();
+    await page.locator("[data-postpurchase-shell]").evaluate((root) => {
+        const style = (root as HTMLElement).style;
+        style.setProperty("--purchase-touch", "52px");
+        style.setProperty("--purchase-link", "#604a2b");
+        style.setProperty("--purchase-focus", "#604a2b");
+    });
+    const reload = page.getByRole("link", { name: "Reload account" });
+    await expect(reload).toHaveCSS("min-height", "52px");
+    await expect(reload).toHaveCSS("color", "rgb(96, 74, 43)");
+    await page.keyboard.press("Tab");
+    await reload.focus();
+    await expect(reload).toHaveCSS("outline-color", "rgb(96, 74, 43)");
+});
+
+for (const width of [1440, 768, 390]) {
+    test(`overview states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=overview");
+        await expect(
+            page.getByRole("heading", { name: "My account", level: 1 })
+        ).toHaveCSS("font-family", /Georgia/);
+        await expect(
+            page.getByText("Coming soon", { exact: true })
+        ).toHaveCount(2);
+        await expect(
+            page.getByRole("link", { name: /Coupons|Shopping credit/ })
+        ).toHaveCount(0);
+        await page
+            .locator("[data-postpurchase-shell]")
+            .evaluate((root) =>
+                (root as HTMLElement).style.setProperty(
+                    "--purchase-panel",
+                    "#fffdf7"
+                )
+            );
+        await expect(page.getByRole("region", { name: /Mina Mori/ })).toHaveCSS(
+            "background-color",
+            "rgb(255, 253, 247)"
+        );
+        await page
+            .locator("[data-postpurchase-shell]")
+            .evaluate((root) =>
+                (root as HTMLElement).style.removeProperty("--purchase-panel")
+            );
+        for (const link of await page.getByRole("link").all()) {
+            expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(
+                44
+            );
+        }
+        const orders = page.getByRole("link", { name: /View all orders/ });
+        await orders.focus();
+        await expect(orders).toHaveCSS("outline-style", "solid");
+        await expect(
+            page.getByRole("link", { name: /Unpaid/ })
+        ).toHaveAttribute("href", "/profile/orders/unpaid");
+        await accessible(page);
+        await page.screenshot({
+            path: info.outputPath(`overview-${width}.png`),
+            fullPage: true,
+        });
+        await page.keyboard.press("Enter");
+        await expect(page).toHaveURL(/\/profile\/orders$/);
+        await page.goto("/?screen=overview&state=error");
+        const reload = page.getByRole("link", { name: "Reload account" });
+        expect((await reload.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+        await accessible(page);
+    });
+}
+
 test("messages follows shared tokens", async ({ page }) => {
     await page.goto("/?screen=messages");
     await page

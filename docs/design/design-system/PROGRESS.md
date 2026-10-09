@@ -1184,3 +1184,7 @@ Red: supportの固定色が注入linkへ追従せず失敗。Green/Refactor: pos
 ### Step 5: DS-PAGE-026 messages
 
 Red: 購入者supportのmessage固定色が注入linkへ追従せず失敗。Green/Refactor: postpurchase --grep messages 4/4（3幅、axe AA、thread failure/retry、長文、send pending/failure/draft保持/success、empty/list retry）；購入者と販売者RTL4 suites 31/31；tsc成功。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。
+
+### Step 6: DS-PAGE-029 overview
+
+Red: 取得失敗時のReload accountのmin-heightが0pxでtouch52pxに追従せず失敗（通常表示の既存token接続は回帰確認）。Green/Refactor: postpurchase --grep overview 4/4（3幅、axe AA、長い氏名、未提供機能、URL/Enter/focus、error）；概要/sidebar/layout RTL3 suites 16/16。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。

@@ -24,3 +24,8 @@
 ## 検証
 
 [要件](requirements.md)と[移行計画](../../../plans/layout-design/profile-design-system-plan.md)。RTLで会員情報とエラー、href、選択状態。Playwrightで実Clerkテスト認証を使い、3画面幅、Tab／Enter、axe、子ページ導線、未認証転送を確認。テストユーザーは既存createCustomerSessionで作成・後処理し、Clerk公式testingのsignInでサインインする。seed／DB初期化／注文送信はしない。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。既存CSS Moduleを役割別purchaseトークンへ接続。購入者scopeに限定し、API/DB/認可とデータ取得境界は変更しない。postpurchase suiteは既存priority serverから本番部品を描画し、トークン注入でcomputed style追従を検証する。
