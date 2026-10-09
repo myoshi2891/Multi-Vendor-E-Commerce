@@ -1,5 +1,10 @@
 # Testing Design: Directory Layout and Tool Selection
 
+## 読取専用の全実ルート監査
+
+既存 `playwright.design.config.ts` の `full-route-audit`（route、3129）と `tests/browser/full-route-audit-design.spec.ts` を使う。`scripts/design/prepare-route-audit.ts` は既存DBから動的ルート識別子を読取り、`DESIGN_AUDIT_INVENTORY` manifestを作る。新規fixture/config、seed、migration、アカウント作成、業務送信は行わない。67ルートの到達結果とPC/モバイル画像、Clerk待機/共通開閉、公開操作寸法を記録する。認証先への転送は本体確認と区別する。収集テストの成功はデザイン合格ではなく、画像確認と全状態/axe受け入れは別に記録する。[実測と制約](../design/design-system/full-route-reaudit-2026-10-09.md)。
+
+
 ## ドキュメントガイド
 
 - **目的**: リポジトリのテスト戦略とディレクトリ構成を定義する

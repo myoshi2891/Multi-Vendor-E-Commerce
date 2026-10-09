@@ -1,5 +1,10 @@
 # Testing Strategy
 
+## 全実ルートのデザイン再監査
+
+実Nextルートの全数到達記録とfixtureの部品検証を区別する。未認証の転送・HTTPエラー・仮実装は本体移行完了と扱わない。収集spec成功だけでデザイン合格にせず、操作寸法・theme・表示状態・認証後本体の受け入れを確認する。[2026-10-09監査](../../docs/design/design-system/full-route-reaudit-2026-10-09.md)。機能/API/データ仕様は今回変更なし。
+
+
 ## Current State
 - Jest + ts-jest configured for unit and server-side tests.
 - React Testing Library and jest-dom installed for component tests.
