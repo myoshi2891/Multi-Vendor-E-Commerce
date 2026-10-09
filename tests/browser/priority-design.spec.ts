@@ -211,3 +211,43 @@ for (const width of [1440, 768, 700, 390]) {
         await accessible(page);
     });
 }
+
+async function pageTargets(page: Page, label: string) {
+    const links = page.getByRole("navigation", { name: label }).getByRole("link");
+    for (const link of await links.all()) {
+        const box = await link.boundingBox();
+        expect(box?.width).toBeGreaterThanOrEqual(44);
+        expect(box?.height).toBeGreaterThanOrEqual(44);
+    }
+}
+for (const width of [1440, 768, 480, 390]) {
+    test(`wishlist tokens and pagination at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=wishlist&page=2");
+        await pageTargets(page, "Wishlist pagination");
+        await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveAttribute("aria-current", "page");
+        await expect(page.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/profile/wishlist/3");
+        await page.locator("#root > div").evaluate(root => (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b"));
+        await expect(page.getByRole("link", { name: "The collection" })).toHaveCSS("color", "rgb(96, 74, 43)");
+        await page.locator("#root > div").evaluate(root => (root as HTMLElement).style.removeProperty("--purchase-link"));
+        const current = page.getByRole("link", { name: "Page 2", exact: true });
+        await current.focus();
+        await expect(current).toHaveCSS("outline-style", "solid");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`wishlist-p2-${width}.png`), fullPage: true });
+        await page.getByRole("link", { name: "Next" }).click();
+        await expect(page.getByRole("link", { name: "Page 3", exact: true })).toHaveAttribute("aria-current", "page");
+        await page.goBack();
+        await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveAttribute("aria-current", "page");
+        await page.goto("/?scenario=wishlist-empty");
+        await expect(page.getByRole("heading", { name: "Your wishlist is empty." })).toBeVisible();
+        await accessible(page);
+        await page.goto("/?scenario=wishlist-error&page=2");
+        await expect(page.getByRole("alert")).toContainText("Your wishlist is unavailable");
+        await expect(page.getByRole("link", { name: "Reload wishlist" })).toHaveAttribute("href", "/profile/wishlist/2");
+        await accessible(page);
+        await page.goto("/?scenario=wishlist-pending");
+        await expect(page.getByRole("status")).toContainText("Loading");
+        await accessible(page);
+    });
+}

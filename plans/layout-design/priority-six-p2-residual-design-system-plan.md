@@ -40,7 +40,7 @@
 - [x] 計画保存・対象選定。
 - [x] 共通基盤。
 - [x] Step 1 比較。
-- [ ] Step 2 Wishlist。
+- [x] Step 2 Wishlist。
 - [ ] Step 3 フォロー店舗。
 - [ ] Step 4 閲覧履歴。
 - [ ] Step 5 通知。

@@ -10,13 +10,15 @@ import NotificationList from "@/components/store/profile/notifications/notificat
 import profileStyles from "@/components/store/profile/profile.module.css";
 import type { NotificationListItem } from "@/queries/notification";
 
+import WishlistPage from "@/app/(store)/profile/wishlist/[page]/page";
+import WishlistLoading from "@/app/(store)/profile/wishlist/[page]/loading";
 import ComparePage from "@/app/(store)/compare/page";
 import { useCompareStore } from "@/compare-store/useCompareStore";
 
 const parameters = new URLSearchParams(location.search);
 const scenario =
     parameters.get("scenario") ??
-    (location.pathname.includes("history") ? "history" : "following");
+    (location.pathname.includes("wishlist") ? "wishlist" : location.pathname.includes("history") ? "history" : "following");
 const page =
     Number(location.pathname.split("/").pop()) ||
     Number(parameters.get("page")) ||
@@ -141,6 +143,15 @@ const root = createRoot(document.getElementById("root")!);
 if (scenario.startsWith("compare")) {
     useCompareStore.setState({items: scenario.includes("empty") ? [] : ["v0", "v1", "v2", "v3"]});
     root.render(<ComparePage />);
+} else if (scenario.startsWith("wishlist")) {
+    const content = scenario.includes("pending")
+        ? Promise.resolve(<WishlistLoading />)
+        : WishlistPage({params: Promise.resolve({page: String(page)})});
+    void content.then(node => root.render(
+        <div className={profileStyles.shell} style={{minHeight: "100vh"}}>
+            <main style={{maxWidth: 1050, margin: "auto", padding: "40px 6%"}}>{node}</main>
+        </div>
+    ));
 } else if (scenario.startsWith("notifications")) {
     root.render(
         <div className={profileStyles.shell} style={{ minHeight: "100vh" }}>

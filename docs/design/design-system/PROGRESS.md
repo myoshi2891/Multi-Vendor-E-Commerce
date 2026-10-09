@@ -1038,3 +1038,9 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Red: `priority --grep 'compare tokens'`。priceが共通link tokenを継承せず旧固定色で失敗。Green: CSS Moduleでtheme合成、価格/card/hero/操作/focusをtokensへ接続。共通ProductPriceのロジックは不変。
 - 既存最大4件・個別削除/clear・empty/loading/error/retry/unavailable・古い応答の無視は回帰確認。
 - Refactor後: 補助Chromium4/4（1440/768/700/390px）、axe AA違反0・overflowなし・狭幅の局所ArrowRight操作、Jest26/26、tsc exit0、lint0 errors/既存8 warnings。画像はtest-results/design/priorityの画面別outputへ保存。
+
+### Step 2 Wishlist（DS-PAGE-033）
+
+- Red: `priority --grep 'wishlist tokens'`、番号リンクの実寸36pxで44px条件に失敗。Green/Refactor: 最小幅44pxとaccount aliases、状態/見出し/罫線/hover/focusを統一。fixtureは本番page/loadingをimportし、既存serverのprofile query adapterで通常/空/失敗を供給。URLが変わった後もWishlistを描画する。
+- 既存検証済み履歴は維持。今回認証後実ルートは専用E2E_DATABASE_URL不在で保留（Clerkキーあり、Docker socketあり。DB初期化は行わない）。
+- Refactor後: 補助Chromium4/4（1440/768/480/390px）、Jest7/7、tsc exit0、lint0 errors/既存8 warnings。axe AA違反0・overflowなし・URL/back/current/empty/error/loadingと390px画像目視を確認。

@@ -13,3 +13,9 @@
 | PW-7 | loadingで状態告知と静的スケルトン。装飾はaria-hidden、読み込み領域はaria-busy。 | RTL |
 
 対象外: 削除機能の追加（既存にない）、認可・DB・query変更、保存バリアントの取得仕様変更、共有カード全体の改修、購入・在庫変更。
+
+## P2残存表示統一（2026-10-09）
+
+Wishlistの見出し・件数・状態・罫線・ページャーをprofile shellのaccount aliasesへ接続。番号リンクは44×44px以上、current/disabled/hover/focusを統一。商品カードの既存editorial操作、URL・範囲補正・alias・取得失敗のreloadを保持する。
+
+[計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。

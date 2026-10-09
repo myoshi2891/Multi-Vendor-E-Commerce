@@ -1,6 +1,7 @@
 .wishlist {
     min-width: 0;
-    color: var(--account-ink, #17251d);
+    overflow-wrap: anywhere;
+    color: var(--account-ink);
 }
 .heading {
     display: flex;
@@ -10,7 +11,7 @@
     margin-bottom: 34px;
 }
 .eyebrow {
-    color: #75613b;
+    color: var(--account-accent);
     font-size: 10px;
     letter-spacing: 0.2em;
 }
@@ -23,7 +24,7 @@
     margin: 16px 0;
 }
 .description {
-    color: #536356;
+    color: var(--account-muted);
     font-size: 13px;
     line-height: 1.9;
 }
@@ -31,25 +32,25 @@
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    min-height: 44px;
+    min-height: var(--account-touch);
     font-size: 12px;
-    color: #75613b;
+    color: var(--account-accent);
     flex-shrink: 0;
 }
 .wishlist a:focus-visible,
 .wishlist button:focus-visible {
-    outline: 2px solid #75613b;
+    outline: 2px solid var(--account-focus);
     outline-offset: 4px;
 }
 .wishlist a:hover {
-    color: #75613b;
+    color: var(--account-accent);
 }
 .summary {
-    border-top: 1px solid #c9c7b8;
-    border-bottom: 1px solid #c9c7b8;
+    border-top: 1px solid var(--account-line);
+    border-bottom: 1px solid var(--account-line);
     padding: 17px 0;
     margin-bottom: 28px;
-    color: #536356;
+    color: var(--account-muted);
     font-size: 12px;
     display: flex;
     justify-content: space-between;
@@ -65,7 +66,7 @@
 .pagination {
     margin-top: 45px;
     padding-top: 24px;
-    border-top: 1px solid #c9c7b8;
+    border-top: 1px solid var(--account-line);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -77,11 +78,11 @@
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    min-height: 44px;
-    color: #17251d;
+    min-height: var(--account-touch);
+    color: var(--account-ink);
 }
 .disabled {
-    color: #536356;
+    color: var(--account-muted);
 }
 .pageNumbers {
     display: flex;
@@ -90,8 +91,8 @@
     gap: 7px;
 }
 .pageNumbers a {
-    min-width: 36px;
-    min-height: 44px;
+    min-width: var(--account-touch);
+    min-height: var(--account-touch);
     padding: 12px 10px;
     display: inline-flex;
     justify-content: center;
@@ -99,22 +100,22 @@
     border: 1px solid transparent;
 }
 .pageNumbers a[aria-current="page"] {
-    background: #e6dfcf;
-    border-color: #75613b;
-    color: #17251d;
+    background: var(--account-selected);
+    border-color: var(--account-accent);
+    color: var(--account-ink);
 }
 .pageNumbers a:hover {
-    border-color: #c9c7b8;
+    border-color: var(--account-line);
 }
 .empty,
 .error {
-    border: 1px solid #c9c7b8;
-    background: #faf8f2;
+    border: 1px solid var(--account-line);
+    background: var(--account-panel);
     padding: 60px 28px;
     text-align: center;
 }
 .empty svg {
-    color: #75613b;
+    color: var(--account-accent);
     margin: 0 auto 22px;
 }
 .empty h2,
@@ -128,7 +129,7 @@
 .error p {
     font-size: 13px;
     line-height: 1.9;
-    color: #536356;
+    color: var(--account-muted);
 }
 .empty a,
 .error a {
@@ -138,14 +139,14 @@
     min-height: 48px;
     padding: 12px 22px;
     margin-top: 28px;
-    background: #17251d;
-    color: #f1eee4;
+    background: var(--account-ink);
+    color: var(--purchase-on-dark);
     font-size: 12px;
 }
 .empty a:hover,
 .error a:hover {
-    background: #264433;
-    color: #f1eee4;
+    background: var(--purchase-dark);
+    color: var(--purchase-on-dark);
 }
 .empty a:focus-visible,
 .error a:focus-visible {
@@ -155,7 +156,7 @@
     margin-top: 30px;
 }
 .loading p {
-    color: #536356;
+    color: var(--account-muted);
     font-size: 13px;
     margin-bottom: 24px;
 }
@@ -167,7 +168,7 @@
 .skeletons span {
     display: block;
     aspect-ratio: 4 / 5;
-    background: #e6e2d6;
+    background: var(--account-selected);
 }
 @media (max-width: 1100px) {
     .heading {

@@ -8,3 +8,10 @@
 - [x] 仕様・進捗・台帳・QAを同期。
 
 [要件](requirements.md)、[設計](design.md)、[進捗](PROGRESS.md)。コミットは明示依頼時のみ。
+
+## P2残存表示統一（2026-10-09）
+
+- [x] 44×44px操作領域のbrowser Red→Green、tokensとURL/empty/loading/errorの回帰、仕様同期。
+- [ ] 今回の認証後実ルート受け入れ（既存検証済み履歴は維持）。
+
+[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。

@@ -757,7 +757,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] 共通基盤: store限定purchase themeとaccount aliasesの接続。
 - [x] Step 1 比較。
-- [ ] Step 2 Wishlist。
+- [x] Step 2 Wishlist。
 - [ ] Step 3 フォロー店舗。
 - [ ] Step 4 閲覧履歴。
 - [ ] Step 5 通知。
