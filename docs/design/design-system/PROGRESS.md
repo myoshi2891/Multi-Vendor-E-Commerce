@@ -1098,3 +1098,14 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 | 通知 | adc85009 |
 | 設定 | 042d5518 |
 | 最終同期 | 本記録とPortal抑制修正のコミット |
+
+
+## 監査指摘6画面移行記録
+
+2026-10-09。[保存計画](../../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。DS-PAGE-006/017/019/041/040/039の順に対応中。既存画面全体の判定・保留と今回の修正範囲を区別する。
+
+### Step 1 商品一覧
+
+DS-PAGE-006: editorialページャとCollection pages名を適用。Red: 新RTL1件はnavigation欠如、browser3幅は高さ27pxで失敗。Green/Refactor: 関連RTL12/12、purchase audit browse3/3、tsc成功。検索/複数size/属性/sort保持、44px、hover濃金、focus、axe AA、横溢れなし、390px画像目視を確認。listen EPERMは環境エラーとして除外し、許可済み実行で再検証。公開実ルートは最終検証で確認するため画面全体判定は維持。
+
+確認したSDD overview/data-modelは業務範囲/DBを変えないため変更不要。requirements/interfaces/quality/testingの既存契約を保持する。

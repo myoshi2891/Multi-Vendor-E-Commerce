@@ -103,3 +103,15 @@ describe("BrowsePagination", () => {
         expect(mockPush).not.toHaveBeenCalled();
     });
 });
+
+
+it("names the collection navigation and preserves repeatable filters", () => {
+    renderPagination(1, 3, "search=piece&size=M&size=L&attr.material=linen&attr.material=wool&sort=top-rated&page=1");
+    const nav = screen.getByRole("navigation", { name: "Collection pages" });
+    fireEvent.click(nav.querySelector('button[aria-current="page"]')!);
+    const query = new URL(mockPush.mock.calls.at(-1)![0], "http://localhost").searchParams;
+    expect(query.getAll("size")).toEqual(["M", "L"]);
+    expect(query.getAll("attr.material")).toEqual(["linen", "wool"]);
+    expect(query.get("sort")).toBe("top-rated");
+    expect(query.get("search")).toBe("piece");
+});

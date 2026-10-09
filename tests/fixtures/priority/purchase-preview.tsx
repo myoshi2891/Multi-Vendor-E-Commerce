@@ -15,6 +15,7 @@ import { products, multiVariantProducts } from "./purchase-data";
 import StoreProducts from "@/components/store/store-page/store-products";
 import StoreDetails from "@/components/store/store-page/store-details";
 import QuantitySelector from "@/components/store/product-page/quantity-selector";
+import BrowsePagination from "@/components/store/browse-page/browse-pagination";
 import Pagination from "@/components/store/shared/pagination";
 import ReviewFilters from "@/components/store/product-page/reviews/filters";
 import CategoryFilter from "@/components/store/browse-page/filters/category/category-filter";
@@ -162,6 +163,7 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
                     <FilterPanel>
                         <CategoryFilter categories={[{ ...createMockCategory({ name: "Art", url: "art" }), children: [] }]} />
                     </FilterPanel>
+                    <BrowsePagination page={Number(new URLSearchParams(location.search).get("page") ?? 1)} totalPages={3} />
                     <ProductList
                         products={
                             new URLSearchParams(location.search).has("pieces")

@@ -10,3 +10,7 @@
 - Checkout: Portal内でも統一した面・入力・保存button・focusを使用。保存失敗時の入力保持、pending中dismiss禁止、focus復帰、住所/coupon更新時の注文ロックを維持。
 - Order: store variantのタグは状態名・意味を保持し、明暗祖先に依存しない可読性を持つ。全注文/支払状態を含む。single total、支払い表示条件、SDK loading/error/retryを保持。
 - DB/API/認可/購入計算/在庫/注文・決済状態/PDFの契約は変更しない。補助fixtureと実認証後route/SDK受け入れは区別する。
+
+## 2026-10-09 監査指摘の補正
+
+Browseのページャはeditorialテーマと`Collection pages`のnavigation名を使用する。既定Review pagesと他callerを保持し、44×44px以上・濃金hover・可視focus・aria-current・先頭/末尾disabledを満たす。繰り返しsize/attrフィルターを含むURL条件を保持する。[計画](../../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。

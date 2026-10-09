@@ -577,3 +577,31 @@ for (const width of [1440, 768, 390]) {
         await expect(page.getByRole("link", { name: "Explore items" })).toBeVisible();
     });
 }
+
+
+for (const width of [1440, 768, 390]) {
+    test(`audit browse ${width}: collection pager hit areas and query retention`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/browse?screen=browse&size=M&size=L&attr.material=linen&attr.material=wool&search=piece&sort=top-rated&page=1");
+        const pager = page.locator("main").getByRole("button", { name: "2", exact: true });
+        const box = await pager.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+        const nav = page.getByRole("navigation", { name: "Collection pages" });
+        await pager.focus();
+        await expect(pager).toHaveCSS("outline-style", "solid");
+        await pager.hover();
+        await expect(pager).toHaveCSS("color", "rgb(120, 96, 53)");
+        expect((await new AxeBuilder({page}).include('main').withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+        await page.screenshot({ path: info.outputPath(`audit-browse-${width}.png`), fullPage: true });
+        await pager.press("Enter");
+        const query = new URL(page.url()).searchParams;
+        expect(query.get("page")).toBe("2");
+        expect(query.getAll("size")).toEqual(["M", "L"]);
+        expect(query.getAll("attr.material")).toEqual(["linen", "wool"]);
+        expect(query.get("search")).toBe("piece");
+        expect(query.get("sort")).toBe("top-rated");
+        await expect(nav.getByRole("button", {name: "2", exact: true})).toHaveAttribute("aria-current", "page");
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+}
