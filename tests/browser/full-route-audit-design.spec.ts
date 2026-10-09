@@ -212,10 +212,26 @@ test("read-only public control dimensions", async ({ page }, info) => {
     for (const width of [1440, 390]) {
         await page.setViewportSize({ width, height: 900 });
         for (const row of publicRoutes) {
-            await page.goto(`http://localhost:3129${row.actualPath}`, {
-                waitUntil: "domcontentloaded",
-                timeout: 45000,
-            });
+            try {
+                await page.goto(`http://localhost:3129${row.actualPath}`, {
+                    waitUntil: "domcontentloaded",
+                    timeout: 45000,
+                });
+            } catch (error) {
+                // 1 ルートの遷移失敗で監査全体を止めず、失敗として記録して次へ進む
+                evidence.push({
+                    id: row.id,
+                    route: row.route,
+                    width,
+                    failure:
+                        error instanceof Error ? error.name : "UnknownError",
+                });
+                writeFileSync(
+                    info.outputPath("public-controls-audit.json"),
+                    JSON.stringify(evidence, null, 2)
+                );
+                continue;
+            }
             await page.waitForTimeout(1200);
             const controls = await page.evaluate(() =>
                 Array.from(

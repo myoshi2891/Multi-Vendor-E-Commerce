@@ -34,7 +34,9 @@ const DESIGN_SUITES = {
         testMatch: "full-route-audit-design.spec.ts",
         port: 3129,
         kind: "route",
-        command: "DATABASE_URL=postgresql://dev:dev@localhost:5432/multivendor_dev NEXT_DEV_DIST_DIR=.next/full-route-audit bun run dev -- --webpack --port 3129",
+        // DATABASE_URL は固定しない。inventory を作った DB を呼び出し側の環境変数で揃える
+        command:
+            "NEXT_DEV_DIST_DIR=.next/full-route-audit bun run dev -- --webpack --port 3129",
         readyPath: "/seller/apply",
         timeout: 120000,
     },
@@ -49,7 +51,8 @@ const DESIGN_SUITES = {
         testMatch: "purchase-public-design.spec.ts",
         port: 3128,
         kind: "route",
-        command: "NEXT_DEV_DIST_DIR=.next/purchase-public bun run dev -- --webpack --port 3128",
+        command:
+            "NEXT_DEV_DIST_DIR=.next/purchase-public bun run dev -- --webpack --port 3128",
         timeout: 120000,
     },
     p4: {
