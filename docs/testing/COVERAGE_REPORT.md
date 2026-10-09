@@ -14,7 +14,7 @@
 | Jestテスト総数（2026-10-09） | **3092 passed / 3095 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-09 閲覧履歴の key 重複修正後の全体Jest実測（coverageなし、coverage率はP2残存6画面時の実測を維持）。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
 | 全体coverage（P2残存6画面時の実測・Jest 3077/3080時点。key重複修正後は未再計測） | Statements87.84%（10745/12232）／Branches78.05%（6578/8427）／Functions84.12%（2098/2494）／Lines88.34%（9780/11070）。 |
 | テストファイル総数（dashboard） | **393ファイル**／lcov **400エントリ**／マトリクス18/80（23%）。2026-10-09再生成実測。 |
-| Jest スイート総数（unit/component） | **318スイート**（317 passed／1 skipped、2026-10-09実測）。 |
+| Jest スイート総数（unit/component） | **319スイート**（318 passed／1 skipped、2026-10-09実測）。 |
 | テスト総数 | **3092 unit/component passed**（3095 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |

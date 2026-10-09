@@ -2,7 +2,7 @@
 
 ## 2026-10-09 監査指摘6画面の実装（最新）
 
-商品一覧・home・商品詳細・属性一覧・属性新規・属性選択肢の実装/TDD/仕様同期を完了。[保存計画](../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md) / [証跡](../design/design-system/PROGRESS.md#監査指摘6画面移行記録)。全体Jest3091/3094（3 skip）、319 suites（318 pass/1 skip）、127 snapshots。purchase53/53、p4全56/56、追加surface回帰1/1、公開実3画面×3幅の3ケース。型/lintエラー0（既存lint警告8）、check:playwright/build成功。統計表はこの実測へ同期し、coverage/Integration/E2E全体の以前の実測は維持する。
+商品一覧・home・商品詳細・属性一覧・属性新規・属性選択肢の実装/TDD/仕様同期を完了。[保存計画](../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md) / [証跡](../design/design-system/PROGRESS.md#監査指摘6画面移行記録)。全体Jest3092/3095（3 skip、閲覧履歴key重複修正後の最新実測。本作業時点は3091/3094）、319 suites（318 pass/1 skip）、127 snapshots。purchase53/53、p4全56/56、追加surface回帰1/1、公開実3画面×3幅の3ケース。型/lintエラー0（既存lint警告8）、check:playwright/build成功。統計表はこの実測へ同期し、coverage/Integration/E2E全体の以前の実測は維持する。
 
 ### DS-AUDIT-SIX 次着手・受け入れ保留
 
