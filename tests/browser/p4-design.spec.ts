@@ -473,3 +473,52 @@ for (const entry of screens)
                         .click();
                 }
             });
+
+
+for (const width of [1440, 768, 390]) for (const theme of ['light','dark']) {
+    test(`audit attributes ${width} ${theme}: heading, search and edit portal`,async({page},info)=>{
+        await page.setViewportSize({width,height:1000});
+        await page.goto('/?screen=attributes');
+        await page.evaluate(dark=>document.documentElement.classList.toggle('dark',dark),theme==='dark');
+        await expect(page.getByRole('heading',{level:1,name:'Attributes',exact:true})).toHaveCSS('font-family',/Georgia/);
+        const search=page.getByRole('searchbox');
+        await search.fill('not-found');
+        await expect(page.getByText('No Results.')).toBeVisible();
+        await search.fill('');
+        const edit=page.getByRole('button',{name:'Open menu for Material',exact:true});
+        await edit.focus();
+        await expect(edit).toHaveCSS('outline-style','solid');
+        expect((await edit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        await edit.press('Enter');
+        await page.getByRole('menuitem',{name:'Edit details'}).click();
+        const dialog=page.getByRole('dialog');
+        await expect(dialog.getByLabel('Key')).toBeDisabled();
+        await expect(dialog).toHaveCSS('color-scheme',theme);
+        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
+        await page.screenshot({path:info.outputPath(`audit-attributes-${width}-${theme}.png`),fullPage:true});
+        await page.keyboard.press('Escape');
+        await expect(edit).toBeFocused();
+        expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+        await page.goto('/?screen=attributes&failure');
+        await page.evaluate(dark=>document.documentElement.classList.toggle('dark',dark),theme==='dark');
+        await page.getByRole('button',{name:'Open menu for Material'}).click();
+        await page.getByRole('menuitem',{name:'Edit details'}).click();
+        await dialog.getByLabel('Display name').fill('Material updated');
+        await dialog.getByRole('button',{name:'Save attribute information'}).click();
+        await expect(dialog.getByLabel('Display name')).toBeDisabled();
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByRole('alert')).toContainText('input has been kept');
+        await expect(dialog.getByLabel('Display name')).toHaveValue('Material updated');
+        await dialog.getByRole('button',{name:'Save attribute information'}).click();
+        await expect(dialog.getByRole('status')).toHaveText('Changes saved.');
+        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
+        await page.keyboard.press('Escape');
+        await page.goto('/?screen=attributes&empty');
+        await expect(page.getByText('No Results.')).toBeVisible();
+        await page.goto('/?screen=attributes&fetcherror');
+        await expect(page.getByRole('alert')).toContainText('Could not load attributes');
+        await expect(page.getByRole('button',{name:'Retry'})).toBeVisible();
+
+    });
+}

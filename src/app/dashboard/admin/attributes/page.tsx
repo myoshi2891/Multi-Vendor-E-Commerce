@@ -1,43 +1,40 @@
-// Queries
-import { getAllAttributeDefinitions } from "@/queries/attribute";
-
-// Data table
-import DataTable from "@/components/ui/data-table";
-
-// Plus icon
-import { Plus } from "lucide-react";
-
-// Attribute details form
-import AttributeDetails from "@/components/dashboard/forms/attribute-details";
-
-// Columns
-import { AttributeCategoriesProvider, columns } from "./columns";
+import {
+    getAllAttributeDefinitions,
+    upsertAttributeDefinition,
+    archiveAttributeDefinition,
+    restoreAttributeDefinition,
+    changeAttributeTypeToNumber,
+} from "@/queries/attribute";
+import AdminAttributes from "@/components/dashboard/admin/admin-attributes";
+import SellerPage from "@/components/dashboard/design/seller-page";
+import LoadError from "@/components/dashboard/design/load-error";
 import { getAttributeCategoryOptions } from "./category-options";
-
 export const dynamic = "force-dynamic";
-
 export default async function AdminAttributesPage() {
-    const [attributes, categories] = await Promise.all([
+    const result = await Promise.all([
         getAllAttributeDefinitions(),
         getAttributeCategoryOptions(),
-    ]);
-
+    ]).catch(() => null);
+    if (!result)
+        return (
+            <SellerPage
+                workspace="Administration"
+                id="admin-attributes"
+                title="Attributes"
+            >
+                <LoadError subject="attributes" />
+            </SellerPage>
+        );
     return (
-        <AttributeCategoriesProvider categories={categories}>
-            <DataTable
-                actionButtonText={
-                    <>
-                        <Plus size={15} />
-                        Create attribute
-                    </>
-                }
-                modalChildren={<AttributeDetails categories={categories} />}
-                newTabLink="/dashboard/admin/attributes/new"
-                filterValue="name"
-                data={attributes}
-                searchPlaceholder="Search attribute name..."
-                columns={columns}
-            />
-        </AttributeCategoriesProvider>
+        <AdminAttributes
+            attributes={result[0]}
+            categories={result[1]}
+            actions={{
+                saveAction: upsertAttributeDefinition,
+                archiveAction: archiveAttributeDefinition,
+                restoreAction: restoreAttributeDefinition,
+                convertAction: changeAttributeTypeToNumber,
+            }}
+        />
     );
 }

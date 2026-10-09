@@ -5,6 +5,7 @@ await startFixtureServer({
     port: process.env.DESIGN_SUITE === "p4" ? 3126 : 3124,
     title: "P3 design fixture",
     mocks: {
+        "@/queries/attribute": `import {attributeSave,attributeList,attributeDefinition} from "./tests/fixtures/p3/attributes"; export const getAllAttributeDefinitions=attributeList,getAttributeDefinition=attributeDefinition,upsertAttributeDefinition=attributeSave,upsertAttributeOption=attributeSave,archiveAttributeDefinition=attributeSave,restoreAttributeDefinition=attributeSave,changeAttributeTypeToNumber=attributeSave,archiveAttributeOption=attributeSave,restoreAttributeOption=attributeSave;`,
         "@clerk/nextjs/server": `export async function currentUser(){return {id:'admin-test',privateMetadata:{role:'ADMIN'},firstName:'Test',lastName:'Administrator',imageUrl:'',emailAddresses:[{emailAddress:'long.administrator.email@example.test'}]}}`,
         "@clerk/nextjs": `import React from 'react'; export function UserButton(){return React.createElement('button',{'aria-label':'User account'},'Account')}`,
 
@@ -16,7 +17,7 @@ await startFixtureServer({
         "@/queries/store": `import {stores,save} from './tests/fixtures/p3/data';export async function getAllStores(){if(location.search.includes('fetcherror'))throw Error('fixture');return location.search.includes('empty')?[]:stores} export const updateStoreStatus=save,deleteStore=save;`,
         "@/queries/order": `import {orders,save} from './tests/fixtures/p3/data';export async function getAllOrders(){if(location.search.includes('fetcherror'))throw Error('fixture');return {orders:location.search.includes('empty')?[]:orders,total:1,page:1,limit:50}}export const updateOrderGroupStatusAsAdmin=save,updateOrderItemStatusAsAdmin=save;`,
         "@/queries/dashboard": `export async function getAdminDashboardStats(){if(location.search.includes('fetcherror'))throw Error('fixture');return {totalRevenue:12.5,totalOrders:3,activeStores:1,pendingStores:2,totalUsers:5,totalProducts:10,totalCategories:2,totalSubCategories:0}} export async function getSalesOverTime(){return location.search.includes('empty')?[]:[{label:'Sep',revenue:12.5},{label:'Oct',revenue:24}]} export async function getRecentOrders(){return []} export async function getRecentStores(){return location.search.includes('empty')?[]:[{id:'s1',name:'A very long store name '.repeat(8),status:'PENDING',createdAt:new Date('2026-10-01')}]}`,
-        "next/navigation": `export function useRouter(){return {refresh(){window.refreshed=true},push(url){window.destination=url}}} export function usePathname(){return '/dashboard/admin'} export function useParams(){return {storeUrl:'example'}}`,
+        "next/navigation": `export function notFound(){throw Error("not found")} export function useRouter(){return {refresh(){window.refreshed=true},push(url){window.destination=url}}} export function usePathname(){return '/dashboard/admin'} export function useParams(){return {storeUrl:'example'}}`,
         "next-themes": `export function useTheme(){return {setTheme(value){document.documentElement.classList.toggle('dark',value==='dark')}}}`,
     },
     loader: { ".jpg": "dataurl", ".png": "dataurl", ".svg": "dataurl" },

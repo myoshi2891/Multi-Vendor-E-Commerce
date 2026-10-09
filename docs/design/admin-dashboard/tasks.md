@@ -267,3 +267,10 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 カテゴリ・管理者クーポン・オファータグの各一覧/新規作成（DS-PAGE-043/042/045/044/047/046）を既存管理者themeへ適用。専用Client/formとAction Props列factory、共通MasterDialog/SaveFeedbackを使用し、編集取得・欠落/失敗/retry・pending重複/close lock・値保持・statusを提供する。coupon toggle、カテゴリ階層/親制限/slug/画像/featured、coupon scope/storeId/日時/割引、offer name/url/更新IDを維持する。
 
 実装・補助検証の6Stepは完了。認証後実ルートと実SDKの受け入れは保留として別管理する。[状態と自己レビュー](../design-system/PROGRESS.md#p4優先6画面移行記録)、[解除条件](../../testing/QA_HANDOFF.md#ds-p4-six-browser)。既存データ/認可/業務queryは変更なし。
+
+## 監査指摘属性3画面（2026-10-09）
+
+- [x] DS-PAGE-041 属性一覧・共通フォーム: TDD/補助検証/仕様同期。
+- [ ] DS-PAGE-040 属性新規。
+- [ ] DS-PAGE-039 ENUM属性選択肢。
+- [ ] 認証後ADMIN実ルート受け入れ（補助fixtureと別）。

@@ -672,3 +672,7 @@ ADR-007 D-5（`scope`）/ D-6（`type`）と同じ「複合 FK + CHECK」の形�
    本設計は「どの方式でも素の SQL で書ける」ところまでを保証する。
 4. **多値属性（`allergens` 等）の格納は未決**（§4 の注記）。069 で決める。
 5. **参照タクソノミー 20 部門の属性シード網羅**は範囲外。069 でパイロット 2〜3 部門のみ。
+
+## 管理画面の表示移行（2026-10-09）
+
+既存データ・制約を保持したまま属性フォーム/行操作をAction Propsへ移行し、管理者light/darkテーマを個別フォームと独立編集Portalへ適用する。nativeカテゴリ選択はpre-order/depth/pathを表示する。送信中の二重送信/入力/dismissを防ぎ、失敗時の入力保持/retryと成功statusを提供する。業務・DB契約の変更なし。[計画](../../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。

@@ -1,3 +1,6 @@
+import AttributesPage from "@/app/dashboard/admin/attributes/page";
+import NewAttributePage from "@/app/dashboard/admin/attributes/new/page";
+import AttributeOptionsPage from "@/app/dashboard/admin/attributes/[id]/options/page";
 import Link from "next/link";
 import React from "react";
 import { createRoot } from "react-dom/client";
@@ -29,7 +32,7 @@ async function preview() {
         </nav>
     );
     const content =
-        screen === "newoffertag" ? (
+        screen === "attributes" ? await AttributesPage() : screen === "newattribute" ? await NewAttributePage() : screen === "attributeoptions" ? await AttributeOptionsPage({params:Promise.resolve({id:"def-1"})}) : screen === "newoffertag" ? (
             <NewOfferTagPage />
         ) : screen === "offertags" ? (
             await OfferTagsPage()

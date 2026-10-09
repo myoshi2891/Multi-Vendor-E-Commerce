@@ -1,7 +1,7 @@
 "use client";
 
 // React, Next.js imports
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -38,11 +38,8 @@ import {
 } from "lucide-react";
 
 // Queries
-import {
-    archiveAttributeDefinition,
-    changeAttributeTypeToNumber,
-    restoreAttributeDefinition,
-} from "@/queries/attribute";
+import type { AttributeActions } from "@/components/dashboard/admin/attribute-actions";
+import styles from "@/components/dashboard/design/seller.module.css";
 
 // Tanstack React Table
 import { ColumnDef } from "@tanstack/react-table";
@@ -57,19 +54,25 @@ export type AttributeRow = AttributeDefinition & {
 
 // 編集フォームのカテゴリ選択肢。全行で同一なので行データへ複製せず Context で 1 回だけ渡す。
 // columns（関数）をサーバーから渡さずに済むよう、Provider もこのクライアントモジュールに置く。
+const AttributeActionsContext = createContext<AttributeActions | null>(null);
+
 const AttributeCategoriesContext = createContext<AttributeCategoryOption[]>([]);
 
 export function AttributeCategoriesProvider({
     categories,
+    actions,
     children,
 }: {
     categories: AttributeCategoryOption[];
+    actions: AttributeActions;
     children: React.ReactNode;
 }) {
     return (
-        <AttributeCategoriesContext.Provider value={categories}>
-            {children}
-        </AttributeCategoriesContext.Provider>
+        <AttributeActionsContext.Provider value={actions}>
+            <AttributeCategoriesContext.Provider value={categories}>
+                {children}
+            </AttributeCategoriesContext.Provider>
+        </AttributeActionsContext.Provider>
     );
 }
 
@@ -142,20 +145,30 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
     const { toast } = useToast();
     const router = useRouter();
     const categories = useContext(AttributeCategoriesContext);
+    const actions = useContext(AttributeActionsContext)!;
+    const pending = useRef(false);
+    const trigger = useRef<HTMLButtonElement>(null);
+    const [feedback, setFeedback] = useState<string | null>(null);
+    const [failed, setFailed] = useState(false);
 
     const run = async <T,>(
         action: () => Promise<T>,
         success: string | ((result: T) => string)
     ) => {
-        if (loading) return;
+        if (pending.current) return;
+        pending.current = true;
         setLoading(true);
+        setFeedback(null);
+        setFailed(false);
         try {
             const result = await action();
-            toast({
-                title: typeof success === "string" ? success : success(result),
-            });
+            const message =
+                typeof success === "string" ? success : success(result);
+            setFeedback(message);
+            toast({ title: message });
             router.refresh();
         } catch (error: unknown) {
+            setFailed(true);
             toast({
                 variant: "destructive",
                 title: "Error",
@@ -163,6 +176,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                     error instanceof Error ? error.message : "Action failed.",
             });
         } finally {
+            pending.current = false;
             setLoading(false);
         }
     };
@@ -171,94 +185,144 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
     const archived = Boolean(rowData.archivedAt);
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    className="size-8 p-0"
-                    disabled={loading}
+        <div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        ref={trigger}
+                        variant="ghost"
+                        className="size-11 p-0"
+                        disabled={loading}
+                    >
+                        <span className="sr-only">
+                            Open menu for {rowData.name}
+                        </span>
+                        <MoreHorizontal className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align="end"
+                    className={`${styles.theme} ${styles.menu}`}
                 >
-                    <span className="sr-only">Open menu</span>
-                    <MoreHorizontal className="size-4" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                {!archived && (
-                    <DropdownMenuItem
-                        className="flex gap-2"
-                        onClick={() =>
-                            setOpen(
-                                <CustomModal>
-                                    <AttributeDetails
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    {!archived && (
+                        <DropdownMenuItem
+                            className="flex min-h-11 gap-2"
+                            disabled={loading}
+                            onClick={() =>
+                                setOpen(
+                                    <AttributeEditModal
                                         data={definition}
                                         categories={categories}
+                                        saveAction={actions.saveAction}
+                                        returnFocusTo={trigger}
                                     />
-                                </CustomModal>
-                            )
-                        }
-                    >
-                        <Edit size={15} />
-                        Edit details
-                    </DropdownMenuItem>
-                )}
-                {rowData.type === AttributeType.ENUM && (
-                    <DropdownMenuItem asChild>
-                        <Link
-                            className="flex gap-2"
-                            href={`/dashboard/admin/attributes/${rowData.id}/options`}
+                                )
+                            }
                         >
-                            <List size={15} />
-                            Manage options
-                        </Link>
-                    </DropdownMenuItem>
-                )}
-                {rowData.type === AttributeType.TEXT && !archived && (
-                    <DropdownMenuItem
-                        className="flex gap-2"
-                        onClick={() =>
-                            run(
-                                () => changeAttributeTypeToNumber(rowData.id),
-                                (result) =>
-                                    result.route === 1
-                                        ? `Converted ${result.converted} values to NUMBER.`
-                                        : `Converted ${result.converted} values. ${result.unconvertible} unconvertible values stay on the archived TEXT attribute.`
-                            )
-                        }
-                    >
-                        <Hash size={15} />
-                        Convert to NUMBER
-                    </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                {archived ? (
-                    <DropdownMenuItem
-                        className="flex gap-2"
-                        onClick={() =>
-                            run(
-                                () => restoreAttributeDefinition(rowData.id),
-                                "Attribute restored."
-                            )
-                        }
-                    >
-                        <ArchiveRestore size={15} />
-                        Restore
-                    </DropdownMenuItem>
-                ) : (
-                    <DropdownMenuItem
-                        className="flex gap-2"
-                        onClick={() =>
-                            run(
-                                () => archiveAttributeDefinition(rowData.id),
-                                "Attribute archived. Existing values are kept."
-                            )
-                        }
-                    >
-                        <Archive size={15} />
-                        Archive
-                    </DropdownMenuItem>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+                            <Edit size={15} />
+                            Edit details
+                        </DropdownMenuItem>
+                    )}
+                    {rowData.type === AttributeType.ENUM && (
+                        <DropdownMenuItem asChild>
+                            <Link
+                                className="flex gap-2"
+                                href={`/dashboard/admin/attributes/${rowData.id}/options`}
+                            >
+                                <List size={15} />
+                                Manage options
+                            </Link>
+                        </DropdownMenuItem>
+                    )}
+                    {rowData.type === AttributeType.TEXT && !archived && (
+                        <DropdownMenuItem
+                            className="flex min-h-11 gap-2"
+                            disabled={loading}
+                            onClick={() =>
+                                run(
+                                    () => actions.convertAction(rowData.id),
+                                    (result) =>
+                                        result.route === 1
+                                            ? `Converted ${result.converted} values to NUMBER.`
+                                            : `Converted ${result.converted} values. ${result.unconvertible} unconvertible values stay on the archived TEXT attribute.`
+                                )
+                            }
+                        >
+                            <Hash size={15} />
+                            Convert to NUMBER
+                        </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    {archived ? (
+                        <DropdownMenuItem
+                            className="flex min-h-11 gap-2"
+                            disabled={loading}
+                            onClick={() =>
+                                run(
+                                    () => actions.restoreAction(rowData.id),
+                                    "Attribute restored."
+                                )
+                            }
+                        >
+                            <ArchiveRestore size={15} />
+                            Restore
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem
+                            className="flex min-h-11 gap-2"
+                            disabled={loading}
+                            onClick={() =>
+                                run(
+                                    () => actions.archiveAction(rowData.id),
+                                    "Attribute archived. Existing values are kept."
+                                )
+                            }
+                        >
+                            <Archive size={15} />
+                            Archive
+                        </DropdownMenuItem>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {loading && <p role="status">Updating attribute…</p>}
+            {feedback && <p role="status">{feedback}</p>}
+            {failed && (
+                <p role="alert" className={styles.alert}>
+                    Could not update attribute. Please try again from the
+                    actions menu.
+                </p>
+            )}
+        </div>
     );
 };
+
+function AttributeEditModal({
+    data,
+    categories,
+    saveAction,
+    returnFocusTo,
+}: {
+    data: AttributeDefinition;
+    categories: AttributeCategoryOption[];
+    saveAction: AttributeActions["saveAction"];
+    returnFocusTo: React.RefObject<HTMLElement | null>;
+}) {
+    const [busy, setBusy] = useState(false);
+    return (
+        <CustomModal
+            design="seller"
+            heading={`Edit attribute ${data.name}`}
+            subheading="Update the attribute information."
+            locked={busy}
+            returnFocusTo={returnFocusTo}
+        >
+            <AttributeDetails
+                data={data}
+                categories={categories}
+                saveAction={saveAction}
+                onBusyChange={setBusy}
+            />
+        </CustomModal>
+    );
+}
