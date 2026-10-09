@@ -1032,3 +1032,9 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Green/Refactor: profile shellで既存purchase themeをcomposeし、account ink/muted/gold/accent/line/panel/selected/focus/状態色を役割で接続。既存profile bodyの面もaliasesへ統一。認可や子ページの機能契約は不変。
 - 基盤検証: 関連Jest197/197（18 suites）、tsc exit0、lint0 errors/既存8 warnings。新テストはCSS文字列ではなくheading/操作の計算済み配色を検証。色schemeの重複定義はRefactorで除去。
 - Refactor後補助Chromium10/10（既存9状態＋継承1）、3幅・axe AA違反0・overflowなし。harness/diff check成功。共通基盤はDS-BASE-001のstore/account subsetのみ。
+
+### Step 1 比較（DS-PAGE-009）
+
+- Red: `priority --grep 'compare tokens'`。priceが共通link tokenを継承せず旧固定色で失敗。Green: CSS Moduleでtheme合成、価格/card/hero/操作/focusをtokensへ接続。共通ProductPriceのロジックは不変。
+- 既存最大4件・個別削除/clear・empty/loading/error/retry/unavailable・古い応答の無視は回帰確認。
+- Refactor後: 補助Chromium4/4（1440/768/700/390px）、axe AA違反0・overflowなし・狭幅の局所ArrowRight操作、Jest26/26、tsc exit0、lint0 errors/既存8 warnings。画像はtest-results/design/priorityの画面別outputへ保存。

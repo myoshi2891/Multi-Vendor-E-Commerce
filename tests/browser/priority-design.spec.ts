@@ -169,3 +169,45 @@ test("account shell inherits shared storefront tokens", async ({ page }) => {
     await expect(page.getByRole("button", { name: "Mark all as read" }))
         .toHaveCSS("color", "rgb(96, 74, 43)");
 });
+
+for (const width of [1440, 768, 700, 390]) {
+    test(`compare tokens and states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=compare-error");
+        await expect(page.getByRole("alert")).toContainText("couldn’t load your selection");
+        const retry = page.getByRole("button", { name: "Try again" });
+        await retry.focus();
+        await expect(retry).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await expect(page.getByRole("region", { name: "Selected products" })).toBeVisible();
+        await expect(page.getByTestId("product-card-price").first()).toHaveText("$45.00");
+        // Inject a theme change to prove the production price/cards use shared tokens.
+        await page.locator("main").evaluate((root) => {
+            (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b");
+            (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7");
+        });
+        await expect(page.getByTestId("product-card-price").first()).toHaveCSS("color", "rgb(96, 74, 43)");
+        await expect(page.locator("article").first()).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await page.locator("main").evaluate((root) => (root as HTMLElement).removeAttribute("style"));
+        const scroller = page.getByRole("region", { name: "Selected products" });
+        await scroller.focus();
+        await expect(scroller).toHaveCSS("outline-style", "solid");
+        if (width === 390) {
+            await page.keyboard.press("ArrowRight");
+            await expect.poll(() => scroller.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
+        }
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`compare-p2-${width}.png`), fullPage: true });
+        await page.getByRole("button", { name: "Remove from compare" }).first().click();
+        await expect(page.getByText("3 of 4 selected")).toBeVisible();
+        await page.getByRole("button", { name: "Clear all" }).click();
+        await expect(page.getByTestId("compare-empty")).toBeVisible();
+        await accessible(page);
+        await page.goto("/?scenario=compare-unavailable");
+        await expect(page.getByRole("status")).toContainText("no longer available");
+        await accessible(page);
+        await page.goto("/?scenario=compare-pending");
+        await expect(page.getByRole("status")).toContainText("Loading your selection");
+        await accessible(page);
+    });
+}

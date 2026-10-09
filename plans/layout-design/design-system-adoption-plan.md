@@ -756,7 +756,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-six-p2-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#p2残存6画面移行記録)。対象DS-PAGE-009/033/022/024/067/032。既存の適用済み本体・検証履歴を保持して残存表示を統一する。
 
 - [x] 共通基盤: store限定purchase themeとaccount aliasesの接続。
-- [ ] Step 1 比較。
+- [x] Step 1 比較。
 - [ ] Step 2 Wishlist。
 - [ ] Step 3 フォロー店舗。
 - [ ] Step 4 閲覧履歴。

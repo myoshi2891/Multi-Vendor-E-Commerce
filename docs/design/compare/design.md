@@ -193,3 +193,9 @@ export const useCompareStore = create(
 ## デザイン移行の検証（2026-09-30）
 
 [移行計画](../../../plans/layout-design/compare-design-system-plan.md)に基づき、既存グリッドテストへ5件追加。先行実行でUI未対応4件失敗、既存回帰8件成功。実装後グリッド12件・ストア11件成功。`tests/e2e/compare-design.spec.ts` の6件は1440px／390px／700pxで配色・focus・ローカルスクロール・axe・失敗／再試行・取得ゼロ・削除を検証する。商品取得応答はフィクスチャ化し、DBを書き換えない。記録の正本は[移行進捗](../design-system/PROGRESS.md)。スペック行比較は引き続き対象外。
+
+## P2残存表示統一（2026-10-09）
+
+比較rootにstore限定purchase themeを合成し、hero/card/price/罫線/意味色/focusを役割別tokensへ統一。暗いheroのfocusには装飾gold、明るい面には濃いfocusを使う。ProductPriceの計算・4件制限・削除・全消去・保存方式・Action Propsは不変。
+
+[保存計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。

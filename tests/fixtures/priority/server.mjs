@@ -21,7 +21,14 @@ await startFixtureServer({
     port,
     title: "Priority design browser fixture",
     mocks: {
-        "@/queries/product": `import {products} from "./tests/fixtures/priority/purchase-data"; export async function getProducts(){return {products:new URLSearchParams(location.search).has("pieces") ? products : []}}`,
+        "@/queries/product": `import {products} from "./tests/fixtures/priority/purchase-data"; let compareCalls=0;
+        export async function getProductsByIds(ids){
+            const scenario=new URLSearchParams(location.search).get("scenario") ?? "";
+            await new Promise(resolve=>setTimeout(resolve, scenario.includes("pending")?10000:350));
+            if(scenario.includes("error") && ++compareCalls===1) throw new Error("fixture failure");
+            return {products:scenario.includes("unavailable")?[]:ids.map(id=>({...products[0],id,slug:"piece-"+id,variants:[{...products[0].variants[0],variantId:id,variantSlug:id}]})),totalPages:1};
+        }
+        export async function getProducts(){return {products:new URLSearchParams(location.search).has("pieces") ? products : []}}`,
         "@/queries/review": `export async function upsertReview(){throw new Error("fixture only")}`,
         "next-cloudinary": `export function CldUploadWidget({children}){return children({open(){}})}`,
         "@/queries/user": `export async function addToWishlist(){return true}`,

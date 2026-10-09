@@ -62,3 +62,9 @@
 - スペック（`Spec`）行ごとの詳細比較表（任意拡張・design §判断4）。
 - 商品カード・商品詳細ページへの「Add to compare」ボタンの本格設置（MVP は最小、または follow-up）。
 - 比較対象の並び替え・絞り込み。
+
+## P2残存表示統一（2026-10-09）
+
+比較rootにstore限定purchase themeを合成し、hero/card/price/罫線/意味色/focusを役割別tokensへ統一。暗いheroのfocusには装飾gold、明るい面には濃いfocusを使う。ProductPriceの計算・4件制限・削除・全消去・保存方式・Action Propsは不変。
+
+[保存計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。

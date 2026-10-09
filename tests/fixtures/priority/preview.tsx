@@ -10,6 +10,9 @@ import NotificationList from "@/components/store/profile/notifications/notificat
 import profileStyles from "@/components/store/profile/profile.module.css";
 import type { NotificationListItem } from "@/queries/notification";
 
+import ComparePage from "@/app/(store)/compare/page";
+import { useCompareStore } from "@/compare-store/useCompareStore";
+
 const parameters = new URLSearchParams(location.search);
 const scenario =
     parameters.get("scenario") ??
@@ -135,7 +138,10 @@ const notificationAction = async () => {
 };
 
 const root = createRoot(document.getElementById("root")!);
-if (scenario.startsWith("notifications")) {
+if (scenario.startsWith("compare")) {
+    useCompareStore.setState({items: scenario.includes("empty") ? [] : ["v0", "v1", "v2", "v3"]});
+    root.render(<ComparePage />);
+} else if (scenario.startsWith("notifications")) {
     root.render(
         <div className={profileStyles.shell} style={{ minHeight: "100vh" }}>
             <main
