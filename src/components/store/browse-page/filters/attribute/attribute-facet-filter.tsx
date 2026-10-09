@@ -85,7 +85,7 @@ function FacetValueButton({
         next.forEach((v) => params.append(paramName, v));
         // 絞り込みが変わると総ページ数も変わるので、1 ページ目へ戻す
         params.delete("page");
-        replace(`${pathname}?${params.toString()}`);
+        replace(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     return (

@@ -51,7 +51,7 @@ describe("AttributeFacetFilter", () => {
 
         // Assert — 絞り込みが変わると総ページ数も変わるので page は外す
         expect(replace).toHaveBeenCalledWith(
-            "/browse?category=fashion&attr.material=wool"
+            "/browse?category=fashion&attr.material=wool", { scroll: false }
         );
     });
 
@@ -80,7 +80,7 @@ describe("AttributeFacetFilter", () => {
 
         // Assert
         expect(replace).toHaveBeenCalledWith(
-            "/browse?category=fashion&attr.material=silk"
+            "/browse?category=fashion&attr.material=silk", { scroll: false }
         );
     });
 

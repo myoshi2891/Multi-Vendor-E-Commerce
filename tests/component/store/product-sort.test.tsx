@@ -154,7 +154,7 @@ describe("ProductSort", () => {
         );
 
         // Assert
-        expect(mockReplace).toHaveBeenCalledWith("/browse?sort=new-arrivals");
+        expect(mockReplace).toHaveBeenCalledWith("/browse?sort=new-arrivals", { scroll: false });
     });
 
     it("既存クエリを保持したまま sort のみ差し替える", () => {
@@ -171,7 +171,7 @@ describe("ProductSort", () => {
 
         // Assert
         expect(mockReplace).toHaveBeenCalledWith(
-            "/browse?category=shoes&sort=price-low-to-high"
+            "/browse?category=shoes&sort=price-low-to-high", { scroll: false }
         );
     });
 });

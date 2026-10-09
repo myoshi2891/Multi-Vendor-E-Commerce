@@ -36,7 +36,7 @@ export default function ProductSort() {
 
     const handleSort = (sort: string) => {
         params.set("sort", sort);
-        replace(`${pathname}?${params.toString()}`);
+        replace(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     return (

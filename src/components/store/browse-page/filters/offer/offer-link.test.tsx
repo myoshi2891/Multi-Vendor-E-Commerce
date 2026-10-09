@@ -16,6 +16,6 @@ describe("OfferLink", () => {
         render(<OfferLink offer={{ id: "offer-1", name: "Special offer", url: "special" } as never} />);
         const button = screen.getByRole("button", { name: "Special offer" });
         fireEvent.click(button);
-        expect(replace).toHaveBeenCalledWith("/browse?category=jewelry&offer=special");
+        expect(replace).toHaveBeenCalledWith("/browse?category=jewelry&offer=special", { scroll: false });
     });
 });

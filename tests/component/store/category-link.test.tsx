@@ -108,7 +108,7 @@ describe("CategoryLink — 選択時の URL 書き換え", () => {
         // Assert —— 正準パラメータは category 1 本。subCategory を残すと
         // 2 つのサブツリーの積になり、意図しない絞り込みが残る。
         expect(mockReplace).toHaveBeenCalledWith(
-            "/browse?sort=most-popular&category=electronics"
+            "/browse?sort=most-popular&category=electronics", { scroll: false }
         );
     });
 
@@ -133,7 +133,7 @@ describe("CategoryLink — 選択時の URL 書き換え", () => {
         // Assert —— 同一 slug でも「正準化して寄せ直す」経路は残す。
         // ここで早期リターンすると、stale な絞り込みから抜ける手段が UI から消える。
         expect(mockReplace).toHaveBeenCalledWith(
-            "/browse?category=electronics"
+            "/browse?category=electronics", { scroll: false }
         );
     });
 
@@ -146,7 +146,7 @@ describe("CategoryLink — 選択時の URL 書き換え", () => {
 
         // Assert
         expect(mockReplace).toHaveBeenCalledWith(
-            "/browse?category=electronics"
+            "/browse?category=electronics", { scroll: false }
         );
     });
 
@@ -158,7 +158,7 @@ describe("CategoryLink — 選択時の URL 書き換え", () => {
         fireEvent.click(screen.getByText("camera"));
 
         // Assert —— 遷移後も枝は畳まない（絞り込み対象が画面から消えない）
-        expect(mockReplace).toHaveBeenCalledWith("/browse?category=camera");
+        expect(mockReplace).toHaveBeenCalledWith("/browse?category=camera", { scroll: false });
         expect(screen.getByText("camera")).toBeInTheDocument();
     });
 });

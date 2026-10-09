@@ -31,7 +31,7 @@ export default function FiltersHeader({
         });
 
         // Replace the URL with the pathname and no query string
-        replace(pathname);
+        replace(pathname, { scroll: false });
     };
 
     // Handle removing specific query values or entire queries
@@ -56,7 +56,7 @@ export default function FiltersHeader({
         }
 
         // Replace the URL with updated params
-        replace(`${pathname}?${params.toString()}`);
+        replace(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     return (
