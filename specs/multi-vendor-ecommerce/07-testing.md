@@ -1325,3 +1325,9 @@ TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/desig
 ### P2 residual six screens (2026-10-09)
 
 Red→Green→Refactorは[進捗](../../docs/design/design-system/PROGRESS.md#p2残存6画面移行記録)に記録。全体Jest3077/3080、318 suites（317 pass/1 skip）、127 snapshots。既存priority29/29とseven settings7/7の計36補助Chromiumを実測。比較のremove/clear/横スクロール、3ページャーの44px/URL、通知status/retry/read/取得失敗、settings appearance/hash/独立Portal/reduced-motionを検証。認証後実ルートと実Clerkは[QA](../../docs/testing/QA_HANDOFF.md#ds-p2-residual-browser)の解除条件待ち。
+
+## 監査指摘6画面のTDDと回帰（2026-10-09）
+
+[計画](../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#監査指摘6画面移行記録)。browseは新navigation RTL Redと高さ27px browser Red、homeは高さ32/38px Red、商品詳細はcategory36px/SDK outline reset Red。属性3画面の新RTLと見出し/名前付きform browser Redを実測。環境/adapterエラーはRedから除外する。
+
+Refactor後の属性関連+P4 RTL66/66、purchase53/53、p4全56/56、公開実3画面×1440/768/390pxの3ケースを確認。後追加surface回帰1/1で既存Card themeの影/丸みと44pxを確認。ENUM/404/archived/value不変/reset、二重送信/input/dismiss lock、error保持/retry/status、focus復帰、axe AAを検証する。認証後ADMIN実ルートはstorageState未提供で保留。既存suite/fixtureのみ拡張し、config/server新設なし。全体統計はQA_HANDOFFを正本とする。

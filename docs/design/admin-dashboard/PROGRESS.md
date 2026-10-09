@@ -116,3 +116,7 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 2026-10-09: 属性一覧の個別UI/編集PortalとAction境界を移行。関連RTL28/28、補助browser6/6。認証後実ルートは未確認。[証跡](../design-system/PROGRESS.md#監査指摘6画面移行記録)。
 
 2026-10-09 Step 5: 属性新規は見出し・カテゴリ取得失敗・入力/送信状態を適用。RTL14/14・補助browser6/6。認証後受け入れ保留。
+
+2026-10-09 Step 6: 属性選択肢・編集Portal・注入Action・属性scope44pxを適用。属性+P4 RTL66/66、選択肢browser6/6、touch1/1。認証後実受け入れは保留。[証跡](../design-system/PROGRESS.md#監査指摘6画面移行記録)。
+
+Refactor後の最終p4全56/56、属性+既存P4 RTL66/66、touch/surface追加回帰1/1。3幅×light/darkの画像/AA/操作確認済み。認証後ADMIN実ルートは保存済みログイン状態未提供で保留。

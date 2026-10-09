@@ -15,6 +15,7 @@ import { DialogTitle } from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 
 type Props = {
+    className?: string;
     heading?: string;
     subheading?: string;
     children: React.ReactNode;
@@ -27,6 +28,7 @@ type Props = {
 
 const CustomModal = ({
     children,
+    className,
     defaultOpen,
     subheading,
     heading,
@@ -62,6 +64,7 @@ const CustomModal = ({
                 className={cn(
                     "h-screen overflow-y-scroll bg-card md:h-fit md:max-h-[700px]",
                     maxWidth,
+                    className,
                     design === "seller" && `${styles.theme} ${styles.dialog}`
                 )}
             >

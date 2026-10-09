@@ -40,6 +40,7 @@ import {
 // Queries
 import type { AttributeActions } from "@/components/dashboard/admin/attribute-actions";
 import styles from "@/components/dashboard/design/seller.module.css";
+import attributeStyles from "@/components/dashboard/admin/attribute.module.css";
 
 // Tanstack React Table
 import { ColumnDef } from "@tanstack/react-table";
@@ -202,7 +203,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
-                    className={`${styles.theme} ${styles.menu}`}
+                    className={`${styles.theme} ${attributeStyles.surface}`}
                 >
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     {!archived && (
@@ -312,6 +313,7 @@ function AttributeEditModal({
     return (
         <CustomModal
             design="seller"
+            className={attributeStyles.surface}
             heading={`Edit attribute ${data.name}`}
             subheading="Update the attribute information."
             locked={busy}

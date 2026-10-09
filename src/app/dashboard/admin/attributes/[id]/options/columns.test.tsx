@@ -4,8 +4,9 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import type { CellContext } from "@tanstack/react-table";
 import type { AttributeOption } from "@prisma/client";
-import { columns } from "@/app/dashboard/admin/attributes/[id]/options/columns";
+import { getAttributeOptionColumns } from "@/app/dashboard/admin/attributes/[id]/options/columns";
 import {
+    upsertAttributeOption,
     archiveAttributeOption,
     restoreAttributeOption,
 } from "@/queries/attribute";
@@ -24,6 +25,7 @@ jest.mock("@/hooks/use-toast", () => ({
     useToast: () => ({ toast: mockToast }),
 }));
 jest.mock("@/queries/attribute", () => ({
+    upsertAttributeOption: jest.fn(),
     archiveAttributeOption: jest.fn(),
     restoreAttributeOption: jest.fn(),
 }));
@@ -56,6 +58,11 @@ jest.mock("@/components/ui/dropdown-menu", () => {
     };
 });
 
+const columns = getAttributeOptionColumns({
+    saveAction: upsertAttributeOption,
+    archiveAction: archiveAttributeOption,
+    restoreAction: restoreAttributeOption,
+});
 const mockArchive = archiveAttributeOption as jest.MockedFunction<
     typeof archiveAttributeOption
 >;
@@ -218,7 +225,7 @@ describe("admin/attributes/[id]/options columns", () => {
         fireEvent.click(menuItem("Archive"));
         await waitFor(() =>
             expect(
-                screen.getByRole("button", { name: "Open menu" })
+                screen.getByRole("button", { name: "Open menu for Wheat" })
             ).toBeDisabled()
         );
         fireEvent.click(menuItem("Archive"));

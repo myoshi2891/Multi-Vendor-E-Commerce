@@ -858,3 +858,5 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 ## 属性一覧のテーマ・Action境界（2026-10-09）
 
 Server Componentが属性/カテゴリを読み、AdminAttributesへ型付きAttributeActionsを渡す。Client側で列を組み立て、フォーム・行操作はContext/Props経由で注入されたActionを呼ぶ。既存SellerPage/DataTable seller、作成MasterDialogと編集CustomModalを再利用。編集Modalの独立Portalへthemeを明示し、busy状態でdismissを禁止してトリガーへfocusを戻す。カテゴリ/type/scopeはnative selectでラベル・階層/値を維持する。
+
+属性選択肢はServer ComponentからAttributeOptionActionsを渡し、Client側getAttributeOptionColumnsで列を構築する。MasterDialog/CustomModalへ任意classNameを追加し、attribute.module.cssをroot/form/Portalへ限定適用して44pxを確保する。汎用theme/他画面への一括上書きは行わない。

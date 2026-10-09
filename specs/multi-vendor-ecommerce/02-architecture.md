@@ -91,3 +91,5 @@ TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/desig
 ### 属性画面のClient境界（2026-10-09）
 
 属性一覧のServer ComponentはAttributeActionsをClientへ注入する。属性フォームと行操作のClientはruntimeでsrc/queriesをimportしない。列定義はClient側に置く。既存管理者themeを個別UI/Portalへ適用し、requireAdminとデータ契約は維持する。
+
+属性選択肢も型付きAttributeOptionActionsを注入し、getAttributeOptionColumnsはClientで構築する。新規scopeのCSSは属性画面とその独立Portalのみに適用する。

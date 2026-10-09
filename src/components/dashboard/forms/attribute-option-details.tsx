@@ -1,7 +1,7 @@
 "use client";
 
 // React
-import { FC } from "react";
+import { FC, useRef, useState } from "react";
 
 // Prisma
 import type { AttributeOption } from "@prisma/client";
@@ -22,7 +22,6 @@ import {
     CardContent,
     CardDescription,
     CardHeader,
-    CardTitle,
 } from "@/components/ui/card";
 import {
     Form,
@@ -36,13 +35,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 // Queries
-import { upsertAttributeOption } from "@/queries/attribute";
+import type { upsertAttributeOption } from "@/queries/attribute";
 
 // Utils
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 
+import styles from "../design/seller.module.css";
+import attributeStyles from "../admin/attribute.module.css";
+import { SaveFeedback } from "../admin/save-state";
+
 interface AttributeOptionDetailsProps {
+    saveAction: typeof upsertAttributeOption;
+    onBusyChange?: (busy: boolean) => void;
     definitionId: string;
     data?: AttributeOption;
 }
@@ -54,6 +59,8 @@ interface AttributeOptionDetailsProps {
 const AttributeOptionDetails: FC<AttributeOptionDetailsProps> = ({
     definitionId,
     data,
+    saveAction,
+    onBusyChange,
 }) => {
     const { toast } = useToast();
     const router = useRouter();
@@ -69,16 +76,25 @@ const AttributeOptionDetails: FC<AttributeOptionDetailsProps> = ({
         },
     });
 
-    const isLoading = form.formState.isSubmitting;
+    const pending = useRef(false);
+    const [busy, setBusy] = useState(false);
+    const [feedback, setFeedback] = useState<"failed" | "saved" | null>(null);
+    const isLoading = busy;
     const idleLabel = isEdit ? "Save option" : "Add option";
     const submitLabel = isLoading ? "loading..." : idleLabel;
 
     const handleSubmit = async (values: AttributeOptionFormValues) => {
+        if (pending.current) return;
+        pending.current = true;
+        setBusy(true);
+        onBusyChange?.(true);
+        setFeedback(null);
         try {
-            await upsertAttributeOption(definitionId, {
+            await saveAction(definitionId, {
                 ...values,
                 id: data?.id,
             });
+            setFeedback("saved");
             toast({
                 title: isEdit
                     ? "Option has been updated."
@@ -92,6 +108,7 @@ const AttributeOptionDetails: FC<AttributeOptionDetailsProps> = ({
                 });
             router.refresh();
         } catch (error: unknown) {
+            setFeedback("failed");
             const message =
                 error instanceof Error
                     ? error.message
@@ -101,13 +118,19 @@ const AttributeOptionDetails: FC<AttributeOptionDetailsProps> = ({
                 title: "Oops!",
                 description: message,
             });
+        } finally {
+            pending.current = false;
+            setBusy(false);
+            onBusyChange?.(false);
         }
     };
 
     return (
-        <Card className="w-full">
+        <Card
+            className={`${styles.theme} ${styles.panel} ${attributeStyles.surface}`}
+        >
             <CardHeader>
-                <CardTitle>{isEdit ? "Edit option" : "Add option"}</CardTitle>
+                <h2>{isEdit ? "Edit option" : "Add option"}</h2>
                 <CardDescription>
                     The value is a permanent machine key. Renaming the label
                     updates every product that uses this option.
@@ -116,67 +139,80 @@ const AttributeOptionDetails: FC<AttributeOptionDetailsProps> = ({
             <CardContent>
                 <Form {...form}>
                     <form
+                        aria-label="Attribute option information"
+                        noValidate
+                        aria-busy={busy}
                         onSubmit={form.handleSubmit(handleSubmit)}
-                        className="flex flex-col gap-4 md:flex-row md:items-end"
+                        className="space-y-4"
                     >
-                        <FormField
-                            control={form.control}
-                            name="value"
-                            render={({ field }) => (
-                                <FormItem className="flex-1">
-                                    <FormLabel>Value</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            placeholder="wheat"
-                                            disabled={isEdit || isLoading}
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="label"
-                            render={({ field }) => (
-                                <FormItem className="flex-1">
-                                    <FormLabel>Label</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Wheat" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="sortOrder"
-                            render={({ field }) => (
-                                <FormItem className="w-32">
-                                    <FormLabel>Sort order</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            min={0}
-                                            step={1}
-                                            value={field.value}
-                                            onChange={(event) =>
-                                                field.onChange(
-                                                    event.target.valueAsNumber
-                                                )
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <Button type="submit" disabled={isLoading}>
-                            {submitLabel}
-                        </Button>
+                        <fieldset
+                            disabled={busy}
+                            className="flex min-w-0 flex-col gap-4 md:flex-row md:items-end"
+                        >
+                            <FormField
+                                control={form.control}
+                                name="value"
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormLabel>Value</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="wheat"
+                                                disabled={isEdit || isLoading}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="label"
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormLabel>Label</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Wheat"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="sortOrder"
+                                render={({ field }) => (
+                                    <FormItem className="w-32">
+                                        <FormLabel>Sort order</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                step={1}
+                                                value={field.value}
+                                                onChange={(event) =>
+                                                    field.onChange(
+                                                        event.target
+                                                            .valueAsNumber
+                                                    )
+                                                }
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit" disabled={isLoading}>
+                                {submitLabel}
+                            </Button>
+                        </fieldset>
                     </form>
                 </Form>
+                <SaveFeedback busy={busy} feedback={feedback} />
             </CardContent>
         </Card>
     );

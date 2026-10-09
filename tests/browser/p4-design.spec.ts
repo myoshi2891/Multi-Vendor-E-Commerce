@@ -474,80 +474,335 @@ for (const entry of screens)
                 }
             });
 
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"]) {
+        test(`audit attributes ${width} ${theme}: heading, search and edit portal`, async ({
+            page,
+        }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=attributes");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", {
+                    level: 1,
+                    name: "Attributes",
+                    exact: true,
+                })
+            ).toHaveCSS("font-family", /Georgia/);
+            const search = page.getByRole("searchbox");
+            await search.fill("not-found");
+            await expect(page.getByText("No Results.")).toBeVisible();
+            await search.fill("");
+            const edit = page.getByRole("button", {
+                name: "Open menu for Material",
+                exact: true,
+            });
+            await edit.focus();
+            await expect(edit).toHaveCSS("outline-style", "solid");
+            expect((await edit.boundingBox())!.height).toBeGreaterThanOrEqual(
+                44
+            );
+            await edit.press("Enter");
+            await page.getByRole("menuitem", { name: "Edit details" }).click();
+            const dialog = page.getByRole("dialog");
+            await expect(dialog.getByLabel("Key")).toBeDisabled();
+            await expect(dialog).toHaveCSS("color-scheme", theme);
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: info.outputPath(`audit-attributes-${width}-${theme}.png`),
+                fullPage: true,
+            });
+            await page.keyboard.press("Escape");
+            await expect(edit).toBeFocused();
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            await page.goto("/?screen=attributes&failure");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await page
+                .getByRole("button", { name: "Open menu for Material" })
+                .click();
+            await page.getByRole("menuitem", { name: "Edit details" }).click();
+            await dialog.getByLabel("Display name").fill("Material updated");
+            await dialog
+                .getByRole("button", { name: "Save attribute information" })
+                .click();
+            await expect(dialog.getByLabel("Display name")).toBeDisabled();
+            await page.keyboard.press("Escape");
+            await expect(dialog).toBeVisible();
+            await expect(dialog.getByRole("alert")).toContainText(
+                "input has been kept"
+            );
+            await expect(dialog.getByLabel("Display name")).toHaveValue(
+                "Material updated"
+            );
+            await dialog
+                .getByRole("button", { name: "Save attribute information" })
+                .click();
+            await expect(dialog.getByRole("status")).toHaveText(
+                "Changes saved."
+            );
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.keyboard.press("Escape");
+            await page.goto("/?screen=attributes&empty");
+            await expect(page.getByText("No Results.")).toBeVisible();
+            await page.goto("/?screen=attributes&fetcherror");
+            await expect(page.getByRole("alert")).toContainText(
+                "Could not load attributes"
+            );
+            await expect(
+                page.getByRole("button", { name: "Retry" })
+            ).toBeVisible();
+        });
+    }
 
-for (const width of [1440, 768, 390]) for (const theme of ['light','dark']) {
-    test(`audit attributes ${width} ${theme}: heading, search and edit portal`,async({page},info)=>{
-        await page.setViewportSize({width,height:1000});
-        await page.goto('/?screen=attributes');
-        await page.evaluate(dark=>document.documentElement.classList.toggle('dark',dark),theme==='dark');
-        await expect(page.getByRole('heading',{level:1,name:'Attributes',exact:true})).toHaveCSS('font-family',/Georgia/);
-        const search=page.getByRole('searchbox');
-        await search.fill('not-found');
-        await expect(page.getByText('No Results.')).toBeVisible();
-        await search.fill('');
-        const edit=page.getByRole('button',{name:'Open menu for Material',exact:true});
-        await edit.focus();
-        await expect(edit).toHaveCSS('outline-style','solid');
-        expect((await edit.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-        await edit.press('Enter');
-        await page.getByRole('menuitem',{name:'Edit details'}).click();
-        const dialog=page.getByRole('dialog');
-        await expect(dialog.getByLabel('Key')).toBeDisabled();
-        await expect(dialog).toHaveCSS('color-scheme',theme);
-        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
-        await page.screenshot({path:info.outputPath(`audit-attributes-${width}-${theme}.png`),fullPage:true});
-        await page.keyboard.press('Escape');
-        await expect(edit).toBeFocused();
-        expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-        await page.goto('/?screen=attributes&failure');
-        await page.evaluate(dark=>document.documentElement.classList.toggle('dark',dark),theme==='dark');
-        await page.getByRole('button',{name:'Open menu for Material'}).click();
-        await page.getByRole('menuitem',{name:'Edit details'}).click();
-        await dialog.getByLabel('Display name').fill('Material updated');
-        await dialog.getByRole('button',{name:'Save attribute information'}).click();
-        await expect(dialog.getByLabel('Display name')).toBeDisabled();
-        await page.keyboard.press('Escape');
-        await expect(dialog).toBeVisible();
-        await expect(dialog.getByRole('alert')).toContainText('input has been kept');
-        await expect(dialog.getByLabel('Display name')).toHaveValue('Material updated');
-        await dialog.getByRole('button',{name:'Save attribute information'}).click();
-        await expect(dialog.getByRole('status')).toHaveText('Changes saved.');
-        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
-        await page.keyboard.press('Escape');
-        await page.goto('/?screen=attributes&empty');
-        await expect(page.getByText('No Results.')).toBeVisible();
-        await page.goto('/?screen=attributes&fetcherror');
-        await expect(page.getByRole('alert')).toContainText('Could not load attributes');
-        await expect(page.getByRole('button',{name:'Retry'})).toBeVisible();
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"]) {
+        test(`audit newattribute ${width} ${theme}: creation validation and retry`, async ({
+            page,
+        }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=newattribute&failure");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", {
+                    level: 1,
+                    name: "Create attribute",
+                    exact: true,
+                })
+            ).toHaveCSS("font-family", /Georgia/);
+            const form = page.getByRole("form", {
+                name: "Attribute information",
+            });
+            await form
+                .getByRole("button", { name: "Create attribute" })
+                .click();
+            await expect(
+                page.getByText("Category is required.", { exact: true })
+            ).toBeVisible();
+            await form
+                .getByLabel("Category", { exact: true })
+                .selectOption("cat-1");
+            await form.getByLabel("Key", { exact: true }).fill("material");
+            await form.getByLabel("Display name").fill("Material");
+            await form.getByLabel("Type", { exact: true }).selectOption("ENUM");
+            await form
+                .getByLabel("Scope", { exact: true })
+                .selectOption("VARIANT");
+            await form.getByRole("checkbox", { name: "Multi-valued" }).check();
+            await form
+                .getByRole("button", { name: "Create attribute" })
+                .click();
+            await expect(form.getByLabel("Display name")).toBeDisabled();
+            await expect(page.getByRole("alert")).toContainText(
+                "input has been kept"
+            );
+            await expect(form.getByLabel("Display name")).toHaveValue(
+                "Material"
+            );
+            await form
+                .getByRole("button", { name: "Create attribute" })
+                .click();
+            await expect(page.getByRole("status")).toContainText(
+                "Changes saved"
+            );
+            expect(
+                await page.evaluate(
+                    () =>
+                        (window as unknown as { destination: string })
+                            .destination
+                )
+            ).toBe("/dashboard/admin/attributes");
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            await page.screenshot({
+                path: info.outputPath(
+                    `audit-newattribute-${width}-${theme}.png`
+                ),
+                fullPage: true,
+            });
+        });
+    }
 
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"]) {
+        test(`audit attributeoptions ${width} ${theme}: option form and edit portal`, async ({
+            page,
+        }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=attributeoptions&failure");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(
+                page.getByRole("heading", {
+                    level: 1,
+                    name: "Material options",
+                    exact: true,
+                })
+            ).toHaveCSS("font-family", /Georgia/);
+            const form = page.getByRole("form", {
+                name: "Attribute option information",
+            });
+            await expect(form).toBeVisible();
+            await form.getByRole("button", { name: "Add option" }).click();
+            await expect(
+                form.getByText("Label is required.", { exact: true })
+            ).toBeVisible();
+            await form.getByLabel("Value", { exact: true }).fill("silk");
+            await form.getByLabel("Label", { exact: true }).fill("Silk");
+            await form.getByRole("button", { name: "Add option" }).click();
+            await expect(
+                form.getByLabel("Label", { exact: true })
+            ).toBeDisabled();
+            await expect(page.getByRole("alert")).toContainText(
+                "input has been kept"
+            );
+            await expect(form.getByLabel("Label", { exact: true })).toHaveValue(
+                "Silk"
+            );
+            await form.getByRole("button", { name: "Add option" }).click();
+            await expect(page.getByRole("status")).toContainText(
+                "Changes saved"
+            );
+            await expect(form.getByLabel("Value", { exact: true })).toHaveValue(
+                ""
+            );
+            await expect(form.getByLabel("Sort order")).toHaveValue("1");
+            const trigger = page.getByRole("button", {
+                name: "Open menu for Linen",
+            });
+            await trigger.click();
+            await page.getByRole("menuitem", { name: "Edit label" }).click();
+            const dialog = page.getByRole("dialog");
+            await expect(
+                dialog.getByLabel("Value", { exact: true })
+            ).toBeDisabled();
+            await expect(dialog).toHaveCSS("color-scheme", theme);
+            await dialog
+                .getByLabel("Label", { exact: true })
+                .fill("Linen updated");
+            await dialog.getByRole("button", { name: "Save option" }).click();
+            await expect(
+                dialog.getByLabel("Label", { exact: true })
+            ).toBeDisabled();
+            await page.keyboard.press("Escape");
+            await expect(dialog).toBeVisible();
+            await expect(dialog.getByRole("status")).toContainText(
+                "Changes saved"
+            );
+            expect(
+                (
+                    await new AxeBuilder({ page })
+                        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                        .analyze()
+                ).violations
+            ).toEqual([]);
+            await page.screenshot({
+                path: info.outputPath(
+                    `audit-attributeoptions-${width}-${theme}.png`
+                ),
+                fullPage: true,
+            });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+            await trigger.click();
+            await page
+                .getByRole("menuitem", { name: "Archive", exact: true })
+                .click();
+            await expect(
+                page.getByRole("status").filter({ hasText: "Option archived" })
+            ).toBeVisible();
+            expect(
+                await page.evaluate(
+                    () => document.documentElement.scrollWidth <= innerWidth
+                )
+            ).toBe(true);
+            await page.goto("/?screen=attributeoptions&archived");
+            await expect(
+                page.getByRole("form", { name: "Attribute option information" })
+            ).toHaveCount(0);
+            await expect(page.getByRole("searchbox")).toBeVisible();
+            await page.goto("/?screen=attributeoptions&empty");
+            await expect(page.getByText("No Results.")).toBeVisible();
+        });
+    }
+
+test("audit attribute touch: forms, create and portal close have 44px targets", async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 390, height: 1000 });
+    await page.goto("/?screen=attributes");
+    const create = page.getByRole("button", {
+        name: "Create attribute",
+        exact: true,
     });
-}
-
-
-for (const width of [1440,768,390]) for (const theme of ['light','dark']) {
-    test(`audit newattribute ${width} ${theme}: creation validation and retry`, async({page},info)=>{
-        await page.setViewportSize({width,height:1000});
-        await page.goto('/?screen=newattribute&failure');
-        await page.evaluate(dark=>document.documentElement.classList.toggle('dark',dark),theme==='dark');
-        await expect(page.getByRole('heading',{level:1,name:'Create attribute',exact:true})).toHaveCSS('font-family',/Georgia/);
-        const form=page.getByRole('form',{name:'Attribute information'});
-        await form.getByRole('button',{name:'Create attribute'}).click();
-        await expect(page.getByText('Category is required.',{exact:true})).toBeVisible();
-        await form.getByLabel('Category',{exact:true}).selectOption('cat-1');
-        await form.getByLabel('Key',{exact:true}).fill('material');
-        await form.getByLabel('Display name').fill('Material');
-        await form.getByLabel('Type',{exact:true}).selectOption('ENUM');
-        await form.getByLabel('Scope',{exact:true}).selectOption('VARIANT');
-        await form.getByRole('checkbox',{name:'Multi-valued'}).check();
-        await form.getByRole('button',{name:'Create attribute'}).click();
-        await expect(form.getByLabel('Display name')).toBeDisabled();
-        await expect(page.getByRole('alert')).toContainText('input has been kept');
-        await expect(form.getByLabel('Display name')).toHaveValue('Material');
-        await form.getByRole('button',{name:'Create attribute'}).click();
-        await expect(page.getByRole('status')).toContainText('Changes saved');
-        expect(await page.evaluate(()=> (window as unknown as {destination:string}).destination)).toBe('/dashboard/admin/attributes');
-        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
-        expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
-        await page.screenshot({path:info.outputPath(`audit-newattribute-${width}-${theme}.png`),fullPage:true});
-    });
-}
+    expect((await create.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await create.click();
+    const dialog = page.getByRole("dialog");
+    const card = dialog
+        .getByRole("form", { name: "Attribute information" })
+        .locator("..")
+        .locator("..");
+    await expect(card).toHaveCSS("box-shadow", "none");
+    await expect(card).toHaveCSS("border-radius", "3px");
+    const controls = dialog.locator(
+        'button:not([role="checkbox"]), input:not([type="checkbox"]), select'
+    );
+    for (const control of await controls.all()) {
+        const box = await control.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+    }
+    for (const name of ["Required", "Facetable", "Multi-valued"]) {
+        const label = dialog
+            .locator("label")
+            .filter({ hasText: new RegExp(`^${name}$`) });
+        expect((await label.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        expect((await label.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+    }
+    await dialog
+        .getByRole("button", { name: "Close", exact: true })
+        .press("Escape");
+    await page.goto("/?screen=attributeoptions");
+    const add = page.getByRole("button", { name: "Add option", exact: true });
+    expect((await add.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+});

@@ -155,3 +155,7 @@ P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440px
 ### P2残存6画面の品質条件（2026-10-09）
 
 1440/768/390pxと対象境界幅で、ページ全体の横溢れなし、キーボードfocus、44pxページング、axe AA（contrast除外なし）を補助ブラウザーで検証する。ClerkのPortalは独立themeを持ち、埋め込み領域と同様にreduced-motionでanimation/transitionを抑制する。fixtureと認証後実ルート/実SDKの受け入れを分ける。[未完了条件](../../docs/testing/QA_HANDOFF.md#ds-p2-residual-browser)。
+
+### 監査指摘の操作領域（2026-10-09）
+
+公開3画面の指摘操作と属性3画面の独立操作は44×44px以上。checkboxはラベル込みで判定する。共有SDKのinline focus resetはeditorial share tileに限定して補正する。属性テーマはroot/form/独立Portalに明示適用し、light/dark・AAコントラスト・focus復帰・局所table scrollを検証する。認証後実ルートと補助fixtureの証跡を区別する。

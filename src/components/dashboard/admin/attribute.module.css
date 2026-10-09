@@ -1,0 +1,20 @@
+/* Attribute-only touch targets: retain existing seller tokens and other callers. */
+.surface
+    :is(
+        button:not([role="checkbox"]),
+        input:not([type="checkbox"]),
+        select,
+        [role="menuitem"]
+    ),
+button.surface {
+    min-height: 44px;
+    min-width: 44px;
+}
+.surface :global(fieldset) {
+    min-width: 0;
+}
+.surface:global([role="dialog"]) > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}

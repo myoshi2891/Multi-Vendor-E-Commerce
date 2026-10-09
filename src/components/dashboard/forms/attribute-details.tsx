@@ -57,6 +57,7 @@ export interface AttributeCategoryOption {
 }
 
 import styles from "../design/seller.module.css";
+import attributeStyles from "../admin/attribute.module.css";
 import { SaveFeedback } from "../admin/save-state";
 
 interface AttributeDetailsProps {
@@ -170,7 +171,9 @@ const AttributeDetails: FC<AttributeDetailsProps> = ({
     };
 
     return (
-        <Card className={`${styles.theme} ${styles.panel}`}>
+        <Card
+            className={`${styles.theme} ${styles.panel} ${attributeStyles.surface}`}
+        >
             <CardHeader>
                 <h2>Attribute Information</h2>
                 <CardDescription>
