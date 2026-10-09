@@ -605,3 +605,27 @@ for (const width of [1440, 768, 390]) {
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     });
 }
+
+
+for (const width of [1440, 768, 390]) {
+    test(`audit home ${width}: motion hit area, focus and preference`, async ({page}, info) => {
+        await page.setViewportSize({width, height: 1000});
+        await page.goto('/?screen=home');
+        const reduced = page.getByRole('button', {name: /motion reduced/});
+        expect((await reduced.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        expect((await reduced.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+        await expect(reduced).toBeDisabled();
+        await page.emulateMedia({reducedMotion: 'no-preference'});
+        const pause = page.getByRole('button', {name: /Pause animation/});
+        await pause.focus();
+        await expect(pause).toHaveCSS('outline-style', 'solid');
+        await pause.press('Enter');
+        const resume = page.getByRole('button', {name: /Resume animation/});
+        await expect(resume).toHaveAttribute('aria-pressed', 'true');
+        await resume.press('Enter');
+        await expect(pause).toHaveAttribute('aria-pressed', 'false');
+        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({path: info.outputPath(`audit-home-${width}.png`), fullPage: true});
+    });
+}

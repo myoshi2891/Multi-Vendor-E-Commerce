@@ -775,7 +775,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [計画](priority-six-audit-remediation-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#監査指摘6画面移行記録)。既存全画面判定と今回の修正受け入れは別に記録する。
 
 - [x] DS-PAGE-006 商品一覧: ページャ・関連検証・仕様同期。
-- [ ] DS-PAGE-017 ホーム。
+- [x] DS-PAGE-017 ホーム: motion操作寸法・関連検証・仕様同期。
 - [ ] DS-PAGE-019 商品詳細。
 - [ ] DS-PAGE-041 属性一覧。
 - [ ] DS-PAGE-040 属性新規。

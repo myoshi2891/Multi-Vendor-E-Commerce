@@ -14,3 +14,5 @@
 ## 2026-10-09 監査指摘の補正
 
 Browseのページャはeditorialテーマと`Collection pages`のnavigation名を使用する。既定Review pagesと他callerを保持し、44×44px以上・濃金hover・可視focus・aria-current・先頭/末尾disabledを満たす。繰り返しsize/attrフィルターを含むURL条件を保持する。[計画](../../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。
+
+Home（DS-PAGE-017）のmotion切替は全幅で44×44px以上を確保する。設定reduce時のdisabledと静止表示、Pause/Resume・aria-pressed・focusを保持する。
