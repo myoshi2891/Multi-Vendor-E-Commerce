@@ -1172,3 +1172,7 @@ Red: supportの色が固定117/97/59で注入96/74/43へ追従せず失敗。Gre
 ### Step 2: DS-PAGE-030 payment
 
 Red: supportの固定色が注入したlinkへ追従せず失敗。Green/Refactor: postpurchase --grep payment 4/4（3幅、axe AA、empty/pending/error/retry/paging/focus）；RTL payments-table 10/10。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。
+
+### Step 3: DS-PAGE-021 addresses
+
+Red: 独立Dialogの固定背景250/248/242が注入panel255/253/247へ追従せず失敗。Green/Refactor: postpurchase --grep addresses 4/4（3幅、axe AA、validation/save pending/failure/retry/success/default/focus復帰）；RTL profile-addresses 11/11；tsc/check:playwright成功。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。

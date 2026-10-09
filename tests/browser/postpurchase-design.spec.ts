@@ -1,6 +1,107 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("addresses portal follows shared tokens", async ({ page }) => {
+    await page.goto("/?screen=addresses");
+    await page
+        .getByRole("button", { name: "Edit address for Mina Mori" })
+        .click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    // Independent portals own their theme; override it on the rendered surface.
+    await dialog.evaluate((root) => {
+        (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7");
+        (root as HTMLElement).style.setProperty("--purchase-gold", "#dfc38e");
+    });
+    await expect(dialog).toHaveCSS("background-color", "rgb(255, 253, 247)");
+    await expect(
+        page.getByRole("button", { name: "Save address", exact: true })
+    ).toHaveCSS("background-color", "rgb(223, 195, 142)");
+});
+
+for (const width of [1440, 768, 390]) {
+    test(`addresses states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=addresses&state=retry");
+        const edit = page.getByRole("button", {
+            name: "Edit address for Mina Mori",
+        });
+        await edit.click();
+        await expect(
+            page.getByRole("textbox", { name: "First name", exact: true })
+        ).toHaveValue("Mina");
+        await accessible(page);
+        const save = page.getByRole("button", {
+            name: "Save address",
+            exact: true,
+        });
+        await page.keyboard.press("Tab");
+        await save.focus();
+        await expect(save).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await expect(
+            page.getByRole("button", { name: "Saving address…" })
+        ).toBeDisabled();
+        await expect(page.getByRole("alert")).toContainText("couldn’t save");
+        await expect(
+            page.getByRole("textbox", { name: "First name", exact: true })
+        ).toHaveValue("Mina");
+        await accessible(page);
+        await save.click();
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+        await expect(edit).toBeFocused();
+        await page
+            .getByRole("button", { name: "Make default address for Mina Mori" })
+            .click();
+        await expect(page.getByRole("alert")).toContainText("couldn’t update");
+        await page
+            .getByRole("button", { name: "Make default address for Mina Mori" })
+            .click();
+        await expect(
+            page.getByText("Default address", { exact: true })
+        ).toBeVisible();
+        await accessible(page);
+        await page.screenshot({
+            path: info.outputPath(`addresses-${width}.png`),
+            fullPage: true,
+        });
+        await edit.click();
+        await page.screenshot({
+            path: info.outputPath(`addresses-dialog-${width}.png`),
+            fullPage: true,
+        });
+        await page.keyboard.press("Escape");
+        await expect(edit).toBeFocused();
+        await page.goto("/?screen=addresses&state=empty");
+        await accessible(page);
+        await page.getByRole("button", { name: /Add.*address/i }).click();
+        await page
+            .getByRole("button", { name: "Save address", exact: true })
+            .click();
+        await expect(page.getByRole("alert")).toContainText(
+            "highlighted fields"
+        );
+        await accessible(page);
+        await page.goto("/?screen=addresses&state=error");
+        await expect(page.getByRole("alert")).toBeVisible();
+        await page.getByRole("button", { name: "Try again" }).click();
+        await expect(page.getByRole("alert")).toHaveCount(0);
+        await page.goto("/?screen=addresses&state=pending");
+        await page
+            .getByRole("button", { name: "Edit address for Mina Mori" })
+            .click();
+        await page
+            .getByRole("button", { name: "Save address", exact: true })
+            .click();
+        await expect(
+            page.getByRole("button", { name: "Saving address…" })
+        ).toBeDisabled();
+        await page.keyboard.press("Escape");
+        await expect(page.getByRole("dialog")).toBeVisible();
+        await accessible(page);
+    });
+}
+
 const screens = [
     { key: "orders", heading: "My orders", empty: "No orders yet" },
     { key: "payment", heading: "My payments", empty: "No payments yet" },

@@ -42,7 +42,7 @@
 
 - [x] Step 1 注文一覧
 - [x] Step 2 支払い履歴
-- [ ] Step 3 配送先
+- [x] Step 3 配送先
 - [ ] Step 4 レビュー
 - [ ] Step 5 メッセージ
 - [ ] Step 6 概要
