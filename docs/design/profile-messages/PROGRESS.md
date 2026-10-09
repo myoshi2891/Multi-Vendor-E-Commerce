@@ -73,3 +73,5 @@ DS-PAGE-056: 購入者名/画像での識別、最新メッセージが購入者
 ## 購入後6画面の共通表示（2026-10-10）
 
 [保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。Red: 購入者supportのmessage固定色が注入linkへ追従せず失敗。Green/Refactor: postpurchase --grep messages 4/4（3幅、axe AA、thread failure/retry、長文、send pending/failure/draft保持/success、empty/list retry）；購入者と販売者RTL4 suites 31/31；tsc成功。今回の表示変更は補助検証済み。認証後実ルートは保存ログイン状態がなく保留。既存の検証履歴を上書きしない。
+
+最終回帰でroute loadingのtoken未接続を先行Red確認し、buyer class接続後にpostpurchase全25件成功。販売者light/dark・設定のseven13件、購入後共通枠のpriority29件も成功。

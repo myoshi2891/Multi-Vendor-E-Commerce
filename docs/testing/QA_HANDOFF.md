@@ -1,6 +1,18 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-09 監査指摘6画面の実装（最新）
+## 2026-10-10 購入後P2 6画面（最新）
+
+注文一覧・支払い履歴・配送先・レビュー・購入者メッセージ・プロフィール概要の残存表示を統一。画面別TDD/仕様更新を6commit、計画を1commit、最終回帰を別commitにまとめる。[計画](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#購入後p2-6画面移行記録)。
+
+最終全体Jestは3092 passed / 3095 total、3 skipped、319 suites（318 passed／1 skipped）、127 snapshots成功（coverageなし）。postpurchase25/25、priority29/29、seven settings/messages13/13、commerce24/24の計91ブラウザーケース成功。1440/768/390px、axe AA（contrast含む）、focus・長文・表示状態・独立Portalと販売者light/darkを確認。lintエラー0（既存警告8）、tscエラー0、check:playwright成功。coverage/Integration/E2E全体の以前の実測は維持。
+
+### DS-POSTPURCHASE-BROWSER
+
+- 今回の6画面変更の認証後実ルート受け入れは保留。既存E2EのcreateCustomerSessionはClerk/DBへのユーザー作成・cleanup削除を伴う。保存済み顧客storageStateは見つからず、今回そのhelperを実行していない。
+- 解除条件・次着手: 既存顧客の検証用ログイン状態と対応する読取可能なデータを用意し、6実ルートと注文filter routeを3幅で確認する。fixture成功を実認証/実データ取得の成功へ読み替えない。
+- 本作業はAPI/DB/認可/業務仕様変更なし。文書リンク・形式・SDD整合を確認。既存画面・部品の検証履歴を維持し、今回の未確認範囲を別記した。
+
+## 2026-10-09 監査指摘6画面の実装（履歴）
 
 商品一覧・home・商品詳細・属性一覧・属性新規・属性選択肢の実装/TDD/仕様同期を完了。[保存計画](../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md) / [証跡](../design/design-system/PROGRESS.md#監査指摘6画面移行記録)。全体Jest3092/3095（3 skip、閲覧履歴key重複修正後の最新実測。本作業時点は3091/3094）、319 suites（318 pass/1 skip）、127 snapshots。purchase53/53、p4全56/56、追加surface回帰1/1、公開実3画面×3幅の3ケース。型/lintエラー0（既存lint警告8）、check:playwright/build成功。統計表はこの実測へ同期し、coverage/Integration/E2E全体の以前の実測は維持する。
 
@@ -43,7 +55,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3092 passed / 3095 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-09 閲覧履歴の key 重複修正後の全体Jest実測（coverageなし）。coverageは前回P2残存6画面の実測を維持。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
+| Jest テスト総数 (unit/component) | **3092 passed / 3095 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 購入後6画面の最終全体Jest実測（coverageなし）。coverageは前回P2残存6画面の実測を維持。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
 | 全体coverage（2026-10-09実測） | Statements87.84%（10745/12232）／Branches78.05%（6578/8427）／Functions84.12%（2098/2494）／Lines88.34%（9780/11070）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 plan 087 実施時の実測: 238/238 pass**・`bun run test:integration`。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
@@ -211,6 +223,7 @@
 | 優先 | ID | 課題 | 期限 / 状態 | 次の一手 |
 |---|---|---|---|---|
 | P3移行 | **DS-P3-SIX-BROWSER** | 管理者3画面・販売者クーポン2画面の認証後実ルート／Clerk検証 | 実装済み・専用DB／認証情報待ち | [解除条件・証跡](#ds-p3-six-browser) |
+| P2移行 | **DS-POSTPURCHASE-BROWSER** | 購入後6画面変更の認証後実ルート確認 | 実装・補助検証済み、ログイン状態なし | [解除条件・次着手](#ds-postpurchase-browser) |
 | P1移行 | **DS-PURCHASE-BROWSER** | Checkout・注文詳細の認証後実ルート／SDK検証 | 実装あり・専用DB環境待ち | [解除条件・次着手](#ds-purchase-browser) |
 | ~~1~~ | ~~**OI-9**~~ | ~~ホーム `/` が SSR で 500（`featured.tsx` の `window` 初期化子参照）~~ | ✅ **解消済み（2026-06-06 / `c196e3d5`）** | 実装は `useState<number>(1200)` の安全な既定値 + `useEffect` での実測反映済み（`featured.tsx:19,30`）。**実測（2026-07-26）**: `security-headers.spec.ts` の `/` が 3 ブラウザとも `status < 400` で pass。**次の一手は D2** — `.lighthouserc.json` / `lhci.yml` の計測 URL へ `/` を追加できる状態になった。 |
 | ~~1~~ | ~~**OI-11**~~ | ~~`/dashboard/seller` 系ルートが本番 SSR で `ReferenceError: self is not defined`~~ | ✅ 解消（2026-10-07・plan 083、未コミット） | **原因の訂正**: `next-cloudinary` の `CldUploadWidget` ではなく、`product-details.tsx` が静的 import していた `jodit-react` の UMD（モジュール評価時に `}(self, …)` を実行）。`next-cloudinary` 6.16.0 と依存の dist に `self` 参照は無い。`next/dynamic(() => import("jodit-react"), { ssr: false })` へ変更し、`product-details-ssr.test.tsx`（`@jest-environment node` で import が `self is not defined` で reject する Red → Green）を追加。`bun run build` 後のサーバーチャンクから jodit が消え、クライアントチャンクのみに含まれることを確認。認証後の実ルート表示は Clerk 認証情報が要るため未確認 |

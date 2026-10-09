@@ -17,7 +17,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 3092 passed / 3095 total across 319 suites (318 passed, one skipped suite, 3 skipped tests), measured on 2026-10-09 with `bun run test -- --no-coverage` after the history duplicate-key fix (`src/components/store/shared/product-list.test.tsx` +1). Coverage percentages remain from the earlier 3077-test coverage run. All 127 snapshots passed. Integration: 238 tests across 18 suites (unchanged since plan 087).
+- 3092 passed / 3095 total across 319 suites (318 passed, one skipped suite, 3 skipped tests), measured on 2026-10-10 with `bun run test -- --runInBand --no-coverage` after the six post-purchase presentation changes. Coverage percentages remain from the earlier 3077-test coverage run. All 127 snapshots passed. Integration: 238 tests across 18 suites (unchanged since plan 087).
 - Earlier measurement (2026-10-08): 3039 passed / 3042 total across 316 suites (315 passed, one skipped suite, 3 skipped tests), measured on 2026-10-08 with `bun run test` after plan 087 (item-level restock: `src/queries/order.test.ts` +10, then +1 review regression). Integration: 238 tests across 18 suites (`tests/integration/order-lifecycle.test.ts` +10 cross-path exactly-once restock scenarios).
 - Earlier measurement (2026-10-07): 2942 passed / 2945 total across 305 suites (304 passed, one skipped suite, 3 skipped tests), measured on 2026-10-07 with `bun run test` after plan 085 (rate limiting per ADR-009: new suite `src/lib/rate-limit.test.ts` +14 for the in-memory Fixed Window limiter, and +5 in `src/app/api/setUserCountryInCookies/route.test.ts` for 429 / `Retry-After`, `x-real-ip`-only keying and fail-open without the header; +1 after review for the structured warning when `x-real-ip` is missing on Vercel).
 - Earlier measurement (2026-10-07): 2922 passed / 2925 total across 304 suites (303 passed, one skipped suite, 3 skipped tests), measured on 2026-10-07 with `bun run test` after plan 083 (OI-11: the seller product form loads `jodit-react` with `next/dynamic` `ssr: false` so SSR no longer evaluates its UMD `self` reference; +1 test in the new suite `tests/component/dashboard/product-details-ssr.test.tsx`).
@@ -1331,3 +1331,8 @@ Red→Green→Refactorは[進捗](../../docs/design/design-system/PROGRESS.md#p2
 [計画](../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#監査指摘6画面移行記録)。browseは新navigation RTL Redと高さ27px browser Red、homeは高さ32/38px Red、商品詳細はcategory36px/SDK outline reset Red。属性3画面の新RTLと見出し/名前付きform browser Redを実測。環境/adapterエラーはRedから除外する。
 
 Refactor後の属性関連+P4 RTL66/66、purchase53/53、p4全56/56、公開実3画面×1440/768/390pxの3ケースを確認。後追加surface回帰1/1で既存Card themeの影/丸みと44pxを確認。ENUM/404/archived/value不変/reset、二重送信/input/dismiss lock、error保持/retry/status、focus復帰、axe AAを検証する。認証後ADMIN実ルートはstorageState未提供で保留。既存suite/fixtureのみ拡張し、config/server新設なし。全体統計はQA_HANDOFFを正本とする。
+
+
+## 購入後P2 6画面の表示検証（2026-10-10）
+
+既存design configのpostpurchase suite（3130）はpriority serverを再利用し、本番部品をaction/Clerk adapters付きで描画する。25/25成功（3幅・axe AA・focus・長文・空/失敗/再試行/処理中・住所保存と既定・message draft保持）。先行Redは表示トークン追従と概要再読込の寸法、追加のmessages route loading。既存機能は回帰確認。priority29/29、seven settings/messages13/13、commerce24/24。全体coverage/Integration/E2Eの以前の実測は維持する。[保存計画](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。認証後実ルートは既存顧客storageState不在で保留。

@@ -46,4 +46,6 @@
 - [x] Step 4 レビュー
 - [x] Step 5 メッセージ
 - [x] Step 6 概要
-- [ ] 最終検証・文書同期
+- [x] 最終検証・文書同期
+
+認証後実ルートの今回の変更受け入れは保留。既存認証helperはユーザー作成/削除を伴い、保存済みstorageStateなし。補助91ケース成功。詳細は[進捗](../../docs/design/design-system/PROGRESS.md#購入後p2-6画面移行記録)。

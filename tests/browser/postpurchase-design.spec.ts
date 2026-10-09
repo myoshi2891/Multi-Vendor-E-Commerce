@@ -1,6 +1,23 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("messages route loading follows shared tokens", async ({ page }) => {
+    await page.goto("/?screen=messages&state=loading");
+    await page
+        .locator("[data-postpurchase-shell]")
+        .evaluate((root) =>
+            (root as HTMLElement).style.setProperty(
+                "--purchase-muted",
+                "#47594b"
+            )
+        );
+    await expect(page.getByRole("status")).toHaveCSS(
+        "color",
+        "rgb(71, 89, 75)"
+    );
+    await accessible(page);
+});
+
 test("overview recovery follows touch and focus tokens", async ({ page }) => {
     await page.goto("/?screen=overview&state=error");
     await expect(page.getByRole("alert")).toBeVisible();

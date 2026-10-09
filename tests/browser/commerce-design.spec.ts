@@ -293,11 +293,11 @@ for (const width of [1440, 768, 390]) {
     });
 }
 
-test("residual checkout compatibility: account address form keeps its default palette", async ({ page }) => {
+test("residual checkout compatibility: account address portal uses the shared theme", async ({ page }) => {
     await page.goto("/?scenario=account-address-form");
     const dialog = page.getByRole("dialog", { name: "Account address form" });
-    await expect(dialog.getByRole("button", { name: "Save address" })).toHaveCSS("background-color", "rgb(23, 37, 29)");
-    await expect(dialog.getByRole("button", { name: "Save address" })).toHaveCSS("color", "rgb(241, 238, 228)");
+    await expect(dialog.getByRole("button", { name: "Save address" })).toHaveCSS("background-color", "rgb(212, 186, 131)");
+    await expect(dialog.getByRole("button", { name: "Save address" })).toHaveCSS("color", "rgb(23, 37, 29)");
     await expect(page.getByLabel("First name")).toHaveCSS("background-color", "rgb(255, 253, 247)");
     await accessible(page);
 });

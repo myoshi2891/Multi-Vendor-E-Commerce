@@ -119,3 +119,8 @@ TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/desig
 ### 監査指摘6画面の表示受け入れ（2026-10-09）
 
 商品一覧のページング、homeのmotion切替、商品詳細のcategory/review/follow/share/SKUコピーは44px以上の操作領域と可視focusを持つ。属性3画面は管理者ブランドlight/dark・名前付きheading/form・独立Portal・入力/状態通知を適用し、送信中の入力変更/二重送信/dismissを防ぐ。失敗時の入力保持/retryと既存のURL/ENUM/immutable key/value/論理削除契約を維持。[計画](../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。
+
+
+## Post-purchase account presentation (2026-10-10)
+
+Orders, payment history, addresses, reviews, buyer messages and account overview consume the existing scoped purchase/account tokens for surfaces, text, borders, selection, focus and touch targets. Existing primary form actions use gold with dark text; links use readable dark gold. The address portal owns its theme, and buyer messages (including route loading) map message roles to storefront tokens without changing seller themes. Existing filters, paging, monetary units, actions, polling, authorization and destinations remain unchanged. [Plan](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md).

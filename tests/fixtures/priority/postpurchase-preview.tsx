@@ -12,6 +12,7 @@ import ReviewsContainer, {
     type ReviewHistoryEntry,
 } from "@/components/store/profile/reviews/reviews-container";
 import MessagesContainer from "@/components/store/profile/messages/messages-container";
+import MessagesLoading from "@/app/(store)/profile/messages/loading";
 import ProfilePage from "@/app/(store)/profile/page";
 import ProfileOverview from "@/components/store/profile/overview";
 import OrdersOverview from "@/components/store/profile/orders-overview";
@@ -197,6 +198,10 @@ async function preview() {
             );
             break;
         case "messages":
+            if (state === "loading") {
+                body = <MessagesLoading />;
+                break;
+            }
             body = (
                 <MessagesContainer
                     initialConversations={

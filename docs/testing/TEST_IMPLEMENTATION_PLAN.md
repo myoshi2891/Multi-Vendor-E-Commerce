@@ -1185,3 +1185,14 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - Step 5 DS-PAGE-040: ✅ Completed (2026-10-09)、認証後実ルート受け入れ保留。
 - Step 6 DS-PAGE-039: ✅ Completed (2026-10-09)、認証後実ルート受け入れ保留。
 - [検証証跡](../design/design-system/PROGRESS.md#監査指摘6画面移行記録)。
+
+
+### 購入後P2 6画面（2026-10-10）
+
+- Step 1 DS-PAGE-028 注文: ✅ Completed (2026-10-10)、実装/TDD/補助検証/仕様同期。
+- Step 2 DS-PAGE-030 支払い: ✅ Completed (2026-10-10)、実装/TDD/補助検証/仕様同期。
+- Step 3 DS-PAGE-021 住所: ✅ Completed (2026-10-10)、実装/TDD/補助検証/仕様同期。
+- Step 4 DS-PAGE-031 レビュー: ✅ Completed (2026-10-10)、実装/TDD/補助検証/仕様同期。
+- Step 5 DS-PAGE-026 メッセージ: ✅ Completed (2026-10-10)、実装/TDD/補助検証/仕様同期。
+- Step 6 DS-PAGE-029 概要: ✅ Completed (2026-10-10)、実装/TDD/補助検証/仕様同期。
+- 認証後実ルートは保留。[QAの解除条件](QA_HANDOFF.md#ds-postpurchase-browser)。

@@ -25,7 +25,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3092 passed / 3095 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-09 閲覧履歴の key 重複修正後の全体Jest実測（coverageなし）。coverageは前回P2残存6画面の実測を維持。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
+| Jestユニットテスト | **3092 passed / 3095 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 購入後6画面の最終全体Jest実測（coverageなし）。coverageは前回P2残存6画面の実測を維持。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5538,3 +5538,8 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 | テスト総数 | 3091 passed / 3094 total | **3092 passed / 3095 total** |
 | スイート数 | 319 | **319** |
 | 型エラー | 0 件 | **0 件** |
+
+
+## 2026-10-10 購入後P2 6画面の表示統一
+
+注文・支払い・住所・レビュー・メッセージ・概要の共通token接続と独立Dialog、44px回復リンクをTDDで実装し画面別commit。全体Jest3092/3095（3 skipped）、319 suites（318 pass/1 skip）、127 snapshots、ブラウザー91/91、型/lintエラー0（既存lint警告8）、harness検査成功。統計の正本は[QA_HANDOFF](testing/QA_HANDOFF.md)。coverageは以前の実測を維持。[移行証跡](design/design-system/PROGRESS.md#購入後p2-6画面移行記録)。今回の認証後実ルートはログイン状態不在で保留。

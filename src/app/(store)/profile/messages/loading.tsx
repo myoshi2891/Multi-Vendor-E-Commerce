@@ -3,7 +3,7 @@ import styles from "@/components/store/profile/messages/messages.module.css";
 export default function MessagesLoading() {
     return (
         <section
-            className={styles.messages}
+            className={`${styles.messages} ${styles.buyer}`}
             data-messages
             aria-label="Message management"
             aria-busy="true"

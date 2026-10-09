@@ -799,3 +799,6 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 5 DS-PAGE-026: messagesの残存表示統一・補助検証・仕様同期。
 
 - [x] Step 6 DS-PAGE-029: overviewの残存表示統一・補助検証・仕様同期。
+
+- [x] 最終回帰・関連仕様/QA/進捗同期（postpurchase25、priority29、seven13、commerce24）。
+- [ ] 今回の6画面変更の認証後実ルート受け入れ（既存顧客ログイン状態が必要）。全画面件数・既存履歴は保持。
