@@ -620,5 +620,6 @@ for (const width of [1440, 768, 767, 390]) {
         await expect(portal.getByRole("button")).toHaveCSS("background-color", "rgb(117, 97, 59)");
         await portal.getByRole("button").focus();
         await expect(portal.getByRole("button")).toHaveCSS("outline-style", "solid");
+        await expect(portal.getByRole("button")).toHaveCSS("animation-name", "none");
     });
 }

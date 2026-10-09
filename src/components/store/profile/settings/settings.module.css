@@ -62,7 +62,10 @@
     }
 }
 @media (prefers-reduced-motion: reduce) {
-    .root * {
+    .root,
+    .root *,
+    .portal,
+    .portal * {
         transition: none !important;
         animation: none !important;
     }

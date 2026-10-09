@@ -495,3 +495,7 @@ P4 specはtests/browser/p4-design.spec.ts、DESIGN_SUITE=p4で実行する。既
 ### Shared header design fixtures
 
 Purchase design fixtures use the existing priority server and production HeaderFrame/AccountMenu. Identity lookup remains in the server component; provider controls are adapters in fixtures. The shared bundler pins its output basename to `preview`, allowing multiple entry filenames without duplicating servers. Screenshot paths use Playwright outputPath. Real browse/checkout data acceptance requires the existing dedicated test DB setup; adapters do not prove Clerk lifecycle or SSR data retrieval.
+
+### P2残存画面のtoken検証（2026-10-09）
+
+既存priority/seven fixtureと `playwright.design.config.ts` を再利用する。CSS変数を上書きしてproduction部品のcomputed colorと操作領域を検証し、固定色への逆戻りを検出する。Clerk adapterはproduction appearanceのvariables/elementsを消費し、埋め込みroot外へPortalを描画して継承とreduced-motionを検証する。adapter成功は実SDKライフサイクルの証明に含めない。[受け入れ条件](./QA_HANDOFF.md#ds-p2-residual-browser)。

@@ -66,3 +66,5 @@ settings rootはstore限定purchase themeを合成し、Clerk appearanceのprima
 インストール済み@clerk/nextjs 7.5.19が参照する@clerk/reactの型（CssColor=string、modalContent key）を確認。[Clerk公式variables仕様](https://clerk.com/docs/guides/customizing-clerk/appearance-prop/variables)のCSS custom properties対応に従う。補助adapterはappearance/hashの受け渡しと計算済み配色を検証するもので、実SDK lifecycle/認証/セキュリティ操作の証明にはしない。
 
 [計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+2026-10-09追記: reduced-motionでは埋め込みrootと独立Portal両方のアニメーション/transitionを抑制する。補助settings7/7で検証、実SDK受け入れは保留。

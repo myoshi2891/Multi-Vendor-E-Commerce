@@ -151,3 +151,7 @@ P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440px
 6画面は1440/768/390px × light/dark、長文/横溢れ/検索/空/validation/pending/error/retry/success、Portal、focus/Enter/Escape/復帰、axe WCAG AA（contrast含む）を検証する。第三者SDKと認証後実ルートは補助fixtureと区別して保留理由/解除条件を記録する。旧フォーム/列の全scopeを移行済みとしない。
 
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+### P2残存6画面の品質条件（2026-10-09）
+
+1440/768/390pxと対象境界幅で、ページ全体の横溢れなし、キーボードfocus、44pxページング、axe AA（contrast除外なし）を補助ブラウザーで検証する。ClerkのPortalは独立themeを持ち、埋め込み領域と同様にreduced-motionでanimation/transitionを抑制する。fixtureと認証後実ルート/実SDKの受け入れを分ける。[未完了条件](../../docs/testing/QA_HANDOFF.md#ds-p2-residual-browser)。

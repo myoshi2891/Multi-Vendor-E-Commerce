@@ -1161,3 +1161,12 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - 残存部品 Step 5 DS-PAGE-008 Checkout: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。
 
 - 残存部品 Step 6 DS-PAGE-003 注文詳細: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。
+
+### P2残存6画面（2026-10-09）
+
+- ✅ 共通profile shellのpurchase token継承・比較画面の計算済み配色と横スクロール。
+- ✅ Wishlist／フォロー店舗／閲覧履歴の44pxページング・URL復帰・状態面。
+- ✅ 通知の取得失敗見出し/cursor再試行、一括既読pending/success/read表示。
+- ✅ 設定の型付きappearance・独立Portal配色/focus/reduced-motion。
+- ✅ 全体Jest3077成功、priority29＋settings7成功、型/Lintエラー0、仕様/QA同期。
+- 保留: 認証後6実ルートと実Clerk。[正本と解除条件](./QA_HANDOFF.md#ds-p2-residual-browser)。

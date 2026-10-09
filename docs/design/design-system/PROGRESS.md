@@ -1023,7 +1023,7 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 
 ## P2残存6画面移行記録
 
-- 2026-10-09。[保存計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)。DS-PAGE-009/033/022/024/067/032を対応中。既存の検証済み・保留・履歴は維持する。
+- 2026-10-09。[保存計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)。DS-PAGE-009/033/022/024/067/032は本体適用・補助検証済み。既存の検証済み・保留・履歴は維持する。
 - 共通基盤はstore限定purchase themeとaccount aliases。dashboard・API・DB・認可は対象外。
 
 ### 共通基盤
@@ -1069,3 +1069,25 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Red: RTL1件（appearanceが旧固定値）、browser1件（primary token上書きが操作の計算済み色に反映されない）。Green: settings root/appearanceをpurchase themeへ統一。Refactor: 型付きmodalContentにPortal専用themeを合成し、埋め込みrootから独立した描画でもtokensを供給。
 - 既存seven fixtureのUserProfile adapterがproduction appearance/hashを受け取り、入力/操作/danger/別rootのPortal sampleを描画する。実SDK機能はmockであり受け入れ証明に含めない。hash/認可/webhook/securityの契約は不変。
 - Refactor後: settings補助Chromium7/7（1440/768/767/390px・embedded/Portal）、関連Jest11/11、tsc exit0、lint0 errors/既存8 warnings。axe AA違反0・overflowなし、390px画像目視。認証後実ルート/実Clerkは保留を継続。
+
+### 最終統合と仕様同期（2026-10-09）
+
+設定Portalのreduced-motion漏れを追加TDDで検出。先行390pxテストでanimation-nameがpulseとなりRed、root/Portalの共通抑制へ修正後settings7/7でGreen。PC/モバイルの画像とcomputed style、axe、focus、溢れを確認。
+
+全体Jest3077 passed/3080 total、3 skipped、318 suites（317 passed/1 skipped）、127 snapshots。Statements87.84%（10745/12232）／Branches78.05%（6578/8427）／Functions84.12%（2098/2494）／Lines88.34%（9780/11070）。priority全29/29＋settings7/7＝補助Chromium36/36。tsc0、Lint0errors/既存8warnings、check:playwright成功。dashboard393files/400lcov/18of80（23%）。
+
+[要求](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[品質](../../../specs/multi-vendor-ecommerce/06-quality.md)・[テスト仕様](../../../specs/multi-vendor-ecommerce/07-testing.md)、画面別仕様、QA、coverage報告、テスト計画/設計、全体進捗を同期。architecture/data-model/interfaces/workflowsはAPI・DB・認可・業務遷移に変更がないため維持。台帳は67画面/242部品のIDと分類を維持し、fixture成功だけで全画面受け入れ状態を更新しない。
+
+専用E2E_DATABASE_URLは未設定、Clerkキーは存在を確認（値は非出力）。認証後実ルート/実Clerkは[QA解除条件](../../testing/QA_HANDOFF.md#ds-p2-residual-browser)まで保留。Integration/フルE2Eは今回未実行。
+
+| 段階 | commit |
+|---|---|
+| 計画 | 3821597d |
+| 共通基盤 | 60b39545 |
+| 比較 | 8d933bf8 |
+| Wishlist | 168e6b7d |
+| フォロー店舗 | 5bc71aa9 |
+| 閲覧履歴 | 68d3addd |
+| 通知 | adc85009 |
+| 設定 | 042d5518 |
+| 最終同期 | 本記録とPortal抑制修正のコミット |

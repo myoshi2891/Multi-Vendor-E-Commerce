@@ -111,3 +111,7 @@ Product quantity and review-filter controls provide 44px operation targets. Revi
 [横断受け入れ仕様](../../docs/design/purchase-residual/requirements.md)を適用。browse/store/product/cart/checkout/orderのrootとPortalにスコープ付きpurchase themeを合成。共有住所フォームは既定配色fallbackを保持し、注文・支払い・商品状態タグは任意`variant="store"`のみ意味色を適用する。API・DB・認可・金額・在庫・決済遷移契約は変更なし。overview/data-modelの更新は不要。
 
 TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。全体Jest3075/3078（3 skipped）・317スイート（316 passed/1 skipped）、127 snapshots。購入補助ブラウザー68/68（purchase44、commerce24）とaxe AAを確認。専用DB/Clerk/外部SDKを伴う受け入れは保留。
+
+### P2残存6画面の表示要件（2026-10-09）
+
+比較・Wishlist・フォロー店舗・閲覧履歴・通知・設定は共通purchase tokenを使用する。番号ページングは44px以上、focusを視認可能とし、空/読み込み/失敗/再試行も同じ意味色を継承する。通知はRead/Unreadを文字で区別し、一括既読の進行/成功をstatusで通知する。取得失敗でも見出しと正規化cursorを保持する再読み込みを提供する。設定は型付きClerk appearanceと独立Portalにthemeを供給する。既存取得・認可・URL・既読化契約を維持。[計画](../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)。

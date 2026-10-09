@@ -19,7 +19,7 @@ await startFixtureServer({
                     React.createElement('input',{id:'fixture-profile-name',defaultValue:'Test Customer',style:{background:v.colorInput,color:v.colorInputForeground}}),
                     React.createElement('button',{type:'button',style:{background:v.colorPrimary,color:v.colorPrimaryForeground}},'Save profile'),
                     React.createElement('button',{type:'button',style:{color:v.colorDanger}},'Delete account'))),
-                location.search.includes('portal') ? createPortal(React.createElement('section',{'aria-label':'Clerk portal adapter',className:e.modalContent},React.createElement('button',{type:'button',style:{background:v.colorPrimary,color:v.colorPrimaryForeground}},'Portal save sample')),document.body) : null);
+                location.search.includes('portal') ? createPortal(React.createElement('section',{'aria-label':'Clerk portal adapter',className:e.modalContent},React.createElement('button',{type:'button',style:{background:v.colorPrimary,color:v.colorPrimaryForeground,animation:'pulse 1s infinite'}},'Portal save sample')),document.body) : null);
         } export function useUser(){return {user:{firstName:'Test',lastName:'Seller',fullName:'Test Seller',primaryEmailAddress:{emailAddress:'test@example.com'},imageUrl:'/assets/logo.png'},isLoaded:true,isSignedIn:!location.search.includes("guest")}}`,
         "next-themes": `export function useTheme(){return {setTheme(value){document.documentElement.classList.toggle('dark',value==='dark')}}}`,
         "@/queries/user": `export async function addToWishlist(){return true}`,
