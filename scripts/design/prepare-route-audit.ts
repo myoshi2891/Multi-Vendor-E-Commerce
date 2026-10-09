@@ -12,6 +12,8 @@ const ledger = readFileSync("docs/design/design-system/PROGRESS.md", "utf8");
 try {
     const [product, store, attribute, order] = await Promise.all([
         db.product.findFirst({
+            // バリアント無し商品を拾うと [variantSlug] / [variantId] が埋まらない
+            where: { variants: { some: {} } },
             select: {
                 id: true,
                 slug: true,

@@ -1,5 +1,13 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
+
+// 固定待機の代わりに、本文の描画と load 完了をリトライ付きで待つ
+const waitForRouteReady = async (page: Page) => {
+    await expect(page.locator("body")).toBeVisible();
+    await expect
+        .poll(() => page.evaluate(() => document.readyState))
+        .toBe("complete");
+};
 
 type Route = {
     id: string;
@@ -47,7 +55,7 @@ test("read-only inventory of every actual route", async ({ browser }, info) => {
                     { waitUntil: "domcontentloaded", timeout: 45000 }
                 );
                 status = response?.status() ?? null;
-                await page.waitForTimeout(1200);
+                await waitForRouteReady(page);
                 const display = await page.evaluate(() => {
                     const main =
                         document.querySelector("main") ?? document.body;
@@ -164,11 +172,20 @@ test("read-only Clerk hydration and shared disclosure audit", async ({
             })
         );
         const secondPage = page.getByRole("button", { name: "2", exact: true });
-        await secondPage.hover();
-        const hoverColor = await secondPage.evaluate(
-            (node) => getComputedStyle(node).color
-        );
-        evidence.push({ width, browsePagination: paging, hoverColor });
+        // 監査 DB の商品数次第で 2 ページ目が無い。欠落を記録して監査を続ける
+        if ((await secondPage.count()) === 0) {
+            evidence.push({
+                width,
+                browsePagination: paging,
+                secondPageMissing: true,
+            });
+        } else {
+            await secondPage.hover();
+            const hoverColor = await secondPage.evaluate(
+                (node) => getComputedStyle(node).color
+            );
+            evidence.push({ width, browsePagination: paging, hoverColor });
+        }
         for (const label of [
             "Account menu",
             "Open search / 検索",
@@ -217,8 +234,9 @@ test("read-only public control dimensions", async ({ page }, info) => {
                     waitUntil: "domcontentloaded",
                     timeout: 45000,
                 });
+                await waitForRouteReady(page);
             } catch (error) {
-                // 1 ルートの遷移失敗で監査全体を止めず、失敗として記録して次へ進む
+                // 1 ルートの遷移・準備待ちの失敗で監査全体を止めず、失敗として記録して次へ進む
                 evidence.push({
                     id: row.id,
                     route: row.route,
@@ -232,7 +250,6 @@ test("read-only public control dimensions", async ({ page }, info) => {
                 );
                 continue;
             }
-            await page.waitForTimeout(1200);
             const controls = await page.evaluate(() =>
                 Array.from(
                     document.querySelectorAll(
