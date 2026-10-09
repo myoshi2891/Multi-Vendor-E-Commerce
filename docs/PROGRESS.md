@@ -25,7 +25,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3091 passed / 3094 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-09 監査指摘6画面の全体Jest実測（coverageなし）。coverageは前回P2残存6画面の実測を維持。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
+| Jestユニットテスト | **3092 passed / 3095 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-09 閲覧履歴の key 重複修正後の全体Jest実測（coverageなし）。coverageは前回P2残存6画面の実測を維持。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5516,3 +5516,25 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 ### P2残存6画面（2026-10-09）
 
 比較・Wishlist・フォロー店舗・閲覧履歴・通知・設定を共通tokenへ統一し、44pxページングと通知進行/再試行/既読表示、設定Portalのtheme/reduced-motionを整備。計画→基盤→6画面→最終同期の段階コミット。全体Jest3077/3080（3skip）、318suites、127snapshots、補助Chromium36/36、型/Lintエラー0（既存8warnings）。dashboard393files/400lcov/18of80。[TDD証跡](design/design-system/PROGRESS.md#p2残存6画面移行記録)・[認証後受け入れ保留](testing/QA_HANDOFF.md#ds-p2-residual-browser)。
+
+### 閲覧履歴の key 重複・browse フィルタのスクロール維持 (2026-10-09)
+
+#### 概要
+
+閲覧履歴（バリアント単位）で同一商品の別バリアントが並ぶと React の key が重複していた問題と、browse のフィルタ操作のたびにページ先頭へ戻る問題を修正した（作業ツリー・未コミット、HEAD `a01b3321`）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/shared/product-list.tsx` | key を `商品ID:先頭バリアントID` に変更 | 未コミット |
+| `src/components/store/shared/product-list.test.tsx` | 同一商品の別バリアントで key 警告が出ない回帰 +1 | 未コミット |
+| `src/components/store/browse-page/{sort,filters/**}.tsx` | `replace(url, { scroll: false })`（ページングは先頭へ戻す挙動を維持） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3091 passed / 3094 total | **3092 passed / 3095 total** |
+| スイート数 | 319 | **319** |
+| 型エラー | 0 件 | **0 件** |
