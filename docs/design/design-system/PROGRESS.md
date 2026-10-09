@@ -108,7 +108,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
-| DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-07新規・plan 086） | P2 | 実装済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。部品は fixture で検証済み、Clerk 認証後の実ルートは未確認 |
+| DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-07新規・plan 086） | P2 | 実装済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。部品は fixture で検証済み、Clerk 認証後の実ルートは未確認。P2表示追加は[残存6画面](#p2残存6画面移行記録)、認証後実ルート保留 |
 
 ## 部品台帳
 
@@ -357,7 +357,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-237 | P1 | Country picker styles | [country-selector.module.css](../../../src/components/shared/country-selector.module.css) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、store opt-in補助検証済み |
 
 | DS-COMP-238 | P2 | Review pagination styles | [pagination.module.css](../../../src/components/store/shared/pagination.module.css) | 実装済み | product review opt-inの補助検証済み、実route保留 |
-| DS-COMP-239 | P2 | 通知一覧 | [notification-list.tsx](../../../src/components/store/profile/notifications/notification-list.tsx) | 検証済み | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット) |
+| DS-COMP-239 | P2 | 通知一覧 | [notification-list.tsx](../../../src/components/store/profile/notifications/notification-list.tsx) | 検証済み | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。P2表示追加は[残存6画面](#p2残存6画面移行記録)、認証後実ルート保留 |
 | DS-COMP-240 | P2 | ヘッダーの未読バッジ・通知リンク | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 実装済み | RTL のみ。ブラウザー表示は認証後ヘッダーの fixture が無く未確認 |
 | DS-COMP-241 | P1 | 購入theme tokens | [purchase-theme.module.css](../../../src/components/store/shared/purchase-theme.module.css) | 保留 | store限定・補助検証済み、認証後実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
 | DS-COMP-242 | P1 | store状態タグCSS | [store-status.module.css](../../../src/components/shared/store-status.module.css) | 保留 | 34状態/明暗祖先/3幅/AA補助検証済み、認証後order実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
@@ -1056,3 +1056,10 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Red: `priority --grep 'history tokens'`、失敗パネルがshared panel tokenを継承せず旧固定面で失敗。Green: empty/error/retry/loadingをaccount aliasesへ接続。Refactor: browser操作領域helperはnavigationの描画を待ち、未描画時の空ループで誤成功しないよう修正。
 - 保存順/不正storage/アクセス不可/古い応答/範囲補正は既存RTL、URL/backとcompare/follow状態は補助ブラウザーで回帰。認証後実ルート保留を継続。
 - Refactor後: 補助Chromium10/10（履歴既存3/新4・フォロー既存3）、Jest10/10、tsc exit0、lint0 errors/既存8 warnings。1440/768/480/390px、axe AA違反0・overflowなし、390px画像目視。
+
+### Step 5 通知（DS-PAGE-067／DS-COMP-239）
+
+- Red: RTL2件（取得失敗にh1/名前付きsectionがない、一括既読pendingにstatusがない）、browser1件（通知listがpanel tokenを継承しない）。Green: 失敗時の見出しとcursor reload、常設status・aria-busy、Read/Unread文字、panel/focus/44px操作。
+- Refactor: 同一moduleのNotificationHeadingで成功/失敗の見出しを集約、cursorを一度だけ正規化。既読化の既存楽観/非楽観更新とリンク遷移は維持。新しいServer Action/APIは追加しない。
+- 補助Chromium7/7（既存3＋継承1＋新状態3）、関連Jest26/26、tsc exit0、lint0 errors/既存8 warnings。1440/768/390px、pending/error/retry/success、リンクなし/空cursor/取得失敗、axe AA違反0・overflowなし・390px画像目視。
+- 新しい[画面要件](../profile-notifications/requirements.md)・設計/tasks/進捗を追加し、基盤設計から参照。認証後実ルートは専用DB不在で保留。

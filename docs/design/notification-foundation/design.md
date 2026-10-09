@@ -349,3 +349,7 @@ export type NotificationType = keyof typeof NOTIFICATION_MAPPING;
 
 - 実装プラン: [plans/086-implement-notification-foundation.md](../../../plans/086-implement-notification-foundation.md)
 - 「新しい状態遷移を足すときはマッピング表の更新を検討する」という一文を、086 の完了時に `tech.md` へ追記するよう提案する（plan 021 Maintenance notes）。
+
+## 通知画面のP2表示統一（2026-10-09）
+
+plan 086後の通知画面の表示仕様は[profile-notifications要件](../profile-notifications/requirements.md)と[設計](../profile-notifications/design.md)を参照。通知/配信モデル・Outbox・メール設計は本変更では更新しない。

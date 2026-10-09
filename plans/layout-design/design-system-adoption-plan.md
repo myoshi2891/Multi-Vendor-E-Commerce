@@ -760,6 +760,6 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 2 Wishlist。
 - [x] Step 3 フォロー店舗。
 - [x] Step 4 閲覧履歴。
-- [ ] Step 5 通知。
+- [x] Step 5 通知。
 - [ ] Step 6 設定。
 - [ ] 認証後実ルート/実Clerkの受け入れ。補助検証だけで全画面判定やDS-BASE-001の全体完了を変更しない。

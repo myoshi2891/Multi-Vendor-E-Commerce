@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import NotificationList from "@/components/store/profile/notifications/notification-list";
@@ -235,4 +235,28 @@ describe("NotificationList", () => {
         );
         errorSpy.mockRestore();
     });
+});
+
+it("announces bulk-read progress and completion while locking repeated submission", async () => {
+    let finish!: (value: { count: number }) => void;
+    const markAllReadAction = jest.fn(
+        () =>
+            new Promise<{ count: number }>((resolve) => {
+                finish = resolve;
+            })
+    );
+    const { user } = setup([item()], { markAllReadAction });
+    const button = screen.getByRole("button", { name: "Mark all as read" });
+    await user.click(button);
+    expect(screen.getByRole("status")).toHaveTextContent(
+        "Updating notifications…"
+    );
+    expect(button).toHaveAttribute("aria-busy", "true");
+    await user.click(button);
+    expect(markAllReadAction).toHaveBeenCalledTimes(1);
+    await act(async () => finish({ count: 1 }));
+    expect(screen.getByRole("status")).toHaveTextContent(
+        "Notifications marked as read."
+    );
+    expect(screen.getByText("Read", { exact: true })).toBeInTheDocument();
 });

@@ -1,5 +1,6 @@
-import NotificationList from "@/components/store/profile/notifications/notification-list";
-import profileStyles from "@/components/store/profile/profile.module.css";
+import NotificationList, {
+    NotificationsUnavailable,
+} from "@/components/store/profile/notifications/notification-list";
 import {
     getMyNotifications,
     markAllNotificationsRead,
@@ -29,22 +30,26 @@ export default async function ProfileNotificationsPage({
 }>) {
     const { cursor } = await searchParams;
 
+    const parsedCursor = parseCursor(cursor);
     let page: Awaited<ReturnType<typeof getMyNotifications>>;
     try {
-        page = await getMyNotifications({ cursor: parseCursor(cursor) });
+        page = await getMyNotifications({ cursor: parsedCursor });
     } catch {
         // 失敗の詳細は getMyNotifications が構造化ログに残している
         return (
-            <p role="alert" className={profileStyles.error}>
-                We couldn&apos;t load your notifications. Please try again
-                later.
-            </p>
+            <NotificationsUnavailable
+                retryHref={
+                    parsedCursor
+                        ? `/profile/notifications?cursor=${encodeURIComponent(parsedCursor)}`
+                        : "/profile/notifications"
+                }
+            />
         );
     }
 
     return (
         <NotificationList
-            key={parseCursor(cursor) ?? "first"}
+            key={parsedCursor ?? "first"}
             initialItems={page.items}
             nextCursor={page.nextCursor}
             markReadAction={markNotificationRead}

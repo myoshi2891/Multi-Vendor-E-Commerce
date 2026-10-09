@@ -29,6 +29,7 @@ await startFixtureServer({
             return {products:scenario.includes("unavailable")?[]:ids.map(id=>({...products[0],id,slug:"piece-"+id,variants:[{...products[0].variants[0],variantId:id,variantSlug:id}]})),totalPages:1};
         }
         export async function getProducts(){return {products:new URLSearchParams(location.search).has("pieces") ? products : []}}`,
+        "@/queries/notification": `export async function getMyNotifications(){throw new Error("fixture lookup failure")} export async function markNotificationRead(){return {count:1}} export async function markAllNotificationsRead(){return {count:1}}`,
         "@/queries/profile": `import {products} from "./tests/fixtures/priority/purchase-data"; export async function getUserWishlist(){const scenario=new URLSearchParams(location.search).get("scenario") ?? ""; if(scenario.includes("error")) throw new Error("fixture failure"); return {wishlist:scenario.includes("empty")?[]:products,totalPages:scenario.includes("empty")?0:20}}`,
         "@/queries/review": `export async function upsertReview(){throw new Error("fixture only")}`,
         "next-cloudinary": `export function CldUploadWidget({children}){return children({open(){}})}`,

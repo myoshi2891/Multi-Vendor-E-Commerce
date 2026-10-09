@@ -308,3 +308,46 @@ for (const width of [1440, 768, 480, 390]) {
         await accessible(page);
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`notification refined states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=notifications-retry");
+        await page.locator("#root > div").evaluate(root => (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7"));
+        await expect(page.getByRole("list")).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await page.locator("#root > div").evaluate(root => (root as HTMLElement).style.removeProperty("--purchase-panel"));
+        const button = page.getByRole("button", {name: "Mark all as read"});
+        await button.focus();
+        await page.keyboard.press("Enter");
+        await expect(button).toBeDisabled();
+        await expect(button).toHaveAttribute("aria-busy", "true");
+        await expect(page.getByRole("status")).toContainText("Updating notifications…");
+        await expect(page.getByRole("alert")).toBeVisible();
+        await expect(page.getByText("Unread", {exact: true})).toHaveCount(2);
+        await button.click();
+        await expect(page.getByRole("status")).toHaveText("Notifications marked as read.");
+        await expect(page.getByText("Read", {exact: true})).toHaveCount(3);
+        await accessible(page);
+        await page.screenshot({path: info.outputPath(`notifications-p2-${width}.png`), fullPage: true});
+        await page.goto("/?scenario=notifications-nolink");
+        const markOne = page.getByRole("button", {name: /Your items were delivered/});
+        await markOne.focus();
+        await expect(markOne).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await expect(markOne).toHaveCount(0);
+        await expect(page.getByText("Unread", {exact: true})).toHaveCount(1);
+        await accessible(page);
+        await page.goto("/?scenario=notifications-empty-cursor");
+        await expect(page.getByText("No notifications yet.")).toBeVisible();
+        const older = page.getByRole("link", {name: "Older notifications"});
+        await expect(older).toHaveAttribute("href", "/profile/notifications?cursor=n3");
+        await older.focus();
+        await expect(older).toHaveCSS("outline-style", "solid");
+        await accessible(page);
+        await page.goto("/?scenario=notifications-fetch-error");
+        await expect(page.getByRole("heading", {name: "Notifications", level: 1})).toBeVisible();
+        await expect(page.getByRole("alert")).toBeVisible();
+        await expect(page.getByRole("link", {name: "Reload notifications"})).toHaveAttribute("href", "/profile/notifications?cursor=12345678-1234-1234-1234-123456789abc");
+        await accessible(page);
+    });
+}

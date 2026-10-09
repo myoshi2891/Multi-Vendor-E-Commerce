@@ -11,6 +11,34 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "UTC",
 });
 
+/** Shared heading for loaded and unavailable notification states. */
+function NotificationHeading() {
+    return (
+        <div className={profileStyles.pageHeading}>
+            <p className={profileStyles.eyebrow}>WHAT&apos;S NEW</p>
+            <h1 id="notifications-title">Notifications</h1>
+            <p lang="ja">ご注文の発送やお届けをお知らせします。</p>
+        </div>
+    );
+}
+
+export function NotificationsUnavailable({
+    retryHref,
+}: Readonly<{ retryHref: string }>) {
+    return (
+        <section className={styles.page} aria-labelledby="notifications-title">
+            <NotificationHeading />
+            <div role="alert" className={profileStyles.error}>
+                <p>
+                    We couldn&apos;t load your notifications. Please try again
+                    later.
+                </p>
+                <Link href={retryHref}>Reload notifications</Link>
+            </div>
+        </section>
+    );
+}
+
 /**
  * 通知一覧（plan 086）。既読化は Server Action を props で受け取る
  * （UI から src/queries を直接呼ばない・messages-container と同じ形）。
@@ -28,6 +56,7 @@ export default function NotificationList({
 }>) {
     const [items, setItems] = useState(initialItems);
     const [error, setError] = useState(false);
+    const [notice, setNotice] = useState("");
     const isMarkingAllRef = useRef(false);
     const [isMarkingAll, setIsMarkingAll] = useState(false);
 
@@ -38,9 +67,11 @@ export default function NotificationList({
         isMarkingAllRef.current = true;
         setIsMarkingAll(true);
         setError(false);
+        setNotice("");
         try {
             await markAllReadAction();
             setItems((prev) => prev.map((item) => ({ ...item, isRead: true })));
+            setNotice("Notifications marked as read.");
         } catch (err: unknown) {
             if (err instanceof Error) {
                 console.error("[NotificationList:markAll] Failed", {
@@ -89,12 +120,11 @@ export default function NotificationList({
     };
 
     return (
-        <section aria-labelledby="notifications-title">
-            <div className={profileStyles.pageHeading}>
-                <p className={profileStyles.eyebrow}>WHAT&apos;S NEW</p>
-                <h1 id="notifications-title">Notifications</h1>
-                <p lang="ja">ご注文の発送やお届けをお知らせします。</p>
-            </div>
+        <section className={styles.page} aria-labelledby="notifications-title">
+            <NotificationHeading />
+            <p role="status" className={styles.notice}>
+                {isMarkingAll ? "Updating notifications…" : notice}
+            </p>
 
             {items.length === 0 ? (
                 <p className={profileStyles.unavailable}>
@@ -107,6 +137,7 @@ export default function NotificationList({
                             type="button"
                             onClick={markAll}
                             disabled={!hasUnread || isMarkingAll}
+                            aria-busy={isMarkingAll}
                             className={styles.markAll}
                         >
                             Mark all as read
@@ -126,11 +157,15 @@ export default function NotificationList({
                                         <span className={styles.title}>
                                             {item.title}
                                         </span>
-                                        {item.isRead ? null : (
-                                            <span className={styles.unread}>
-                                                Unread
-                                            </span>
-                                        )}
+                                        <span
+                                            className={
+                                                item.isRead
+                                                    ? styles.read
+                                                    : styles.unread
+                                            }
+                                        >
+                                            {item.isRead ? "Read" : "Unread"}
+                                        </span>
                                     </span>
                                     <span className={styles.body}>
                                         {item.body}
