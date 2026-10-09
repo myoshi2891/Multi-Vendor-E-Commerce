@@ -33,9 +33,9 @@ await startFixtureServer({
         "@/queries/profile": `import {products} from "./tests/fixtures/priority/purchase-data"; export async function getUserWishlist(){const scenario=new URLSearchParams(location.search).get("scenario") ?? ""; if(scenario.includes("error")) throw new Error("fixture failure"); return {wishlist:scenario.includes("empty")?[]:products,totalPages:scenario.includes("empty")?0:20}}`,
         "@/queries/review": `export async function upsertReview(){throw new Error("fixture only")}`,
         "next-cloudinary": `export function CldUploadWidget({children}){return children({open(){}})}`,
-        "@/queries/user": `export async function addToWishlist(){return true}`,
+        "@/queries/user": `export async function addToWishlist(){return true} export async function followStore(){return true}`,
         "next/dynamic": `export default function dynamic(){return function DynamicFixture(){return null}}`,
-        "@clerk/nextjs": `import React from "react"; export function SignOutButton({children}){return children} export function UserButton(){return React.createElement("button",null,"Manage account")}`,
+        "@clerk/nextjs": `import React from "react"; export function useUser(){return {isLoaded:true,isSignedIn:true}} export function SignOutButton({children}){return children} export function UserButton(){return React.createElement("button",null,"Manage account")}`,
         "next/navigation": `export function redirect(url){location.assign(url); throw new Error("fixture redirect")} export function useSearchParams(){return new URLSearchParams(location.search)} export function usePathname(){return location.pathname} const router={replace(url){history.replaceState(null,"",url)},push(url){location.assign(url)},refresh(){}}; export function useRouter(){return router}`,
     },
 });

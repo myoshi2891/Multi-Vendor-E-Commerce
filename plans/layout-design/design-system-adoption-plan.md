@@ -776,7 +776,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] DS-PAGE-006 商品一覧: ページャ・関連検証・仕様同期。
 - [x] DS-PAGE-017 ホーム: motion操作寸法・関連検証・仕様同期。
-- [ ] DS-PAGE-019 商品詳細。
+- [x] DS-PAGE-019 商品詳細: 周辺操作・focus・関連検証・仕様同期。
 - [ ] DS-PAGE-041 属性一覧。
 - [ ] DS-PAGE-040 属性新規。
 - [ ] DS-PAGE-039 属性選択肢。

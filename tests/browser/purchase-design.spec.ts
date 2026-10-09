@@ -629,3 +629,39 @@ for (const width of [1440, 768, 390]) {
         await page.screenshot({path: info.outputPath(`audit-home-${width}.png`), fullPage: true});
     });
 }
+
+
+for (const width of [1440, 768, 390]) {
+    test(`audit product ${width}: peripheral actions, copy, review and follow`, async ({page}, info) => {
+        await page.addInitScript(() => {
+            Object.defineProperty(navigator, 'clipboard', {value: {writeText: async (text: string) => { document.documentElement.dataset.copied = text; }}});
+            class FixtureSocket { close() {} };
+            Object.defineProperty(window, 'WebSocket', {value: FixtureSocket});
+        });
+        await page.setViewportSize({width, height: 1000});
+        await page.goto('/?screen=product&audit=1');
+        const controls = [page.getByRole('button', {name: 'Browse categories'}), page.getByRole('button', {name: '5 stars (3)'}), page.getByRole('button', {name: 'Follow boutique'}), page.getByRole('button', {name: /SKU-001/}), page.getByRole('button', {name: 'Copy product link'}), ...['Facebook','X','WhatsApp','Pinterest'].map(name => page.getByRole('button', {name: `Share on ${name}`}))];
+        for (const control of controls) {
+            const box = await control.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await control.focus();
+            await expect(control).toHaveCSS('outline-style', 'solid');
+        }
+        await controls[0].press('Enter');
+        await expect(page.getByRole('link', {name:'Art',exact:true})).toHaveAttribute('href','/browse?category=art');
+        await controls[0].press('Escape');
+        await expect(controls[0]).toBeFocused();
+        await controls[1].press('Enter');
+        await expect(controls[1]).toHaveAttribute('aria-pressed','true');
+        await controls[2].press('Enter');
+        await expect(page.getByRole('button',{name:'Following',exact:true})).toHaveAttribute('aria-pressed','true');
+        await controls[3].press('Enter');
+        await expect(page.locator('html')).toHaveAttribute('data-copied','SKU-001');
+        await controls[4].press('Enter');
+        await expect(page.locator('html')).toHaveAttribute('data-copied', /product\/considered-piece\/ivory$/);
+        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({path: info.outputPath(`audit-product-${width}.png`), fullPage: true});
+    });
+}

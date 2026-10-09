@@ -1113,3 +1113,7 @@ DS-PAGE-006: editorialページャとCollection pages名を適用。Red: 新RTL1
 ### Step 2 ホーム
 
 DS-PAGE-017: motion切替にmin-height/min-width44px。Red: 1440/768幅38px、390幅32pxで先行browser3件失敗。Green/Refactor: browser3/3、既存motion RTL11/11回帰。設定reduceでdisabled、設定変更後Pause/Resume・aria-pressed・focus・axe AA・横溢れを確認。新機能のRTL Redは創作しない。機能/URL/APIは維持。
+
+### Step 3 商品詳細
+
+DS-PAGE-019: category/評価/follow/share/SKUを44pxに統一。Red: browser3幅のcategory36px、続いて実next-shareのinline outline:noneを検出。共有tile内のみfocus-visibleを補正。Green/Refactor: browser3/3、関連RTL26/26。コピー/評価/フォロー、カテゴリEscape、axe AA、横溢れなし、390px画像目視。fixture祖先の初期誤り（productBody不足）を直し、誤配置によるcontrast違反は実ページ不具合として数えない。
