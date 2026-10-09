@@ -49,7 +49,7 @@ export default function MessagesContainer({
     }
     return (
         <section
-            className={styles.messages}
+            className={`${styles.messages} ${styles.buyer}`}
             data-messages
             aria-label="Message management"
         >

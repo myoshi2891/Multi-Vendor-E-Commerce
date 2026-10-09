@@ -1,6 +1,110 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
+test("messages follows shared tokens", async ({ page }) => {
+    await page.goto("/?screen=messages");
+    await page
+        .getByRole("button", { name: "Open conversation with Garden Store" })
+        .click();
+    await expect(
+        page.getByRole("textbox", { name: "Your message" })
+    ).toBeEnabled();
+    await page.locator("[data-postpurchase-shell]").evaluate((root) => {
+        const style = (root as HTMLElement).style;
+        style.setProperty("--purchase-panel", "#fffdf7");
+        style.setProperty("--purchase-link", "#604a2b");
+        style.setProperty("--purchase-gold", "#dfc38e");
+        style.setProperty("--purchase-focus", "#604a2b");
+        style.setProperty("--purchase-touch", "52px");
+    });
+    await expect(page.getByRole("link", { name: "Need a hand? →" })).toHaveCSS(
+        "color",
+        "rgb(96, 74, 43)"
+    );
+    const send = page.getByRole("button", { name: "Send", exact: true });
+    await expect(send).toHaveCSS("background-color", "rgb(223, 195, 142)");
+    await expect(send).toHaveCSS("min-height", "52px");
+    await page.keyboard.press("Tab");
+    await send.focus();
+    await expect(send).toHaveCSS("outline-color", "rgb(96, 74, 43)");
+});
+
+for (const width of [1440, 768, 390]) {
+    test(`messages states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=messages&state=retry");
+        await page
+            .getByRole("button", {
+                name: "Open conversation with Garden Store",
+            })
+            .click();
+        await expect(page.getByRole("alert")).toBeVisible();
+        await page.getByRole("button", { name: "Retry messages" }).click();
+        await expect(
+            page.getByRole("textbox", { name: "Your message" })
+        ).toBeEnabled();
+        await accessible(page);
+        await page
+            .getByRole("textbox", { name: "Your message" })
+            .fill("Thank you for the lovely scarf");
+        const send = page.getByRole("button", { name: "Send", exact: true });
+        await page.keyboard.press("Tab");
+        await send.focus();
+        await expect(send).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await expect(
+            page.getByRole("button", { name: "Sending…", exact: true })
+        ).toBeDisabled();
+        await expect(page.getByRole("alert")).toContainText(
+            "Your draft is saved"
+        );
+        await expect(
+            page.getByRole("textbox", { name: "Your message" })
+        ).toHaveValue("Thank you for the lovely scarf");
+        await accessible(page);
+        await send.click();
+        await expect(
+            page.getByRole("textbox", { name: "Your message" })
+        ).toHaveValue("");
+        await expect(
+            page.getByText("Thank you for the lovely scarf", { exact: true })
+        ).toBeVisible();
+        await accessible(page);
+        await page.screenshot({
+            path: info.outputPath(`messages-${width}.png`),
+            fullPage: true,
+        });
+        await page.goto("/?screen=messages&state=empty");
+        await expect(
+            page.getByRole("heading", { name: "No conversations yet" })
+        ).toBeVisible();
+        await accessible(page);
+        await page.goto("/?screen=messages&state=error");
+        await expect(page.getByRole("alert")).toBeVisible();
+        await page.getByRole("button", { name: "Try again" }).click();
+        await expect(page.getByRole("alert")).toHaveCount(0);
+        await page.goto("/?screen=messages&state=pending");
+        await page
+            .getByRole("button", {
+                name: "Open conversation with Garden Store",
+            })
+            .click();
+        await page
+            .getByRole("textbox", { name: "Your message" })
+            .fill("Pending draft");
+        await page.getByRole("button", { name: "Send", exact: true }).click();
+        await expect(
+            page.getByRole("textbox", { name: "Your message" })
+        ).toBeDisabled();
+        await expect(
+            page.getByRole("button", {
+                name: "Open conversation with Garden Store",
+            })
+        ).toBeDisabled();
+        await accessible(page);
+    });
+}
+
 test("addresses portal follows shared tokens", async ({ page }) => {
     await page.goto("/?screen=addresses");
     await page

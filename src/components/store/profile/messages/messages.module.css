@@ -2,6 +2,29 @@
     min-width: 0;
     color: var(--account-ink, var(--message-ink, #17251d));
 }
+.buyer {
+    --message-ink: var(--purchase-ink);
+    --message-primary: var(--purchase-dark);
+    --message-contrast: var(--purchase-on-dark);
+    --message-paper: var(--purchase-panel);
+    --message-muted: var(--purchase-muted);
+    --message-border: var(--purchase-line);
+    --message-tint: var(--purchase-selected);
+    --message-error: var(--purchase-danger);
+    --message-gold: var(--purchase-link);
+    --message-focus: var(--purchase-focus);
+    --message-touch: var(--purchase-touch);
+}
+.buyer .primary {
+    background: var(--purchase-gold);
+    color: var(--purchase-ink);
+}
+.buyer .primary:hover {
+    background: var(--purchase-gold-hover);
+}
+.buyer .composer textarea {
+    background: var(--purchase-input);
+}
 .heading {
     display: flex;
     align-items: flex-end;
@@ -30,7 +53,7 @@
 .support {
     color: var(--message-gold, #75613b);
     font-size: 12px;
-    min-height: 44px;
+    min-height: var(--message-touch, 44px);
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
@@ -41,7 +64,7 @@
 }
 .messages button {
     cursor: pointer;
-    min-height: 44px;
+    min-height: var(--message-touch, 44px);
 }
 .messages button:disabled {
     cursor: wait;
@@ -51,14 +74,14 @@
 .messages button:focus-visible,
 .messages textarea:focus-visible,
 .log:focus-visible {
-    outline: 2px solid var(--message-gold, #75613b);
+    outline: 2px solid var(--message-focus, var(--message-gold, #75613b));
     outline-offset: 4px;
 }
 .primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
+    min-height: var(--message-touch, 44px);
     background: var(--message-primary, #17251d);
     color: var(--message-contrast, #faf8f2);
     padding: 12px 20px;

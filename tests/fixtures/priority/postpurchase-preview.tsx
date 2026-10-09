@@ -102,7 +102,12 @@ async function operation(name: string) {
     const count = (calls.get(name) ?? 0) + 1;
     calls.set(name, count);
     await new Promise((resolve) =>
-        setTimeout(resolve, state === "pending" ? 60000 : 300)
+        setTimeout(
+            resolve,
+            state === "pending" && (screen !== "messages" || name === "send")
+                ? 60000
+                : 300
+        )
     );
     if (state === "retry" && count === 1)
         throw new Error("Fixture request failure");

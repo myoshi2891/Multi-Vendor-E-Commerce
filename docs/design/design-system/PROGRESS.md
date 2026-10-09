@@ -1180,3 +1180,7 @@ Red: 独立Dialogの固定背景250/248/242が注入panel255/253/247へ追従せ
 ### Step 4: DS-PAGE-031 reviews
 
 Red: supportの固定色が注入linkへ追従せず失敗。Green/Refactor: postpurchase --grep reviews 4/4（3幅、axe AA、写真/小数評価/長文、empty/pending/error/retry/paging/focus）；RTL reviews-container 11/11。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。
+
+### Step 5: DS-PAGE-026 messages
+
+Red: 購入者supportのmessage固定色が注入linkへ追従せず失敗。Green/Refactor: postpurchase --grep messages 4/4（3幅、axe AA、thread failure/retry、長文、send pending/failure/draft保持/success、empty/list retry）；購入者と販売者RTL4 suites 31/31；tsc成功。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。
