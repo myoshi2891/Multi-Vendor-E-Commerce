@@ -73,8 +73,8 @@
 |---|---:|
 | 検証済み（2026-10-05） | 15 |
 | 本体適用・周辺確認 | 12 |
-| 本体適用・検証保留 | 28 |
-| 未適用 | 3 |
+| 本体適用・検証保留 | 31 |
+| 未適用 | 0 |
 | 実装済み（通知・認証後確認保留） | 1 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
@@ -125,9 +125,9 @@
 | `/returns-exchange` | 検証済み（2026-10-01） | P2 | [src/app/(store)/returns-exchange/page.tsx](<../../src/app/(store)/returns-exchange/page.tsx>) |
 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/store/[storeUrl]/page.tsx](<../../src/app/(store)/store/[storeUrl]/page.tsx>) |
 | `/track-order` | 検証済み（2026-10-01） | P2 | [src/app/(store)/track-order/page.tsx](<../../src/app/(store)/track-order/page.tsx>) |
-| `/dashboard/admin/attributes/[id]/options` | 未適用 | P4 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) |
-| `/dashboard/admin/attributes/new` | 未適用 | P4 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../src/app/dashboard/admin/attributes/new/page.tsx>) |
-| `/dashboard/admin/attributes` | 未適用 | P4 | [src/app/dashboard/admin/attributes/page.tsx](<../../src/app/dashboard/admin/attributes/page.tsx>) |
+| `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留（2026-10-09） | P4 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) |
+| `/dashboard/admin/attributes/new` | 本体適用・検証保留（2026-10-09） | P4 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../src/app/dashboard/admin/attributes/new/page.tsx>) |
+| `/dashboard/admin/attributes` | 本体適用・検証保留（2026-10-09） | P4 | [src/app/dashboard/admin/attributes/page.tsx](<../../src/app/dashboard/admin/attributes/page.tsx>) |
 | `/dashboard/admin/categories/new` | 本体適用・検証保留（2026-10-06） | P4 | [src/app/dashboard/admin/categories/new/page.tsx](<../../src/app/dashboard/admin/categories/new/page.tsx>) |
 | `/dashboard/admin/categories` | 本体適用・検証保留（2026-10-06） | P4 | [src/app/dashboard/admin/categories/page.tsx](<../../src/app/dashboard/admin/categories/page.tsx>) |
 | `/dashboard/admin/coupons/new` | 本体適用・検証保留（2026-10-06） | P4 | [src/app/dashboard/admin/coupons/new/page.tsx](<../../src/app/dashboard/admin/coupons/new/page.tsx>) |
@@ -768,3 +768,17 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 5 通知。
 - [x] Step 6 設定。
 - [ ] 認証後実ルート/実Clerkの受け入れ。補助検証だけで全画面判定やDS-BASE-001の全体完了を変更しない。
+
+
+### 監査指摘6画面（2026-10-09）
+
+[計画](priority-six-audit-remediation-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#監査指摘6画面移行記録)。既存全画面判定と今回の修正受け入れは別に記録する。
+
+- [x] DS-PAGE-006 商品一覧: ページャ・関連検証・仕様同期。
+- [x] DS-PAGE-017 ホーム: motion操作寸法・関連検証・仕様同期。
+- [x] DS-PAGE-019 商品詳細: 周辺操作・focus・関連検証・仕様同期。
+- [x] DS-PAGE-041 属性一覧: 実装・補助検証・仕様同期。認証後受け入れ保留。
+- [x] DS-PAGE-040 属性新規: 実装・補助検証・仕様同期。認証後受け入れ保留。
+- [x] DS-PAGE-039 属性選択肢: 実装・補助検証・仕様同期。認証後受け入れ保留。
+
+2026-10-09 監査指摘6画面の修正: 属性3画面を本体適用・補助検証済み・認証後検証保留へ移行。台帳は検証保留31・未適用0、計67を維持する。部品DS-COMP-243〜245を追加し現台帳245項目。監査時点の242項目/216未完了は過去の実測として保持する。

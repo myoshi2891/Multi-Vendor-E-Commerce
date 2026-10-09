@@ -1,12 +1,6 @@
 /** @jest-environment jsdom */
 import React from "react";
-import {
-    render,
-    screen,
-    fireEvent,
-    waitFor,
-    within,
-} from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import type { AttributeDefinition } from "@prisma/client";
 import AttributeDetails, {
@@ -32,48 +26,6 @@ jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));
 // Radix Select はポインタ操作に依存し jsdom で開けない。選択肢の列挙と
 // onValueChange の配線だけを検証したいので、素のボタンへ置き換える
 // （category-details.test.tsx と同じスタブ）。
-jest.mock("@/components/ui/select", () => {
-    const react: typeof React = jest.requireActual("react");
-    const Ctx = react.createContext<(value: string) => void>(() => {});
-    type Children = { children?: React.ReactNode };
-    return {
-        __esModule: true,
-        Select: ({
-            children,
-            value,
-            onValueChange,
-        }: Children & {
-            value?: string;
-            onValueChange: (value: string) => void;
-        }) => (
-            <Ctx.Provider value={onValueChange}>
-                <div data-testid="select" data-value={value}>
-                    {children}
-                </div>
-            </Ctx.Provider>
-        ),
-        SelectContent: ({ children }: Children) => <div>{children}</div>,
-        SelectTrigger: ({ children }: Children) => <div>{children}</div>,
-        SelectValue: ({ placeholder }: { placeholder?: string }) => (
-            <span>{placeholder}</span>
-        ),
-        SelectItem: ({ children, value }: Children & { value: string }) => {
-            const onValueChange = react.useContext(Ctx);
-            return (
-                <button
-                    type="button"
-                    role="option"
-                    aria-selected={false}
-                    data-value={value}
-                    onClick={() => onValueChange(value)}
-                >
-                    {children}
-                </button>
-            );
-        },
-    };
-});
-
 const mockUpsertAttributeDefinition =
     upsertAttributeDefinition as jest.MockedFunction<
         typeof upsertAttributeDefinition
@@ -111,14 +63,10 @@ const definition = (
 /** data-value が `value` の Select（カテゴリ / 型 / スコープ）の中の選択肢を押す。 */
 const chooseOption = (selectValue: string, optionValue: string) => {
     const select = screen
-        .getAllByTestId("select")
-        .find((node) => node.dataset.value === selectValue);
+        .getAllByRole("combobox")
+        .find((node) => (node as HTMLSelectElement).value === selectValue);
     if (!select) throw new Error(`select not found: ${selectValue}`);
-    const target = within(select)
-        .getAllByRole("option")
-        .find((node) => node.dataset.value === optionValue);
-    if (!target) throw new Error(`option not found: ${optionValue}`);
-    fireEvent.click(target);
+    fireEvent.change(select, { target: { value: optionValue } });
 };
 
 describe("AttributeDetails", () => {
@@ -153,7 +101,12 @@ describe("AttributeDetails", () => {
     describe("初期表示", () => {
         it("正常系: 新規では作成用の文言を出し、カテゴリを深さで字下げして並べる", () => {
             // Arrange / Act
-            render(<AttributeDetails categories={CATEGORIES} />);
+            render(
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    categories={CATEGORIES}
+                />
+            );
 
             // Assert
             expect(
@@ -162,11 +115,13 @@ describe("AttributeDetails", () => {
             expect(
                 screen.getByText(/It is inherited by all descendant categories/)
             ).toBeInTheDocument();
-            // 字下げは NO-BREAK SPACE (U+00A0) × depth × 4
+            // 階層の字下げとカテゴリpathを表示する
             const shoes = screen
                 .getAllByRole("option")
-                .find((node) => node.dataset.value === "cat-shoes");
-            expect(shoes?.textContent).toBe(`${" ".repeat(4)}Shoes`);
+                .find(
+                    (node) => (node as HTMLOptionElement).value === "cat-shoes"
+                );
+            expect(shoes?.textContent).toBe("— Shoes /fashion/shoes");
             // スコープは列挙値ではなく表示名で出す
             expect(
                 screen.getByRole("option", { name: "Product" })
@@ -179,7 +134,11 @@ describe("AttributeDetails", () => {
         it("正常系: 編集では既存値を入れ、key（機械キー）は変更できない", () => {
             // Arrange / Act
             render(
-                <AttributeDetails data={definition()} categories={CATEGORIES} />
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    data={definition()}
+                    categories={CATEGORIES}
+                />
             );
 
             // Assert
@@ -207,7 +166,12 @@ describe("AttributeDetails", () => {
             mockUpsertAttributeDefinition.mockResolvedValue(
                 definition({ type: "TEXT", unit: null }) as never
             );
-            render(<AttributeDetails categories={CATEGORIES} />);
+            render(
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    categories={CATEGORIES}
+                />
+            );
             fillNewAttribute();
 
             // Act
@@ -245,7 +209,12 @@ describe("AttributeDetails", () => {
             mockUpsertAttributeDefinition.mockResolvedValue(
                 definition({ type: "ENUM", multiValued: true }) as never
             );
-            render(<AttributeDetails categories={CATEGORIES} />);
+            render(
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    categories={CATEGORIES}
+                />
+            );
             fillNewAttribute();
 
             // Act
@@ -286,7 +255,11 @@ describe("AttributeDetails", () => {
                 definition() as never
             );
             render(
-                <AttributeDetails data={definition()} categories={CATEGORIES} />
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    data={definition()}
+                    categories={CATEGORIES}
+                />
             );
 
             // Act
@@ -326,7 +299,12 @@ describe("AttributeDetails", () => {
             consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
-            render(<AttributeDetails categories={CATEGORIES} />);
+            render(
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    categories={CATEGORIES}
+                />
+            );
             fillNewAttribute();
 
             // Act
@@ -352,7 +330,12 @@ describe("AttributeDetails", () => {
             consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
-            render(<AttributeDetails categories={CATEGORIES} />);
+            render(
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    categories={CATEGORIES}
+                />
+            );
             fillNewAttribute();
 
             // Act
@@ -372,7 +355,12 @@ describe("AttributeDetails", () => {
 
         it("異常系: TEXT の多値・facetable はサーバーを呼ばずに止める（D-7）", async () => {
             // Arrange —— 型は既定の TEXT のまま
-            render(<AttributeDetails categories={CATEGORIES} />);
+            render(
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    categories={CATEGORIES}
+                />
+            );
             fillNewAttribute();
             fireEvent.click(
                 screen.getByRole("checkbox", { name: "Multi-valued" })
@@ -400,7 +388,12 @@ describe("AttributeDetails", () => {
 
         it("異常系: カテゴリ未選択ならサーバーを呼ばない", async () => {
             // Arrange
-            render(<AttributeDetails categories={CATEGORIES} />);
+            render(
+                <AttributeDetails
+                    saveAction={mockUpsertAttributeDefinition}
+                    categories={CATEGORIES}
+                />
+            );
             fireEvent.change(screen.getByLabelText("Key"), {
                 target: { value: "screen_size" },
             });

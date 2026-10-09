@@ -78,7 +78,7 @@ export default function CategoryLink({
         // /browse 側の正準化で 1 ページ目へ寄るが、足りる場合は寄らない）。
         params.delete("page");
         params.set("category", slug);
-        replace(`${pathname}?${params.toString()}`);
+        replace(`${pathname}?${params.toString()}`, { scroll: false });
         setExpand(true);
     };
 

@@ -115,3 +115,7 @@ TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/desig
 ### P2残存6画面の表示要件（2026-10-09）
 
 比較・Wishlist・フォロー店舗・閲覧履歴・通知・設定は共通purchase tokenを使用する。番号ページングは44px以上、focusを視認可能とし、空/読み込み/失敗/再試行も同じ意味色を継承する。通知はRead/Unreadを文字で区別し、一括既読の進行/成功をstatusで通知する。取得失敗でも見出しと正規化cursorを保持する再読み込みを提供する。設定は型付きClerk appearanceと独立Portalにthemeを供給する。既存取得・認可・URL・既読化契約を維持。[計画](../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)。
+
+### 監査指摘6画面の表示受け入れ（2026-10-09）
+
+商品一覧のページング、homeのmotion切替、商品詳細のcategory/review/follow/share/SKUコピーは44px以上の操作領域と可視focusを持つ。属性3画面は管理者ブランドlight/dark・名前付きheading/form・独立Portal・入力/状態通知を適用し、送信中の入力変更/二重送信/dismissを防ぐ。失敗時の入力保持/retryと既存のURL/ENUM/immutable key/value/論理削除契約を維持。[計画](../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。

@@ -1,5 +1,9 @@
 # デザインシステム移行 — 進捗ノート
 
+## 2026-10-09 監査指摘修正後の現在地
+
+公開3画面の指摘操作を修正し、実3幅で確認。属性3画面は個別UI/Portal/Action Propsを適用し補助検証済み、認証後実受け入れ保留。現在のソースは本体適用59・仮実装1・転送7の計67。部品245＝検証済み26・実装済み12・保留98・TODO109（未完了219は再実装数ではない）。下記の全監査の数値は修正前の歴史として維持する。[証跡](#監査指摘6画面移行記録)。
+
 ## 2026-10-09 全実ルート再監査
 
 67ルート＝画面本体60（公開20、認証後機能39、仮実装1）＋転送7。ソース判定は本体適用56・個別部分移行3・仮実装1・転送7。242部品＝検証済み26・実装済み12・保留91・TODO113。下記の66ページ/240部品/55適用等は過去時点の集計。現在の正確な範囲・証跡は[全実画面再監査](full-route-reaudit-2026-10-09.md)を参照。
@@ -7,7 +11,7 @@
 公開20画面のPC/モバイル初期表示を目視確認。browseは旧ページング色/27px操作、homeはmotion切替32〜38px、商品詳細はカテゴリ/評価/share/follow等の操作寸法不足。属性3画面は親theme適用済み・個別UI/Portal部分移行。seller/storesは仮実装。修正対象既知6画面＋仮実装1だが、認証後機能39は本体未確認（属性3を含む）で確定総残数ではない。台帳を全状態検証済みへ昇格しない。
 
 
-- 更新日: 2026-10-06
+- 更新日: 2026-10-09
 - 状態: 運用文書・ルール整備済み／個別移行は継続
 - 対象・優先度・受け入れ条件: [移行計画](../../../plans/layout-design/design-system-adoption-plan.md)。
 - 実施手順: [design-system-workflow](../../../.agent/skills/design-system-workflow/SKILL.md)。
@@ -87,9 +91,9 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録) |
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、実route保留 |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録) |
-| DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 未実施 |
-| DS-PAGE-040 | `/dashboard/admin/attributes/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 未実施 |
-| DS-PAGE-041 | `/dashboard/admin/attributes` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 未実施 |
+| DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
+| DS-PAGE-040 | `/dashboard/admin/attributes/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
+| DS-PAGE-041 | `/dashboard/admin/attributes` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
 | DS-PAGE-042 | `/dashboard/admin/categories/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-044 | `/dashboard/admin/coupons/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
@@ -278,8 +282,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-153 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/product-status-select.tsx](<../../../src/components/dashboard/forms/product-status-select.tsx>) | TODO | 未実施 |
 | DS-COMP-154 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/store-status-select.tsx](<../../../src/components/dashboard/forms/store-status-select.tsx>) | TODO | 未実施 |
 | DS-COMP-155 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/category-details.tsx](<../../../src/components/dashboard/forms/category-details.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
-| DS-COMP-156 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/attribute-details.tsx](<../../../src/components/dashboard/forms/attribute-details.tsx>) | TODO | 未実施 |
-| DS-COMP-157 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/attribute-option-details.tsx](<../../../src/components/dashboard/forms/attribute-option-details.tsx>) | TODO | 未実施 |
+| DS-COMP-156 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/attribute-details.tsx](<../../../src/components/dashboard/forms/attribute-details.tsx>) | 保留 | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
+| DS-COMP-157 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/attribute-option-details.tsx](<../../../src/components/dashboard/forms/attribute-option-details.tsx>) | 保留 | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
 | DS-COMP-158 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/attribute-fields.tsx](<../../../src/components/dashboard/forms/attribute-fields.tsx>) | TODO | 未実施 |
 | DS-COMP-159 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/offer-tag-details.tsx](<../../../src/components/dashboard/forms/offer-tag-details.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-160 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/forms/admin-coupon-details.tsx](<../../../src/components/dashboard/forms/admin-coupon-details.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
@@ -291,8 +295,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-166 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/shared/store-summary.tsx](<../../../src/components/dashboard/shared/store-summary.tsx>) | TODO | 未実施 |
 | DS-COMP-167 | P3/P4 | 業務フォーム・編集部品（P3/P4） | [src/components/dashboard/shared/store-order-summary.tsx](<../../../src/components/dashboard/shared/store-order-summary.tsx>) | TODO | 未実施 |
 | DS-COMP-168 | P4 | 印刷（P4） | [src/components/store/order-page/pdf-invoice.tsx](<../../../src/components/store/order-page/pdf-invoice.tsx>) | TODO | 未実施 |
-| DS-COMP-169 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/attributes/[id]/options/columns.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/columns.tsx>) | TODO | 未実施 |
-| DS-COMP-170 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/attributes/columns.tsx](<../../../src/app/dashboard/admin/attributes/columns.tsx>) | TODO | 未実施 |
+| DS-COMP-169 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/attributes/[id]/options/columns.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/columns.tsx>) | 保留 | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
+| DS-COMP-170 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/attributes/columns.tsx](<../../../src/app/dashboard/admin/attributes/columns.tsx>) | 保留 | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
 | DS-COMP-171 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/categories/columns.tsx](<../../../src/app/dashboard/admin/categories/columns.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-172 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/coupons/columns.tsx](<../../../src/app/dashboard/admin/coupons/columns.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
 | DS-COMP-173 | P3/P4 | データテーブルの画面別列・操作（P3/P4） | [src/app/dashboard/admin/offer-tags/columns.tsx](<../../../src/app/dashboard/admin/offer-tags/columns.tsx>) | TODO | P4の6実ルートからは未使用。旧部品は利用監査対象、全scope移行済みとしない。[P4証跡](#p4優先6画面移行記録) |
@@ -368,6 +372,9 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-240 | P2 | ヘッダーの未読バッジ・通知リンク | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 実装済み | RTL のみ。ブラウザー表示は認証後ヘッダーの fixture が無く未確認 |
 | DS-COMP-241 | P1 | 購入theme tokens | [purchase-theme.module.css](../../../src/components/store/shared/purchase-theme.module.css) | 保留 | store限定・補助検証済み、認証後実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
 | DS-COMP-242 | P1 | store状態タグCSS | [store-status.module.css](../../../src/components/shared/store-status.module.css) | 保留 | 34状態/明暗祖先/3幅/AA補助検証済み、認証後order実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
+| DS-COMP-243 | P4 | 属性一覧Client境界 | [AdminAttributes](../../../src/components/dashboard/admin/admin-attributes.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
+| DS-COMP-244 | P4 | 属性操作scope | [attribute CSS](../../../src/components/dashboard/admin/attribute.module.css) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
+| DS-COMP-245 | P4 | 属性選択肢Client境界 | [AdminAttributeOptions](../../../src/components/dashboard/admin/admin-attribute-options.tsx) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -1098,3 +1105,57 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 | 通知 | adc85009 |
 | 設定 | 042d5518 |
 | 最終同期 | 本記録とPortal抑制修正のコミット |
+
+
+## 監査指摘6画面移行記録
+
+2026-10-09。[保存計画](../../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。DS-PAGE-006/017/019/041/040/039の実装・関連検証・文書同期を完了。既存画面全体の判定・保留と今回の修正範囲を区別する。
+
+### Step 1 商品一覧
+
+DS-PAGE-006: editorialページャとCollection pages名を適用。Red: 新RTL1件はnavigation欠如、browser3幅は高さ27pxで失敗。Green/Refactor: 関連RTL12/12、purchase audit browse3/3、tsc成功。検索/複数size/属性/sort保持、44px、hover濃金、focus、axe AA、横溢れなし、390px画像目視を確認。listen EPERMは環境エラーとして除外し、許可済み実行で再検証。公開実ルートは最終検証で確認するため画面全体判定は維持。
+
+確認したSDD overview/data-modelは業務範囲/DBを変えないため変更不要。requirements/interfaces/quality/testingの既存契約を保持する。
+
+### Step 2 ホーム
+
+DS-PAGE-017: motion切替にmin-height/min-width44px。Red: 1440/768幅38px、390幅32pxで先行browser3件失敗。Green/Refactor: browser3/3、既存motion RTL11/11回帰。設定reduceでdisabled、設定変更後Pause/Resume・aria-pressed・focus・axe AA・横溢れを確認。新機能のRTL Redは創作しない。機能/URL/APIは維持。
+
+### Step 3 商品詳細
+
+DS-PAGE-019: category/評価/follow/share/SKUを44pxに統一。Red: browser3幅のcategory36px、続いて実next-shareのinline outline:noneを検出。共有tile内のみfocus-visibleを補正。Green/Refactor: browser3/3、関連RTL26/26。コピー/評価/フォロー、カテゴリEscape、axe AA、横溢れなし、390px画像目視。fixture祖先の初期誤り（productBody不足）を直し、誤配置によるcontrast違反は実ページ不具合として数えない。
+
+### Step 4 属性一覧・共通フォーム
+
+DS-PAGE-041: SellerPage/DataTable seller、作成/編集Portal、native階層select、Action Props、送信中ロック/失敗保持/retry/status。Red: RTL3件（見出し/取得失敗/名前付きフォーム）、browser6件（h1欠如）。初回adapterのnotFound export不足はRedから除外。Green/Refactor: RTL28/28、browser6/6、tsc成功。1440/768/390×light/dark、検索/空/取得失敗、編集key不変、Escape focus復帰、pending中Escape禁止、失敗保持/retry、axe AAと画像目視。認証後ADMIN実受け入れは保留。新規routeへsaveActionを接続した変更は共通フォームの必須Propsへの追随であり、新規画面のレイアウト移行はStep5。
+
+### Step 5 属性新規
+
+DS-PAGE-040: SellerPageの名前付き見出しとカテゴリ取得失敗/Retryを適用。Red: RTL2件（h1/取得失敗）、browser6件（h1欠如）。Green/Refactor: 関連RTL14/14、browser6/6。1440/768/390×light/dark、未入力validation、ENUM/VARIANT/多値保持、送信中入力ロック、失敗保持/retry、成功statusと既存一覧遷移、axe AA・overflow・画像目視。認証後ADMIN実ルートは保留。
+
+### Step 6 属性選択肢・操作寸法の最終補正
+
+DS-PAGE-039: SellerPage/フォーム/表/編集Portalと型付きAttributeOptionActionsを適用。Red: RTL2件（名前付きregion/formと注入save）、browser6件（名前付きform欠如）。Green/Refactor: 属性関連+既存P4 RTL66/66、選択肢browser6/6。ENUM限定404、archived定義の追加非表示、value不変、連続追加後resetとsortOrder+1、pending入力/dismissロック、失敗保持/retry、archive、focus復帰、AA/overflowを確認。認証後ADMIN実ルートは未確認。
+
+最終操作監査でcreate button40pxをRed確認し、属性scopeのみ44pxへ補正。MasterDialog/CustomModalは任意classNameを追加し、属性独立Portalへ専用CSSを渡す。他callerの既定は維持。隠しcheckbox input16pxは合否対象とせず、ラベル込み44pxを確認。touch regression1/1、tsc/Playwright構成チェック成功。全体検証と最終画像目視は下記へ追記する。
+
+### 最終自己レビュー
+
+| 対象 | 変更/状態 | 最終証跡 | 実ルート制約 |
+|---|---|---|---|
+| `DS-PAGE-006` | editorial pager・URL条件保持・44px/focus | purchaseの新3幅+既存回帰、公開実3幅 | 画面全体の他状態/共有callerは別 |
+| `DS-PAGE-017` | motion44px・reduce/Pause/Resume保持 | purchaseの新3幅+既存回帰、公開実3幅 | 実WebGL/全データ状態は別 |
+| `DS-PAGE-019` | category/review/follow/share/SKU44px、SDK focus | purchaseの新3幅・RTL26、公開実3幅 | 認証後follow/外部共有送信は未実行 |
+| `DS-PAGE-041` | heading/table/form/Portal/light-dark/Action Props | 新browser6ケース、属性RTL56 | 認証後ADMIN実ルート保留 |
+| `DS-PAGE-040` | heading/validation/pending/error/retry/success | 新browser6ケース、属性RTL56 | 認証後ADMIN実ルート保留 |
+| `DS-PAGE-039` | ENUM/archived/immutable value/reset/table/edit | 新browser6ケース、属性RTL56 | 認証後ADMIN実ルート保留 |
+
+Refactor後: 属性+既存P4 RTL66/66、既存P4を含む全browser56/56、購入共通browser53/53。追加touch/surface回帰1/1でbutton/input/select/close44px、checkbox label44px、既存themeによる影なし/3pxを確認（後追加の影/丸み検査はRedとして数えない）。管理者3幅×light/dark・初期/空/検索/validation/pending/error/retry/success/編集・focus/Escape復帰・axe AA（contrast除外なし）、公開fixture全幅と公開実3画面×3幅を確認。最終p4の390px newattribute light/options dark画像と公開実商品詳細390pxを目視。新規propsへの追随以外のDB/query/認可/業務・計算変更なし。
+
+SDD overview/data-modelは範囲・DB変更がないため更新不要、他SDD/画面要件/設計/tasksを同期。認証後ADMIN実受け入れはstorageState未提供で保留。解除条件: 検証用ADMINログイン状態とschema-currentテストDBで3実ルート（light/dark・操作・実Portal）を確認。fixtureで業務操作を検証し、既存DBへ検証用保存を行っていない。
+
+最終全体検証: `bun run test -- --runInBand --json --outputFile=/tmp/ds-remediation-jest.json`は3091/3094、3skip、319 suites（318pass/1skip）、127 snapshots。`DESIGN_SUITE=purchase bun run test:design`53/53、`DESIGN_SUITE=p4 bun run test:design`56/56、後追加surface回帰1/1。`DATABASE_URL=<既存local dev DB> DESIGN_AUDIT_INVENTORY=/tmp/ds-remediation-route-inventory.json DESIGN_SUITE=purchase-public bun run test:design -- --grep 'audit public'`3/3（実3画面×3幅）。
+
+`bunx tsc --noEmit`/`bun run lint`/`bun run check:playwright`成功、lint既存warning8。sandbox内buildはcompile段階で進まず、自分で起動したprocessのみ停止（exit143）してsandbox外で同じ`bun run build`を再実行し成功。Next devのtsconfig include追加は検証副作用として元のincludeへ戻した。全体coverage/Integrationは未再測定で過去値を保持する。
+
+`bun run coverage:dashboard`で395 test files / 400 LCOV entries / 18/80（23%）を再生成。LCOVは既存スナップショットを使用し、coverage率は再測定していない。文書の相対リンクと台帳IDの重複・件数を確認。

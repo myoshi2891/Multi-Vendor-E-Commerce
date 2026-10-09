@@ -17,6 +17,6 @@ describe("SizeLink", () => {
         const button = screen.getByRole("button", { name: "M" });
         expect(button).toHaveAttribute("aria-pressed", "false");
         fireEvent.click(button);
-        expect(replace).toHaveBeenCalledWith("/browse?category=jewelry&size=M");
+        expect(replace).toHaveBeenCalledWith("/browse?category=jewelry&size=M", { scroll: false });
     });
 });

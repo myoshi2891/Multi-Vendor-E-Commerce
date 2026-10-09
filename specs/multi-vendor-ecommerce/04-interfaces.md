@@ -310,3 +310,7 @@ Product-review Pagination accepts optional `variant: "default" | "editorial"`. E
 [横断受け入れ仕様](../../docs/design/purchase-residual/requirements.md)を適用。browse/store/product/cart/checkout/orderのrootとPortalにスコープ付きpurchase themeを合成。共有住所フォームは既定配色fallbackを保持し、注文・支払い・商品状態タグは任意`variant="store"`のみ意味色を適用する。API・DB・認可・金額・在庫・決済遷移契約は変更なし。overview/data-modelの更新は不要。
 
 TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。全体Jest3075/3078（3 skipped）・317スイート（316 passed/1 skipped）、127 snapshots。購入補助ブラウザー68/68（purchase44、commerce24）とaxe AAを確認。専用DB/Clerk/外部SDKを伴う受け入れは保留。
+
+### 監査指摘6画面の表示インターフェース（2026-10-09）
+
+Paginationの任意ariaLabel（既定Review pages）をbrowseでCollection pagesへ指定する。AttributeDetails/AttributeOptionDetailsは型付きsaveActionと任意onBusyChangeを受け取り、一覧の行操作はAttributeActions/AttributeOptionActions経由で既存queryを呼ぶ。MasterDialog/CustomModalは任意classNameで属性Portalの表示scopeを指定可能。Server Actionの引数/戻り値、DB/認可/公開URL変更なし。

@@ -55,7 +55,8 @@ const ProductList: FC<Props> = ({ products, title, link, arrow, variant }) => {
                     )}
                 >
                     {products.map((product) => (
-                        <ProductCard key={product.id} product={product} variant={variant} />
+                        // 閲覧履歴はバリアント単位で、同一商品が複数枚並ぶため先頭バリアントも key に含める
+                        <ProductCard key={`${product.id}:${product.variants[0]?.variantId ?? ''}`} product={product} variant={variant} />
                     ))}
                 </div>
             ) : variant === 'editorial' ? (

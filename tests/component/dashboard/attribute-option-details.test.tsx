@@ -65,7 +65,12 @@ describe("AttributeOptionDetails", () => {
     describe("初期表示", () => {
         it("正常系: 新規では追加用の見出しとボタンを出し、value を入力できる", () => {
             // Arrange / Act
-            render(<AttributeOptionDetails definitionId="def-1" />);
+            render(
+                <AttributeOptionDetails
+                    saveAction={mockUpsertAttributeOption}
+                    definitionId="def-1"
+                />
+            );
 
             // Assert
             expect(
@@ -78,7 +83,11 @@ describe("AttributeOptionDetails", () => {
         it("正常系: 編集では既存値を入れ、value（機械値）は変更できない", () => {
             // Arrange / Act
             render(
-                <AttributeOptionDetails definitionId="def-1" data={option()} />
+                <AttributeOptionDetails
+                    saveAction={mockUpsertAttributeOption}
+                    definitionId="def-1"
+                    data={option()}
+                />
             );
 
             // Assert
@@ -96,7 +105,12 @@ describe("AttributeOptionDetails", () => {
         it("正常系: 追加後はフォームを空に戻し、並び順を 1 つ進めて refresh する", async () => {
             // Arrange
             mockUpsertAttributeOption.mockResolvedValue(option() as never);
-            render(<AttributeOptionDetails definitionId="def-1" />);
+            render(
+                <AttributeOptionDetails
+                    saveAction={mockUpsertAttributeOption}
+                    definitionId="def-1"
+                />
+            );
             fillNewOption();
 
             // Act
@@ -125,7 +139,11 @@ describe("AttributeOptionDetails", () => {
             // Arrange
             mockUpsertAttributeOption.mockResolvedValue(option() as never);
             render(
-                <AttributeOptionDetails definitionId="def-1" data={option()} />
+                <AttributeOptionDetails
+                    saveAction={mockUpsertAttributeOption}
+                    definitionId="def-1"
+                    data={option()}
+                />
             );
 
             // Act
@@ -166,7 +184,12 @@ describe("AttributeOptionDetails", () => {
             consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
-            render(<AttributeOptionDetails definitionId="def-1" />);
+            render(
+                <AttributeOptionDetails
+                    saveAction={mockUpsertAttributeOption}
+                    definitionId="def-1"
+                />
+            );
             fillNewOption();
 
             // Act
@@ -190,7 +213,12 @@ describe("AttributeOptionDetails", () => {
             consoleSpy = jest
                 .spyOn(console, "error")
                 .mockImplementation(() => {});
-            render(<AttributeOptionDetails definitionId="def-1" />);
+            render(
+                <AttributeOptionDetails
+                    saveAction={mockUpsertAttributeOption}
+                    definitionId="def-1"
+                />
+            );
             fillNewOption();
 
             // Act
@@ -208,7 +236,12 @@ describe("AttributeOptionDetails", () => {
 
         it("異常系: value が機械値の形式でなければサーバーを呼ばない", async () => {
             // Arrange
-            render(<AttributeOptionDetails definitionId="def-1" />);
+            render(
+                <AttributeOptionDetails
+                    saveAction={mockUpsertAttributeOption}
+                    definitionId="def-1"
+                />
+            );
             fireEvent.change(screen.getByLabelText("Value"), {
                 target: { value: "Whole Wheat" },
             });

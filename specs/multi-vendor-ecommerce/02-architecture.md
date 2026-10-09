@@ -87,3 +87,9 @@ StoreHeader loads cookie and Clerk identity on the server, then supplies the exi
 [横断受け入れ仕様](../../docs/design/purchase-residual/requirements.md)を適用。browse/store/product/cart/checkout/orderのrootとPortalにスコープ付きpurchase themeを合成。共有住所フォームは既定配色fallbackを保持し、注文・支払い・商品状態タグは任意`variant="store"`のみ意味色を適用する。API・DB・認可・金額・在庫・決済遷移契約は変更なし。overview/data-modelの更新は不要。
 
 TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。全体Jest3075/3078（3 skipped）・317スイート（316 passed/1 skipped）、127 snapshots。購入補助ブラウザー68/68（purchase44、commerce24）とaxe AAを確認。専用DB/Clerk/外部SDKを伴う受け入れは保留。
+
+### 属性画面のClient境界（2026-10-09）
+
+属性一覧のServer ComponentはAttributeActionsをClientへ注入する。属性フォームと行操作のClientはruntimeでsrc/queriesをimportしない。列定義はClient側に置く。既存管理者themeを個別UI/Portalへ適用し、requireAdminとデータ契約は維持する。
+
+属性選択肢も型付きAttributeOptionActionsを注入し、getAttributeOptionColumnsはClientで構築する。新規scopeのCSSは属性画面とその独立Portalのみに適用する。

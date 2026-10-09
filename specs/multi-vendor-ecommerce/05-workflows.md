@@ -215,3 +215,7 @@ New-store users complete validated profile/contact/logo/cover fields in the stan
 一覧検索から編集すると最新データを取得し、null/失敗は入力画面を表示せずretryする。閉じた編集sessionの応答は無視する。保存/削除中は重複操作とdialog終了を防止し、失敗時入力を保持する。カテゴリ/offer作成は既存一覧URLへ、編集とadmin coupon保存/toggle/削除はrefreshする。削除は確認とキャンセルを経由する。
 
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
+
+### 属性管理の表示状態（2026-10-09）
+
+作成/編集はvalidation→保存中（入力/二重送信/dismiss禁止）→成功status/既存遷移、または入力保持/error→同じフォームでretry。定義編集keyと選択肢編集valueは不変。選択肢作成成功後は連続追加用にreset/sortOrder+1、archived定義で追加formを隠す。業務状態遷移/論理削除/型変換/ENUM限定404は従来契約を保持する。

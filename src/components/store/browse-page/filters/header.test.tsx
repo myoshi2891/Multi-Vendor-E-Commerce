@@ -48,7 +48,7 @@ describe("FiltersHeader", () => {
         fireEvent.click(screen.getByRole("button", { name: "Remove offer sale" }));
 
         // Assert
-        expect(replace).toHaveBeenCalledWith("/browse?category=rings&offer=new");
+        expect(replace).toHaveBeenCalledWith("/browse?category=rings&offer=new", { scroll: false });
     });
 
     it("単一値クエリのチップはクエリごと取り除く", () => {
@@ -57,7 +57,7 @@ describe("FiltersHeader", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Remove category rings" }));
 
-        expect(replace).toHaveBeenCalledWith("/browse?sort=most-popular");
+        expect(replace).toHaveBeenCalledWith("/browse?sort=most-popular", { scroll: false });
     });
 
     it("Clear All ですべてのクエリを外す", () => {
@@ -66,6 +66,6 @@ describe("FiltersHeader", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Clear All" }));
 
-        expect(replace).toHaveBeenCalledWith("/browse");
+        expect(replace).toHaveBeenCalledWith("/browse", { scroll: false });
     });
 });

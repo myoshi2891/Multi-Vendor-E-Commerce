@@ -577,3 +577,92 @@ for (const width of [1440, 768, 390]) {
         await expect(page.getByRole("link", { name: "Explore items" })).toBeVisible();
     });
 }
+
+
+for (const width of [1440, 768, 390]) {
+    test(`audit browse ${width}: collection pager hit areas and query retention`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/browse?screen=browse&size=M&size=L&attr.material=linen&attr.material=wool&search=piece&sort=top-rated&page=1");
+        const pager = page.locator("main").getByRole("button", { name: "2", exact: true });
+        const box = await pager.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+        const nav = page.getByRole("navigation", { name: "Collection pages" });
+        await pager.focus();
+        await expect(pager).toHaveCSS("outline-style", "solid");
+        await pager.hover();
+        await expect(pager).toHaveCSS("color", "rgb(120, 96, 53)");
+        expect((await new AxeBuilder({page}).include('main').withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+        await page.screenshot({ path: info.outputPath(`audit-browse-${width}.png`), fullPage: true });
+        await pager.press("Enter");
+        const query = new URL(page.url()).searchParams;
+        expect(query.get("page")).toBe("2");
+        expect(query.getAll("size")).toEqual(["M", "L"]);
+        expect(query.getAll("attr.material")).toEqual(["linen", "wool"]);
+        expect(query.get("search")).toBe("piece");
+        expect(query.get("sort")).toBe("top-rated");
+        await expect(nav.getByRole("button", {name: "2", exact: true})).toHaveAttribute("aria-current", "page");
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    });
+}
+
+
+for (const width of [1440, 768, 390]) {
+    test(`audit home ${width}: motion hit area, focus and preference`, async ({page}, info) => {
+        await page.setViewportSize({width, height: 1000});
+        await page.goto('/?screen=home');
+        const reduced = page.getByRole('button', {name: /motion reduced/});
+        expect((await reduced.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+        expect((await reduced.boundingBox())!.width).toBeGreaterThanOrEqual(44);
+        await expect(reduced).toBeDisabled();
+        await page.emulateMedia({reducedMotion: 'no-preference'});
+        const pause = page.getByRole('button', {name: /Pause animation/});
+        await pause.focus();
+        await expect(pause).toHaveCSS('outline-style', 'solid');
+        await pause.press('Enter');
+        const resume = page.getByRole('button', {name: /Resume animation/});
+        await expect(resume).toHaveAttribute('aria-pressed', 'true');
+        await resume.press('Enter');
+        await expect(pause).toHaveAttribute('aria-pressed', 'false');
+        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({path: info.outputPath(`audit-home-${width}.png`), fullPage: true});
+    });
+}
+
+
+for (const width of [1440, 768, 390]) {
+    test(`audit product ${width}: peripheral actions, copy, review and follow`, async ({page}, info) => {
+        await page.addInitScript(() => {
+            Object.defineProperty(navigator, 'clipboard', {value: {writeText: async (text: string) => { document.documentElement.dataset.copied = text; }}});
+            class FixtureSocket { close() {} };
+            Object.defineProperty(window, 'WebSocket', {value: FixtureSocket});
+        });
+        await page.setViewportSize({width, height: 1000});
+        await page.goto('/?screen=product&audit=1');
+        const controls = [page.getByRole('button', {name: 'Browse categories'}), page.getByRole('button', {name: '5 stars (3)'}), page.getByRole('button', {name: 'Follow boutique'}), page.getByRole('button', {name: /SKU-001/}), page.getByRole('button', {name: 'Copy product link'}), ...['Facebook','X','WhatsApp','Pinterest'].map(name => page.getByRole('button', {name: `Share on ${name}`}))];
+        for (const control of controls) {
+            await expect(control).toBeVisible();
+            const box = await control.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await control.focus();
+            await expect(control).toHaveCSS('outline-style', 'solid');
+        }
+        await controls[0].press('Enter');
+        await expect(page.getByRole('link', {name:'Art',exact:true})).toHaveAttribute('href','/browse?category=art');
+        await controls[0].press('Escape');
+        await expect(controls[0]).toBeFocused();
+        await controls[1].press('Enter');
+        await expect(controls[1]).toHaveAttribute('aria-pressed','true');
+        await controls[2].press('Enter');
+        await expect(page.getByRole('button',{name:'Following',exact:true})).toHaveAttribute('aria-pressed','true');
+        await controls[3].press('Enter');
+        await expect(page.locator('html')).toHaveAttribute('data-copied','SKU-001');
+        await controls[4].press('Enter');
+        await expect(page.locator('html')).toHaveAttribute('data-copied', /product\/considered-piece\/ivory$/);
+        expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({path: info.outputPath(`audit-product-${width}.png`), fullPage: true});
+    });
+}

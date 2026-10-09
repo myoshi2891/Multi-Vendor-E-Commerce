@@ -1175,3 +1175,13 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ 設定の型付きappearance・独立Portal配色/focus/reduced-motion。
 - ✅ 全体Jest3077成功、priority29＋settings7成功、型/Lintエラー0、仕様/QA同期。
 - 保留: 認証後6実ルートと実Clerk。[正本と解除条件](./QA_HANDOFF.md#ds-p2-residual-browser)。
+
+### 監査指摘6画面（2026-10-09）
+
+- Step 1 DS-PAGE-006: ✅ Completed (2026-10-09)。
+- Step 2 DS-PAGE-017: ✅ Completed (2026-10-09)。
+- Step 3 DS-PAGE-019: ✅ Completed (2026-10-09)。
+- Step 4 DS-PAGE-041: ✅ Completed (2026-10-09)、認証後実ルート受け入れ保留。
+- Step 5 DS-PAGE-040: ✅ Completed (2026-10-09)、認証後実ルート受け入れ保留。
+- Step 6 DS-PAGE-039: ✅ Completed (2026-10-09)、認証後実ルート受け入れ保留。
+- [検証証跡](../design/design-system/PROGRESS.md#監査指摘6画面移行記録)。

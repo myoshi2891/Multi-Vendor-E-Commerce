@@ -240,6 +240,8 @@
     z-index: 2;
 }
 .motionControl button {
+    min-height: 44px;
+    min-width: 44px;
     display: flex;
     align-items: center;
     gap: 9px;

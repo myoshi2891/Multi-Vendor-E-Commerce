@@ -12,10 +12,12 @@ import {
 import styles from "../design/seller.module.css";
 export default function MasterDialog<T>({
     label,
+    className,
     loadAction,
     children,
 }: {
     label: string;
+    className?: string;
     loadAction?: () => Promise<T | null>;
     children: (
         data: T | undefined,
@@ -62,13 +64,16 @@ export default function MasterDialog<T>({
             }}
         >
             <DialogTrigger asChild>
-                <Button variant={loadAction ? "outline" : "default"}>
+                <Button
+                    className={className}
+                    variant={loadAction ? "outline" : "default"}
+                >
                     {label}
                 </Button>
             </DialogTrigger>
             <DialogContent
                 closeDisabled={busy}
-                className={`${styles.theme} ${styles.dialog}`}
+                className={`${styles.theme} ${styles.dialog} ${className ?? ""}`}
                 onEscapeKeyDown={(e) => {
                     if (locked.current) e.preventDefault();
                 }}

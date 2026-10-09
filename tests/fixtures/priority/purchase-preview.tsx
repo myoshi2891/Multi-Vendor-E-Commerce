@@ -15,6 +15,7 @@ import { products, multiVariantProducts } from "./purchase-data";
 import StoreProducts from "@/components/store/store-page/store-products";
 import StoreDetails from "@/components/store/store-page/store-details";
 import QuantitySelector from "@/components/store/product-page/quantity-selector";
+import BrowsePagination from "@/components/store/browse-page/browse-pagination";
 import Pagination from "@/components/store/shared/pagination";
 import ReviewFilters from "@/components/store/product-page/reviews/filters";
 import CategoryFilter from "@/components/store/browse-page/filters/category/category-filter";
@@ -26,6 +27,10 @@ import type { ReviewWithImageType } from "@/lib/types";
 import ReviewsSort from "@/components/store/product-page/reviews/sort";
 import type { ReviewsOrderType } from "@/lib/types";
 import type { ReviewsFilterType } from "@/lib/types";
+import ProductNavigation from "@/components/store/product-page/product-navigation";
+import ProductInfo from "@/components/store/product-page/product-info/product-info";
+import StoreCard from "@/components/store/cards/store-card";
+import type { ProductPageDataType } from "@/lib/types";
 import productStyles from "@/components/store/product-page/product.module.css";
 import browseStyles from "@/app/(store)/browse/browse.module.css";
 const screen = new URLSearchParams(location.search).get("screen") ?? "home";
@@ -110,7 +115,14 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
                 </main>
             ) : screen === "product" ? (
                 <main className={productStyles.page}>
-                    <h1>Made to be yours</h1>
+                    {new URLSearchParams(location.search).has("audit") ? <>
+                        <StoreToaster />
+                        <ProductNavigation categories={[{name: "Art", url: "art"}]} offers={[]} />
+                        <div className={productStyles.productBody}>
+                            <ProductInfo productData={{name: "Considered piece", sku: "SKU-001", colors: [{name: "Ivory"}], variantInfo: [], sizes: [], isSale: false, variantName: "Ivory", variantDescription: "A thoughtful piece.", variantId: "variant", variantSlug: "ivory", productSlug: "considered-piece", images: [{url: "/assets/brand/star.svg"}], store: {name: "The boutique", url: "boutique", logo: "/assets/brand/star.svg"}, rating: 4.5, reviewsStatistics: {totalReviews: 3, ratingStatistics: []}} as unknown as ProductPageDataType} sizeId={undefined} handleChange={() => {}} setVariantImages={() => {}} setActiveImage={() => {}} />
+                        </div>
+                        <StoreCard editorial store={{id: "store", name: "The boutique", url: "boutique", logo: "/assets/brand/star.svg", followersCount: 3, isUserFollowingStore: false}} />
+                    </> : <h1>Made to be yours</h1>}
                     <QuantitySelector
                         productId="product"
                         variantId="variant"
@@ -162,6 +174,7 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
                     <FilterPanel>
                         <CategoryFilter categories={[{ ...createMockCategory({ name: "Art", url: "art" }), children: [] }]} />
                     </FilterPanel>
+                    <BrowsePagination page={Number(new URLSearchParams(location.search).get("page") ?? 1)} totalPages={3} />
                     <ProductList
                         products={
                             new URLSearchParams(location.search).has("pieces")

@@ -32,5 +32,5 @@ export default function BrowsePagination({
         router.push(`/browse?${params.toString()}`);
     };
 
-    return <Pagination page={page} totalPages={totalPages} setPage={goTo} />;
+    return <Pagination variant="editorial" ariaLabel="Collection pages" page={page} totalPages={totalPages} setPage={goTo} />;
 }

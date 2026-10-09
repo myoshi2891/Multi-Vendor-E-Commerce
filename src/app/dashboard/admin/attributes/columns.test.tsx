@@ -12,6 +12,7 @@ import {
     archiveAttributeDefinition,
     changeAttributeTypeToNumber,
     restoreAttributeDefinition,
+    upsertAttributeDefinition,
 } from "@/queries/attribute";
 
 const mockSetOpen = jest.fn();
@@ -28,6 +29,7 @@ jest.mock("@/hooks/use-toast", () => ({
     useToast: () => ({ toast: mockToast }),
 }));
 jest.mock("@/queries/attribute", () => ({
+    upsertAttributeDefinition: jest.fn(),
     archiveAttributeDefinition: jest.fn(),
     changeAttributeTypeToNumber: jest.fn(),
     restoreAttributeDefinition: jest.fn(),
@@ -69,6 +71,13 @@ jest.mock("@/components/ui/dropdown-menu", () => {
             ),
     };
 });
+
+const actions = {
+    saveAction: upsertAttributeDefinition,
+    archiveAction: archiveAttributeDefinition,
+    restoreAction: restoreAttributeDefinition,
+    convertAction: changeAttributeTypeToNumber,
+};
 
 const mockArchive = archiveAttributeDefinition as jest.MockedFunction<
     typeof archiveAttributeDefinition
@@ -117,7 +126,11 @@ function renderCell(
         AttributeRow,
         unknown
     >;
-    return render(<>{wrap(cell(ctx))}</>);
+    return render(
+        <AttributeCategoriesProvider categories={[]} actions={actions}>
+            {wrap(cell(ctx))}
+        </AttributeCategoriesProvider>
+    );
 }
 
 const menuItem = (name: string) => screen.getByRole("menuitem", { name });
@@ -243,7 +256,10 @@ describe("admin/attributes columns", () => {
                 },
             ];
             renderCell("actions", attributeRow(), (node) => (
-                <AttributeCategoriesProvider categories={categories}>
+                <AttributeCategoriesProvider
+                    categories={categories}
+                    actions={actions}
+                >
                     {node}
                 </AttributeCategoriesProvider>
             ));
@@ -376,7 +392,9 @@ describe("admin/attributes columns", () => {
             fireEvent.click(menuItem("Archive"));
             await waitFor(() =>
                 expect(
-                    screen.getByRole("button", { name: "Open menu" })
+                    screen.getByRole("button", {
+                        name: "Open menu for Material",
+                    })
                 ).toBeDisabled()
             );
             fireEvent.click(menuItem("Archive"));

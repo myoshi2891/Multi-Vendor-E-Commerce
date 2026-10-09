@@ -28,7 +28,7 @@ export default function SizeLink({ size }: { size: string }) {
     };
 
     const replaceParams = () => {
-        replace(`${pathname}?${params.toString()}`);
+        replace(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     return (

@@ -4,6 +4,7 @@ import { MoveLeft, MoveRight } from "lucide-react";
 import { Dispatch, FC, SetStateAction } from "react";
 
 interface Props {
+    ariaLabel?: string;
     variant?: "default" | "editorial";
     page: number;
     totalPages: number;
@@ -15,6 +16,7 @@ const Pagination: FC<Props> = ({
     totalPages,
     setPage,
     variant = "default",
+    ariaLabel = "Review pages",
 }) => {
     const handlePrevious = () => {
         if (page > 1) {
@@ -31,7 +33,7 @@ const Pagination: FC<Props> = ({
     const Wrapper = variant === "editorial" ? "nav" : "div";
     return (
         <Wrapper
-            aria-label={variant === "editorial" ? "Review pages" : undefined}
+            aria-label={variant === "editorial" ? ariaLabel : undefined}
             className={cn(
                 "w-full px-4 py-0 sm:px-6 lg:px-0",
                 variant === "editorial" && styles.editorial
