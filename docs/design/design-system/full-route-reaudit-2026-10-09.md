@@ -45,7 +45,9 @@
 [保存計画](../../../plans/layout-design/full-route-design-system-reaudit-plan.md)。既存playwright.design.config.tsにfull-route-audit（route、3129）を追加し、tests/browser/full-route-audit-design.spec.tsで測定。新規fixture/configなし。
 
 ```sh
-DATABASE_URL=postgresql://dev:dev@localhost:5432/multivendor_dev bun scripts/design/prepare-route-audit.ts /tmp/design-audit-inventory.json
+# inventory とdevサーバーで同じDBを使う（configはDATABASE_URLを固定しない）
+export DATABASE_URL=postgresql://dev:dev@localhost:5432/multivendor_dev
+bun scripts/design/prepare-route-audit.ts /tmp/design-audit-inventory.json
 DESIGN_AUDIT_INVENTORY=/tmp/design-audit-inventory.json DESIGN_SUITE=full-route-audit bun run test:design
 ```
 
