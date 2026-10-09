@@ -12,3 +12,8 @@
 - 1000px以下で検索と期間・見出し導線を縦へ、480px以下でカードと金額を折り返す。画像・状態・ページャも折り返し、注文IDはoverflow-wrap:anywhere。focus-visibleと44px以上の操作領域。
 
 ブラウザーは実Clerkのテスト顧客を作成/認証/後処理し、初期空を実queryで確認。商品入り・遅延・失敗・再試行はaction応答mockを使う。注文DB作成・購入・seed・DB初期化を行わない。実注文ありの照会は別途運営データで確認可能。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。既存CSS Moduleを役割別purchaseトークンへ接続。購入者scopeに限定し、API/DB/認可とデータ取得境界は変更しない。postpurchase suiteは既存priority serverから本番部品を描画し、トークン注入でcomputed style追従を検証する。

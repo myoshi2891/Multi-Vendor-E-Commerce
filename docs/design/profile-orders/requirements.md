@@ -15,3 +15,8 @@
 | PO-9 | ClientはServer Actionを直接importせず、Server ComponentがPropsで渡す。金額number・日付ISO文字列、表示に不要なフィールドを省いたデータを返す。所有者絞り込み維持。 | query / RTL |
 
 対象外: 注文詳細、購入/決済/配送更新、DB/schema/認可条件、共有status部品、他profile本文。ページ内の条件はClient state（URLと同期せず、再読込でrouteの初期条件へ戻る）。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。共通purchaseトークンで面・文字・罫線・選択・focus・操作寸法を表示し、主操作はgold/inkとする。既存機能要件・URL・所有者制約は維持する。独立Portalはテーマを明示し、意味色は色だけに依存させない。

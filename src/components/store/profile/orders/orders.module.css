@@ -1,6 +1,6 @@
 .orders {
     min-width: 0;
-    color: var(--account-ink, #17251d);
+    color: var(--purchase-ink);
 }
 .heading {
     display: flex;
@@ -10,7 +10,7 @@
     margin-bottom: 34px;
 }
 .eyebrow {
-    color: #75613b;
+    color: var(--purchase-link);
     font-size: 10px;
     letter-spacing: 0.18em;
 }
@@ -23,14 +23,14 @@
     margin: 16px 0;
 }
 .description {
-    color: #536356;
+    color: var(--purchase-muted);
     font-size: 13px;
     line-height: 1.9;
 }
 .support {
-    color: #75613b;
+    color: var(--purchase-link);
     font-size: 12px;
-    min-height: 44px;
+    min-height: var(--purchase-touch, 44px);
     display: inline-flex;
     align-items: center;
     flex-shrink: 0;
@@ -44,20 +44,20 @@
 .orders button:focus-visible,
 .orders input:focus-visible,
 .orders select:focus-visible {
-    outline: 2px solid #75613b;
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 4px;
 }
 .orders button {
     cursor: pointer;
-    min-height: 44px;
+    min-height: var(--purchase-touch, 44px);
 }
 .orders button:disabled {
     cursor: wait;
 }
 .controls {
     min-width: 0;
-    border-top: 1px solid #c9c7b8;
-    border-bottom: 1px solid #c9c7b8;
+    border-top: 1px solid var(--purchase-line);
+    border-bottom: 1px solid var(--purchase-line);
     padding: 18px 0 24px;
     font-size: 12px;
 }
@@ -76,18 +76,18 @@
 .filters button {
     padding: 10px 14px;
     border: 1px solid transparent;
-    color: #536356;
+    color: var(--purchase-muted);
 }
 .filters button:hover {
-    background: #eae6da;
+    background: var(--purchase-selected);
 }
 .filters button[aria-pressed="true"] {
-    background: #e6dfcf;
-    border-color: #75613b;
-    color: #17251d;
+    background: var(--purchase-selected);
+    border-color: var(--purchase-link);
+    color: var(--purchase-ink);
 }
 .clear {
-    color: #75613b;
+    color: var(--purchase-link);
     text-decoration: underline;
     text-underline-offset: 4px;
 }
@@ -100,7 +100,7 @@
 .searchForm label {
     display: block;
     margin-bottom: 10px;
-    color: #536356;
+    color: var(--purchase-muted);
 }
 .searchInput {
     display: flex;
@@ -109,33 +109,33 @@
 .period select {
     min-width: 0;
     width: 100%;
-    min-height: 46px;
-    border: 1px solid #c9c7b8;
-    background: #faf8f2;
+    min-height: var(--purchase-touch, 44px);
+    border: 1px solid var(--purchase-line);
+    background: var(--purchase-input);
     padding: 12px;
-    color: #17251d;
+    color: var(--purchase-ink);
 }
 .searchInput input::placeholder {
-    color: #536356;
+    color: var(--purchase-muted);
 }
 .primary {
-    background: #17251d;
-    color: #f1eee4;
+    background: var(--purchase-gold);
+    color: var(--purchase-ink);
     padding: 12px 22px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 46px;
+    min-height: var(--purchase-touch, 44px);
     font-size: 12px;
 }
 .primary:hover {
-    background: #264433;
+    background: var(--purchase-gold-hover);
 }
 .controls:disabled {
     opacity: 0.7;
 }
 .summary {
-    color: #536356;
+    color: var(--purchase-muted);
     font-size: 12px;
     margin: 24px 0 18px;
 }
@@ -144,8 +144,8 @@
     gap: 20px;
 }
 .card {
-    background: #faf8f2;
-    border: 1px solid #c9c7b8;
+    background: var(--purchase-panel);
+    border: 1px solid var(--purchase-line);
     padding: 24px;
     min-width: 0;
 }
@@ -154,7 +154,7 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 22px;
-    border-bottom: 1px solid #c9c7b8;
+    border-bottom: 1px solid var(--purchase-line);
     padding-bottom: 20px;
 }
 .identity {
@@ -167,7 +167,7 @@
     margin: 8px 0;
 }
 .date {
-    color: #536356;
+    color: var(--purchase-muted);
     font-size: 11px;
     line-height: 1.7;
 }
@@ -177,7 +177,7 @@
 }
 .total span {
     display: block;
-    color: #536356;
+    color: var(--purchase-muted);
     font-size: 11px;
     margin-bottom: 8px;
 }
@@ -185,7 +185,7 @@
     font:
         400 28px/1.3 Georgia,
         serif;
-    color: #75613b;
+    color: var(--purchase-link);
 }
 .cardBody {
     display: flex;
@@ -200,7 +200,7 @@
     gap: 14px;
     flex-wrap: wrap;
     font-size: 12px;
-    color: #536356;
+    color: var(--purchase-muted);
 }
 .images {
     display: flex;
@@ -209,7 +209,7 @@
 }
 .images img {
     object-fit: cover;
-    background: #e6dfcf;
+    background: var(--purchase-selected);
     width: 42px;
     height: 50px;
 }
@@ -220,20 +220,20 @@
     font-size: 11px;
 }
 .statuses dt {
-    color: #536356;
+    color: var(--purchase-muted);
     margin-bottom: 8px;
 }
 .badge {
-    background: #e6dfcf;
-    color: #17251d;
+    background: var(--purchase-selected);
+    color: var(--purchase-ink);
     padding: 7px 10px;
     line-height: 1.5;
 }
 .view {
     margin-left: auto;
-    color: #75613b;
+    color: var(--purchase-link);
     font-size: 12px;
-    min-height: 44px;
+    min-height: var(--purchase-touch, 44px);
     display: inline-flex;
     align-items: center;
 }
@@ -249,19 +249,19 @@
     gap: 12px;
     flex-wrap: wrap;
     margin-top: 30px;
-    border-top: 1px solid #c9c7b8;
+    border-top: 1px solid var(--purchase-line);
     padding-top: 18px;
     font-size: 12px;
 }
 .pagination button:disabled {
     cursor: default;
-    color: #536356;
+    color: var(--purchase-muted);
 }
 .message {
     margin-top: 24px;
     padding: 50px 24px;
-    border: 1px solid #c9c7b8;
-    background: #faf8f2;
+    border: 1px solid var(--purchase-line);
+    background: var(--purchase-panel);
     text-align: center;
 }
 .message h2 {
@@ -271,7 +271,7 @@
     margin: 16px 0;
 }
 .message p {
-    color: #536356;
+    color: var(--purchase-muted);
     font-size: 13px;
     line-height: 1.9;
 }
@@ -279,13 +279,13 @@
     margin-top: 26px;
 }
 .emptySymbol {
-    color: #75613b;
+    color: var(--purchase-link);
     font-size: 40px;
 }
 .skeleton {
     height: 90px;
     margin-top: 24px;
-    background: #e6dfcf;
+    background: var(--purchase-selected);
 }
 @media (max-width: 1000px) {
     .heading {

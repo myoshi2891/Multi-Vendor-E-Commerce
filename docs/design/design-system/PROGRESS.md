@@ -1159,3 +1159,12 @@ SDD overview/data-modelは範囲・DB変更がないため更新不要、他SDD/
 `bunx tsc --noEmit`/`bun run lint`/`bun run check:playwright`成功、lint既存warning8。sandbox内buildはcompile段階で進まず、自分で起動したprocessのみ停止（exit143）してsandbox外で同じ`bun run build`を再実行し成功。Next devのtsconfig include追加は検証副作用として元のincludeへ戻した。全体coverage/Integrationは未再測定で過去値を保持する。
 
 `bun run coverage:dashboard`で395 test files / 400 LCOV entries / 18/80（23%）を再生成。LCOVは既存スナップショットを使用し、coverage率は再測定していない。文書の相対リンクと台帳IDの重複・件数を確認。
+
+
+## 購入後P2 6画面移行記録
+
+2026-10-10。[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。既存全画面判定は保持し、今回の変更受け入れを別記する。
+
+### Step 1: DS-PAGE-028 orders
+
+Red: supportの色が固定117/97/59で注入96/74/43へ追従せず失敗。Green/Refactor: postpurchase --grep orders 4/4（1440/768/390px、axe AA、pending/error/retry/empty/paging/focus）；RTL orders-table 10/10；tsc成功。仕様・設計・タスク・進捗を同期。認証後実ルートは保留（保存状態なし、既存helperはアカウント作成/削除を伴う）。解除条件は既存顧客のテストログイン状態。API/DB/認可/業務仕様は変更なし。

@@ -15,12 +15,15 @@ if (!Number.isInteger(port) || port <= 0) {
 await startFixtureServer({
     name: "priority",
     entry:
-        process.env.DESIGN_SUITE === "purchase"
-            ? "tests/fixtures/priority/purchase-preview.tsx"
-            : "tests/fixtures/priority/preview.tsx",
+        process.env.DESIGN_SUITE === "postpurchase"
+            ? "tests/fixtures/priority/postpurchase-preview.tsx"
+            : process.env.DESIGN_SUITE === "purchase"
+              ? "tests/fixtures/priority/purchase-preview.tsx"
+              : "tests/fixtures/priority/preview.tsx",
     port,
     title: "Priority design browser fixture",
     mocks: {
+        "@clerk/nextjs/server": `export async function currentUser(){if(new URLSearchParams(location.search).get("state")==="error") throw new Error("fixture"); return {fullName:"Mina Mori — a customer with a very long display name",imageUrl:"/assets/images/default-user.jpg"}}`,
         "@/queries/product": `import {products} from "./tests/fixtures/priority/purchase-data"; let compareCalls=0;
         export async function getProductsByIds(ids){
             const scenario=new URLSearchParams(location.search).get("scenario") ?? "";
