@@ -82,3 +82,29 @@ it("attribute form injects save, locks inputs, retains a failed draft and retrie
     expect(saveAction).toHaveBeenCalledTimes(2);
     expect(upsertAttributeDefinition).not.toHaveBeenCalled();
 });
+
+it("new attribute has a creation heading and named form", async () => {
+    const { default: NewAttributePage } = await import(
+        "@/app/dashboard/admin/attributes/new/page"
+    );
+    render(await NewAttributePage());
+    expect(
+        screen.getByRole("heading", { level: 1, name: "Create attribute" })
+    ).toBeVisible();
+    expect(
+        screen.getByRole("form", { name: "Attribute information" })
+    ).toBeVisible();
+});
+it("new attribute category failure provides generic retry", async () => {
+    jest.mocked(getAttributeCategoryOptions).mockRejectedValue(
+        new Error("private data")
+    );
+    const { default: NewAttributePage } = await import(
+        "@/app/dashboard/admin/attributes/new/page"
+    );
+    render(await NewAttributePage());
+    expect(screen.getByRole("alert")).toHaveTextContent(
+        "Could not load categories"
+    );
+    expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+});

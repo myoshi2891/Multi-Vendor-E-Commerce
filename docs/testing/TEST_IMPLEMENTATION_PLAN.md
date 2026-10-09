@@ -1182,5 +1182,6 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - Step 2 DS-PAGE-017: ✅ Completed (2026-10-09)。
 - Step 3 DS-PAGE-019: ✅ Completed (2026-10-09)。
 - Step 4 DS-PAGE-041: ✅ Completed (2026-10-09)、認証後実ルート受け入れ保留。
-- Step 5/6: 対応予定。
+- Step 5 DS-PAGE-040: ✅ Completed (2026-10-09)、認証後実ルート受け入れ保留。
+- Step 6: 対応予定。
 - [検証証跡](../design/design-system/PROGRESS.md#監査指摘6画面移行記録)。

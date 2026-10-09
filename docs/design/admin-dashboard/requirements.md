@@ -211,3 +211,5 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 ## 属性画面の表示受け入れ（2026-10-09）
 
 DS-PAGE-041/040/039は既存管理者themeの個別UI/Portalを適用する。属性一覧は名前付き見出し・検索・空・取得失敗/Retryと44px操作を持ち、編集Portalもlight/dark・focus復帰を保持する。フォームは送信中input/close lock、二重送信防止、失敗時値保持/retry、成功statusを提供する。既存requireAdmin・key/value不変・ENUM/論理削除/型変換契約は維持。[計画](../../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。
+
+属性新規（DS-PAGE-040）はCreate attributeのh1と名前付きフォームを持ち、カテゴリ取得失敗は内部情報を表示せずRetryを提供する。送信成功時は既存属性一覧URLへ遷移する。

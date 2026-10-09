@@ -114,3 +114,5 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 実装・補助検証の6Stepは完了。認証後実ルートと実SDKの受け入れは保留として別管理する。[状態と自己レビュー](../design-system/PROGRESS.md#p4優先6画面移行記録)、[解除条件](../../testing/QA_HANDOFF.md#ds-p4-six-browser)。既存データ/認可/業務queryは変更なし。
 
 2026-10-09: 属性一覧の個別UI/編集PortalとAction境界を移行。関連RTL28/28、補助browser6/6。認証後実ルートは未確認。[証跡](../design-system/PROGRESS.md#監査指摘6画面移行記録)。
+
+2026-10-09 Step 5: 属性新規は見出し・カテゴリ取得失敗・入力/送信状態を適用。RTL14/14・補助browser6/6。認証後受け入れ保留。

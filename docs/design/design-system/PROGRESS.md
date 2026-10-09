@@ -88,7 +88,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、実route保留 |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録) |
 | DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 未実施 |
-| DS-PAGE-040 | `/dashboard/admin/attributes/new` | 未適用 | P4 | TODO | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 未実施 |
+| DS-PAGE-040 | `/dashboard/admin/attributes/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
 | DS-PAGE-041 | `/dashboard/admin/attributes` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
 | DS-PAGE-042 | `/dashboard/admin/categories/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
@@ -1122,3 +1122,7 @@ DS-PAGE-019: category/評価/follow/share/SKUを44pxに統一。Red: browser3幅
 ### Step 4 属性一覧・共通フォーム
 
 DS-PAGE-041: SellerPage/DataTable seller、作成/編集Portal、native階層select、Action Props、送信中ロック/失敗保持/retry/status。Red: RTL3件（見出し/取得失敗/名前付きフォーム）、browser6件（h1欠如）。初回adapterのnotFound export不足はRedから除外。Green/Refactor: RTL28/28、browser6/6、tsc成功。1440/768/390×light/dark、検索/空/取得失敗、編集key不変、Escape focus復帰、pending中Escape禁止、失敗保持/retry、axe AAと画像目視。認証後ADMIN実受け入れは保留。新規routeへsaveActionを接続した変更は共通フォームの必須Propsへの追随であり、新規画面のレイアウト移行はStep5。
+
+### Step 5 属性新規
+
+DS-PAGE-040: SellerPageの名前付き見出しとカテゴリ取得失敗/Retryを適用。Red: RTL2件（h1/取得失敗）、browser6件（h1欠如）。Green/Refactor: 関連RTL14/14、browser6/6。1440/768/390×light/dark、未入力validation、ENUM/VARIANT/多値保持、送信中入力ロック、失敗保持/retry、成功statusと既存一覧遷移、axe AA・overflow・画像目視。認証後ADMIN実ルートは保留。
