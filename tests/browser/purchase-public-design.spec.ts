@@ -6,7 +6,7 @@ for (const width of [1440, 768, 390]) {
         test(`${route} ${width}: public route and shared header`, async ({
             page,
         }, info) => {
-            test.skip(route === "/browse" && !process.env.E2E_DATABASE_URL, "Dedicated schema-current E2E database required; current DB lacks Product.searchKeywords.");
+            test.skip(route === "/browse" && !process.env.E2E_DATABASE_URL, "Dedicated schema-current E2E database required for product-data acceptance.");
                 test.setTimeout(45000);
             await page.setViewportSize({ width, height: 1000 });
             await page.goto(route);
@@ -38,7 +38,7 @@ for (const width of [1440, 768, 390]) {
         });
     }
 }
-test("checkout guest return stays on cart", async ({ page }) => {
+test("checkout guest sign-in preserves its return destination", async ({ page }) => {
     await page.goto("/checkout");
-    await expect(page).toHaveURL(/\/cart$/);
+    await expect(page).toHaveURL(url => url.pathname === "/sign-in" && url.searchParams.get("redirect_url") === new URL("/checkout", url.origin).href);
 });

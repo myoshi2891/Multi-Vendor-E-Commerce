@@ -11,3 +11,7 @@
 検証: RTLでカート同期・明細・送料・保存成功／失敗・二重送信防止、Playwrightで1440/390/768px、空／商品入り／読み込み／在庫切れ／通知／保存中と失敗、mainと通知のaxe AA、focusと横あふれを確認する。action応答はmockし外部送信・購入は行わない。
 
 [要件](requirements.md) / [計画](../../../plans/layout-design/cart-design-system-plan.md) / [検証記録](../design-system/PROGRESS.md#cart移行記録)
+
+## 残存部品のtheme境界（2026-10-08）
+
+Cartのpage rootにpurchase-themeをCSS compositionで適用。商品checkboxは既存IDとaria-labelを維持したlabelで囲み、44pxを確保する。業務状態とstore action Propsは不変。[受け入れ](../purchase-residual/requirements.md)。

@@ -40,9 +40,10 @@ export default function OrderHeader({ order }: { order: OrderInvoice }) {
             <p>Order #{order.id}</p>
             <div className={styles.badges}>
                 <PaymentStatusTag
+                    variant="store"
                     status={order.paymentStatus as PaymentStatus}
                 />
-                <OrderStatusTag status={order.orderStatus as OrderStatus} />
+                <OrderStatusTag variant="store" status={order.orderStatus as OrderStatus} />
             </div>
             <div className={styles.actions}>
                 <Link href="/profile/orders" className={styles.secondary}>

@@ -1,9 +1,10 @@
 /* Scoped purchase surfaces; no global theme or business status overrides. */
 .page {
-    --commerce-ink: #17251d;
-    --commerce-muted: #536054;
-    --commerce-line: #ccc7b9;
-    background: #f3f0e8;
+    composes: theme from "./purchase-theme.module.css";
+    --commerce-ink: var(--purchase-ink);
+    --commerce-muted: var(--purchase-muted);
+    --commerce-line: var(--purchase-line);
+    background: var(--purchase-page);
     color: var(--commerce-ink);
     min-height: 80vh;
     overflow-wrap: anywhere;
@@ -14,12 +15,12 @@
 }
 .page :is(a, button, input, select, textarea):focus-visible,
 .dialog :is(a, button, input, select, textarea):focus-visible {
-    outline: 2px solid #a68a56;
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 4px;
 }
 .hero {
-    background: #0b100e;
-    color: #f1eee4;
+    background: var(--purchase-dark);
+    color: var(--purchase-on-dark);
     padding: 30px max(6%, calc((100vw - 1440px) / 2));
 }
 .breadcrumb {
@@ -36,13 +37,13 @@
     margin: 28px 0 18px;
 }
 .hero p {
-    color: #c4ccbf;
+    color: var(--purchase-muted-on-dark);
     font-size: 14px;
     line-height: 1.8;
     max-width: 650px;
 }
 .eyebrow {
-    color: #d4ba83;
+    color: var(--purchase-gold);
     font-size: 11px;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -73,7 +74,7 @@
     min-width: 0;
     border: 1px solid var(--commerce-line);
     padding: 26px;
-    background: #f8f6ef;
+    background: var(--purchase-panel);
 }
 .panel h2,
 .summary h2 {
@@ -88,8 +89,8 @@
     margin-bottom: 12px;
 }
 .summary {
-    background: #17251d;
-    color: #f3f0e8;
+    background: var(--purchase-ink);
+    color: var(--purchase-page);
     padding: 26px;
     min-width: 0;
 }
@@ -101,7 +102,7 @@
     gap: 16px;
     justify-content: space-between;
     padding: 12px 0;
-    border-bottom: 1px solid #ccc7b9;
+    border-bottom: 1px solid var(--purchase-line);
     font-size: 13px;
     line-height: 1.7;
 }
@@ -136,20 +137,20 @@
     text-decoration: none;
 }
 .primary {
-    background: #d4ba83;
-    color: #17251d;
-    border: 1px solid #d4ba83;
+    background: var(--purchase-gold);
+    color: var(--purchase-ink);
+    border: 1px solid var(--purchase-gold);
 }
 .primary:hover {
-    background: #e4cca0;
+    background: var(--purchase-gold-hover);
 }
 .secondary {
     background: transparent;
-    color: #75613b;
+    color: var(--purchase-link);
     border: 1px solid #a99c84;
 }
 .hero .secondary {
-    color: #f1eee4;
+    color: var(--purchase-on-dark);
     border-color: #657163;
 }
 .primary:disabled,
@@ -169,20 +170,20 @@
 .note {
     font-size: 13px;
     line-height: 1.8;
-    color: #536054;
+    color: var(--purchase-muted);
 }
 .summary .note {
-    color: #c4ccbf;
+    color: var(--purchase-muted-on-dark);
     margin-top: 14px;
 }
 .error {
-    color: #8a3028;
+    color: var(--purchase-danger);
     font-size: 13px;
     line-height: 1.8;
     margin: 12px 0;
 }
 .success {
-    color: #286142;
+    color: var(--purchase-success);
     font-size: 13px;
     line-height: 1.8;
     margin: 12px 0;
@@ -199,12 +200,12 @@
 }
 .address {
     padding: 18px;
-    border: 1px solid #ccc7b9;
+    border: 1px solid var(--purchase-line);
     min-width: 0;
 }
 .address[data-selected="true"] {
-    border-color: #75613b;
-    background: #ece7da;
+    border-color: var(--purchase-link);
+    background: var(--purchase-selected);
 }
 .address label {
     display: flex;
@@ -215,7 +216,7 @@
     line-height: 1.8;
 }
 .address input {
-    accent-color: #17251d;
+    accent-color: var(--purchase-ink);
     width: 18px;
     height: 18px;
     flex-shrink: 0;
@@ -232,13 +233,13 @@
 .field input {
     width: 100%;
     min-height: 44px;
-    background: #f8f6ef;
-    color: #17251d;
+    background: var(--purchase-panel);
+    color: var(--purchase-ink);
     border: 1px solid #a99c84;
     padding: 12px;
 }
 .field input[aria-invalid="true"] {
-    border-color: #8a3028;
+    border-color: var(--purchase-danger);
 }
 .coupon {
     display: grid;
@@ -250,7 +251,7 @@
     grid-template-columns: 90px minmax(0, 1fr);
     gap: 18px;
     padding: 24px 0;
-    border-top: 1px solid #ccc7b9;
+    border-top: 1px solid var(--purchase-line);
 }
 .product img {
     width: 90px;
@@ -278,7 +279,7 @@
     flex-wrap: wrap;
     justify-content: space-between;
     gap: 16px;
-    border-bottom: 1px solid #ccc7b9;
+    border-bottom: 1px solid var(--purchase-line);
     padding-bottom: 20px;
     margin-bottom: 12px;
 }
@@ -300,12 +301,12 @@
 }
 .assurance {
     padding: 18px 0;
-    border-bottom: 1px solid #ccc7b9;
+    border-bottom: 1px solid var(--purchase-line);
     font-size: 13px;
     line-height: 1.8;
 }
 .assurance a {
-    color: #75613b;
+    color: var(--purchase-link);
     text-decoration: underline;
     text-underline-offset: 4px;
 }
@@ -320,8 +321,9 @@
     padding: 20px;
 }
 .dialog {
-    background: #f3f0e8;
-    color: #17251d;
+    composes: theme from "./purchase-theme.module.css";
+    background: var(--purchase-page);
+    color: var(--purchase-ink);
     width: min(640px, 100%);
     max-height: calc(100dvh - 40px);
     overflow-y: auto;
@@ -384,3 +386,5 @@
         scroll-behavior: auto !important;
     }
 }
+
+.hero, .summary { --purchase-focus: var(--purchase-gold); }

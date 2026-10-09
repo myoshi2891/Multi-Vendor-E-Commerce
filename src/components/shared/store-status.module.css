@@ -1,0 +1,32 @@
+/* Optional purchase tags; dashboard callers keep the existing utility theme. */
+.tag {
+    composes: theme from "../store/shared/purchase-theme.module.css";
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border: 1px solid var(--purchase-line);
+    border-radius: 0;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--purchase-info);
+    background: var(--purchase-info-surface);
+    overflow-wrap: anywhere;
+}
+.tag:is([data-status="Pending"], [data-status="OnHold"], [data-status="BackOrdered"]) {
+    color: var(--purchase-warning);
+    background: var(--purchase-warning-surface);
+}
+.tag:is([data-status="Paid"], [data-status="Delivered"]) {
+    color: var(--purchase-success);
+    background: var(--purchase-success-surface);
+}
+.tag:is([data-status="Canceled"], [data-status="Failed"], [data-status="Declined"], [data-status="ChargeBack"], [data-status="FailedDelivery"]) {
+    color: var(--purchase-danger);
+    background: var(--purchase-danger-surface);
+}
+.tag:is([data-status="Cancelled"], [data-status="Refunded"], [data-status="PartiallyRefunded"], [data-status="Returned"]) {
+    color: var(--purchase-muted);
+    background: var(--purchase-neutral-surface);
+}

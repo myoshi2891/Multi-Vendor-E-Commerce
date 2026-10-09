@@ -11,13 +11,13 @@
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-07実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-08実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3028 passed / 3031 total、3 skipped、127 snapshots passed、316 スイート（315 passed／1 skipped、failed 0）** — 2026-10-07 plan 086（通知基盤）後の全体実測。Integration228／18 suitesは2026-10-07実測（plan 086 後）。正本[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
-| Jest Integration テスト | **228テスト / 18スイート** — 2026-10-07実測（plan 086 後・228/228 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
+| Jestユニットテスト | **3075 passed / 3078 total、3 skipped、127 snapshots passed、317 スイート（316 passed／1 skipped、failed 0）**。2026-10-08 購入導線6画面移行後の全体coverage付き実測。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
+| Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |
@@ -5449,3 +5449,57 @@ admin の注文グループ更新に行ロックを追加し、リンク先の�
 | テスト総数 | 3026 passed / 3029 total | **3028 passed / 3031 total** |
 | スイート数 | 316 | **316** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### 在庫復元の item 単位一本化（plan 087）(2026-10-08)
+
+#### 概要
+
+注文の取り消し・返金・返品で在庫が経路を問わず「ちょうど 1 回」戻るよう、復元の印を `OrderItem.status` に一本化した（作業ツリー・未コミット、HEAD `b7b3333e`）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/order.ts` | `settleOrderItems`（条件付き `updateManyAndReturn`）を新設し経路 A〜E を通す。item 終端を吸収状態に。`restockOrderItems` を `size.updateMany` 化（F-3） | 未コミット |
+| `tests/integration/order-lifecycle.test.ts` | 経路をまたぐ exactly-once・吸収状態・F-3・seller 復元/IDOR を +10 | 未コミット |
+| `src/queries/order.test.ts` | 旧呼び出し形の固定を更新し、分岐 +10 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3028 passed / 3031 total | **3038 passed / 3041 total** |
+| スイート数 | 316 | **316** |
+| Integration | 228 / 18 スイート | **238 / 18 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### plan 087 レビュー対応: 終端パスの空振りを成功扱いにしない (2026-10-08)
+
+#### 概要
+
+`applyOrderItemStatus` の終端パスで、`settleOrderItems` の遷移も付け替えの `updateMany` も 0 件のとき `"ok"` を返していたため、`"settled"` を返すよう修正した（作業ツリー・未コミット、HEAD `e03a45a7`）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/order.ts` | 付け替えの `count` を見て 0 件なら `"settled"` | 未コミット |
+| `src/queries/order.test.ts` | 遷移 [] かつ付け替え count 0 で拒否される回帰 +1 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3038 passed / 3041 total | **3039 passed / 3042 total** |
+| スイート数 | 316 | **316** |
+| 型エラー | 0 件 | **0 件** |
+
+## 購入導線6画面の残存部品移行（2026-10-08）
+
+[移行記録](./design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。browse・store・product・cart・checkout・orderのスコープ付きtokens、44px操作領域、focus、Portal、任意store状態タグを適用。全体Jestは前回比36件・1スイート増。coverage/dashboardを実測更新、マトリクス18/80は不変。Integrationは今回未実行。
+
+purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest checkoutの修正後再試行1件を確認。browse3件は専用E2E_DATABASE_URL不在でskip。初回guest失敗は既存のsign-in戻り先契約と古いテスト期待の不一致で、期待のみ修正。DB接続P1001が発生し、商品あり実ルート・認証後checkout/order・Cloudinary/決済SDKの受け入れは保留。次回は現行schemaの使い捨てDB・Clerk顧客・SDK検証環境を用意して解除する。fixture成功は実ルート受け入れの代用にしない。

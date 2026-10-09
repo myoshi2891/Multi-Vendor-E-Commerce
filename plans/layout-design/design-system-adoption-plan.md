@@ -58,11 +58,11 @@
 
 | 区分 | ページ定義 |
 |---|---:|
-| 顧客向け（store） | 34 |
+| 顧客向け（store） | 35 |
 | 認証（auth） | 2 |
 | 全画面表示（fullscreen） | 2 |
 | 出店者・管理者（dashboard） | 28 |
-| **合計** | **66** |
+| **合計** | **67** |
 
 | 判定 | 件数 |
 |---|---:|
@@ -70,13 +70,14 @@
 | 本体適用・周辺確認 | 12 |
 | 本体適用・検証保留 | 28 |
 | 未適用 | 3 |
+| 実装済み（通知・認証後確認保留） | 1 |
 | 仮実装 | 1 |
 | 転送専用 | 7 |
-| **合計** | **66** |
+| **合計** | **67** |
 
 動的パラメーターとページングは「ページ定義」単位で数える。実データごとのURL数ではない。
 
-### 2.2 全66ページ
+### 2.2 全67ページ
 
 | URL | 判定 | 優先度 | 根拠ファイル |
 |---|---|---|---|
@@ -545,7 +546,7 @@ CSSの実装文字列をそのままなぞる大量の単体テストは作ら�
 
 ### 文書の完了条件
 
-- 全66ページが台帳に含まれ、判定件数と一致する。
+- 全67ページが台帳に含まれ、判定件数と一致する。
 - 小さな部品にもファイル単位の対応項目がある。
 - 優先度の理由、導入順、依存関係、検証方法が記載される。
 - 適用済み・未適用・利用確認・認証等の実画面未確認を区別する。
@@ -733,3 +734,19 @@ P4専用部品DS-COMP-226〜233と共通CouponFormFieldsのadmin opt-inは補助
 DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/他callerは別検証を必要とする。
 
 - [ ] DS-COMP-238 [review pagination CSS](../../src/components/store/shared/pagination.module.css): product opt-in実装・補助検証済み、実route保留。他callerは別対象。
+
+### 購入導線残存部品6画面（2026-10-08）
+
+[保存計画](priority-six-purchase-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。共通tokensはstore限定。画面全体の認証後実受け入れと部品の他callerは別検証。
+
+- [x] 残存部品 Step 1 DS-PAGE-006 商品一覧: 実装・関連検証・仕様同期。
+- [x] 残存部品 Step 2 DS-PAGE-037 店舗詳細: 実装・関連検証・仕様同期。
+- [x] 残存部品 Step 3 DS-PAGE-019 商品詳細: 実装・関連検証・仕様同期。
+- [x] 残存部品 Step 4 DS-PAGE-007 Cart: 実装・関連検証・仕様同期。
+- [x] 残存部品 Step 5 DS-PAGE-008 Checkout: 実装・関連検証・仕様同期。
+- [x] 残存部品 Step 6 DS-PAGE-003 注文詳細: 実装・関連検証・仕様同期。
+
+- [ ] DS-COMP-241 [purchase theme](../../src/components/store/shared/purchase-theme.module.css): store限定tokens、補助検証済み・実受け入れ保留。
+- [ ] DS-COMP-242 [store status CSS](../../src/components/shared/store-status.module.css): store opt-in全34状態を補助検証、認証後order実ルート保留。
+
+2026-10-08: plan 086で追加済みの通知ページを含めて台帳集計を67ページへ整合。購入導線6画面の今回の補助検証による全画面判定変更はない。

@@ -331,3 +331,20 @@ ALL を満たすこと:
 - レビュアーが後続実装 PR で最も精査すべき点: 遷移 action の権限マトリクス
   （顧客が APPROVED を自分で付けられない等）と、`$transaction` 内での
   OrderItem 反映・通知発火の原子性
+
+## 実施結果（2026-10-07・HEAD `cfbcd9a6`）
+
+- 成果物: [`docs/design/returns-rma/design.md`](../docs/design/returns-rma/design.md) / 後続の実装プラン [088](088-implement-returns-rma.md)
+- STOP 条件の判定: RMA のモデルは無く、`SupportTicket.status` は `String` のまま。即時に悪用できる認可欠陥も無い。
+  一方、plan 012 の設計（087）は item の全数を一度に戻す形で、部分返品とそのままでは組み合わせられなかった（条件 2）。
+  このため判断を仰ぎ、**差し引き方式**（ユーザーの選択）で組み合わせることにした（design §4.3）。
+- 決定の要点:
+  - **形**: 店舗単位（`OrderGroup`）のヘッダと、item 単位の明細にする。冪等性の制約は `@@unique([userId, idempotencyKey])`。`userId` と `idempotencyKey` は NOT NULL で、ゲストの RMA は認めない。
+  - **数量の上限**: OrderItem 行を `FOR UPDATE` でロックしてから、有効な RMA の数量を合計する。
+  - **チケット**: チケットから RMA への昇格はさせず、相談窓口として並べて残す。
+  - **ポリシー**: 環境変数の既定値と、店舗の列による上書きの 2 層。期限は「`createdAt` + `shippingDeliveryMax` + 返品できる日数」で近似する。
+  - **自動承認**: 初期スコープに含めない。
+  - **通知**: (β) Outbox（086 に合わせる）。予約済みの `rma.refunded` は `rma.resolved` に改名する。
+  - **MVP の解決方法**: REFUND のみ。
+- 気づいた点: `createSupportTicket` は `orderId` の所有者を確かめていない。保存するだけなので現時点で漏洩は無いが、DIRECTION-03 では所有の証拠として扱わないこと（design §0.1）。
+- ソース・スキーマは未変更。

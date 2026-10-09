@@ -8,3 +8,7 @@
 - Supplementalブラウザーはproduction部品・CSSをbundleし、NextナビゲーションとSDKだけをadapterへ差し替える。DB・Clerk・実決済は呼ばない。実ルートの認可は既存queryのRTL回帰まで確認し、認証後E2Eとは区別する。
 
 [要件](requirements.md) / [タスク](tasks.md) / [証跡](../design-system/PROGRESS.md#checkout-order移行記録)
+
+## 状態タグのopt-in境界（2026-10-08）
+
+既存OrderStatusTag/PaymentStatusTag/ProductStatusTagへ任意store variantを追加。store-status CSS Moduleがpurchase-themeをcomposeし、data-statusで状態色を選択。header/group/itemから指定し、既定callerは既存utilityクラスを維持。状態遷移・ラベル・支払い条件・PDFを変更しない。

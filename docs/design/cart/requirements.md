@@ -19,3 +19,7 @@
 ## 共通ヘッダー統合回帰（2026-10-06）
 
 [購入導線6画面計画](../../../plans/layout-design/priority-six-purchase-design-system-plan.md)。既存Cartの購入・金額・保存契約を維持し、item/wishlist/remove/quantityと通知closeの操作範囲を44pxへ拡大。新headerとの組み合わせ、保存失敗保持/retry・同期失敗保持・空状態を検証する。
+
+## 残存操作部品（2026-10-08）
+
+[6画面受け入れ](../purchase-residual/requirements.md)。pageにstore専用tokensをcomposeし、全選択/商品選択はlabelを含む44pxの操作領域、一括削除/同期再試行は44px以上とする。商品列はラベル領域を確保し3幅で横あふれを防ぐ。数量・送料・wishlist・checkout失敗保持の契約は変更しない。

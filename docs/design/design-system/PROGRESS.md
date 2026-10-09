@@ -359,6 +359,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-238 | P2 | Review pagination styles | [pagination.module.css](../../../src/components/store/shared/pagination.module.css) | 実装済み | product review opt-inの補助検証済み、実route保留 |
 | DS-COMP-239 | P2 | 通知一覧 | [notification-list.tsx](../../../src/components/store/profile/notifications/notification-list.tsx) | 検証済み | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット) |
 | DS-COMP-240 | P2 | ヘッダーの未読バッジ・通知リンク | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 実装済み | RTL のみ。ブラウザー表示は認証後ヘッダーの fixture が無く未確認 |
+| DS-COMP-241 | P1 | 購入theme tokens | [purchase-theme.module.css](../../../src/components/store/shared/purchase-theme.module.css) | 保留 | store限定・補助検証済み、認証後実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
+| DS-COMP-242 | P1 | store状態タグCSS | [store-status.module.css](../../../src/components/shared/store-status.module.css) | 保留 | 34状態/明暗祖先/3幅/AA補助検証済み、認証後order実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
 
 ## 前セッションの確認結果
 
@@ -970,3 +972,51 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - 検証: `DESIGN_SUITE=priority bun run test:design` 9/9（通知一覧 1440 / 768 / 390px で axe AA 違反 0・横スクロールなし・ボタンの focus outline・一括既読・失敗 alert・空状態）、`bun run check:playwright` pass、関連 Jest 425/425、tsc exit0、lint 0 errors／8 warnings。1440 / 390px のスクリーンショットで長い店舗名の折り返しを確認。
 - 保留: Clerk 認証後の実ルート `/profile/notifications` と、ダークなヘッダー上の未読バッジのブラウザー表示は未確認（認証後のヘッダーを描画する fixture が無い）。解除条件: 認証後受け入れ環境（[QA_HANDOFF](../../testing/QA_HANDOFF.md#ds-p4-six-browser)）で確認する。
 - 仕様: `04-interfaces.md`（ルート・notification module・cron API）、`05-workflows.md`（発送通知フロー）、`03-data-model.md` を更新。
+
+## 購入導線残存部品6画面移行記録
+
+- 2026-10-08。[保存計画](../../../plans/layout-design/priority-six-purchase-residual-design-system-plan.md) / [受け入れ仕様](../purchase-residual/requirements.md)。対象DS-PAGE-006/037/019/007/008/003は対応中（既存の検証済み/保留と履歴を維持）。
+- 計画コミット: `43cafd89`。overview/data-modelは商品scope/DB契約不変のため変更不要。対象外callerとSDK受け入れは今回の補助検証へ含めない。
+
+### 共通トークン
+
+- Red: purchase Chromium1件、FilterPanelの面がtransparent（期待ivory）。最初のEPERMは環境エラーでRedに数えず、許可されたローカルサーバー実行で確認。
+- Green/Refactor: opt-in purchase-themeをFilterPanelにcompose。面/文字/状態/focus/44pxトークンと明示light scheme。Chromium1/1、focus/面/scheme確認。lint/tsc結果はコミット前に確認。
+- DS-BASE-001のstore subset追加。全体tokens移行の完了にはしない。
+
+### 残存部品 Step 1 — DS-PAGE-006 商品一覧
+
+- Red: variantリンクの名前/focusのRTL2件、カテゴリ操作36pxのChromium3件。Green/Refactor: カードvariant名/current/focus、editorial操作44px、filters/browse/sort Portalのtokens。Jest40/40、Chromium10/10（3幅/URL保持/variant Enter/axe AA）。途中のpointer後focus locatorはkeyboard modalityへ修正しRedに加算しない。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 2 — DS-PAGE-037 店舗詳細
+
+- Red: 修正済みlocatorで空カード背景transparentをChromium3幅で確認（最初の文言locatorミスはRedに含めない）。Green/Refactor: hero/results/emptyにtheme compose、空カードpanel面、light面focusは濃gold、dark heroは装飾gold。関連Jest27/27、Chromium9/9（3幅×長文/商品あり/空、axe AA、focus、URL）。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 3 — DS-PAGE-019 商品詳細
+
+- Red: review sort34pxのChromium3件。Green/Refactor: select44px/入力面/focus、review card/formとdropdown/errorのtokens、フォーム文字色/長文折返し。関連Jest20/20、product選択Chromium10/10、実card/form補助3/3（paint/draft/focus/overflow、Cloudinary/Action adapters）。フォーム全体のSDK/投稿実受け入れは別。初回fixtureのvariant空配列とlikes不足はテストfixture修正でRedには数えない。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 4 — DS-PAGE-007 Cart
+
+- Red: select-all label18pxのChromium3件。Green/Refactor: page tokens、44px選択label/item label/bulk/retry、商品grid領域調整。Jest52/52、Chromium8/8（3幅・数量・失敗保持/retry・sync失敗・bulk→empty・axe AA）。cart要件/設計を同期。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 5 — DS-PAGE-008 Checkout
+
+- Red: Portal保存buttonが従来green（期待gold）のChromium3件。Green/Refactor: commerce page/dialogへのtheme composeと共用AddressFormのtoken fallback。Jest33/33、commerce17/17、account既定配色/axe互換1/1。住所保存pending/error/success/focus、coupon/order lock/retry、3幅/axe AA。checkout要件/設計/tasksと共有order要件を同期。実認証/SDKは保留。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 Step 6 — DS-PAGE-003 注文詳細
+
+- Red: store opt-inのRTL34件、角丸6pxのChromium6件。Green/Refactor: 注文/支払い/itemの任意store variantと共通意味色、header/group/itemに適用。関連Jest96/96、commerce24/24（全34状態×3幅×明暗祖先、axe AA、pending/paid/SDK-adapter失敗/retry、single total）。注文要件/設計/tasks同期。実SDK/認証後routeは保留。
+- 仕様: [6画面受け入れ](../purchase-residual/requirements.md)。既存の業務契約と画面全体の保留は維持。lint/tscは通過状態でコミット。
+
+### 残存部品 最終統合検証
+
+- 全体Jest coverage付き: 3075 passed / 3078 total、3 skipped、317 suites（316 passed/1 skipped）、127 snapshots。Statements87.83%、Branches78.04%、Functions84.1%、Lines88.34%。
+- purchase44/44、commerce24/24。1440/768/390px、明暗祖先、キーボード、Portal、overflow、reduced motion、axe AAと画像目視を確認。公開home/cart6件とguest sign-in戻り先1件を確認（初回の古いguest期待を修正して対象再試行）。browse3件は専用DB不在でskip。
+- 仕様・SDD・QA・全体進捗・coverage dashboard同期。台帳は通知追加分を含め67ページへ集計整合、全画面の検証済み判定は変更しない。SDKアップロード/投稿、認証後checkout/order、商品あり実DBの受け入れは保留。
+- 最終lint errors0／既存warnings8、tsc exit0、check:playwright pass、diff --check pass。追加文書リンク14件、台帳67ページ・242部品のID重複なしを確認。

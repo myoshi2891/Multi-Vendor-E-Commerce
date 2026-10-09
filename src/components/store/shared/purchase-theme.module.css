@@ -1,0 +1,28 @@
+/* Opt-in storefront theme. Compose on page roots AND portal surfaces. */
+.theme {
+    --purchase-page: #f3f0e8;
+    --purchase-panel: #f8f6ef;
+    --purchase-input: #fffdf7;
+    --purchase-ink: #17251d;
+    --purchase-muted: #536054;
+    --purchase-line: #ccc7b9;
+    --purchase-gold: #d4ba83;
+    --purchase-gold-hover: #e4cca0;
+    --purchase-link: #75613b;
+    --purchase-focus: #786035;
+    --purchase-dark: #0b100e;
+    --purchase-on-dark: #f1eee4;
+    --purchase-muted-on-dark: #c4ccbf;
+    --purchase-selected: #ece7da;
+    --purchase-success: #286142;
+    --purchase-danger: #8a3028;
+    --purchase-warning: #755b24;
+    --purchase-info: #284d63;
+    --purchase-info-surface: #e4ebef;
+    --purchase-success-surface: #e4eee5;
+    --purchase-danger-surface: #f4e3dd;
+    --purchase-warning-surface: #eee5d2;
+    --purchase-neutral-surface: #e8e5dc;
+    --purchase-touch: 44px;
+    color-scheme: light;
+}

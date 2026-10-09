@@ -1,8 +1,10 @@
+import storeStyles from './store-status.module.css'
 import { PaymentStatus } from '@/lib/types'
 import { CreditCard } from 'lucide-react' // Lucide credit card icon
 
 interface PaymentStatusTagProps {
     status: PaymentStatus
+    variant?: "store"
     isTable?: boolean
 }
 
@@ -58,13 +60,16 @@ const paymentStatusStyles: {
 const PaymentStatusTag: React.FC<PaymentStatusTagProps> = ({
     status,
     isTable,
+    variant,
 }) => {
     const styles = paymentStatusStyles[status]
 
     return (
         <div>
             <span
-                className={`inline-flex items-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ${styles.bgColor} ${styles.textColor}`}
+                data-appearance={variant}
+                data-status={variant === "store" ? status : undefined}
+                className={variant === "store" ? storeStyles.tag : `inline-flex items-center gap-x-1 rounded-md px-2 py-1 text-xs font-medium ${styles.bgColor} ${styles.textColor}`}
             >
                 <CreditCard className="size-3 shrink-0" />
                 {/* Lucide Credit Card Icon */}

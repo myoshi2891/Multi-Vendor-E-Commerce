@@ -44,3 +44,9 @@ export const products: ProductType[] = [
         ],
     },
 ];
+
+export const multiVariantProducts: ProductType[] = [{
+    ...products[0],
+    variants: [products[0].variants[0], { ...products[0].variants[0], variantId: "forest", variantName: "Forest", variantSlug: "forest" }],
+    variantImages: [...products[0].variantImages, { url: "/product/considered-piece/forest", image: "/assets/brand/star.svg" }],
+}];

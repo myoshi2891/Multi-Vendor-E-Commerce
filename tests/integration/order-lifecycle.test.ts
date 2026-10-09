@@ -59,6 +59,8 @@ import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
 import { currentUser } from "@clerk/nextjs/server";
 import {
     updateOrderGroupStatusAsAdmin,
+    updateOrderItemStatus,
+    updateOrderItemStatusAsAdmin,
     updateOrderPaymentStatus,
 } from "@/queries/order";
 import { disconnectTestDb, getTestDb } from "./setup/db";
@@ -88,6 +90,14 @@ function mockAuthAsAdmin(): void {
     });
 }
 
+/** currentUser を店舗オーナー（SELLER）として解決させる。id は Store.userId と一致させる */
+function mockAuthAsSeller(userId: string): void {
+    (currentUser as unknown as jest.Mock).mockResolvedValue({
+        id: userId,
+        privateMetadata: { role: "SELLER" },
+    });
+}
+
 /** currentUser を一般ユーザー（非 ADMIN）として解決させる */
 function mockAuthAsCustomer(): void {
     (currentUser as unknown as jest.Mock).mockResolvedValue({
@@ -106,12 +116,15 @@ function mockAuthAsCustomer(): void {
  */
 function resolveConnectionLimit(): number {
     const url = process.env.DATABASE_URL;
-    if (!url) throw new Error("DATABASE_URL が未設定です（globalSetup 未実行）");
+    if (!url)
+        throw new Error("DATABASE_URL が未設定です（globalSetup 未実行）");
     const explicit = new URL(url).searchParams.get("connection_limit");
     if (explicit !== null) {
         const parsed = Number(explicit.trim());
         if (!Number.isFinite(parsed)) {
-            throw new Error(`connection_limit が数値ではありません: ${explicit}`);
+            throw new Error(
+                `connection_limit が数値ではありません: ${explicit}`
+            );
         }
         return parsed;
     }
@@ -182,6 +195,85 @@ async function seedPlacedOrder(): Promise<PlacedOrderFixture> {
         userId: user.id,
         shippingAddressId: address.id,
     };
+}
+
+interface PlacedItem {
+    groupId: string;
+    storeId: string;
+    itemId: string;
+    sizeId: string;
+}
+
+/**
+ * 既存の注文に、在庫を 3 個減算済みの OrderItem を 1 行足す（plan 087）。
+ *
+ * `target` を渡すとその group に足す（同じ group に 2 item）。省くと別ユーザーが持つ
+ * 別店舗の group を新設する（1 注文に 2 group）。
+ */
+async function addPlacedItem(
+    fixture: PlacedOrderFixture,
+    target?: { groupId: string; storeId: string }
+): Promise<PlacedItem> {
+    let groupId = target?.groupId;
+    let storeId = target?.storeId;
+    const { category, subCategory } = await seedCategoryWithSubcategory(db);
+    if (!groupId || !storeId) {
+        const owner = await seedUser(db);
+        const store = await seedStore(db, { userId: owner.id });
+        storeId = store.id;
+    }
+    const { product, variant, size } = await seedProductWithVariantAndSize(db, {
+        storeId,
+        categoryId: category.id,
+        subCategoryId: subCategory.id,
+        sizePrice: 100,
+        sizeQuantity: INITIAL_STOCK,
+    });
+    await db.size.update({
+        where: { id: size.id },
+        data: { quantity: { decrement: ORDER_QUANTITY } },
+    });
+    if (!groupId) {
+        const group = await db.orderGroup.create({
+            data: {
+                orderId: fixture.orderId,
+                storeId,
+                status: OrderStatus.Pending,
+                subTotal: size.price.mul(ORDER_QUANTITY),
+                shippingFees: size.price.mul(0),
+                total: size.price.mul(ORDER_QUANTITY),
+                shippingService: "Standard",
+                shippingDeliveryMin: 7,
+                shippingDeliveryMax: 14,
+            },
+        });
+        groupId = group.id;
+    }
+    const item = await db.orderItem.create({
+        data: {
+            orderGroupId: groupId,
+            productId: product.id,
+            variantId: variant.id,
+            sizeId: size.id,
+            productSlug: product.slug,
+            variantSlug: variant.slug,
+            sku: variant.sku,
+            name: `${product.name} - ${variant.variantName}`,
+            image: variant.variantImage,
+            size: size.size,
+            price: size.price,
+            quantity: ORDER_QUANTITY,
+            shippingFee: size.price.mul(0),
+            totalPrice: size.price.mul(ORDER_QUANTITY),
+        },
+    });
+    return { groupId, storeId, itemId: item.id, sizeId: size.id };
+}
+
+/** OrderItem.status を読む */
+async function itemStatusOf(itemId: string): Promise<string> {
+    const row = await db.orderItem.findUniqueOrThrow({ where: { id: itemId } });
+    return row.status;
 }
 
 /** 現在の Size.quantity を読む */
@@ -545,5 +637,282 @@ describe("Scenario 6: non-admin callers are rejected without side effects", () =
         });
         expect(order.orderStatus).toBe(OrderStatus.Pending);
         expect(await stockOf(fixture.sizeId)).toBe(STOCK_AFTER_ORDER);
+    });
+});
+
+// ============================================================================
+// Scenario 7〜13: 経路をまたいでも在庫はちょうど 1 回だけ戻る（plan 087）
+//
+// 復元の印は OrderItem.status（終端 = Canceled / Refunded / Returned）。
+// order（A）/ group（B・E）/ item（C・D）のどの経路から入っても、
+// 終端へ遷移した item の在庫だけが戻る（design: docs/design/inventory-restock/design.md §2・§4.2）。
+// ============================================================================
+
+describe("Scenario 7: cross-path restock is exactly-once (plan 087)", () => {
+    it("F-1: group cancel then order refund does not restock the canceled group twice", async () => {
+        // Arrange: 1 注文に 2 group（A = fixture、B = 別店舗）
+        const fixture = await seedPlacedOrder();
+        const b = await addPlacedItem(fixture);
+        mockAuthAsAdmin();
+
+        // Act
+        await updateOrderGroupStatusAsAdmin(
+            fixture.groupId,
+            OrderStatus.Canceled
+        );
+        await updateOrderPaymentStatus(fixture.orderId, PaymentStatus.Refunded);
+
+        // Assert: A は 1 回だけ（11 なら二重復元）、B は返金で 1 回
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+        expect(await stockOf(b.sizeId)).toBe(INITIAL_STOCK);
+        // 先に終端だった item は Refunded で上書きされない（item ごとの履歴を保つ）
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+        expect(await itemStatusOf(b.itemId)).toBe(ProductStatus.Refunded);
+    });
+
+    it("F-2: group cancel → reopen → cancel restocks once and keeps items settled", async () => {
+        // Arrange
+        const fixture = await seedPlacedOrder();
+        mockAuthAsAdmin();
+
+        // Act 1: 取り消し
+        await updateOrderGroupStatusAsAdmin(
+            fixture.groupId,
+            OrderStatus.Canceled
+        );
+
+        // Assert 1
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+
+        // Act 2: 再オープン（group は許可、item は再活性化しない・design §7）
+        await updateOrderGroupStatusAsAdmin(
+            fixture.groupId,
+            OrderStatus.Processing
+        );
+
+        // Assert 2
+        const reopened = await db.orderGroup.findUniqueOrThrow({
+            where: { id: fixture.groupId },
+        });
+        expect(reopened.status).toBe(OrderStatus.Processing);
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+
+        // Act 3: もう一度取り消し
+        await updateOrderGroupStatusAsAdmin(
+            fixture.groupId,
+            OrderStatus.Canceled
+        );
+
+        // Assert 3: 追加の復元は無い
+        const recanceled = await db.orderGroup.findUniqueOrThrow({
+            where: { id: fixture.groupId },
+        });
+        expect(recanceled.status).toBe(OrderStatus.Canceled);
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+    });
+
+    it("item cancel then order refund restocks each item exactly once", async () => {
+        // Arrange: 同じ group に X（fixture）と Y
+        const fixture = await seedPlacedOrder();
+        const y = await addPlacedItem(fixture, {
+            groupId: fixture.groupId,
+            storeId: fixture.storeId,
+        });
+        mockAuthAsAdmin();
+
+        // Act 1
+        await updateOrderItemStatusAsAdmin(
+            fixture.itemId,
+            ProductStatus.Canceled
+        );
+
+        // Assert 1: X だけが戻る
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+        expect(await stockOf(y.sizeId)).toBe(STOCK_AFTER_ORDER);
+
+        // Act 2
+        await updateOrderPaymentStatus(fixture.orderId, PaymentStatus.Refunded);
+
+        // Assert 2: X は追加で戻らず、Y が 1 回戻る
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+        expect(await stockOf(y.sizeId)).toBe(INITIAL_STOCK);
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+        expect(await itemStatusOf(y.itemId)).toBe(ProductStatus.Refunded);
+    });
+
+    it("item cancel then group cancel restocks each item exactly once", async () => {
+        // Arrange
+        const fixture = await seedPlacedOrder();
+        const y = await addPlacedItem(fixture, {
+            groupId: fixture.groupId,
+            storeId: fixture.storeId,
+        });
+        mockAuthAsAdmin();
+
+        // Act
+        await updateOrderItemStatusAsAdmin(
+            fixture.itemId,
+            ProductStatus.Canceled
+        );
+        await updateOrderGroupStatusAsAdmin(
+            fixture.groupId,
+            OrderStatus.Canceled
+        );
+
+        // Assert
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+        expect(await stockOf(y.sizeId)).toBe(INITIAL_STOCK);
+        expect(await itemStatusOf(y.itemId)).toBe(ProductStatus.Canceled);
+    });
+
+    it("item cancel and order cancel dispatched concurrently restock once", async () => {
+        // 前提: プールが 1 だと直列化されて並行を検証しない（Scenario 2 と同じ）
+        expect(resolveConnectionLimit()).toBeGreaterThanOrEqual(2);
+
+        // Arrange
+        const fixture = await seedPlacedOrder();
+        mockAuthAsAdmin();
+
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let arrived = 0;
+        const arm = async <T>(run: () => Promise<T>): Promise<T> => {
+            arrived += 1;
+            if (arrived === 2) release();
+            await gate;
+            return run();
+        };
+
+        // Act
+        const settled = await Promise.allSettled([
+            arm(() =>
+                updateOrderItemStatusAsAdmin(
+                    fixture.itemId,
+                    ProductStatus.Canceled
+                )
+            ),
+            arm(() =>
+                updateOrderPaymentStatus(
+                    fixture.orderId,
+                    PaymentStatus.Cancelled
+                )
+            ),
+        ]);
+
+        // Assert
+        expect(settled.map((s) => s.status)).toEqual([
+            "fulfilled",
+            "fulfilled",
+        ]);
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+    });
+});
+
+describe("Scenario 8: settled items are absorbing (plan 087 I-2)", () => {
+    it("rejects moving a canceled item back to a non-terminal status without side effects", async () => {
+        // Arrange
+        const fixture = await seedPlacedOrder();
+        mockAuthAsAdmin();
+        await updateOrderItemStatusAsAdmin(
+            fixture.itemId,
+            ProductStatus.Canceled
+        );
+
+        // Act + Assert
+        await expect(
+            updateOrderItemStatusAsAdmin(
+                fixture.itemId,
+                ProductStatus.Processing
+            )
+        ).rejects.toThrow("Order item is already settled.");
+
+        // 副作用なし
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+    });
+
+    it("allows relabeling between terminal statuses without restocking again", async () => {
+        // Arrange
+        const fixture = await seedPlacedOrder();
+        mockAuthAsAdmin();
+        await updateOrderItemStatusAsAdmin(
+            fixture.itemId,
+            ProductStatus.Canceled
+        );
+
+        // Act
+        const result = await updateOrderItemStatusAsAdmin(
+            fixture.itemId,
+            ProductStatus.Refunded
+        );
+
+        // Assert
+        expect(result).toBe(ProductStatus.Refunded);
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Refunded);
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+    });
+});
+
+describe("Scenario 9: cancellation survives a recreated Size (F-3)", () => {
+    it("cancels the order even when the ordered Size row no longer exists", async () => {
+        // Arrange: updateProduct の全置換で Size が作り直された状態を模す
+        const fixture = await seedPlacedOrder();
+        await db.size.delete({ where: { id: fixture.sizeId } });
+        mockAuthAsAdmin();
+
+        // Act
+        const result = await updateOrderPaymentStatus(
+            fixture.orderId,
+            PaymentStatus.Cancelled
+        );
+
+        // Assert: 取り消しは完了し、item は終端になる（戻す先の無い在庫は捨てる）
+        expect(result).toBe(PaymentStatus.Cancelled);
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+    });
+});
+
+describe("Scenario 10: seller item cancellation restocks within the owned store", () => {
+    it("restocks when the store owner cancels an item", async () => {
+        // Arrange
+        const fixture = await seedPlacedOrder();
+        mockAuthAsSeller(fixture.userId);
+
+        // Act
+        await updateOrderItemStatus(
+            fixture.storeId,
+            fixture.itemId,
+            ProductStatus.Canceled
+        );
+
+        // Assert
+        expect(await itemStatusOf(fixture.itemId)).toBe(ProductStatus.Canceled);
+        expect(await stockOf(fixture.sizeId)).toBe(INITIAL_STOCK);
+    });
+
+    it("rejects an item of another store and leaves its status and stock unchanged (IDOR)", async () => {
+        // Arrange: 他店舗（別オーナー）の item
+        const fixture = await seedPlacedOrder();
+        const other = await addPlacedItem(fixture);
+        mockAuthAsSeller(fixture.userId);
+
+        // Act + Assert (a) スロー
+        await expect(
+            updateOrderItemStatus(
+                fixture.storeId,
+                other.itemId,
+                ProductStatus.Canceled
+            )
+        ).rejects.toThrow("Order item not found");
+
+        // (c) 副作用なし
+        expect(await itemStatusOf(other.itemId)).toBe(ProductStatus.Pending);
+        expect(await stockOf(other.sizeId)).toBe(STOCK_AFTER_ORDER);
     });
 });

@@ -11,12 +11,20 @@ import StoreToaster from "@/components/store/shared/store-toaster";
 import { useCartStore } from "@/cart-store/useCartStore";
 import { createMockCartProduct } from "@/config/test-fixtures";
 import ProductList from "@/components/store/shared/product-list";
-import { products } from "./purchase-data";
+import { products, multiVariantProducts } from "./purchase-data";
 import StoreProducts from "@/components/store/store-page/store-products";
 import StoreDetails from "@/components/store/store-page/store-details";
 import QuantitySelector from "@/components/store/product-page/quantity-selector";
 import Pagination from "@/components/store/shared/pagination";
 import ReviewFilters from "@/components/store/product-page/reviews/filters";
+import CategoryFilter from "@/components/store/browse-page/filters/category/category-filter";
+import { createMockCategory } from "@/config/test-fixtures";
+import ReviewDetails from "@/components/store/forms/review-details";
+import ReviewCard from "@/components/store/cards/review";
+import { createMockUser } from "@/config/test-fixtures";
+import type { ReviewWithImageType } from "@/lib/types";
+import ReviewsSort from "@/components/store/product-page/reviews/sort";
+import type { ReviewsOrderType } from "@/lib/types";
 import type { ReviewsFilterType } from "@/lib/types";
 import productStyles from "@/components/store/product-page/product.module.css";
 import browseStyles from "@/app/(store)/browse/browse.module.css";
@@ -43,6 +51,8 @@ if (screen === "cart")
 function App({ storeCollection }: { storeCollection: React.ReactNode }) {
     const [page, setPage] = useState(1);
     const [quantity, setQuantity] = useState(1);
+    const [reviews, setReviews] = useState<ReviewWithImageType[]>([]);
+    const [reviewSort, setReviewSort] = useState<ReviewsOrderType>();
     const [filters, setFilters] = useState<ReviewsFilterType>({});
     return (
         <>
@@ -132,6 +142,11 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
                                 ],
                             }}
                         />
+                        {new URLSearchParams(location.search).has("review-form") && <>
+                            <ReviewCard editorial review={{ id: "review", productId: "product", userId: "user", createdAt: new Date(), updatedAt: new Date(), rating: 4.5, likes: 0, review: "A thoughtful piece ".repeat(30), variant: "Ivory", size: "M", quantity: "1", color: "ivory", images: [], user: createMockUser({ picture: "/assets/images/default-user.jpg" }) }} />
+                            <ReviewDetails productId="product" variantsInfo={[{ ...products[0].variants[0], variantImage: "/assets/brand/star.svg", variantUrl: "/product/considered-piece/ivory", colors: [{ name: "ivory" }] }]} reviews={reviews} setReviews={setReviews} />
+                        </>}
+                        <ReviewsSort sort={reviewSort} setSort={setReviewSort} />
                         <Pagination
                             variant="editorial"
                             page={page}
@@ -145,12 +160,12 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
                     <h1>The collection</h1>
                     <ProductSort />
                     <FilterPanel>
-                        <Link href="/browse?category=art">Art</Link>
+                        <CategoryFilter categories={[{ ...createMockCategory({ name: "Art", url: "art" }), children: [] }]} />
                     </FilterPanel>
                     <ProductList
                         products={
                             new URLSearchParams(location.search).has("pieces")
-                                ? products
+                                ? (new URLSearchParams(location.search).has("variants") ? multiVariantProducts : products)
                                 : []
                         }
                         variant="editorial"

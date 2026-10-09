@@ -22,6 +22,8 @@ await startFixtureServer({
     title: "Priority design browser fixture",
     mocks: {
         "@/queries/product": `import {products} from "./tests/fixtures/priority/purchase-data"; export async function getProducts(){return {products:new URLSearchParams(location.search).has("pieces") ? products : []}}`,
+        "@/queries/review": `export async function upsertReview(){throw new Error("fixture only")}`,
+        "next-cloudinary": `export function CldUploadWidget({children}){return children({open(){}})}`,
         "@/queries/user": `export async function addToWishlist(){return true}`,
         "next/dynamic": `export default function dynamic(){return function DynamicFixture(){return null}}`,
         "@clerk/nextjs": `import React from "react"; export function SignOutButton({children}){return children} export function UserButton(){return React.createElement("button",null,"Manage account")}`,
