@@ -197,6 +197,10 @@ describe("NotificationList", () => {
         await waitFor(() =>
             expect(screen.queryByText("Unread")).not.toBeInTheDocument()
         );
+        // 既読化の完了を status で知らせる
+        expect(screen.getByRole("status")).toHaveTextContent(
+            "Notification marked as read."
+        );
         // 既読の通知はボタンにしない
         expect(
             screen.queryByRole("button", { name: /Delivered/ })
@@ -219,9 +223,10 @@ describe("NotificationList", () => {
             screen.getByRole("button", { name: /Your items have shipped/ })
         );
 
-        // Assert —— 失敗しても印とボタンが残る
+        // Assert —— 失敗しても印とボタンが残り、完了の通知も出さない
         await waitFor(() => expect(errorSpy).toHaveBeenCalled());
         expect(screen.getByText("Unread")).toBeInTheDocument();
+        expect(screen.getByRole("status")).toBeEmptyDOMElement();
 
         // Act —— 再試行は成功する
         await user.click(

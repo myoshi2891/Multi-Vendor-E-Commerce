@@ -103,7 +103,11 @@ export default function NotificationList({
             );
         if (optimistic) applyRead();
         void markReadAction(id).then(
-            optimistic ? undefined : applyRead,
+            () => {
+                if (!optimistic) applyRead();
+                // 成功時だけ status で知らせる（失敗時は空のまま）
+                setNotice("Notification marked as read.");
+            },
             (err: unknown) => {
                 if (err instanceof Error) {
                     console.error("[NotificationList:markOne] Failed", {
