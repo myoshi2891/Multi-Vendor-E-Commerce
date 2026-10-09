@@ -30,6 +30,14 @@ type DesignSuite = {
 };
 
 const DESIGN_SUITES = {
+    "full-route-audit": {
+        testMatch: "full-route-audit-design.spec.ts",
+        port: 3129,
+        kind: "route",
+        command: "DATABASE_URL=postgresql://dev:dev@localhost:5432/multivendor_dev NEXT_DEV_DIST_DIR=.next/full-route-audit bun run dev -- --webpack --port 3129",
+        readyPath: "/seller/apply",
+        timeout: 120000,
+    },
     purchase: {
         testMatch: "purchase-design.spec.ts",
         // priority と同じ server.mjs を使うが、並行実行で衝突しないよう port を分ける
