@@ -1050,3 +1050,9 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Red: `priority --grep 'following tokens'`、番号リンクの実寸36pxで44px条件に失敗。Green/Refactor: shared discoveryの番号操作・heading/card/actions/feedbackをaccount aliasesへ接続。色だけでfollow/成功/失敗を表さずaria-pressed/status/alertを維持。
 - 閲覧履歴の共通ページャー・URL・back/forward・商品操作への影響も回帰検証。認証後実ルート保留は継続。
 - Refactor後: 補助Chromium10/10（フォロー既存3/新4・履歴既存3）、Jest10/10、tsc exit0、lint0 errors/既存8 warnings、3幅＋480px境界・axe AA違反0・overflowなし・390px画像目視。
+
+### Step 4 閲覧履歴（DS-PAGE-024）
+
+- Red: `priority --grep 'history tokens'`、失敗パネルがshared panel tokenを継承せず旧固定面で失敗。Green: empty/error/retry/loadingをaccount aliasesへ接続。Refactor: browser操作領域helperはnavigationの描画を待ち、未描画時の空ループで誤成功しないよう修正。
+- 保存順/不正storage/アクセス不可/古い応答/範囲補正は既存RTL、URL/backとcompare/follow状態は補助ブラウザーで回帰。認証後実ルート保留を継続。
+- Refactor後: 補助Chromium10/10（履歴既存3/新4・フォロー既存3）、Jest10/10、tsc exit0、lint0 errors/既存8 warnings。1440/768/480/390px、axe AA違反0・overflowなし、390px画像目視。

@@ -213,7 +213,9 @@ for (const width of [1440, 768, 700, 390]) {
 }
 
 async function pageTargets(page: Page, label: string) {
-    const links = page.getByRole("navigation", { name: label }).getByRole("link");
+    const navigation = page.getByRole("navigation", { name: label });
+    await expect(navigation).toBeVisible();
+    const links = navigation.getByRole("link");
     for (const link of await links.all()) {
         const box = await link.boundingBox();
         expect(box?.width).toBeGreaterThanOrEqual(44);
@@ -271,5 +273,38 @@ for (const width of [1440, 768, 480, 390]) {
         await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveCSS("outline-style", "solid");
         await accessible(page);
         await page.screenshot({ path: info.outputPath(`following-p2-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 480, 390]) {
+    test(`history tokens and states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=history-error&page=2");
+        await expect(page.getByRole("alert")).toBeVisible();
+        await page.locator("main").evaluate(root => {
+            (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7");
+            (root as HTMLElement).style.setProperty("--purchase-muted", "#47594b");
+        });
+        await expect(page.getByRole("alert")).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await page.locator("main").evaluate(root => {
+            (root as HTMLElement).style.removeProperty("--purchase-panel");
+            (root as HTMLElement).style.removeProperty("--purchase-muted");
+        });
+        const retry = page.getByRole("button", { name: "Try again" });
+        await retry.focus();
+        await expect(retry).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await pageTargets(page, "View history pagination");
+        await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveAttribute("aria-current", "page");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`history-p2-${width}.png`), fullPage: true });
+        await page.goto("/?scenario=history-pending");
+        await expect(page.getByRole("status")).toContainText("Loading recently viewed pieces");
+        await page.locator("main").evaluate(root => (root as HTMLElement).style.setProperty("--purchase-muted", "#47594b"));
+        await expect(page.getByRole("status")).toHaveCSS("color", "rgb(71, 89, 75)");
+        await accessible(page);
+        await page.goto("/?scenario=history-empty");
+        await expect(page.getByRole("heading", { name: "No recently viewed pieces." })).toBeVisible();
+        await accessible(page);
     });
 }

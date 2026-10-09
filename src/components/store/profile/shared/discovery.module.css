@@ -42,8 +42,8 @@
 }
 .empty,
 .error {
-    border: 1px solid #c9c7b8;
-    background: #faf8f2;
+    border: 1px solid var(--account-line);
+    background: var(--account-panel);
     padding: 48px 24px;
     text-align: center;
 }
@@ -56,7 +56,7 @@
 }
 .empty p,
 .error p {
-    color: #536356;
+    color: var(--account-muted);
     font-size: 13px;
     line-height: 1.9;
 }
@@ -66,13 +66,13 @@
     display: inline-flex;
     padding: 14px 22px;
     margin-top: 24px;
-    background: #17251d;
-    color: #f3f0e8;
+    background: var(--account-ink);
+    color: var(--purchase-on-dark);
     font-size: 13px;
 }
 .loading {
     padding: 30px 0;
-    color: #536356;
+    color: var(--account-muted);
 }
 .stores {
     display: grid;

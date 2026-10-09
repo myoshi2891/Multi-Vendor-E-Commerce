@@ -42,7 +42,7 @@
 - [x] Step 1 比較。
 - [x] Step 2 Wishlist。
 - [x] Step 3 フォロー店舗。
-- [ ] Step 4 閲覧履歴。
+- [x] Step 4 閲覧履歴。
 - [ ] Step 5 通知。
 - [ ] Step 6 設定。
 - [ ] 最終統合検証・仕様/QA同期。
