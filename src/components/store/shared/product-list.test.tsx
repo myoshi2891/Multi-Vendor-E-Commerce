@@ -105,4 +105,26 @@ describe("ProductList Component", () => {
         render(<ProductList products={mockProducts} title="Hot Deals" link="/deals" arrow />);
         expect(screen.getByRole("link")).toContainElement(screen.getByTestId("chevron-right"));
     });
+
+    it("同一商品の別バリアント（閲覧履歴）を並べても key が重複しない", () => {
+        // Arrange —— 閲覧履歴はバリアント単位なので、同じ商品 ID のカードが 2 枚になりうる
+        const base = createMockProduct({ id: "p1", name: "Ring" });
+        const variantOf = (variantId: string): ProductType => ({
+            ...base,
+            variants: [{ variantId, variantSlug: variantId, variantName: variantId, images: [], sizes: [] }],
+            variantImages: [],
+        });
+        const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+
+        // Act
+        render(<ProductList products={[variantOf("v-gold"), variantOf("v-silver")]} variant="editorial" />);
+
+        // Assert
+        expect(screen.getAllByTestId("dummy-product-card")).toHaveLength(2);
+        const keyWarnings = consoleError.mock.calls.filter((args) =>
+            args.some((arg) => typeof arg === "string" && arg.includes("same key"))
+        );
+        expect(keyWarnings).toHaveLength(0);
+        consoleError.mockRestore();
+    });
 });
