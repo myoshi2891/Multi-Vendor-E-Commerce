@@ -590,3 +590,35 @@ for (const width of [1440, 768, 390])
                 page.getByRole("button", { name: /Open conversation with/ })
             ).toBeVisible();
         });
+
+for (const width of [1440, 768, 767, 390]) {
+    test(`settings token adapter at ${width}`, async ({page}, info) => {
+        await page.setViewportSize({width, height: 1000});
+        await page.goto("/?screen=settings");
+        const settings = page.getByRole("region", {name: "Account settings"});
+        // This adapter consumes production appearance; it does not prove real Clerk lifecycle.
+        await expect(page.getByRole("region", {name: "Clerk fixture"})).toHaveAttribute("data-routing", "hash");
+        await settings.evaluate(root => {
+            (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b");
+            (root as HTMLElement).style.setProperty("--purchase-input", "#fffdf7");
+        });
+        const save = page.getByRole("button", {name: "Save profile"});
+        await expect(save).toHaveCSS("background-color", "rgb(96, 74, 43)");
+        await expect(page.getByRole("textbox", {name: "Name"})).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await settings.evaluate(root => (root as HTMLElement).removeAttribute("style"));
+        await save.focus();
+        await expect(save).toHaveCSS("outline-style", "solid");
+        const box = await save.boundingBox();
+        expect(box?.height).toBeGreaterThanOrEqual(44);
+        await expect(page.getByRole("button", {name: "Delete account"})).toHaveCSS("color", "rgb(138, 48, 40)");
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        expect((await new AxeBuilder({page}).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+        await page.screenshot({path: info.outputPath(`settings-p2-${width}.png`), fullPage: true});
+        await page.goto("/?screen=settings&portal");
+        const portal = page.getByRole("region", {name: "Clerk portal adapter"});
+        await expect(portal).toHaveCSS("background-color", "rgb(248, 246, 239)");
+        await expect(portal.getByRole("button")).toHaveCSS("background-color", "rgb(117, 97, 59)");
+        await portal.getByRole("button").focus();
+        await expect(portal.getByRole("button")).toHaveCSS("outline-style", "solid");
+    });
+}

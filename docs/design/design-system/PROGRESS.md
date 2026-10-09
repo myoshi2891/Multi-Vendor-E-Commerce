@@ -1063,3 +1063,9 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Refactor: 同一moduleのNotificationHeadingで成功/失敗の見出しを集約、cursorを一度だけ正規化。既読化の既存楽観/非楽観更新とリンク遷移は維持。新しいServer Action/APIは追加しない。
 - 補助Chromium7/7（既存3＋継承1＋新状態3）、関連Jest26/26、tsc exit0、lint0 errors/既存8 warnings。1440/768/390px、pending/error/retry/success、リンクなし/空cursor/取得失敗、axe AA違反0・overflowなし・390px画像目視。
 - 新しい[画面要件](../profile-notifications/requirements.md)・設計/tasks/進捗を追加し、基盤設計から参照。認証後実ルートは専用DB不在で保留。
+
+### Step 6 設定（DS-PAGE-032）
+
+- Red: RTL1件（appearanceが旧固定値）、browser1件（primary token上書きが操作の計算済み色に反映されない）。Green: settings root/appearanceをpurchase themeへ統一。Refactor: 型付きmodalContentにPortal専用themeを合成し、埋め込みrootから独立した描画でもtokensを供給。
+- 既存seven fixtureのUserProfile adapterがproduction appearance/hashを受け取り、入力/操作/danger/別rootのPortal sampleを描画する。実SDK機能はmockであり受け入れ証明に含めない。hash/認可/webhook/securityの契約は不変。
+- Refactor後: settings補助Chromium7/7（1440/768/767/390px・embedded/Portal）、関連Jest11/11、tsc exit0、lint0 errors/既存8 warnings。axe AA違反0・overflowなし、390px画像目視。認証後実ルート/実Clerkは保留を継続。
