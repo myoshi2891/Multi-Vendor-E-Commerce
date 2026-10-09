@@ -172,7 +172,7 @@ if (scenario.startsWith("compare")) {
 } else
     root.render(
         <main
-            className={styles.page}
+            className={`${profileStyles.shell} ${styles.page}`}
             style={{
                 background: "#f3f0e8",
                 maxWidth: 1050,

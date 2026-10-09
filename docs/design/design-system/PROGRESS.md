@@ -1044,3 +1044,9 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - Red: `priority --grep 'wishlist tokens'`、番号リンクの実寸36pxで44px条件に失敗。Green/Refactor: 最小幅44pxとaccount aliases、状態/見出し/罫線/hover/focusを統一。fixtureは本番page/loadingをimportし、既存serverのprofile query adapterで通常/空/失敗を供給。URLが変わった後もWishlistを描画する。
 - 既存検証済み履歴は維持。今回認証後実ルートは専用E2E_DATABASE_URL不在で保留（Clerkキーあり、Docker socketあり。DB初期化は行わない）。
 - Refactor後: 補助Chromium4/4（1440/768/480/390px）、Jest7/7、tsc exit0、lint0 errors/既存8 warnings。axe AA違反0・overflowなし・URL/back/current/empty/error/loadingと390px画像目視を確認。
+
+### Step 3 フォロー店舗（DS-PAGE-022）
+
+- Red: `priority --grep 'following tokens'`、番号リンクの実寸36pxで44px条件に失敗。Green/Refactor: shared discoveryの番号操作・heading/card/actions/feedbackをaccount aliasesへ接続。色だけでfollow/成功/失敗を表さずaria-pressed/status/alertを維持。
+- 閲覧履歴の共通ページャー・URL・back/forward・商品操作への影響も回帰検証。認証後実ルート保留は継続。
+- Refactor後: 補助Chromium10/10（フォロー既存3/新4・履歴既存3）、Jest10/10、tsc exit0、lint0 errors/既存8 warnings、3幅＋480px境界・axe AA違反0・overflowなし・390px画像目視。

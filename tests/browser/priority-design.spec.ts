@@ -251,3 +251,25 @@ for (const width of [1440, 768, 480, 390]) {
         await accessible(page);
     });
 }
+
+for (const width of [1440, 768, 480, 390]) {
+    test(`following tokens and pagination at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=following&page=2");
+        await pageTargets(page, "Followed stores pagination");
+        await page.locator("main").evaluate(root => {
+            (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7");
+            (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b");
+        });
+        await expect(page.locator("article")).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await expect(page.getByRole("link", { name: "Browse the collection" })).toHaveCSS("color", "rgb(96, 74, 43)");
+        await page.locator("main").evaluate(root => {
+            (root as HTMLElement).style.removeProperty("--purchase-panel");
+            (root as HTMLElement).style.removeProperty("--purchase-link");
+        });
+        await page.getByRole("link", { name: "Page 2", exact: true }).focus();
+        await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveCSS("outline-style", "solid");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`following-p2-${width}.png`), fullPage: true });
+    });
+}
