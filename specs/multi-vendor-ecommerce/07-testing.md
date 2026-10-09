@@ -1,5 +1,10 @@
 # Testing Strategy
 
+## 全実ルートのデザイン再監査
+
+実Nextルートの全数到達記録とfixtureの部品検証を区別する。未認証の転送・HTTPエラー・仮実装は本体移行完了と扱わない。収集spec成功だけでデザイン合格にせず、操作寸法・theme・表示状態・認証後本体の受け入れを確認する。[2026-10-09監査](../../docs/design/design-system/full-route-reaudit-2026-10-09.md)。機能/API/データ仕様は今回変更なし。
+
+
 ## Current State
 - Jest + ts-jest configured for unit and server-side tests.
 - React Testing Library and jest-dom installed for component tests.
@@ -12,7 +17,7 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 3075 passed / 3078 total across 317 suites (316 passed, one skipped suite, 3 skipped tests), measured on 2026-10-08 with `bun run test -- --coverage` after the six purchase-screen design migration. All 127 snapshots passed. Integration: 238 tests across 18 suites (unchanged since plan 087).
+- 3077 passed / 3080 total across 318 suites (317 passed, one skipped suite, 3 skipped tests), measured on 2026-10-09 with `bun run test -- --runInBand --coverage` after the six P2 residual-screen migration. All 127 snapshots passed. Integration: 238 tests across 18 suites (unchanged since plan 087).
 - Earlier measurement (2026-10-08): 3039 passed / 3042 total across 316 suites (315 passed, one skipped suite, 3 skipped tests), measured on 2026-10-08 with `bun run test` after plan 087 (item-level restock: `src/queries/order.test.ts` +10, then +1 review regression). Integration: 238 tests across 18 suites (`tests/integration/order-lifecycle.test.ts` +10 cross-path exactly-once restock scenarios).
 - Earlier measurement (2026-10-07): 2942 passed / 2945 total across 305 suites (304 passed, one skipped suite, 3 skipped tests), measured on 2026-10-07 with `bun run test` after plan 085 (rate limiting per ADR-009: new suite `src/lib/rate-limit.test.ts` +14 for the in-memory Fixed Window limiter, and +5 in `src/app/api/setUserCountryInCookies/route.test.ts` for 429 / `Retry-After`, `x-real-ip`-only keying and fail-open without the header; +1 after review for the structured warning when `x-real-ip` is missing on Vercel).
 - Earlier measurement (2026-10-07): 2922 passed / 2925 total across 304 suites (303 passed, one skipped suite, 3 skipped tests), measured on 2026-10-07 with `bun run test` after plan 083 (OI-11: the seller product form loads `jodit-react` with `next/dynamic` `ssr: false` so SSR no longer evaluates its UMD `self` reference; +1 test in the new suite `tests/component/dashboard/product-details-ssr.test.tsx`).
@@ -1316,3 +1321,7 @@ admin-p4-pagesの9新要件RTLとカテゴリ390px heading browserのRedを確�
 [横断受け入れ仕様](../../docs/design/purchase-residual/requirements.md)を適用。browse/store/product/cart/checkout/orderのrootとPortalにスコープ付きpurchase themeを合成。共有住所フォームは既定配色fallbackを保持し、注文・支払い・商品状態タグは任意`variant="store"`のみ意味色を適用する。API・DB・認可・金額・在庫・決済遷移契約は変更なし。overview/data-modelの更新は不要。
 
 TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。全体Jest3075/3078（3 skipped）・317スイート（316 passed/1 skipped）、127 snapshots。購入補助ブラウザー68/68（purchase44、commerce24）とaxe AAを確認。専用DB/Clerk/外部SDKを伴う受け入れは保留。
+
+### P2 residual six screens (2026-10-09)
+
+Red→Green→Refactorは[進捗](../../docs/design/design-system/PROGRESS.md#p2残存6画面移行記録)に記録。全体Jest3077/3080、318 suites（317 pass/1 skip）、127 snapshots。既存priority29/29とseven settings7/7の計36補助Chromiumを実測。比較のremove/clear/横スクロール、3ページャーの44px/URL、通知status/retry/read/取得失敗、settings appearance/hash/独立Portal/reduced-motionを検証。認証後実ルートと実Clerkは[QA](../../docs/testing/QA_HANDOFF.md#ds-p2-residual-browser)の解除条件待ち。

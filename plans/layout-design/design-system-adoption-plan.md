@@ -1,5 +1,10 @@
 # 新デザインシステム適用状況・移行計画
 
+## 2026-10-09 全実ルート再監査追記
+
+[監査報告](../../docs/design/design-system/full-route-reaudit-2026-10-09.md)。67定義＝本体60＋転送7。既知修正対象6画面（公開操作不足3＋属性部分移行3）、別に仮実装1。認証後39機能画面は実表示未確認で属性3を含む。以前の「42未完了」は台帳状態の集計で、旧UI残存数ではない。親theme適用済みの属性3を全面未適用とみなさず、個別UI/Portal部分移行として扱う。共通部品は242項目・未完了216で、再実装数ではない。
+
+
 - 調査日: 2026-09-30
 - 対象: 顧客向け画面、認証画面、出店者画面、管理者画面、共通・補助コンポーネント
 - 調査基準: 未コミットの変更を含む現在のワークスペース。HEADだけを基準にしない。
@@ -750,3 +755,16 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [ ] DS-COMP-242 [store status CSS](../../src/components/shared/store-status.module.css): store opt-in全34状態を補助検証、認証後order実ルート保留。
 
 2026-10-08: plan 086で追加済みの通知ページを含めて台帳集計を67ページへ整合。購入導線6画面の今回の補助検証による全画面判定変更はない。
+
+### P2残存6画面（2026-10-09）
+
+[保存計画](priority-six-p2-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#p2残存6画面移行記録)。対象DS-PAGE-009/033/022/024/067/032。既存の適用済み本体・検証履歴を保持して残存表示を統一する。
+
+- [x] 共通基盤: store限定purchase themeとaccount aliasesの接続。
+- [x] Step 1 比較。
+- [x] Step 2 Wishlist。
+- [x] Step 3 フォロー店舗。
+- [x] Step 4 閲覧履歴。
+- [x] Step 5 通知。
+- [x] Step 6 設定。
+- [ ] 認証後実ルート/実Clerkの受け入れ。補助検証だけで全画面判定やDS-BASE-001の全体完了を変更しない。

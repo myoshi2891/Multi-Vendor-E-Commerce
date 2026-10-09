@@ -24,3 +24,9 @@ WishlistContainerはClient state／useEffect／router.pushを除去し、Server 
 ## 検証
 
 [保存計画](../../../plans/layout-design/wishlist-design-system-plan.md)。RTLで新要件のRed、card/query/sidebar回帰。Chromiumはテスト顧客に既存カタログ11商品のお気に入りだけを作成し、空／10商品／最終1商品のページ、比較操作・キーボード・axe・範囲外と戻るを確認。テスト顧客の後処理によりfixtureを除去し、商品作成／seed／DB初期化／購入は行わない。取得失敗とloadingはRTL確認、ブラウザでの強制障害再現は行わない。
+
+## P2残存表示統一（2026-10-09）
+
+Wishlistの見出し・件数・状態・罫線・ページャーをprofile shellのaccount aliasesへ接続。番号リンクは44×44px以上、current/disabled/hover/focusを統一。商品カードの既存editorial操作、URL・範囲補正・alias・取得失敗のreloadを保持する。
+
+[計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。

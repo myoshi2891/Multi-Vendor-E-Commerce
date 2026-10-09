@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import NotificationList from "@/components/store/profile/notifications/notification-list";
@@ -197,6 +197,10 @@ describe("NotificationList", () => {
         await waitFor(() =>
             expect(screen.queryByText("Unread")).not.toBeInTheDocument()
         );
+        // 既読化の完了を status で知らせる
+        expect(screen.getByRole("status")).toHaveTextContent(
+            "Notification marked as read."
+        );
         // 既読の通知はボタンにしない
         expect(
             screen.queryByRole("button", { name: /Delivered/ })
@@ -219,9 +223,10 @@ describe("NotificationList", () => {
             screen.getByRole("button", { name: /Your items have shipped/ })
         );
 
-        // Assert —— 失敗しても印とボタンが残る
+        // Assert —— 失敗しても印とボタンが残り、完了の通知も出さない
         await waitFor(() => expect(errorSpy).toHaveBeenCalled());
         expect(screen.getByText("Unread")).toBeInTheDocument();
+        expect(screen.getByRole("status")).toBeEmptyDOMElement();
 
         // Act —— 再試行は成功する
         await user.click(
@@ -235,4 +240,28 @@ describe("NotificationList", () => {
         );
         errorSpy.mockRestore();
     });
+});
+
+it("announces bulk-read progress and completion while locking repeated submission", async () => {
+    let finish!: (value: { count: number }) => void;
+    const markAllReadAction = jest.fn(
+        () =>
+            new Promise<{ count: number }>((resolve) => {
+                finish = resolve;
+            })
+    );
+    const { user } = setup([item()], { markAllReadAction });
+    const button = screen.getByRole("button", { name: "Mark all as read" });
+    await user.click(button);
+    expect(screen.getByRole("status")).toHaveTextContent(
+        "Updating notifications…"
+    );
+    expect(button).toHaveAttribute("aria-busy", "true");
+    await user.click(button);
+    expect(markAllReadAction).toHaveBeenCalledTimes(1);
+    await act(async () => finish({ count: 1 }));
+    expect(screen.getByRole("status")).toHaveTextContent(
+        "Notifications marked as read."
+    );
+    expect(screen.getByText("Read", { exact: true })).toBeInTheDocument();
 });

@@ -1,7 +1,7 @@
 .page {
-    background: #f3f0e8;
-    color: #17251d;
-    color-scheme: light;
+    composes: theme from "../../shared/purchase-theme.module.css";
+    background: var(--purchase-page);
+    color: var(--purchase-ink);
     min-width: 0;
     padding: clamp(1rem, 3vw, 2rem);
     font-family: Arial, Helvetica, sans-serif;
@@ -10,10 +10,10 @@
 .heading {
     padding-bottom: 1.5rem;
     margin-bottom: 1.5rem;
-    border-bottom: 1px solid #c9c2b2;
+    border-bottom: 1px solid var(--purchase-line);
 }
 .eyebrow {
-    color: #755b2f;
+    color: var(--purchase-link);
     font-size: 0.7rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -27,7 +27,7 @@
 }
 .heading p:last-child {
     margin-top: 0.75rem;
-    color: #536356;
+    color: var(--purchase-muted);
     line-height: 1.6;
 }
 .root,
@@ -39,16 +39,17 @@
     box-shadow: none;
 }
 .card {
-    background: #faf8f2;
-    border: 1px solid #c9c2b2;
+    background: var(--purchase-panel);
+    border: 1px solid var(--purchase-line);
     border-radius: 3px;
 }
 .clerkTitle {
     font-family: Georgia, "Times New Roman", serif;
-    color: #17251d;
+    color: var(--purchase-ink);
 }
-.root :is(a, button, input, select, textarea):focus-visible {
-    outline: 2px solid #755b2f;
+.root :is(a, button, input, select, textarea):focus-visible,
+.portal :is(a, button, input, select, textarea):focus-visible {
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 3px;
 }
 @media (max-width: 767px) {
@@ -61,8 +62,25 @@
     }
 }
 @media (prefers-reduced-motion: reduce) {
-    .root * {
+    .root,
+    .root *,
+    .portal,
+    .portal * {
         transition: none !important;
         animation: none !important;
     }
+}
+
+/* SDK portal surfaces do not inherit the embedded page's CSS variables. */
+.portal {
+    composes: theme from "../../shared/purchase-theme.module.css";
+    background: var(--purchase-panel);
+    color: var(--purchase-ink);
+    font-family: Arial, Helvetica, sans-serif;
+    overflow-wrap: anywhere;
+}
+.root :is(button, input, select, textarea),
+.portal :is(button, input, select, textarea) {
+    min-height: var(--purchase-touch);
+    max-width: 100%;
 }

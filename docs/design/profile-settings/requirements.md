@@ -58,3 +58,13 @@ profile概要と共通ナビゲーションの新デザインは[profile-overvie
 ## 設定本体のデザイン移行（2026-10-05）
 
 Clerk UserProfileのhash routingとセキュリティ機能を保持し、専用appearanceとCSS Moduleを導入。アイボリー、濃いゴールドの操作色、セリフ見出し、意味を保つ危険色、focus、狭い幅のカード枠を整備。RTLはラベル付きsection・appearance・hashを検証、補助ブラウザは3幅とaxe AAを検証。実Clerk/認証後実ルートは保留。[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。既存機能の完了記録をデザイン検証完了とは扱わない。
+
+## P2残存表示統一（2026-10-09）
+
+settings rootはstore限定purchase themeを合成し、Clerk appearanceのprimary/background/foreground/input/danger/success/ringを共通tokensへ接続。hash routing・氏名/メール/security機能は維持する。SDKのPortalは埋め込みpageの変数を継承しないため、型が提供するmodalContentへthemeを合成した専用classを渡す。入力と操作は44px以上、可視focusと意味色を維持する。
+
+インストール済み@clerk/nextjs 7.5.19が参照する@clerk/reactの型（CssColor=string、modalContent key）を確認。[Clerk公式variables仕様](https://clerk.com/docs/guides/customizing-clerk/appearance-prop/variables)のCSS custom properties対応に従う。補助adapterはappearance/hashの受け渡しと計算済み配色を検証するもので、実SDK lifecycle/認証/セキュリティ操作の証明にはしない。
+
+[計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+2026-10-09追記: reduced-motionでは埋め込みrootと独立Portal両方のアニメーション/transitionを抑制する。補助settings7/7で検証、実SDK受け入れは保留。

@@ -1,5 +1,10 @@
 # Testing Design: Directory Layout and Tool Selection
 
+## 読取専用の全実ルート監査
+
+既存 `playwright.design.config.ts` の `full-route-audit`（route、3129）と `tests/browser/full-route-audit-design.spec.ts` を使う。`scripts/design/prepare-route-audit.ts` は既存DBから動的ルート識別子を読取り、`DESIGN_AUDIT_INVENTORY` manifestを作る。新規fixture/config、seed、migration、アカウント作成、業務送信は行わない。67ルートの到達結果とPC/モバイル画像、Clerk待機/共通開閉、公開操作寸法を記録する。認証先への転送は本体確認と区別する。収集テストの成功はデザイン合格ではなく、画像確認と全状態/axe受け入れは別に記録する。[実測と制約](../design/design-system/full-route-reaudit-2026-10-09.md)。
+
+
 ## ドキュメントガイド
 
 - **目的**: リポジトリのテスト戦略とディレクトリ構成を定義する
@@ -495,3 +500,7 @@ P4 specはtests/browser/p4-design.spec.ts、DESIGN_SUITE=p4で実行する。既
 ### Shared header design fixtures
 
 Purchase design fixtures use the existing priority server and production HeaderFrame/AccountMenu. Identity lookup remains in the server component; provider controls are adapters in fixtures. The shared bundler pins its output basename to `preview`, allowing multiple entry filenames without duplicating servers. Screenshot paths use Playwright outputPath. Real browse/checkout data acceptance requires the existing dedicated test DB setup; adapters do not prove Clerk lifecycle or SSR data retrieval.
+
+### P2残存画面のtoken検証（2026-10-09）
+
+既存priority/seven fixtureと `playwright.design.config.ts` を再利用する。CSS変数を上書きしてproduction部品のcomputed colorと操作領域を検証し、固定色への逆戻りを検出する。Clerk adapterはproduction appearanceのvariables/elementsを消費し、埋め込みroot外へPortalを描画して継承とreduced-motionを検証する。adapter成功は実SDKライフサイクルの証明に含めない。[受け入れ条件](./QA_HANDOFF.md#ds-p2-residual-browser)。

@@ -1,5 +1,10 @@
 # 包括的テスト実装計画書 (Comprehensive Test Implementation Plan)
 
+## 2026-10-09 実ルート全数再監査
+
+✅ Completed (2026-10-09): ソース67定義と台帳の突合、実ルート134到達記録、公開20画面PC/モバイル初期表示とClerk/共通開閉/操作寸法の補足測定。認証後39機能画面＋仮実装1の本体・全状態受け入れは未完了。詳細は[監査報告](../design/design-system/full-route-reaudit-2026-10-09.md)、次着手はQA_HANDOFF。収集spec成功を移行完了としない。
+
+
 ## 1. 目的とスコープ
 本計画書は、Multi-Vendor EC プロジェクトにおいて現在不足しているテストケースを特定し、世界トップクラスの品質基準を満たすための実装ロードマップを定義するものである。
 
@@ -1161,3 +1166,12 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - 残存部品 Step 5 DS-PAGE-008 Checkout: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。
 
 - 残存部品 Step 6 DS-PAGE-003 注文詳細: ✅ Completed (2026-10-08)。検証結果は進捗正本を参照。
+
+### P2残存6画面（2026-10-09）
+
+- ✅ 共通profile shellのpurchase token継承・比較画面の計算済み配色と横スクロール。
+- ✅ Wishlist／フォロー店舗／閲覧履歴の44pxページング・URL復帰・状態面。
+- ✅ 通知の取得失敗見出し/cursor再試行、一括既読pending/success/read表示。
+- ✅ 設定の型付きappearance・独立Portal配色/focus/reduced-motion。
+- ✅ 全体Jest3077成功、priority29＋settings7成功、型/Lintエラー0、仕様/QA同期。
+- 保留: 認証後6実ルートと実Clerk。[正本と解除条件](./QA_HANDOFF.md#ds-p2-residual-browser)。

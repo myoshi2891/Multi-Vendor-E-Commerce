@@ -5,3 +5,10 @@
 - 証跡は[デザイン移行記録](../design-system/PROGRESS.md#wishlist移行記録)へ集約する。
 
 - 関連Jest87/87（4 suites）、Chromium5/5、lint 0 errors／既存12 warnings、tsc成功。取得失敗とloadingはRTL、実画面は空・10商品・最終1商品を確認。
+
+## P2残存表示統一（2026-10-09）
+
+- [x] 44×44px操作領域のbrowser Red→Green、tokensとURL/empty/loading/errorの回帰、仕様同期。
+- [ ] 今回の認証後実ルート受け入れ（既存検証済み履歴は維持）。
+
+[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。

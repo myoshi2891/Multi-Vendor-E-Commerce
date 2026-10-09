@@ -1,5 +1,5 @@
 .page {
-    color: #17251d;
+    color: var(--account-ink);
     min-width: 0;
     overflow-wrap: anywhere;
 }
@@ -7,7 +7,7 @@
     margin-bottom: 32px;
 }
 .eyebrow {
-    color: #75613b;
+    color: var(--account-accent);
     font-size: 10px;
     letter-spacing: 0.2em;
 }
@@ -19,31 +19,31 @@
     margin: 16px 0;
 }
 .heading > p:not(.eyebrow) {
-    color: #536356;
+    color: var(--account-muted);
     font-size: 13px;
     line-height: 1.9;
 }
 .collection {
     display: inline-flex;
     align-items: center;
-    min-height: 44px;
+    min-height: var(--account-touch);
     margin-top: 16px;
     font-size: 12px;
-    color: #75613b;
-    border-bottom: 1px solid #c9c7b8;
+    color: var(--account-accent);
+    border-bottom: 1px solid var(--account-line);
 }
 .page a:focus-visible,
 .page button:focus-visible {
-    outline: 2px solid #75613b;
+    outline: 2px solid var(--account-focus);
     outline-offset: 4px;
 }
 .page button {
-    min-height: 44px;
+    min-height: var(--account-touch);
 }
 .empty,
 .error {
-    border: 1px solid #c9c7b8;
-    background: #faf8f2;
+    border: 1px solid var(--account-line);
+    background: var(--account-panel);
     padding: 48px 24px;
     text-align: center;
 }
@@ -56,7 +56,7 @@
 }
 .empty p,
 .error p {
-    color: #536356;
+    color: var(--account-muted);
     font-size: 13px;
     line-height: 1.9;
 }
@@ -66,21 +66,21 @@
     display: inline-flex;
     padding: 14px 22px;
     margin-top: 24px;
-    background: #17251d;
-    color: #f3f0e8;
+    background: var(--account-ink);
+    color: var(--purchase-on-dark);
     font-size: 13px;
 }
 .loading {
     padding: 30px 0;
-    color: #536356;
+    color: var(--account-muted);
 }
 .stores {
     display: grid;
     gap: 24px;
 }
 .card {
-    border: 1px solid #c9c7b8;
-    background: #faf8f2;
+    border: 1px solid var(--account-line);
+    background: var(--account-panel);
     padding: 28px;
     min-width: 0;
 }
@@ -105,7 +105,7 @@
 }
 .identity p {
     font-size: 12px;
-    color: #536356;
+    color: var(--account-muted);
     margin-top: 8px;
 }
 .actions {
@@ -118,12 +118,12 @@
 }
 .actions button {
     padding: 10px 18px;
-    border: 1px solid #75613b;
+    border: 1px solid var(--account-accent);
 }
 .actions button[aria-pressed="true"] {
-    background: #17251d;
-    color: #f3f0e8;
-    border-color: #17251d;
+    background: var(--account-ink);
+    color: var(--purchase-on-dark);
+    border-color: var(--account-ink);
 }
 .actions button:disabled {
     cursor: wait;
@@ -131,9 +131,9 @@
 .actions a {
     display: inline-flex;
     align-items: center;
-    min-height: 44px;
+    min-height: var(--account-touch);
     padding: 10px 0;
-    color: #75613b;
+    color: var(--account-accent);
 }
 .feedback {
     font-size: 13px;
@@ -141,12 +141,12 @@
     line-height: 1.8;
 }
 .feedback[role="alert"] {
-    color: #8a2929;
+    color: var(--account-danger);
 }
 .pagination {
     margin-top: 40px;
     padding-top: 20px;
-    border-top: 1px solid #c9c7b8;
+    border-top: 1px solid var(--account-line);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -164,20 +164,20 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 44px;
-    min-width: 36px;
+    min-height: var(--account-touch);
+    min-width: var(--account-touch);
     padding: 10px;
     border: 1px solid transparent;
 }
 .pagination a[aria-current="page"] {
-    background: #e6dfcf;
-    border-color: #75613b;
+    background: var(--account-selected);
+    border-color: var(--account-accent);
 }
 .pagination a:hover {
-    border-color: #c9c7b8;
+    border-color: var(--account-line);
 }
 .pagination > span {
-    color: #536356;
+    color: var(--account-muted);
 }
 .products {
     min-width: 0;

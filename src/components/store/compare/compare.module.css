@@ -1,18 +1,22 @@
 .page {
-    --compare-gold: #d4ba83;
-    --compare-ink: #17251d;
-    background: #f3f0e8;
-    color: var(--compare-ink);
+    composes: theme from "../shared/purchase-theme.module.css";
+    min-width: 0;
+    overflow-wrap: anywhere;
+    background: var(--purchase-page);
+    color: var(--purchase-ink);
 }
 .page a:focus-visible,
 .page button:focus-visible,
 .scroller:focus-visible {
-    outline: 2px solid #a68a56;
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 5px;
 }
 .hero {
-    background: #0b100e;
-    color: #f1eee4;
+    background: var(--purchase-dark);
+    color: var(--purchase-on-dark);
+}
+.hero a:focus-visible {
+    outline-color: var(--purchase-gold);
 }
 .heroInner {
     max-width: 1600px;
@@ -22,7 +26,7 @@
 .breadcrumb {
     display: flex;
     gap: 15px;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
     font-size: 11px;
 }
 .heroContent {
@@ -38,7 +42,7 @@
     letter-spacing: 0.2em;
 }
 .eyebrow {
-    color: var(--compare-gold);
+    color: var(--purchase-gold);
 }
 .hero h1 {
     font:
@@ -50,7 +54,7 @@
 }
 .intro {
     max-width: 310px;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
     font-size: 13px;
     line-height: 1.9;
 }
@@ -58,17 +62,17 @@
     display: flex;
     justify-content: space-between;
     gap: 20px;
-    border-top: 1px solid #d4ba8333;
+    border-top: 1px solid color-mix(in srgb, var(--purchase-gold) 20%, transparent);
     padding-top: 20px;
     font-size: 10px;
     letter-spacing: 0.08em;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
 }
 .heroFoot a {
     display: inline-flex;
     gap: 15px;
     align-items: center;
-    color: var(--compare-gold);
+    color: var(--purchase-gold);
 }
 .selection {
     max-width: 1600px;
@@ -82,11 +86,11 @@
     gap: 20px;
     align-items: flex-end;
     padding-bottom: 25px;
-    border-bottom: 1px solid #c9c7b8;
+    border-bottom: 1px solid var(--purchase-line);
     margin-bottom: 30px;
 }
 .sectionLabel {
-    color: #75613b;
+    color: var(--purchase-link);
     margin-bottom: 12px;
 }
 .toolbar h2 {
@@ -102,20 +106,20 @@
     gap: 25px;
 }
 .count {
-    color: #536356;
+    color: var(--purchase-muted);
     font-size: 12px;
     white-space: nowrap;
 }
 .textButton {
-    color: #17251d;
+    color: var(--purchase-ink);
     font-size: 12px;
-    border-bottom: 1px solid #8b7346;
+    border-bottom: 1px solid var(--purchase-link);
     padding: 12px 0;
-    min-height: 44px;
+    min-height: var(--purchase-touch);
 }
 .textButton:hover,
 .detailLink:hover {
-    color: #75613b;
+    color: var(--purchase-link);
 }
 .empty {
     display: flex;
@@ -124,11 +128,11 @@
     gap: 23px;
     text-align: center;
     padding: 65px 20px 70px;
-    background: #eae7de;
-    border: 1px solid #d2cec2;
+    background: var(--purchase-selected);
+    border: 1px solid var(--purchase-line);
 }
 .empty > svg {
-    color: #75613b;
+    color: var(--purchase-link);
 }
 .empty h3 {
     font:
@@ -141,7 +145,7 @@
     max-width: 430px;
     font-size: 13px;
     line-height: 1.9;
-    color: #536356;
+    color: var(--purchase-muted);
 }
 .cta {
     display: inline-flex;
@@ -149,14 +153,14 @@
     justify-content: center;
     gap: 28px;
     padding: 16px 23px;
-    background: var(--compare-gold);
-    color: #141c16;
+    background: var(--purchase-gold);
+    color: var(--purchase-ink);
     font-size: 12px;
     min-height: 48px;
     transition: background 0.2s;
 }
 .cta:hover {
-    background: #e5cfa5;
+    background: var(--purchase-gold-hover);
 }
 .scroller {
     display: flex;
@@ -164,19 +168,19 @@
     overflow-x: auto;
     padding: 6px 6px 20px;
     margin: -6px;
-    scrollbar-color: #8b7346 #e4e0d4;
+    scrollbar-color: var(--purchase-link) var(--purchase-selected);
 }
 .card {
     flex: 1 0 260px;
     max-width: 340px;
     min-width: 0;
-    border: 1px solid #d2cec2;
-    background: #faf8f2;
+    border: 1px solid var(--purchase-line);
+    background: var(--purchase-panel);
 }
 .image {
     position: relative;
     aspect-ratio: 1;
-    background: #eae7de;
+    background: var(--purchase-selected);
 }
 .image > a {
     position: absolute;
@@ -190,7 +194,7 @@
 }
 .imageFallback {
     font-size: 12px;
-    color: #536356;
+    color: var(--purchase-muted);
 }
 .remove {
     position: absolute;
@@ -199,14 +203,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    background: #faf8f2;
-    color: #17251d;
-    border: 1px solid #d2cec2;
+    width: var(--purchase-touch);
+    height: var(--purchase-touch);
+    background: var(--purchase-panel);
+    color: var(--purchase-ink);
+    border: 1px solid var(--purchase-line);
 }
 .remove:hover {
-    background: #d4ba83;
+    background: var(--purchase-gold);
 }
 .cardBody {
     padding: 23px;
@@ -214,7 +218,7 @@
 .variant {
     font-size: 10px;
     letter-spacing: 0.12em;
-    color: #536356;
+    color: var(--purchase-muted);
     margin-bottom: 12px;
 }
 .card h3 {
@@ -229,7 +233,7 @@
     margin: 20px 0 23px;
 }
 .price [data-testid="product-card-price"] {
-    color: #75613b;
+    color: var(--purchase-link);
     font:
         400 21px/1.3 Georgia,
         "Times New Roman",
@@ -237,18 +241,18 @@
 }
 .details {
     font-size: 12px;
-    border-top: 1px solid #d2cec2;
+    border-top: 1px solid var(--purchase-line);
 }
 .details > div {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 14px 0;
-    border-bottom: 1px solid #d2cec2;
+    border-bottom: 1px solid var(--purchase-line);
 }
 .details dt,
 .details dd span {
-    color: #536356;
+    color: var(--purchase-muted);
 }
 .detailLink {
     display: flex;
@@ -256,10 +260,10 @@
     justify-content: space-between;
     font-size: 12px;
     padding-top: 20px;
-    min-height: 44px;
+    min-height: var(--purchase-touch);
 }
 .notice {
-    color: #536356;
+    color: var(--purchase-muted);
     font-size: 13px;
     margin-bottom: 20px;
 }
@@ -267,11 +271,14 @@
     flex: 1 0 260px;
     max-width: 340px;
     height: 430px;
-    background: #e4e0d4;
-    border: 1px solid #d2cec2;
+    background: var(--purchase-selected);
+    border: 1px solid var(--purchase-line);
 }
 @media (max-width: 700px) {
-    .heroInner {
+    .hero a:focus-visible {
+    outline-color: var(--purchase-gold);
+}
+.heroInner {
         padding: 25px 6%;
     }
     .heroContent {

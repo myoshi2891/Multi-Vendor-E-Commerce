@@ -103,3 +103,9 @@
 - [x] 4-E 要件・設計・仕様・QA・移行台帳・元計画・全体進捗の同期と最終差分検証。
 
 実施記録は[移行進捗](../design-system/PROGRESS.md)、[移行計画](../../../plans/layout-design/compare-design-system-plan.md)。コミットは依頼されていないため行わない。従来Phase 1〜3の完了は維持する。
+
+## Phase 5: P2残存表示統一（2026-10-09）
+
+- [x] token継承のbrowser Red→Green、4幅（700px境界含む）の局所スクロール/focus/価格/状態回帰。
+- [x] 関連Jest・lint・型チェックと要件/設計/進捗同期。
+- [ ] 専用DBでの今回の実データ取得受け入れ（補助fixtureと区別）。

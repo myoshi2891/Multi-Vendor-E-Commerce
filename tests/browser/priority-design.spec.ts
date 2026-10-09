@@ -156,3 +156,198 @@ for (const width of [1440, 768, 390]) {
         await accessible(page);
     });
 }
+
+// Theme inheritance must be observable in rendered UI, including account child screens.
+test("account shell inherits shared storefront tokens", async ({ page }) => {
+    await page.goto("/?scenario=notifications");
+    const title = page.getByRole("heading", { name: "Notifications" });
+    await page.locator("#root > div").evaluate((root) => {
+        (root as HTMLElement).style.setProperty("--purchase-ink", "#243b53");
+        (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b");
+    });
+    await expect(title).toHaveCSS("color", "rgb(36, 59, 83)");
+    await expect(page.getByRole("button", { name: "Mark all as read" }))
+        .toHaveCSS("color", "rgb(96, 74, 43)");
+});
+
+for (const width of [1440, 768, 700, 390]) {
+    test(`compare tokens and states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=compare-error");
+        await expect(page.getByRole("alert")).toContainText("couldn’t load your selection");
+        const retry = page.getByRole("button", { name: "Try again" });
+        await retry.focus();
+        await expect(retry).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await expect(page.getByRole("region", { name: "Selected products" })).toBeVisible();
+        await expect(page.getByTestId("product-card-price").first()).toHaveText("$45.00");
+        // Inject a theme change to prove the production price/cards use shared tokens.
+        await page.locator("main").evaluate((root) => {
+            (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b");
+            (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7");
+        });
+        await expect(page.getByTestId("product-card-price").first()).toHaveCSS("color", "rgb(96, 74, 43)");
+        await expect(page.locator("article").first()).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await page.locator("main").evaluate((root) => (root as HTMLElement).removeAttribute("style"));
+        const scroller = page.getByRole("region", { name: "Selected products" });
+        await scroller.focus();
+        await expect(scroller).toHaveCSS("outline-style", "solid");
+        if (width === 390) {
+            await page.keyboard.press("ArrowRight");
+            await expect.poll(() => scroller.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
+        }
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`compare-p2-${width}.png`), fullPage: true });
+        await page.getByRole("button", { name: "Remove from compare" }).first().click();
+        await expect(page.getByText("3 of 4 selected")).toBeVisible();
+        await page.getByRole("button", { name: "Clear all" }).click();
+        await expect(page.getByTestId("compare-empty")).toBeVisible();
+        await accessible(page);
+        await page.goto("/?scenario=compare-unavailable");
+        await expect(page.getByRole("status")).toContainText("no longer available");
+        await accessible(page);
+        await page.goto("/?scenario=compare-pending");
+        await expect(page.getByRole("status")).toContainText("Loading your selection");
+        await accessible(page);
+    });
+}
+
+async function pageTargets(page: Page, label: string) {
+    const navigation = page.getByRole("navigation", { name: label });
+    await expect(navigation).toBeVisible();
+    const links = navigation.getByRole("link");
+    for (const link of await links.all()) {
+        const box = await link.boundingBox();
+        expect(box?.width).toBeGreaterThanOrEqual(44);
+        expect(box?.height).toBeGreaterThanOrEqual(44);
+    }
+}
+for (const width of [1440, 768, 480, 390]) {
+    test(`wishlist tokens and pagination at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=wishlist&page=2");
+        await pageTargets(page, "Wishlist pagination");
+        await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveAttribute("aria-current", "page");
+        await expect(page.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/profile/wishlist/3");
+        await page.locator("#root > div").evaluate(root => (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b"));
+        await expect(page.getByRole("link", { name: "The collection" })).toHaveCSS("color", "rgb(96, 74, 43)");
+        await page.locator("#root > div").evaluate(root => (root as HTMLElement).style.removeProperty("--purchase-link"));
+        const current = page.getByRole("link", { name: "Page 2", exact: true });
+        await current.focus();
+        await expect(current).toHaveCSS("outline-style", "solid");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`wishlist-p2-${width}.png`), fullPage: true });
+        await page.getByRole("link", { name: "Next" }).click();
+        await expect(page.getByRole("link", { name: "Page 3", exact: true })).toHaveAttribute("aria-current", "page");
+        await page.goBack();
+        await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveAttribute("aria-current", "page");
+        await page.goto("/?scenario=wishlist-empty");
+        await expect(page.getByRole("heading", { name: "Your wishlist is empty." })).toBeVisible();
+        await accessible(page);
+        await page.goto("/?scenario=wishlist-error&page=2");
+        await expect(page.getByRole("alert")).toContainText("Your wishlist is unavailable");
+        await expect(page.getByRole("link", { name: "Reload wishlist" })).toHaveAttribute("href", "/profile/wishlist/2");
+        await accessible(page);
+        await page.goto("/?scenario=wishlist-pending");
+        await expect(page.getByRole("status")).toContainText("Loading");
+        await accessible(page);
+    });
+}
+
+for (const width of [1440, 768, 480, 390]) {
+    test(`following tokens and pagination at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=following&page=2");
+        await pageTargets(page, "Followed stores pagination");
+        await page.locator("main").evaluate(root => {
+            (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7");
+            (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b");
+        });
+        await expect(page.locator("article")).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await expect(page.getByRole("link", { name: "Browse the collection" })).toHaveCSS("color", "rgb(96, 74, 43)");
+        await page.locator("main").evaluate(root => {
+            (root as HTMLElement).style.removeProperty("--purchase-panel");
+            (root as HTMLElement).style.removeProperty("--purchase-link");
+        });
+        await page.getByRole("link", { name: "Page 2", exact: true }).focus();
+        await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveCSS("outline-style", "solid");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`following-p2-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 480, 390]) {
+    test(`history tokens and states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=history-error&page=2");
+        await expect(page.getByRole("alert")).toBeVisible();
+        await page.locator("main").evaluate(root => {
+            (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7");
+            (root as HTMLElement).style.setProperty("--purchase-muted", "#47594b");
+        });
+        await expect(page.getByRole("alert")).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await page.locator("main").evaluate(root => {
+            (root as HTMLElement).style.removeProperty("--purchase-panel");
+            (root as HTMLElement).style.removeProperty("--purchase-muted");
+        });
+        const retry = page.getByRole("button", { name: "Try again" });
+        await retry.focus();
+        await expect(retry).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await pageTargets(page, "View history pagination");
+        await expect(page.getByRole("link", { name: "Page 2", exact: true })).toHaveAttribute("aria-current", "page");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`history-p2-${width}.png`), fullPage: true });
+        await page.goto("/?scenario=history-pending");
+        await expect(page.getByRole("status")).toContainText("Loading recently viewed pieces");
+        await page.locator("main").evaluate(root => (root as HTMLElement).style.setProperty("--purchase-muted", "#47594b"));
+        await expect(page.getByRole("status")).toHaveCSS("color", "rgb(71, 89, 75)");
+        await accessible(page);
+        await page.goto("/?scenario=history-empty");
+        await expect(page.getByRole("heading", { name: "No recently viewed pieces." })).toBeVisible();
+        await accessible(page);
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`notification refined states at ${width}px`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=notifications-retry");
+        await page.locator("#root > div").evaluate(root => (root as HTMLElement).style.setProperty("--purchase-panel", "#fffdf7"));
+        await expect(page.getByRole("list")).toHaveCSS("background-color", "rgb(255, 253, 247)");
+        await page.locator("#root > div").evaluate(root => (root as HTMLElement).style.removeProperty("--purchase-panel"));
+        const button = page.getByRole("button", {name: "Mark all as read"});
+        await button.focus();
+        await page.keyboard.press("Enter");
+        await expect(button).toBeDisabled();
+        await expect(button).toHaveAttribute("aria-busy", "true");
+        await expect(page.getByRole("status")).toContainText("Updating notifications…");
+        await expect(page.getByRole("alert")).toBeVisible();
+        await expect(page.getByText("Unread", {exact: true})).toHaveCount(2);
+        await button.click();
+        await expect(page.getByRole("status")).toHaveText("Notifications marked as read.");
+        await expect(page.getByText("Read", {exact: true})).toHaveCount(3);
+        await accessible(page);
+        await page.screenshot({path: info.outputPath(`notifications-p2-${width}.png`), fullPage: true});
+        await page.goto("/?scenario=notifications-nolink");
+        const markOne = page.getByRole("button", {name: /Your items were delivered/});
+        await markOne.focus();
+        await expect(markOne).toHaveCSS("outline-style", "solid");
+        await page.keyboard.press("Enter");
+        await expect(markOne).toHaveCount(0);
+        await expect(page.getByText("Unread", {exact: true})).toHaveCount(1);
+        await accessible(page);
+        await page.goto("/?scenario=notifications-empty-cursor");
+        await expect(page.getByText("No notifications yet.")).toBeVisible();
+        const older = page.getByRole("link", {name: "Older notifications"});
+        await expect(older).toHaveAttribute("href", "/profile/notifications?cursor=n3");
+        await older.focus();
+        await expect(older).toHaveCSS("outline-style", "solid");
+        await accessible(page);
+        await page.goto("/?scenario=notifications-fetch-error");
+        await expect(page.getByRole("heading", {name: "Notifications", level: 1})).toBeVisible();
+        await expect(page.getByRole("alert")).toBeVisible();
+        await expect(page.getByRole("link", {name: "Reload notifications"})).toHaveAttribute("href", "/profile/notifications?cursor=12345678-1234-1234-1234-123456789abc");
+        await accessible(page);
+    });
+}

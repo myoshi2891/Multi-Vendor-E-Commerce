@@ -1,5 +1,12 @@
 # デザインシステム移行 — 進捗ノート
 
+## 2026-10-09 全実ルート再監査
+
+67ルート＝画面本体60（公開20、認証後機能39、仮実装1）＋転送7。ソース判定は本体適用56・個別部分移行3・仮実装1・転送7。242部品＝検証済み26・実装済み12・保留91・TODO113。下記の66ページ/240部品/55適用等は過去時点の集計。現在の正確な範囲・証跡は[全実画面再監査](full-route-reaudit-2026-10-09.md)を参照。
+
+公開20画面のPC/モバイル初期表示を目視確認。browseは旧ページング色/27px操作、homeはmotion切替32〜38px、商品詳細はカテゴリ/評価/share/follow等の操作寸法不足。属性3画面は親theme適用済み・個別UI/Portal部分移行。seller/storesは仮実装。修正対象既知6画面＋仮実装1だが、認証後機能39は本体未確認（属性3を含む）で確定総残数ではない。台帳を全状態検証済みへ昇格しない。
+
+
 - 更新日: 2026-10-06
 - 状態: 運用文書・ルール整備済み／個別移行は継続
 - 対象・優先度・受け入れ条件: [移行計画](../../../plans/layout-design/design-system-adoption-plan.md)。
@@ -108,7 +115,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
-| DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-07新規・plan 086） | P2 | 実装済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。部品は fixture で検証済み、Clerk 認証後の実ルートは未確認 |
+| DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-07新規・plan 086） | P2 | 実装済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。部品は fixture で検証済み、Clerk 認証後の実ルートは未確認。P2表示追加は[残存6画面](#p2残存6画面移行記録)、認証後実ルート保留 |
 
 ## 部品台帳
 
@@ -357,7 +364,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-237 | P1 | Country picker styles | [country-selector.module.css](../../../src/components/shared/country-selector.module.css) | 実装済み | [購入導線優先6画面](#購入導線優先6画面移行記録)、store opt-in補助検証済み |
 
 | DS-COMP-238 | P2 | Review pagination styles | [pagination.module.css](../../../src/components/store/shared/pagination.module.css) | 実装済み | product review opt-inの補助検証済み、実route保留 |
-| DS-COMP-239 | P2 | 通知一覧 | [notification-list.tsx](../../../src/components/store/profile/notifications/notification-list.tsx) | 検証済み | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット) |
+| DS-COMP-239 | P2 | 通知一覧 | [notification-list.tsx](../../../src/components/store/profile/notifications/notification-list.tsx) | 検証済み | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。P2表示追加は[残存6画面](#p2残存6画面移行記録)、認証後実ルート保留 |
 | DS-COMP-240 | P2 | ヘッダーの未読バッジ・通知リンク | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 実装済み | RTL のみ。ブラウザー表示は認証後ヘッダーの fixture が無く未確認 |
 | DS-COMP-241 | P1 | 購入theme tokens | [purchase-theme.module.css](../../../src/components/store/shared/purchase-theme.module.css) | 保留 | store限定・補助検証済み、認証後実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
 | DS-COMP-242 | P1 | store状態タグCSS | [store-status.module.css](../../../src/components/shared/store-status.module.css) | 保留 | 34状態/明暗祖先/3幅/AA補助検証済み、認証後order実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
@@ -1020,3 +1027,74 @@ getAllCouponsのstore:trueには配送Decimalが含まれる。表示用Propsが
 - purchase44/44、commerce24/24。1440/768/390px、明暗祖先、キーボード、Portal、overflow、reduced motion、axe AAと画像目視を確認。公開home/cart6件とguest sign-in戻り先1件を確認（初回の古いguest期待を修正して対象再試行）。browse3件は専用DB不在でskip。
 - 仕様・SDD・QA・全体進捗・coverage dashboard同期。台帳は通知追加分を含め67ページへ集計整合、全画面の検証済み判定は変更しない。SDKアップロード/投稿、認証後checkout/order、商品あり実DBの受け入れは保留。
 - 最終lint errors0／既存warnings8、tsc exit0、check:playwright pass、diff --check pass。追加文書リンク14件、台帳67ページ・242部品のID重複なしを確認。
+
+## P2残存6画面移行記録
+
+- 2026-10-09。[保存計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)。DS-PAGE-009/033/022/024/067/032は本体適用・補助検証済み。既存の検証済み・保留・履歴は維持する。
+- 共通基盤はstore限定purchase themeとaccount aliases。dashboard・API・DB・認可は対象外。
+
+### 共通基盤
+
+- Red: `DESIGN_SUITE=priority bun run test:design -- --grep 'account shell inherits'`。tokenを上書きしてもheadingが旧固定inkのままで失敗。初回listen EPERMは環境エラーでRedに含めず、sandbox外で再実行して確認。
+- Green/Refactor: profile shellで既存purchase themeをcomposeし、account ink/muted/gold/accent/line/panel/selected/focus/状態色を役割で接続。既存profile bodyの面もaliasesへ統一。認可や子ページの機能契約は不変。
+- 基盤検証: 関連Jest197/197（18 suites）、tsc exit0、lint0 errors/既存8 warnings。新テストはCSS文字列ではなくheading/操作の計算済み配色を検証。色schemeの重複定義はRefactorで除去。
+- Refactor後補助Chromium10/10（既存9状態＋継承1）、3幅・axe AA違反0・overflowなし。harness/diff check成功。共通基盤はDS-BASE-001のstore/account subsetのみ。
+
+### Step 1 比較（DS-PAGE-009）
+
+- Red: `priority --grep 'compare tokens'`。priceが共通link tokenを継承せず旧固定色で失敗。Green: CSS Moduleでtheme合成、価格/card/hero/操作/focusをtokensへ接続。共通ProductPriceのロジックは不変。
+- 既存最大4件・個別削除/clear・empty/loading/error/retry/unavailable・古い応答の無視は回帰確認。
+- Refactor後: 補助Chromium4/4（1440/768/700/390px）、axe AA違反0・overflowなし・狭幅の局所ArrowRight操作、Jest26/26、tsc exit0、lint0 errors/既存8 warnings。画像はtest-results/design/priorityの画面別outputへ保存。
+
+### Step 2 Wishlist（DS-PAGE-033）
+
+- Red: `priority --grep 'wishlist tokens'`、番号リンクの実寸36pxで44px条件に失敗。Green/Refactor: 最小幅44pxとaccount aliases、状態/見出し/罫線/hover/focusを統一。fixtureは本番page/loadingをimportし、既存serverのprofile query adapterで通常/空/失敗を供給。URLが変わった後もWishlistを描画する。
+- 既存検証済み履歴は維持。今回認証後実ルートは専用E2E_DATABASE_URL不在で保留（Clerkキーあり、Docker socketあり。DB初期化は行わない）。
+- Refactor後: 補助Chromium4/4（1440/768/480/390px）、Jest7/7、tsc exit0、lint0 errors/既存8 warnings。axe AA違反0・overflowなし・URL/back/current/empty/error/loadingと390px画像目視を確認。
+
+### Step 3 フォロー店舗（DS-PAGE-022）
+
+- Red: `priority --grep 'following tokens'`、番号リンクの実寸36pxで44px条件に失敗。Green/Refactor: shared discoveryの番号操作・heading/card/actions/feedbackをaccount aliasesへ接続。色だけでfollow/成功/失敗を表さずaria-pressed/status/alertを維持。
+- 閲覧履歴の共通ページャー・URL・back/forward・商品操作への影響も回帰検証。認証後実ルート保留は継続。
+- Refactor後: 補助Chromium10/10（フォロー既存3/新4・履歴既存3）、Jest10/10、tsc exit0、lint0 errors/既存8 warnings、3幅＋480px境界・axe AA違反0・overflowなし・390px画像目視。
+
+### Step 4 閲覧履歴（DS-PAGE-024）
+
+- Red: `priority --grep 'history tokens'`、失敗パネルがshared panel tokenを継承せず旧固定面で失敗。Green: empty/error/retry/loadingをaccount aliasesへ接続。Refactor: browser操作領域helperはnavigationの描画を待ち、未描画時の空ループで誤成功しないよう修正。
+- 保存順/不正storage/アクセス不可/古い応答/範囲補正は既存RTL、URL/backとcompare/follow状態は補助ブラウザーで回帰。認証後実ルート保留を継続。
+- Refactor後: 補助Chromium10/10（履歴既存3/新4・フォロー既存3）、Jest10/10、tsc exit0、lint0 errors/既存8 warnings。1440/768/480/390px、axe AA違反0・overflowなし、390px画像目視。
+
+### Step 5 通知（DS-PAGE-067／DS-COMP-239）
+
+- Red: RTL2件（取得失敗にh1/名前付きsectionがない、一括既読pendingにstatusがない）、browser1件（通知listがpanel tokenを継承しない）。Green: 失敗時の見出しとcursor reload、常設status・aria-busy、Read/Unread文字、panel/focus/44px操作。
+- Refactor: 同一moduleのNotificationHeadingで成功/失敗の見出しを集約、cursorを一度だけ正規化。既読化の既存楽観/非楽観更新とリンク遷移は維持。新しいServer Action/APIは追加しない。
+- 補助Chromium7/7（既存3＋継承1＋新状態3）、関連Jest26/26、tsc exit0、lint0 errors/既存8 warnings。1440/768/390px、pending/error/retry/success、リンクなし/空cursor/取得失敗、axe AA違反0・overflowなし・390px画像目視。
+- 新しい[画面要件](../profile-notifications/requirements.md)・設計/tasks/進捗を追加し、基盤設計から参照。認証後実ルートは専用DB不在で保留。
+
+### Step 6 設定（DS-PAGE-032）
+
+- Red: RTL1件（appearanceが旧固定値）、browser1件（primary token上書きが操作の計算済み色に反映されない）。Green: settings root/appearanceをpurchase themeへ統一。Refactor: 型付きmodalContentにPortal専用themeを合成し、埋め込みrootから独立した描画でもtokensを供給。
+- 既存seven fixtureのUserProfile adapterがproduction appearance/hashを受け取り、入力/操作/danger/別rootのPortal sampleを描画する。実SDK機能はmockであり受け入れ証明に含めない。hash/認可/webhook/securityの契約は不変。
+- Refactor後: settings補助Chromium7/7（1440/768/767/390px・embedded/Portal）、関連Jest11/11、tsc exit0、lint0 errors/既存8 warnings。axe AA違反0・overflowなし、390px画像目視。認証後実ルート/実Clerkは保留を継続。
+
+### 最終統合と仕様同期（2026-10-09）
+
+設定Portalのreduced-motion漏れを追加TDDで検出。先行390pxテストでanimation-nameがpulseとなりRed、root/Portalの共通抑制へ修正後settings7/7でGreen。PC/モバイルの画像とcomputed style、axe、focus、溢れを確認。
+
+全体Jest3077 passed/3080 total、3 skipped、318 suites（317 passed/1 skipped）、127 snapshots。Statements87.84%（10745/12232）／Branches78.05%（6578/8427）／Functions84.12%（2098/2494）／Lines88.34%（9780/11070）。priority全29/29＋settings7/7＝補助Chromium36/36。tsc0、Lint0errors/既存8warnings、check:playwright成功。dashboard393files/400lcov/18of80（23%）。
+
+[要求](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[品質](../../../specs/multi-vendor-ecommerce/06-quality.md)・[テスト仕様](../../../specs/multi-vendor-ecommerce/07-testing.md)、画面別仕様、QA、coverage報告、テスト計画/設計、全体進捗を同期。architecture/data-model/interfaces/workflowsはAPI・DB・認可・業務遷移に変更がないため維持。台帳は67画面/242部品のIDと分類を維持し、fixture成功だけで全画面受け入れ状態を更新しない。
+
+専用E2E_DATABASE_URLは未設定、Clerkキーは存在を確認（値は非出力）。認証後実ルート/実Clerkは[QA解除条件](../../testing/QA_HANDOFF.md#ds-p2-residual-browser)まで保留。Integration/フルE2Eは今回未実行。
+
+| 段階 | commit |
+|---|---|
+| 計画 | 3821597d |
+| 共通基盤 | 60b39545 |
+| 比較 | 8d933bf8 |
+| Wishlist | 168e6b7d |
+| フォロー店舗 | 5bc71aa9 |
+| 閲覧履歴 | 68d3addd |
+| 通知 | adc85009 |
+| 設定 | 042d5518 |
+| 最終同期 | 本記録とPortal抑制修正のコミット |

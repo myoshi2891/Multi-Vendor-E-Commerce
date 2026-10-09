@@ -6,14 +6,20 @@ import HistoryContainer from "@/components/store/profile/history/container";
 import { DiscoveryHeading } from "@/components/store/profile/shared/discovery";
 import styles from "@/components/store/profile/shared/discovery.module.css";
 import type { ProductType } from "@/lib/types";
+import NotificationsPage from "@/app/(store)/profile/notifications/page";
 import NotificationList from "@/components/store/profile/notifications/notification-list";
 import profileStyles from "@/components/store/profile/profile.module.css";
 import type { NotificationListItem } from "@/queries/notification";
 
+import WishlistPage from "@/app/(store)/profile/wishlist/[page]/page";
+import WishlistLoading from "@/app/(store)/profile/wishlist/[page]/loading";
+import ComparePage from "@/app/(store)/compare/page";
+import { useCompareStore } from "@/compare-store/useCompareStore";
+
 const parameters = new URLSearchParams(location.search);
 const scenario =
     parameters.get("scenario") ??
-    (location.pathname.includes("history") ? "history" : "following");
+    (location.pathname.includes("wishlist") ? "wishlist" : location.pathname.includes("history") ? "history" : "following");
 const page =
     Number(location.pathname.split("/").pop()) ||
     Number(parameters.get("page")) ||
@@ -128,14 +134,32 @@ const notifications: NotificationListItem[] = [
         createdAt: "2026-10-05T08:15:00.000Z",
     },
 ];
+let notificationCalls = 0;
 const notificationAction = async () => {
-    await delay(150);
-    if (scenario === "notifications-error") throw new Error("fixture failure");
+    await delay(800);
+    notificationCalls++;
+    if (scenario === "notifications-error" || (scenario === "notifications-retry" && notificationCalls === 1)) throw new Error("fixture failure");
     return { count: 1 };
 };
 
 const root = createRoot(document.getElementById("root")!);
-if (scenario.startsWith("notifications")) {
+if (scenario.startsWith("compare")) {
+    useCompareStore.setState({items: scenario.includes("empty") ? [] : ["v0", "v1", "v2", "v3"]});
+    root.render(<ComparePage />);
+} else if (scenario.startsWith("wishlist")) {
+    const content = scenario.includes("pending")
+        ? Promise.resolve(<WishlistLoading />)
+        : WishlistPage({params: Promise.resolve({page: String(page)})});
+    void content.then(node => root.render(
+        <div className={profileStyles.shell} style={{minHeight: "100vh"}}>
+            <main style={{maxWidth: 1050, margin: "auto", padding: "40px 6%"}}>{node}</main>
+        </div>
+    ));
+} else if (scenario === "notifications-fetch-error") {
+    void NotificationsPage({searchParams: Promise.resolve({cursor: "12345678-1234-1234-1234-123456789abc"})}).then(node => root.render(
+        <div className={profileStyles.shell} style={{minHeight: "100vh"}}><main style={{maxWidth: 1050, margin: "auto", padding: "40px 6%"}}>{node}</main></div>
+    ));
+} else if (scenario.startsWith("notifications")) {
     root.render(
         <div className={profileStyles.shell} style={{ minHeight: "100vh" }}>
             <main
@@ -143,9 +167,9 @@ if (scenario.startsWith("notifications")) {
             >
                 <NotificationList
                     initialItems={
-                        scenario.includes("empty") ? [] : notifications
+                        scenario.includes("empty") ? [] : notifications.map(item => scenario.includes("nolink") && item.id === "n2" ? {...item, linkUrl: null} : item)
                     }
-                    nextCursor={scenario.includes("empty") ? null : "n3"}
+                    nextCursor={scenario === "notifications-empty" ? null : "n3"}
                     markReadAction={notificationAction}
                     markAllReadAction={notificationAction}
                 />
@@ -155,7 +179,7 @@ if (scenario.startsWith("notifications")) {
 } else
     root.render(
         <main
-            className={styles.page}
+            className={`${profileStyles.shell} ${styles.page}`}
             style={{
                 background: "#f3f0e8",
                 maxWidth: 1050,

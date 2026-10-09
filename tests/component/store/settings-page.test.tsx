@@ -36,8 +36,8 @@ it("provides a labeled settings section and preserves hash routing with brand ap
             routing: "hash",
             appearance: expect.objectContaining({
                 variables: expect.objectContaining({
-                    colorPrimary: "#755b2f",
-                    colorDanger: "#a32929",
+                    colorPrimary: "var(--purchase-link)",
+                    colorDanger: "var(--purchase-danger)",
                 }),
             }),
         })
