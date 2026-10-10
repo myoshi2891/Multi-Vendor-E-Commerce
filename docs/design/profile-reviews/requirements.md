@@ -15,3 +15,8 @@
 | PR-9 | getUserReviewsForDisplayをServer Componentからaction Propsで渡す。最小投影/ISO日付、所有者条件と認証失敗時DB未実行、Client直接action importなし。 | query / RTL |
 
 既存queryの評価・createdAt期間・本文case-insensitive検索・10件ページ・updatedAt降順を維持。ページ内条件はClient stateで再読込時初期化。投稿/編集/削除、商品・店舗・注文検索、商品ページ共有ReviewCardの移行は対象外。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。共通purchaseトークンで面・文字・罫線・選択・focus・操作寸法を表示し、主操作はgold/inkとする。既存機能要件・URL・所有者制約は維持する。独立Portalはテーマを明示し、意味色は色だけに依存させない。

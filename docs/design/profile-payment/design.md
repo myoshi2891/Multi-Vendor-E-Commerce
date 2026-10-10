@@ -12,3 +12,8 @@
 - 1000px以下で見出し導線/検索期間を縦にし、480px以下で金額/詳細項目を縦に折り返す。長いIDはoverflow-wrap:anywhere、gridはminmax(0,1fr)。44px以上の操作領域、focus-visible、静的スケルトン。
 
 検証は既存Clerkテスト顧客の作成/認証/後処理、初期空の実query。通常データ/遅延/失敗/再試行はaction応答mock。支払いDB作成、実決済、返金、seed、DB初期化、providerへの送信を行わない。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。既存CSS Moduleを役割別purchaseトークンへ接続。購入者scopeに限定し、API/DB/認可とデータ取得境界は変更しない。postpurchase suiteは既存priority serverから本番部品を描画し、トークン注入でcomputed style追従を検証する。

@@ -23,3 +23,8 @@
 ## P2共通トークン接続（2026-10-09）
 
 profile shellは既存store限定purchase themeを合成し、accountの文字・面・罫線・focus・意味色を役割別に接続する。固定lightのaccount枠、ナビゲーションと既存子ページ機能は維持する。[計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。共通purchaseトークンで面・文字・罫線・選択・focus・操作寸法を表示し、主操作はgold/inkとする。既存機能要件・URL・所有者制約は維持する。独立Portalはテーマを明示し、意味色は色だけに依存させない。

@@ -1,6 +1,6 @@
 .addresses {
     min-width: 0;
-    color: var(--account-ink, #17251d);
+    color: var(--purchase-ink);
 }
 .heading {
     display: flex;
@@ -10,7 +10,7 @@
     margin-bottom: 34px;
 }
 .eyebrow {
-    color: var(--purchase-link, #75613b);
+    color: var(--purchase-link);
     font-size: 10px;
     letter-spacing: 0.18em;
 }
@@ -23,16 +23,16 @@
     margin: 16px 0;
 }
 .description {
-    color: var(--purchase-muted, #536356);
+    color: var(--purchase-muted);
     font-size: 13px;
     line-height: 1.9;
 }
 .support {
     display: inline-flex;
     align-items: center;
-    min-height: 44px;
+    min-height: var(--purchase-touch);
     flex-shrink: 0;
-    color: var(--purchase-link, #75613b);
+    color: var(--purchase-link);
     font-size: 12px;
 }
 .addresses button,
@@ -46,13 +46,13 @@
 .dialog button:focus-visible,
 .dialog input:focus-visible,
 .dialog select:focus-visible {
-    outline: 2px solid var(--purchase-focus, #75613b);
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 4px;
 }
 .addresses button,
 .dialog button {
     cursor: pointer;
-    min-height: 44px;
+    min-height: var(--purchase-touch);
 }
 .addresses button:disabled,
 .dialog button:disabled {
@@ -65,28 +65,28 @@
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
-    border-top: 1px solid var(--purchase-line, #c9c7b8);
-    border-bottom: 1px solid var(--purchase-line, #c9c7b8);
+    border-top: 1px solid var(--purchase-line);
+    border-bottom: 1px solid var(--purchase-line);
     padding: 16px 0;
     margin-bottom: 26px;
-    color: var(--purchase-muted, #536356);
+    color: var(--purchase-muted);
     font-size: 12px;
 }
 .primary {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--purchase-gold, #17251d);
-    color: var(--purchase-ink, #f1eee4);
+    background: var(--purchase-gold);
+    color: var(--purchase-ink);
     padding: 12px 22px;
-    min-height: 46px;
+    min-height: var(--purchase-touch);
     font-size: 12px !important;
 }
 .primary:hover {
-    background: var(--purchase-gold-hover, #264433);
+    background: var(--purchase-gold-hover);
 }
 .secondary {
-    color: var(--purchase-link, #75613b);
+    color: var(--purchase-link);
     font-size: 12px !important;
     text-decoration: underline;
     text-underline-offset: 4px;
@@ -94,7 +94,7 @@
 }
 .secondary:hover,
 .support:hover {
-    color: #17251d;
+    color: var(--purchase-ink);
 }
 .list {
     display: grid;
@@ -104,8 +104,8 @@
 }
 .card {
     min-width: 0;
-    background: #faf8f2;
-    border: 1px solid var(--purchase-line, #c9c7b8);
+    background: var(--purchase-panel);
+    border: 1px solid var(--purchase-line);
     padding: 26px;
     overflow-wrap: anywhere;
 }
@@ -122,19 +122,19 @@
         serif;
 }
 .badge {
-    background: #e6dfcf;
-    color: #17251d;
+    background: var(--purchase-selected);
+    color: var(--purchase-ink);
     padding: 7px 10px;
     font-size: 10px;
     line-height: 1.5;
 }
 .phone {
-    color: var(--purchase-muted, #536356);
+    color: var(--purchase-muted);
     font-size: 12px;
     margin: 15px 0 20px;
 }
 .postal {
-    color: var(--purchase-muted, #536356);
+    color: var(--purchase-muted);
     font-size: 13px;
     line-height: 1.9;
     font-style: normal;
@@ -144,13 +144,13 @@
     gap: 24px;
     flex-wrap: wrap;
     margin-top: 22px;
-    border-top: 1px solid var(--purchase-line, #c9c7b8);
+    border-top: 1px solid var(--purchase-line);
     padding-top: 12px;
 }
 .message {
     padding: 50px 24px;
-    border: 1px solid var(--purchase-line, #c9c7b8);
-    background: #faf8f2;
+    border: 1px solid var(--purchase-line);
+    background: var(--purchase-panel);
     text-align: center;
     margin-bottom: 26px;
 }
@@ -162,7 +162,7 @@
 }
 .message p {
     font-size: 13px;
-    color: var(--purchase-muted, #536356);
+    color: var(--purchase-muted);
     line-height: 1.9;
 }
 .message .primary {
@@ -170,21 +170,21 @@
 }
 .emptySymbol {
     font-size: 40px;
-    color: var(--purchase-link, #75613b);
+    color: var(--purchase-link);
 }
 .skeleton {
     height: 90px;
     margin-top: 24px;
-    background: #e6dfcf;
+    background: var(--purchase-selected);
 }
 .feedback {
-    color: var(--purchase-muted, #536356);
+    color: var(--purchase-muted);
     font-size: 13px;
     line-height: 1.8;
     margin: 16px 0;
 }
 .errorText {
-    color: var(--purchase-danger, #963d32);
+    color: var(--purchase-danger);
     font-size: 12px;
     line-height: 1.8;
     margin: 10px 0;
@@ -197,6 +197,7 @@
     background: #0b100eb3;
 }
 .dialog {
+    composes: theme from "../../shared/purchase-theme.module.css";
     position: fixed;
     z-index: 71;
     top: 50%;
@@ -206,10 +207,9 @@
     max-height: calc(100dvh - 40px);
     overflow-y: auto;
     padding: 32px;
-    background: #faf8f2;
-    border: 1px solid var(--purchase-line, #c9c7b8);
-    color: #17251d;
-    color-scheme: light;
+    background: var(--purchase-panel);
+    border: 1px solid var(--purchase-line);
+    color: var(--purchase-ink);
 }
 .dialogTitle {
     font:
@@ -222,8 +222,8 @@
     top: 16px;
     right: 16px;
     width: 44px;
-    min-height: 44px;
-    color: var(--purchase-link, #75613b);
+    min-height: var(--purchase-touch);
+    color: var(--purchase-link);
     font-size: 26px !important;
 }
 .formFields {
@@ -240,36 +240,36 @@
 }
 .field label {
     display: block;
-    color: var(--purchase-muted, #536356);
+    color: var(--purchase-muted);
     font-size: 12px;
     margin-bottom: 9px;
 }
 .field input,
 .field select {
     width: 100%;
-    min-height: 46px;
+    min-height: var(--purchase-touch);
     min-width: 0;
-    background: var(--purchase-input, #fffdf7);
-    border: 1px solid var(--purchase-line, #c9c7b8);
+    background: var(--purchase-input);
+    border: 1px solid var(--purchase-line);
     padding: 11px 12px;
     font-size: 14px;
 }
 .field input[aria-invalid="true"],
 .field select[aria-invalid="true"] {
-    border-color: var(--purchase-danger, #963d32);
+    border-color: var(--purchase-danger);
 }
 .check {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 44px;
+    min-height: var(--purchase-touch);
     margin-top: 20px;
     font-size: 12px;
 }
 .check input {
     width: 18px;
     height: 18px;
-    accent-color: #17251d;
+    accent-color: var(--purchase-ink);
 }
 .formActions {
     display: flex;
@@ -278,7 +278,7 @@
     flex-wrap: wrap;
     gap: 24px;
     margin-top: 24px;
-    border-top: 1px solid var(--purchase-line, #c9c7b8);
+    border-top: 1px solid var(--purchase-line);
     padding-top: 20px;
 }
 @media (max-width: 1000px) {

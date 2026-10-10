@@ -504,3 +504,8 @@ Purchase design fixtures use the existing priority server and production HeaderF
 ### P2残存画面のtoken検証（2026-10-09）
 
 既存priority/seven fixtureと `playwright.design.config.ts` を再利用する。CSS変数を上書きしてproduction部品のcomputed colorと操作領域を検証し、固定色への逆戻りを検出する。Clerk adapterはproduction appearanceのvariables/elementsを消費し、埋め込みroot外へPortalを描画して継承とreduced-motionを検証する。adapter成功は実SDKライフサイクルの証明に含めない。[受け入れ条件](./QA_HANDOFF.md#ds-p2-residual-browser)。
+
+
+## 購入後6画面のfixture検証（2026-10-10）
+
+`DESIGN_SUITE=postpurchase bun run test:design`。既存priority serverのentry分岐でpostpurchase-previewを描画し、`screen`と`state`パラメーターで本番部品の表示を切り替える。Action Propsのadapterはoperation単位で初回失敗/再試行、pendingを再現し外部書き込みをしない。RSC概要は会員情報を`await ProfileOverview()`で解決し、本番の`AccountView`へ`identity`として渡す（page構成を複製しない）。`@clerk/nextjs/server`のモックは`DESIGN_SUITE=postpurchase`のときだけ注入し、他のpriority系suiteへ波及させない。page.tsx等の計測除外パスから抽出した表示部品はbrowser検証だけではlcovに載らないため、RTLも併置する。Portalのトークン注入は表示面自身に、その他は共通shellに行いcomputed styleを測る。focus-visibleはキーボード入力後に検証。fixtureは認証後実ルートの受け入れを証明しない。

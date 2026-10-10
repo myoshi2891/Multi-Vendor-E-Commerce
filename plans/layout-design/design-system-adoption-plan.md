@@ -782,3 +782,23 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] DS-PAGE-039 属性選択肢: 実装・補助検証・仕様同期。認証後受け入れ保留。
 
 2026-10-09 監査指摘6画面の修正: 属性3画面を本体適用・補助検証済み・認証後検証保留へ移行。台帳は検証保留31・未適用0、計67を維持する。部品DS-COMP-243〜245を追加し現台帳245項目。監査時点の242項目/216未完了は過去の実測として保持する。
+
+
+### 購入後P2 6画面（2026-10-10）
+
+[保存計画](priority-six-p2-postpurchase-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入後p2-6画面移行記録)。既存本体適用と今回の変更受け入れを区別する。
+
+- [x] Step 1 DS-PAGE-028: ordersの残存表示統一・補助検証・仕様同期。
+
+- [x] Step 2 DS-PAGE-030: paymentの残存表示統一・補助検証・仕様同期。
+
+- [x] Step 3 DS-PAGE-021: addressesの残存表示統一・補助検証・仕様同期。
+
+- [x] Step 4 DS-PAGE-031: reviewsの残存表示統一・補助検証・仕様同期。
+
+- [x] Step 5 DS-PAGE-026: messagesの残存表示統一・補助検証・仕様同期。
+
+- [x] Step 6 DS-PAGE-029: overviewの残存表示統一・補助検証・仕様同期。
+
+- [x] 最終回帰・関連仕様/QA/進捗同期（postpurchase25、priority29、seven13、commerce24）。
+- [ ] 今回の6画面変更の認証後実ルート受け入れ（既存顧客ログイン状態が必要）。全画面件数・既存履歴は保持。

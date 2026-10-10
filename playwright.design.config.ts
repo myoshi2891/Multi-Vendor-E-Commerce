@@ -30,6 +30,12 @@ type DesignSuite = {
 };
 
 const DESIGN_SUITES = {
+    postpurchase: {
+        testMatch: "postpurchase-design.spec.ts",
+        port: 3130,
+        kind: "fixture",
+        command: "node tests/fixtures/priority/server.mjs",
+    },
     "full-route-audit": {
         testMatch: "full-route-audit-design.spec.ts",
         port: 3129,

@@ -15,3 +15,8 @@
 | PA-9 | Server Componentから3actionをPropsで渡し、Client直接importなし。user/timestamps等を投影から除外。UUID/フォーム検証、所有者where、認可失敗/他人IDで書き込みなし。createdAtを新フォームで上書きしない。 | query / RTL |
 
 対象外: 削除の追加、checkout/共有旧住所部品の移行、DBモデル/認可ポリシー/配送/購入変更。フォーム制約は既存仕様を保持（氏名は英字、住所2行目のみ任意）。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。共通purchaseトークンで面・文字・罫線・選択・focus・操作寸法を表示し、主操作はgold/inkとする。既存機能要件・URL・所有者制約は維持する。独立Portalはテーマを明示し、意味色は色だけに依存させない。

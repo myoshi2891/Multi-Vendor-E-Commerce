@@ -6,7 +6,7 @@
 - `src/components/store/profile/profile.module.css`をlayout・sidebar・会員情報・注文概要で共有。テーマ変数はshell内に限定し、他のページやPortalへグローバルな上書きを追加しない。
 - 色: 深緑#0b100e、アイボリー#f3f0e8、面#faf8f2、文字#17251d、本文#536356、装飾#d4ba83、明るい面のリンク／focus#75613b。見出しはGeorgia、日本語本文は既存本文フォント。
 - PCは220pxナビゲーションと残り本文の2列。1000px以下でsidebar185px、800px以下で1列と3列メニュー、480px以下で2列メニュー。注文カードは4列→2列、ショートカットは5列→3列→2列。
-- page.tsxにMy accountのh1とブランドmetadata。既存ProfileOverview／OrdersOverviewをServer Componentとして描画。
+- page.tsxはブランドmetadataを持ち、`AccountView`（`src/components/store/profile/account-view.tsx`）にMy accountのh1・概要枠・OrdersOverviewを集約する。会員情報のServer Component `ProfileOverview` は`identity`として渡す（2026-10-10、browser fixtureと同一構成を共有するため抽出）。
 
 ## 会員情報と取得状態
 
@@ -24,3 +24,8 @@
 ## 検証
 
 [要件](requirements.md)と[移行計画](../../../plans/layout-design/profile-design-system-plan.md)。RTLで会員情報とエラー、href、選択状態。Playwrightで実Clerkテスト認証を使い、3画面幅、Tab／Enter、axe、子ページ導線、未認証転送を確認。テストユーザーは既存createCustomerSessionで作成・後処理し、Clerk公式testingのsignInでサインインする。seed／DB初期化／注文送信はしない。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。既存CSS Moduleを役割別purchaseトークンへ接続。購入者scopeに限定し、API/DB/認可とデータ取得境界は変更しない。postpurchase suiteは既存priority serverから本番部品を描画し、トークン注入でcomputed style追従を検証する。

@@ -159,3 +159,8 @@ P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440px
 ### 監査指摘の操作領域（2026-10-09）
 
 公開3画面の指摘操作と属性3画面の独立操作は44×44px以上。checkboxはラベル込みで判定する。共有SDKのinline focus resetはeditorial share tileに限定して補正する。属性テーマはroot/form/独立Portalに明示適用し、light/dark・AAコントラスト・focus復帰・局所table scrollを検証する。認証後実ルートと補助fixtureの証跡を区別する。
+
+
+### 購入後P2 6画面の品質条件（2026-10-10）
+
+1440/768/390pxで横溢れなし、長い氏名/ID/本文の折り返し、44px操作領域、keyboard/focus、axe AA（contrast含む）を確認する。独立住所Portalは自身にthemeを持ち、失敗後の入力保持・pending操作ロック・focus復帰を維持。画面と読み込み表示のトークン追従をcomputed styleで検証し、認証後実ルートとfixture証跡は分ける。[計画](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。

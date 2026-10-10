@@ -12,3 +12,8 @@
 - 専用module CSSのクリーム/深緑/ゴールド、serif h1。1000px以下でカード/フォームを1列、mobile dialogと長い住所を折り返す。44px以上の操作、focus-visible、静的loading。
 
 実Clerkテスト顧客の認証/後処理と初期空の実queryを確認。通常住所/遅延/失敗/save/defaultはaction応答mockで確認し、住所DBを書き換えず購入/外部送信しない。既存profile E2Eのフォームselectorはnative入力へ同期するが、実住所を書き込む旧E2Eは今回実行しない。
+
+
+## 購入後6画面の共通表示（2026-10-10）
+
+[保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。既存CSS Moduleを役割別purchaseトークンへ接続。購入者scopeに限定し、API/DB/認可とデータ取得境界は変更しない。postpurchase suiteは既存priority serverから本番部品を描画し、トークン注入でcomputed style追従を検証する。
