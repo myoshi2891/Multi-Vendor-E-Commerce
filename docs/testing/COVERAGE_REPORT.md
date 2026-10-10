@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21（**最終更新**: 2026-10-09）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-10-10）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-09） | **3092 passed / 3095 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-09 閲覧履歴の key 重複修正後の全体Jest実測（coverageなし、coverage率はP2残存6画面時の実測を維持）。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
+| Jestテスト総数（2026-10-10） | **3094 passed / 3097 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 PR #199 `AccountView` RTL +2 後の全体Jest実測（coverageなし、coverage率はP2残存6画面時の実測を維持）。Integration238／18 suitesは以前の実測を維持。 |
 | 全体coverage（P2残存6画面時の実測・Jest 3077/3080時点。key重複修正後は未再計測） | Statements87.84%（10745/12232）／Branches78.05%（6578/8427）／Functions84.12%（2098/2494）／Lines88.34%（9780/11070）。 |
 | テストファイル総数（dashboard） | **395ファイル**／lcov **400エントリ**／マトリクス18/80（23%）。2026-10-09再生成実測。 |
 | Jest スイート総数（unit/component） | **319スイート**（318 passed／1 skipped、2026-10-09実測）。 |
-| テスト総数 | **3092 unit/component passed**（3095 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| テスト総数 | **3094 unit/component passed**（3097 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
@@ -518,6 +518,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-08 | **plan 087 在庫復元の item 単位一本化 — Jest +10（3028 → 3038 passed / 3031 → 3041 total・316 スイート不変）、Integration +10（228 → 238・18 スイート不変）**（作業ツリー・コミット前、HEAD `b7b3333e`）: `src/queries/order.ts` の在庫復元を `OrderItem.status` の条件付き遷移（`settleOrderItems`）に一本化し経路 A〜E を通した。`order-lifecycle.test.ts` に経路をまたぐ exactly-once（F-1 / F-2 / item→order / item→group / 並行）・吸収状態・Size 消失（F-3）・seller の復元と IDOR を追加。`order.test.ts` は旧呼び出し形の固定 11 件を更新し分岐 +10。ヒートマップ分類変更なし。 |
 | 2026-10-08 | **plan 087 レビュー対応 — Jest +1（3038 → 3039 passed / 3041 → 3042 total・316 スイート不変）、Integration 不変（238）**（作業ツリー・コミット前、HEAD `e03a45a7`）: `applyOrderItemStatus` の終端パスで、遷移も付け替えも 0 件のとき `"ok"` を返していたのを `"settled"` に修正（書き込みが起きていないのに成功扱いにしない）。`order.test.ts` に回帰 +1。 |
 | 2026-10-09 | **閲覧履歴の key 重複修正 — Jest +1（3091 → 3092 passed / 3094 → 3095 total・319 スイート不変）**。同一商品の別バリアントを閲覧すると `ProductList` の `key={product.id}` が重複していたため、key に先頭バリアント ID を追加（`product-list.test.tsx` +1）。browse フィルタの `replace` に `{ scroll: false }` を付与（既存テスト 13 件の期待値変更、件数不変）。作業ツリー・未コミット（HEAD `a01b3321`） |
+| 2026-10-10 | **PR #199 Sonar New Code coverage対応 — Jest +2（3092 → 3094 passed / 3095 → 3097 total・319 スイート不変）**。レビュー対応で`page.tsx`（coverage除外）から`account-view.tsx`（計測対象）へ表示枠を抽出し、browser検証のみでlcov未カバー（0%）になったため`profile-overview.test.tsx`に`AccountView` RTL +2（Lines 100%）。ヒートマップ分類変更なし。作業ツリー・未コミット（HEAD `bd6633ea`） |
 
 ### 2026-09-30 compareデザイン移行
 

@@ -12,6 +12,7 @@
 - 解除条件・次着手: 既存顧客の検証用ログイン状態と対応する読取可能なデータを用意し、6実ルートと注文filter routeを3幅で確認する。fixture成功を実認証/実データ取得の成功へ読み替えない。
 - 本作業はAPI/DB/認可/業務仕様変更なし。文書リンク・形式・SDD整合を確認。既存画面・部品の検証履歴を維持し、今回の未確認範囲を別記した。
 - PR #199レビュー対応（2026-10-10）: 概要枠を`AccountView`へ抽出しfixtureと共有、`--purchase-touch`のフォールバック統一、Clerkモックをpostpurchaseのみに限定。件数不変。postpurchase25/priority29/purchase53/commerce24成功、tsc/lintエラー0、check:playwright成功。[計画](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md#pr-199-レビュー対応2026-10-10)
+- SonarCloud PR #199 New Code coverage 0%（`account-view.tsx`）対応: page.tsxは`collectCoverageFrom`/`sonar.coverage.exclusions`で除外、抽出先componentsは計測対象でbrowser検証はlcov外のため。`tests/component/store/profile-overview.test.tsx`に`AccountView` RTL +2（当該ファイルLines 100%）。Jest 3092/3095→3094/3097、319 suites・127 snapshots不変、型エラー0。
 
 ## 2026-10-09 監査指摘6画面の実装（履歴）
 
@@ -48,7 +49,7 @@
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-09実測 / lcov: 2026-10-09実測 / Integration: 2026-10-08実測 / E2Eフルラン: 2026-10-03実測 / design priority: 2026-10-09実測）
+### テスト統計（Jest: 2026-10-10実測 / lcov: 2026-10-09実測 / Integration: 2026-10-08実測 / E2Eフルラン: 2026-10-03実測 / design priority: 2026-10-09実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -56,7 +57,7 @@
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3092 passed / 3095 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 購入後6画面の最終全体Jest実測（coverageなし）。coverageは前回P2残存6画面の実測を維持。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
+| Jest テスト総数 (unit/component) | **3094 passed / 3097 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 PR #199 Sonar New Code対応（`AccountView` RTL +2）後の全体Jest実測（`--runInBand --no-coverage`）。coverageは前回P2残存6画面の実測を維持。Integration238／18 suitesはplan 087後の以前の実測を維持。 |
 | 全体coverage（2026-10-09実測） | Statements87.84%（10745/12232）／Branches78.05%（6578/8427）／Functions84.12%（2098/2494）／Lines88.34%（9780/11070）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 plan 087 実施時の実測: 238/238 pass**・`bun run test:integration`。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
