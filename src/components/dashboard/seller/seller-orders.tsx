@@ -72,7 +72,14 @@ export function getSellerOrderColumns(
         {
             accessorKey: "paymentStatus",
             header: "Payment status",
-            cell: ({ row }) => <span className={styles.paymentState} data-payment-state={row.original.paymentStatus}>{row.original.paymentStatus}</span>,
+            cell: ({ row }) => (
+                <span
+                    className={styles.paymentState}
+                    data-payment-state={row.original.paymentStatus}
+                >
+                    {row.original.paymentStatus}
+                </span>
+            ),
         },
         {
             accessorKey: "status",
