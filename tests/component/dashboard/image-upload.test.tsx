@@ -45,9 +45,12 @@ describe("ImageUpload", () => {
             // Arrange
             process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET = "test-preset";
 
-            // Act
-            render(<ImageUpload {...baseProps} type={type} value={[]} />);
-            delete process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+            // Act（render が失敗しても後続テストへ env を残さない）
+            try {
+                render(<ImageUpload {...baseProps} type={type} value={[]} />);
+            } finally {
+                delete process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+            }
 
             // Assert
             expect(mockPresets.length).toBeGreaterThan(0);
