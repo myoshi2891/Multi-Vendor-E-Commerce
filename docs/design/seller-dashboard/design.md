@@ -660,3 +660,7 @@ StoreStatsCardsをstatsGridへ変更。auto-fit/minmaxでviewportではなくcon
 ### Step 2 商品一覧 — DS-PAGE-062
 
 DataTable seller toolbarにcontrolsを合成、New variantとProductActionsにcontrol、メニュー/確認Dialog/CustomModalにcontrolsを適用。Dialog直下のclose buttonを44px化。共有callerの機能と既定scopeは維持する。
+
+### Step 3 在庫 — DS-PAGE-055
+
+StockNumberEditor groupにcontrolsを適用し、success表示をbrand-successへ接続。整数範囲/確定値復帰/失敗値再送/Enter/二重送信ガードを維持。

@@ -11,5 +11,9 @@ export async function touchControl(control: Locator, icon = false) {
 export async function sellerEvidence(page: Page, info: TestInfo) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze()).violations).toEqual([]);
+    await page.evaluate(() => {
+        window.scrollTo(0, 0);
+        document.querySelectorAll('[role="dialog"], [role="alertdialog"]').forEach(node => { node.scrollTop = 0; });
+    });
     await page.screenshot({ path: info.outputPath("seller-residual.png"), fullPage: true });
 }

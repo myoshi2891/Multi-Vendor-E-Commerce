@@ -695,3 +695,25 @@ for (const width of [1440, 768, 390])
             await page.keyboard.press("Escape");
             await expect(create).toBeFocused();
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual inventory ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=inventory");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const editor = page.getByRole("group", { name: "過小在庫しきい値の編集" });
+            await touchControl(editor.getByRole("spinbutton"));
+            await touchControl(editor.getByRole("button", { name: "保存", exact: true }));
+            await editor.getByRole("spinbutton").fill("7");
+            await page.keyboard.press("Enter");
+            await expect(editor.getByRole("button", { name: "保存中…" })).toBeDisabled();
+            await expect(editor.getByRole("alert")).toContainText("失敗");
+            await touchControl(editor.getByRole("button", { name: "再試行" }));
+            await editor.getByRole("button", { name: "再試行" }).click();
+            const status = editor.getByRole("status");
+            await expect(status).toContainText("更新しました");
+            await expect(status).toHaveCSS("color", theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)");
+            for (const input of await page.getByRole("spinbutton").all()) await touchControl(input);
+            await sellerEvidence(page, info);
+        });

@@ -211,3 +211,5 @@ DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失�
 - [x] Step 1 店舗概要 — DS-PAGE-058: 表示移行・関連検証・仕様同期。
 
 - [x] Step 2 商品一覧 — DS-PAGE-062: 表示移行・関連検証・仕様同期。
+
+- [x] Step 3 在庫 — DS-PAGE-055: 表示移行・関連検証・仕様同期。

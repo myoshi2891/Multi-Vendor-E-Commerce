@@ -1227,3 +1227,9 @@ Red: 768px/light-darkでKPI幅87pxの2件失敗。大きな金額の既存折り
 Red: New variantの操作高24pxでbrowser6件失敗。Green/Refactor: seven products 12/12、関連RTL2 suites 43/43、lint/tsc成功。検索空/再表示、削除pending/error/retry、作成Dialog/44px close/Escape focus復帰、3幅/light-dark/axe AAを確認。390px darkの作成Dialogを画像目視。
 
 認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。
+
+### Step 3 在庫 — DS-PAGE-055
+
+Red: 数量入力高36pxで新browser6件失敗。Green/Refactor: seven inventory 12/12、関連RTL5 suites 16/16、lint/tsc成功。3幅/light-dark、validation/Enter/pending/error/retry/success、全数量44px、検索空、意味色/axe AAを確認。390px darkを画像目視。
+
+認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。

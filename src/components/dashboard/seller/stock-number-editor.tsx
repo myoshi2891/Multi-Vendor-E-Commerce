@@ -59,7 +59,7 @@ export default function StockNumberEditor({
         }
     };
     return (
-        <div role="group" aria-label={`${label}の編集`}>
+        <div role="group" aria-label={`${label}の編集`} className={styles.controls}>
             <div className="flex flex-wrap items-end gap-2">
                 <div>
                     <label htmlFor={id} className="mb-1 block text-sm">
@@ -117,7 +117,7 @@ export default function StockNumberEditor({
                 </div>
             )}
             {feedback === "saved" && (
-                <p role="status" className="mt-2 text-sm">
+                <p role="status" className={`${styles.success} mt-2 text-sm`}>
                     {successText}
                 </p>
             )}
