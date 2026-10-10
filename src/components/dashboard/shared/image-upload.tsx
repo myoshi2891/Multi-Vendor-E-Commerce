@@ -103,8 +103,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
                     />
                 )}
                 <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
-                    {({ open }) => {
+                    {({ open, isLoading }) => {
+                        // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                         const onClick = () => {
+                            if (isLoading) return;
                             open();
                         };
 
@@ -114,7 +116,8 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                     aria-label={`Upload ${type || "product"} image`}
                                     type="button"
                                     className="absolute bottom-6 right-0 z-20 flex size-14 items-center justify-center rounded-full border-none bg-gradient-to-t from-blue-primary to-blue-300 text-[17px] font-medium text-white shadow-lg hover:shadow-md active:shadow-sm"
-                                    disabled={disabled}
+                                    disabled={disabled || isLoading}
+                                    aria-busy={isLoading || undefined}
                                     onClick={onClick}
                                 >
                                     <svg
@@ -159,8 +162,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
                     />
                 )}
                 <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
-                    {({ open }) => {
+                    {({ open, isLoading }) => {
+                        // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                         const onClick = () => {
+                            if (isLoading) return;
                             open();
                         };
 
@@ -169,7 +174,8 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                 aria-label={`Upload ${type || "product"} image`}
                                 type="button"
                                 className="absolute bottom-4 right-4 flex items-center rounded-full border-none bg-gradient-to-t from-blue-primary to-blue-300 px-6 py-3 text-[17px] font-medium text-white shadow-lg hover:shadow-md active:shadow-sm"
-                                disabled={disabled}
+                                disabled={disabled || isLoading}
+                                aria-busy={isLoading || undefined}
                                 onClick={onClick}
                             >
                                 <svg
@@ -232,8 +238,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
                         ))}
                 </div>
                 <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
-                    {({ open }) => {
+                    {({ open, isLoading }) => {
+                        // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                         const onClick = () => {
+                            if (isLoading) return;
                             open();
                         };
 
@@ -243,7 +251,8 @@ const ImageUpload: FC<ImageUploadProps> = ({
                                     aria-label={`Upload ${type || "product"} image`}
                                     type="button"
                                     className="flex items-center rounded-full border-none bg-gradient-to-t from-blue-primary to-blue-300 px-6 py-3 text-[17px] font-medium text-white shadow-lg hover:shadow-md active:shadow-sm"
-                                    disabled={disabled}
+                                    disabled={disabled || isLoading}
+                                    aria-busy={isLoading || undefined}
                                     onClick={onClick}
                                 >
                                     <svg

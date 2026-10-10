@@ -81,8 +81,10 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
                 )}
             </div>
             <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
-                {({ open }) => {
+                {({ open, isLoading }) => {
+                    // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                     const onClick = () => {
+                        if (isLoading) return
                         open()
                     }
 

@@ -5,6 +5,8 @@ import "@testing-library/jest-dom";
 
 let mockIsMounted = true;
 let triggerSuccess: (result: unknown) => void = () => {};
+// 実 SDK の isLoading はスクリプト読込（onLoad）まで true
+let mockIsLoading = false;
 
 // Mock react to control useSyncExternalStore state
 jest.mock("react", () => {
@@ -23,7 +25,7 @@ jest.mock("react", () => {
 
 interface CldUploadWidgetProps {
     onSuccess: (result: unknown) => void;
-    children: (args: { open: () => void }) => React.ReactNode;
+    children: (args: { open: () => void; isLoading?: boolean }) => React.ReactNode;
 }
 
 // Mock next-cloudinary
@@ -31,7 +33,8 @@ jest.mock("next-cloudinary", () => ({
     CldUploadWidget: ({ onSuccess, children }: CldUploadWidgetProps) => {
         triggerSuccess = onSuccess;
         return children({
-            open: () => onSuccess({ info: { secure_url: "https://example.com/mock.jpg" } })
+            open: () => onSuccess({ info: { secure_url: "https://example.com/mock.jpg" } }),
+            isLoading: mockIsLoading,
         });
     }
 }));
@@ -154,5 +157,48 @@ describe("ImageUploadStore Component", () => {
             triggerSuccess({ info: { secure_url: 12345 } });
             expect(mockOnChange).not.toHaveBeenCalled();
         });
+    });
+});
+
+describe("ImageUploadStore while the Cloudinary script is loading", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockIsMounted = true;
+        mockIsLoading = false;
+    });
+
+    const clickEmptySlot = (container: HTMLElement) => {
+        const slot = container.querySelector(".cursor-pointer");
+        if (!(slot instanceof HTMLElement)) throw new Error("empty slot not found");
+        fireEvent.click(slot);
+    };
+
+    it("does not open the widget before the script is ready", () => {
+        // Arrange
+        mockIsLoading = true;
+        const onChange = jest.fn();
+        const { container } = render(
+            <ImageUploadStore onChange={onChange} onRemove={jest.fn()} value={[]} maxImages={1} />
+        );
+
+        // Act
+        clickEmptySlot(container);
+
+        // Assert（open を呼ぶと mock が onSuccess→onChange を発火する）
+        expect(onChange).not.toHaveBeenCalled();
+    });
+
+    it("opens the widget once the script is ready", () => {
+        // Arrange
+        const onChange = jest.fn();
+        const { container } = render(
+            <ImageUploadStore onChange={onChange} onRemove={jest.fn()} value={[]} maxImages={1} />
+        );
+
+        // Act
+        clickEmptySlot(container);
+
+        // Assert
+        expect(onChange).toHaveBeenCalledWith("https://example.com/mock.jpg");
     });
 });

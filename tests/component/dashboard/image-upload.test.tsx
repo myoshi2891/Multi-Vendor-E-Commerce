@@ -7,22 +7,28 @@ import ImageUpload from "@/components/dashboard/shared/image-upload";
 // Cloudinary ウィジェットは外部スクリプトを読むため、open と onSuccess だけを再現する
 const open = jest.fn();
 let lastOnSuccess: ((result: unknown) => void) | undefined;
+// 実 SDK の isLoading はスクリプト読込（onLoad）まで true。読込前の open() は内部で例外になる
+let mockIsLoading = false;
 jest.mock("next-cloudinary", () => ({
     CldUploadWidget: ({
         children,
         onSuccess,
     }: {
-        children: (api: { open: () => void }) => React.ReactNode;
+        children: (api: {
+            open: () => void;
+            isLoading?: boolean;
+        }) => React.ReactNode;
         onSuccess: (result: unknown) => void;
     }) => {
         lastOnSuccess = onSuccess;
-        return <>{children({ open })}</>;
+        return <>{children({ open, isLoading: mockIsLoading })}</>;
     },
 }));
 
 beforeEach(() => {
     open.mockClear();
     lastOnSuccess = undefined;
+    mockIsLoading = false;
 });
 
 const baseProps = { onChange: jest.fn(), onRemove: jest.fn() };
@@ -185,4 +191,39 @@ describe("ImageUpload", () => {
             screen.getByRole("button", { name: "Upload standard image" })
         ).toBeDisabled();
     });
+});
+
+describe("ImageUpload while the Cloudinary script is loading", () => {
+    it.each(["profile", "cover", "standard"] as const)(
+        "%s: disables the upload button until the widget is ready",
+        async (type) => {
+            // Arrange
+            const user = userEvent.setup();
+            mockIsLoading = true;
+            const { rerender } = render(
+                <ImageUpload {...baseProps} type={type} value={[]} />
+            );
+            const button = screen.getByRole("button", {
+                name: `Upload ${type} image`,
+            });
+
+            // Act
+            await user.click(button);
+
+            // Assert
+            expect(button).toBeDisabled();
+            expect(button).toHaveAttribute("aria-busy", "true");
+            expect(open).not.toHaveBeenCalled();
+
+            // Act: スクリプト読込後は通常どおり開ける
+            mockIsLoading = false;
+            rerender(<ImageUpload {...baseProps} type={type} value={[]} />);
+            await user.click(button);
+
+            // Assert
+            expect(button).toBeEnabled();
+            expect(button).not.toHaveAttribute("aria-busy");
+            expect(open).toHaveBeenCalledTimes(1);
+        }
+    );
 });
