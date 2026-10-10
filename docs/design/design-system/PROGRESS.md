@@ -2,7 +2,7 @@
 
 ## 2026-10-10 販売者8画面の実ルート受け入れ（現在地）
 
-認証後8実ルート（DS-PAGE-055〜058・061〜064）を専用DBと Clerk テスト販売者で受け入れ、検証済みへ更新。実環境で見つかった axe 違反（サイドバー・Jodit）と不具合（Cloudinary 読込前クリック、Decimal 受け渡し）は修正済み。部品の判定は変更しない（受け入れはページ単位）。[証跡](#認証後8実ルート受け入れ2026-10-10)。
+認証後8実ルート（DS-PAGE-055〜058・061〜064）を専用DBと Clerk テスト販売者で受け入れ、検証済みへ更新。配送は料率編集 Dialog のフォーカス復帰が一度間欠失敗（3/5）したが、列定義の再生成による remount を修正し 5/5 を確認（[QA](../../testing/QA_HANDOFF.md#ds-seller-eight-browser)）。実環境で見つかった axe 違反（サイドバー・Jodit）と不具合（Cloudinary 読込前クリック、Decimal 受け渡し）は修正済み。部品の判定は変更しない（受け入れはページ単位）。[証跡](#認証後8実ルート受け入れ2026-10-10)。
 
 ## 2026-10-10 販売者優先8画面の現在地（履歴）
 
@@ -1288,7 +1288,8 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 - 操作 9ケース×3回=27/27: 権限（未認証は`/`、他店舗URLはエラー境界のみでデータ非表示）、在庫しきい値・在庫数、注文状態、店舗電話、既定配送サービスの保存→再読込で保持、注文詳細・料率編集・商品作成 Dialog の Escape でフォーカス復帰、販売者返信の永続化、実 Jodit 描画と Cloudinary ウィジェット表示（商品登録・店舗設定）。
 - 追加の不具合: SDK 読込前に画像アップロードボタンを押すと `open()` が `Cannot read properties of undefined (reading 'open')` で失敗（`src/components/dashboard/shared/image-upload.tsx` 等、`window.cloudinary` 読込後は正常）。店舗レイアウトが `Decimal` を含む `Store` を Client Component（Sidebar）へ渡し、全ルートで React の非 plain object 警告。
 - 判定（初回）: 8画面とも「本体適用・検証保留」を維持（axe 違反が解消されるまで受け入れ未完了）。
-- 修正後の再検証（同日）: サイドバーを素の nav＋リンクへ、ProductsIcon の role 除去、Jodit の ARIA 補正・`resolvedTheme`・プレースホルダー/ステータスバーのコントラスト、Cloudinary の `isLoading` 中の無効化、Store の `name`/`url` 射影と Server Action 戻り値の絞り込み。seller-eight-route 57/57（48ケース axe 違反0・pageerror0、操作9件）、`Decimal` 警告0。回帰 seven 82/82、six 56/56。8画面を検証済みへ更新。
+- 修正後の再検証（同日）: サイドバーを素の nav＋リンクへ、ProductsIcon の role 除去、Jodit の ARIA 補正・`resolvedTheme`・プレースホルダー/ステータスバーのコントラスト、Cloudinary の `isLoading` 中の無効化、Store の `name`/`url` 射影と Server Action 戻り値の絞り込み。seller-eight-route 57/57（48ケース axe 違反0・pageerror0、操作9件）、`Decimal` 警告0。回帰 seven 82/82、six 56/56。7画面を検証済みへ更新。配送は Dialog のフォーカス復帰の再実行で 3/5 となり保留。
+- 配送のフォーカス復帰の修正（同日）: 原因は `SellerShipping` が列定義を毎 render 作り直していたこと（`flexRender` が cell 関数をコンポーネント型として描画するため、保存後の `router.refresh()` で Actions ボタンが remount され、Dialog の `returnFocusTo` が DOM から外れた要素を指していた）。`inventory-table-client` と同じく Server Action 参照を `useState` で固定し列定義を `useMemo` で固定して修正（RTL +1）。修正後、同テストを記録手順で ×5 再実行し 5/5、配送表示6ケース 6/6、six 56/56。配送を検証済みへ更新し、8画面とも受け入れ完了。
 
 ### 最終回帰・文書同期（2026-10-10）
 

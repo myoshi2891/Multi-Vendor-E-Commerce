@@ -58,7 +58,7 @@ TEST_IMPLEMENTATION_PLAN/QA_HANDOFFを更新、coverage変化はCOVERAGE_REPORT�
 - [x] Step 7 配送。
 - [x] Step 8 店舗設定。
 - [x] 最終回帰・仕様/QA/統計同期。
-- [x] 認証後8実ルート/実SDK受け入れ（2026-10-10、Cloudinary はウィジェット表示まで）。
+- [x] 認証後8実ルート/実SDK受け入れ（2026-10-10、Cloudinary はウィジェット表示まで）。配送の Dialog フォーカス復帰の間欠失敗は、列定義の固定で修正（×5 再実行 5/5）。
 
 最終実測: Jest3095/3098（3 skipped）、ブラウザー256/256＋最終Refactor10/10。認証後保留の解除条件は[QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser)。
 
@@ -72,3 +72,4 @@ TEST_IMPLEMENTATION_PLAN/QA_HANDOFFを更新、coverage変化はCOVERAGE_REPORT�
 - 対象外: Cloudinary への実アップロード、Neon/`multivendor_dev` への書き込み、本体E2E設定の変更。
 - 実施結果（2026-10-10）: 表示48ケース全件200・はみ出し0、操作27/27。axe違反34/48（サイドバー、Jodit）と不具合2件（Cloudinary open の読込前クリック、Store の Decimal 受け渡し）により受け入れは保留。[QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser)。
 - 修正と再検証（2026-10-10）: ユーザー承認のもと、サイドバーを素の nav（検索欄なし）へ、Jodit の ARIA 補正・テーマ判定・コントラスト、Cloudinary の読込中無効化、Store の Decimal を Client へ渡さない射影（`upsertStore`→`{ id, url }`、`updateStoreDefaultShippingDetails`→`{ url }`）を TDD で実施。seller-eight-route 57/57、Jest 3111/3114、321 suites。
+- 今後の課題（列定義の固定が未対応の表 8 か所、在庫のしきい値依存、管理者ナビの既定分岐、保存失敗理由の表示、Cloudinary 実アップロード、本番ビルドでの再検証、既存の Prettier 未整形）は [QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser) に記録。

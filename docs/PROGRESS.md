@@ -2,7 +2,7 @@
 
 ## 2026-10-10 販売者優先8画面の残存デザイン適用
 
-8画面の操作寸法・意味色・独立Portal・未読識別と概要のレスポンシブ表示を統一。TDD・仕様同期・全体Jest/coverage・補助ブラウザー256ケースを確認し、coverage dashboardを再生成。認証後8実ルート/実SDKは専用test DBとSELLERログイン状態の不足により保留。[証跡](design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)／[QA正本](testing/QA_HANDOFF.md#ds-seller-eight-browser)。
+8画面の操作寸法・意味色・独立Portal・未読識別と概要のレスポンシブ表示を統一。TDD・仕様同期・全体Jest/coverage・補助ブラウザー256ケースを確認し、coverage dashboardを再生成。その後、専用test DBと Clerk テスト販売者で認証後8実ルートを検証し、見つかった不具合を修正（seller-eight-route 57/57）。配送の料率編集 Dialog のフォーカス復帰が再実行で間欠失敗（3/5）したため、列定義の再生成による remount を修正し 5/5 を確認。8画面とも受け入れ完了。Cloudinary への実アップロードは承認範囲外で未実施（ウィジェット表示までを確認）。[証跡](design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)／[QA正本](testing/QA_HANDOFF.md#ds-seller-eight-browser)。
 
 ## 2026-10-09 監査指摘6画面のデザイン適用
 
@@ -29,7 +29,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3111 passed / 3114 total、3 skipped、127 snapshots passed、321 スイート（320 passed／1 skipped、failed 0）**。2026-10-10 販売者8実ルート不具合修正後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3113 passed / 3116 total、3 skipped、127 snapshots passed、321 スイート（320 passed／1 skipped、failed 0）**。2026-10-10 販売者8実ルート不具合修正後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5592,6 +5592,6 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
-| テスト総数 | 3095 passed / 3098 total | **3111 passed / 3114 total** |
+| テスト総数 | 3095 passed / 3098 total | **3113 passed / 3116 total** |
 | スイート数 | 319（318 passed／1 skipped） | **321（320 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |

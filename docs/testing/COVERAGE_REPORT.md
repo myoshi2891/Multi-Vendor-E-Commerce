@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-10） | **3111 passed / 3114 total、3 skipped、127 snapshots passed、321 スイート（320 passed／1 skipped、failed 0）**。2026-10-10 販売者8実ルート不具合修正後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-10実測） | Statements88.06%（10888/12364）／Branches78.27%（6701/8561）／Functions84.36%（2121/2514）／Lines88.59%（9917/11194）。 |
+| Jestテスト総数（2026-10-10） | **3113 passed / 3116 total、3 skipped、127 snapshots passed、321 スイート（320 passed／1 skipped、failed 0）**。2026-10-10 販売者8実ルート不具合修正後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-10実測） | Statements88.06%（10893/12369）／Branches78.27%（6701/8561）／Functions84.37%（2123/2516）／Lines88.59%（9921/11198）。 |
 | テストファイル総数（dashboard） | **399ファイル**／lcov **404エントリ**／マトリクス18/80（23%）。2026-10-10再生成実測。 |
 | Jest スイート総数（unit/component） | **321スイート**（320 passed／1 skipped、2026-10-10実測）。 |
-| テスト総数 | **3111 unit/component passed**（3114 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| テスト総数 | **3113 unit/component passed**（3116 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-10 dashboard実測、セル状態変化なし）。 |
@@ -522,6 +522,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-09 | **閲覧履歴の key 重複修正 — Jest +1（3091 → 3092 passed / 3094 → 3095 total・319 スイート不変）**。同一商品の別バリアントを閲覧すると `ProductList` の `key={product.id}` が重複していたため、key に先頭バリアント ID を追加（`product-list.test.tsx` +1）。browse フィルタの `replace` に `{ scroll: false }` を付与（既存テスト 13 件の期待値変更、件数不変）。作業ツリー・未コミット（HEAD `a01b3321`） |
 | 2026-10-10 | **PR #199 Sonar New Code coverage対応 — Jest +2（3092 → 3094 passed / 3095 → 3097 total・319 スイート不変）**。レビュー対応で`page.tsx`（coverage除外）から`account-view.tsx`（計測対象）へ表示枠を抽出し、browser検証のみでlcov未カバー（0%）になったため`profile-overview.test.tsx`に`AccountView` RTL +2（Lines 100%）。ヒートマップ分類変更なし。作業ツリー・未コミット（HEAD `bd6633ea`） |
 | 2026-10-10 | **販売者8実ルート不具合修正 — Jest +16（3095 → 3111 passed / 3098 → 3114 total・319 → 321 スイート）**。新規 `nav-seller.test.tsx`（+3）、`jodit-a11y.test.ts`（+5）、`image-upload` の読込中無効化（+3）、`upload-images`（+2）、`product-details` の resolvedTheme（+2）、`seller-shell` の店舗 select（+1）。`store.test.ts` は戻り値契約の変更で期待値を4件更新（件数不変）。coverage Statements87.91→88.06%／Branches78.08→78.27%／Functions84.11→84.36%／Lines88.41→88.59%。dashboard 396→399 files／403→404 lcov、セル不変。seller-eight-route 57/57（axe 0）、seven 82/82、six 56/56。コミット未作成（作業ツリー）。 |
+| 2026-10-10 | **click-to-add のアイコン操作に aria-label — Jest +1（3111 → 3112 passed / 3114 → 3115 total・321 スイート不変）**。PlusButton／MinusButton に `aria-label`（Add new detail／Remove detail）、SVG に `aria-hidden`。coverage・dashboard（399 files／404 lcov／18 of 80）は不変。 |
+| 2026-10-10 | **配送の料率 Dialog のフォーカス復帰修正 — Jest +1（3112 → 3113 passed / 3115 → 3116 total・321 スイート不変）**。`SellerShipping` の列定義を `useMemo`＋Server Action 参照の固定で安定化し、refresh 後も行の操作ボタンを remount しない（`seller-shipping-design.test.tsx` +1）。coverage Statements88.06%（10893/12369）／Functions84.37%（2123/2516）／Lines88.59%（9921/11198）、Branches・dashboard（399 files／404 lcov／18 of 80）は不変。seller-eight-route の該当テスト ×5 で 5/5。 |
 
 ### 2026-09-30 compareデザイン移行
 
@@ -592,12 +594,12 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 | 指標 | 過去の値 |
 |---|---|
 | Jestテスト総数（2026-10-04） | **2742 passed / 2745 total、3 skipped、127 snapshots passed、257 スイート（failed 0）**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。plan 077 の cookie 回帰 +3 と `bc4be297` の未同期分 +13。以前の記録: 2726 passed / 2729 total（2026-10-04・`extractAttributeParams` 空キー回帰後）。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
-| 全体coverage（2026-10-10実測） | Statements88.06%（10888/12364）／Branches78.27%（6701/8561）／Functions84.36%（2121/2514）／Lines88.59%（9917/11194）。 |
+| 全体coverage（2026-10-10実測） | Statements87.91%（10837/12327）／Branches78.08%（6651/8518）／Functions84.11%（2107/2505）／Lines88.41%（9871/11164）。 |
 | テストファイル総数 | **371ファイル**（2026-10-06 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **299スイート**（298 passed／1 skipped、2026-10-06全体実測）。 |
-| テスト総数 | **3111 unit/component passed**（3114 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| テスト総数 | **3095 unit/component passed**（3098 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | カバー済みセル | **18/80（23%）**（2026-10-10 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **404**（2026-10-10全体coverage/dashboard実測）。 |
+| lcov エントリ数 | **403**（2026-10-10全体coverage/dashboard実測）。 |
 | 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
 </details>
