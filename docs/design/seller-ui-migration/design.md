@@ -69,3 +69,7 @@ StatusEditorにcontrols/success、詳細buttonにcontrol。支払状態のspan/p
 ### Step 5 メッセージ — DS-PAGE-056
 
 messages.sellerへmessage-touch/message-focusを接続。useIdで未読説明IDを生成しaria-describedbyで会話buttonに関連付ける。markRead成功時の既存unreadLatest更新のみで解除。buyerスタイルとprops APIは維持。
+
+### Step 6 商品登録 — DS-PAGE-061
+
+ProductDetails seller editorへcontrols、警告へwarning、成功時のみsuccessを適用。AttributeFieldsに任意design propを追加し属性Select Portalに渡す。ClickToAddのiconControlとseller専用keyword button。既定scope/payload/validationを維持。

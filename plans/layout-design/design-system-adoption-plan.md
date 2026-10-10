@@ -819,3 +819,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 4 注文 — DS-PAGE-057: 実装・補助検証・仕様同期。
 
 - [x] Step 5 メッセージ — DS-PAGE-056: 実装・補助検証・仕様同期。
+
+- [x] Step 6 商品登録 — DS-PAGE-061: 実装・補助検証・仕様同期。

@@ -519,3 +519,51 @@ test("seller gallery keyboard actions and empty shipping states", async ({ page 
     await expect(scrollRegion).toBeFocused();
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
 });
+
+import { touchControl, sellerEvidence } from "./seller-eight-assertions";
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual product ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=product&attributes=1");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            await touchControl(page.getByPlaceholder("Product Name", { exact: true }));
+            const add = page.getByRole("button", { name: "Add new detail", exact: true }).first();
+            await touchControl(add, true);
+            await add.focus();
+            await expect(add).toHaveCSS("outline-style", "solid");
+            await page.getByRole("combobox", { name: "Category", exact: true }).click();
+            await page.getByRole("option", { name: /Watches/ }).click();
+            for (const [name, choice] of [["Material", "Gold"], ["Recycled", "Yes"]]) {
+                await page.getByRole("combobox", { name, exact: true }).click();
+                const list = page.getByRole("listbox");
+                await expect(list).toHaveCSS("color", theme === "dark" ? "rgb(243, 240, 232)" : "rgb(24, 38, 29)");
+                await touchControl(page.getByRole("option", { name: choice, exact: true }));
+                await page.getByRole("option", { name: choice, exact: true }).click();
+            }
+            const specs = page.getByRole("tabpanel", { name: "Product Specifications", exact: true });
+            await specs.getByRole("button", { name: "Add new detail", exact: true }).click();
+            await specs.getByRole("textbox", { name: "name 1", exact: true }).fill("Material");
+            const warning = page.getByRole("status").filter({ hasText: "These specifications duplicate" });
+            await expect(warning).toBeVisible();
+            await expect(warning).toHaveCSS("color", theme === "dark" ? "rgb(239, 166, 93)" : "rgb(138, 77, 15)");
+            await sellerEvidence(page, info);
+        });
+
+test("residual product keyword keyboard removal preserves sibling values", async ({ page }, info) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.goto("/?screen=editvariant&extra-keyword=1");
+    const remove = page.getByRole("button", { name: "Remove keyword watch", exact: true });
+    await touchControl(remove, true);
+    await remove.focus();
+    await page.keyboard.press("Enter");
+    await expect(remove).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Remove keyword gold", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Save product", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "Product saved" })).toBeVisible();
+    const saved = await page.evaluate(() => (window as unknown as { saved: { keywords: string[]; sizes: { price: number }[] }[] }).saved[0]);
+    expect(saved.keywords).not.toContain("watch");
+    expect(saved.keywords).toContain("gold");
+    expect(saved.sizes[0].price).toBe(12.5);
+    await sellerEvidence(page, info);
+});

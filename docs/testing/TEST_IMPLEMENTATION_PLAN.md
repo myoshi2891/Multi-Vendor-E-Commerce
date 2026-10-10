@@ -1214,3 +1214,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-10): Step 4 注文 — DS-PAGE-057 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
 
 - ✅ Completed (2026-10-10): Step 5 メッセージ — DS-PAGE-056 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 6 商品登録 — DS-PAGE-061 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。

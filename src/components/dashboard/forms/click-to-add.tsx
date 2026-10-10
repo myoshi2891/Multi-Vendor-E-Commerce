@@ -86,7 +86,11 @@ const ClickToAddInputs = <T extends Detail>({
                 onClick={onClick}
                 type="button"
                 title="Add new detail"
-                className="group cursor-pointer outline-none duration-300 hover:rotate-90"
+                className={
+                    design === "seller"
+                        ? sellerStyles.iconControl
+                        : "group cursor-pointer outline-none duration-300 hover:rotate-90"
+                }
             >
                 {/* Plus icon */}
                 <svg
@@ -113,7 +117,11 @@ const ClickToAddInputs = <T extends Detail>({
             <button
                 type="button"
                 title="Remove detail"
-                className="group cursor-pointer outline-none duration-300 hover:rotate-90"
+                className={
+                    design === "seller"
+                        ? sellerStyles.iconControl
+                        : "group cursor-pointer outline-none duration-300 hover:rotate-90"
+                }
                 onClick={onClick}
             >
                 {/* Minus icon */}
@@ -153,9 +161,14 @@ const ClickToAddInputs = <T extends Detail>({
                     {Object.keys(detail).map((property, propIndex) => (
                         <div
                             key={propIndex}
-                            className={design === "seller"
-                                ? cn(sellerStyles.detailField, containerClassName)
-                                : containerClassName}
+                            className={
+                                design === "seller"
+                                    ? cn(
+                                          sellerStyles.detailField,
+                                          containerClassName
+                                      )
+                                    : containerClassName
+                            }
                         >
                             {/* Color picker toggle */}
                             {property === "color" && colorPicker && (
@@ -163,7 +176,11 @@ const ClickToAddInputs = <T extends Detail>({
                                     <button
                                         aria-label="Choose color"
                                         type="button"
-                                        className="cursor-pointer"
+                                        className={
+                                            design === "seller"
+                                                ? sellerStyles.iconControl
+                                                : "cursor-pointer"
+                                        }
                                         onClick={() =>
                                             setColorPickerIndex(
                                                 colorPickerIndex === index
@@ -202,9 +219,14 @@ const ClickToAddInputs = <T extends Detail>({
 
                             {/* Input field for each property */}
                             <Input
-                                className={design === "seller"
-                                    ? cn("w-full placeholder:capitalize", inputClassName)
-                                    : inputClassName}
+                                className={
+                                    design === "seller"
+                                        ? cn(
+                                              "w-full placeholder:capitalize",
+                                              inputClassName
+                                          )
+                                        : inputClassName
+                                }
                                 type={
                                     typeof detail[property] === "number"
                                         ? "number"

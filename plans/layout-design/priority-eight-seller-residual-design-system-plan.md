@@ -54,7 +54,7 @@ TEST_IMPLEMENTATION_PLAN/QA_HANDOFFを更新、coverage変化はCOVERAGE_REPORT�
 - [x] Step 3 在庫。
 - [x] Step 4 注文。
 - [x] Step 5 メッセージ。
-- [ ] Step 6 商品登録。
+- [x] Step 6 商品登録。
 - [ ] Step 7 配送。
 - [ ] Step 8 店舗設定。
 - [ ] 最終回帰・仕様/QA/統計同期。

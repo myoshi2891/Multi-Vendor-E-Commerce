@@ -48,7 +48,7 @@ export const product = {
     weight: 1.5,
     colors: [{ color: "#d4ba83" }],
     sizes: [{ size: "M", quantity: 3, price: 12.5, discount: 0 }],
-    keywords: ["watch", "gold", "classic", "time", "accessory"],
+    keywords: ["watch", "gold", "classic", "time", "accessory", ...(location.search.includes("extra-keyword") ? ["precision"] : [])],
     product_specs: [{ name: "Material", value: "Gold" }],
     variant_specs: [{ name: "Finish", value: "Polished" }],
     questions: [],
@@ -117,3 +117,9 @@ export async function save(...args: unknown[]) {
         throw new Error("Private fixture failure");
     return { ...store, ...shipping, id: "saved-1" };
 }
+
+export const attributeDefinitions = [
+    { id: "material", key: "material", name: "Material", type: "ENUM", scope: "PRODUCT", unit: null, required: false, multiValued: false,
+      options: [{ id: "gold", value: "gold", label: "Gold" }, { id: "steel", value: "steel", label: "Steel" }] },
+    { id: "recycled", key: "recycled", name: "Recycled", type: "BOOLEAN", scope: "PRODUCT", unit: null, required: false, multiValued: false, options: [] },
+];

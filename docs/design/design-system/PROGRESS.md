@@ -1245,3 +1245,9 @@ Red: 状態selectの操作高不足でbrowser6件失敗。Green/Refactor: seven 
 Red: 未読accessible description不足のRTL1件（既存11成功）とseller-touchに追従せず44pxのbrowser8件。Green/Refactor: seven messages 14/14、関連Jestは下記統合実績に記録、lint/tsc成功。1440/1000/768/390×light-dark、未読/既読失敗再試行/送信値保持/戻るfocus/52px注入/ring追従/axe AA、390px dark画像目視。
 
 認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。
+
+### Step 6 商品登録 — DS-PAGE-061
+
+Red: standalone入力高40pxのbrowser6件とkeyword button不在のbrowser1件。Green26/26後、checkbox表示器とlabel操作領域/成功時だけの色をRefactorしsix13/13再確認。関連RTL3 suites 47/47、lint/tsc成功。3幅/light-dark、ENUM/BOOLEAN Portal、重複警告、dynamic focus、keyword Enter/他keywordと価格12.5保持、variant/画像回帰、axe AA、390px dark画像目視。keywordテストは既存5件minを維持するfixture6件へ調整し、schemaは変更しない。
+
+認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。

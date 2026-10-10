@@ -471,7 +471,7 @@
     align-items: center;
     justify-content: center;
 }
-.controls :is(button, input:not([type="checkbox"]):not([type="radio"]), select, [role="combobox"], [role="menuitem"], [role="tab"]) {
+.controls :is(button:not([role="checkbox"]):not([role="switch"]), input:not([type="checkbox"]):not([type="radio"]), select, [role="combobox"], [role="menuitem"], [role="option"], [role="tab"]) {
     min-height: var(--seller-touch);
 }
 .success {
@@ -520,4 +520,16 @@
 .paymentState[data-payment-state="Declined"],
 .paymentState[data-payment-state="ChargeBack"] {
     color: hsl(var(--destructive));
+}
+
+.editor :global([role="tablist"]) {
+    height: auto;
+    min-height: var(--seller-touch);
+}
+
+/* Enlarge the label target while keeping the checkbox indicator compact. */
+.controls label:has([role="checkbox"]) {
+    min-height: var(--seller-touch);
+    display: flex;
+    align-items: center;
 }

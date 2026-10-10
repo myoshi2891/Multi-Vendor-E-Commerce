@@ -445,12 +445,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             );
             setSaveState("success");
             // Seller forms announce feedback inline in their scoped theme.
-            if (design !== "seller") toast({
-                title:
-                    data?.productId && data?.variantId
-                        ? "Product has been updated."
-                        : `Congratulations! Product is now created.`,
-            });
+            if (design !== "seller")
+                toast({
+                    title:
+                        data?.productId && data?.variantId
+                            ? "Product has been updated."
+                            : `Congratulations! Product is now created.`,
+                });
             // Redirect or Refresh data
             if (data?.productId && data?.variantId) {
                 router.refresh();
@@ -475,11 +476,12 @@ const ProductDetails: FC<ProductDetailsProps> = ({
             } else {
                 console.error("ProductDetails submit error:", error);
             }
-            if (design !== "seller") toast({
-                variant: "destructive",
-                title: "Oops!",
-                description: message,
-            });
+            if (design !== "seller")
+                toast({
+                    variant: "destructive",
+                    title: "Oops!",
+                    description: message,
+                });
         } finally {
             savingRef.current = false;
         }
@@ -530,7 +532,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     };
 
     return (
-        <Card className={design === "seller" ? sellerStyles.editor : "w-full"}>
+        <Card
+            className={
+                design === "seller"
+                    ? `${sellerStyles.editor} ${sellerStyles.controls}`
+                    : "w-full"
+            }
+        >
             <CardHeader>
                 <CardTitle
                     role={design === "seller" ? "heading" : undefined}
@@ -823,7 +831,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                     <SelectContent
                                                         className={
                                                             design === "seller"
-                                                                ? sellerStyles.theme
+                                                                ? `${sellerStyles.theme} ${sellerStyles.controls}`
                                                                 : undefined
                                                         }
                                                     >
@@ -889,7 +897,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                     <SelectContent
                                                         className={
                                                             design === "seller"
-                                                                ? sellerStyles.theme
+                                                                ? `${sellerStyles.theme} ${sellerStyles.controls}`
                                                                 : undefined
                                                         }
                                                     >
@@ -931,6 +939,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                 productAttributeDefs.length > 0 && (
                                     <InputFieldset label="Product attributes">
                                         <AttributeFields
+                                            design={design}
                                             control={form.control}
                                             prefix="productAttributes"
                                             definitions={productAttributeDefs}
@@ -942,6 +951,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                             {variantAttributeDefs.length > 0 && (
                                 <InputFieldset label="Variant attributes">
                                     <AttributeFields
+                                        design={design}
                                         control={form.control}
                                         prefix="variantAttributes"
                                         definitions={variantAttributeDefs}
@@ -1110,14 +1120,33 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                 className="inline-flex items-center gap-x-2 rounded-full bg-blue-200 px-3 py-1 text-xs text-blue-700"
                                             >
                                                 <span>{k}</span>
-                                                <span
-                                                    className="cursor-pointer"
-                                                    onClick={() =>
-                                                        handleDeleteKeyword(i)
-                                                    }
-                                                >
-                                                    x
-                                                </span>
+                                                {design === "seller" ? (
+                                                    <button
+                                                        type="button"
+                                                        aria-label={`Remove keyword ${k}`}
+                                                        className={
+                                                            sellerStyles.iconControl
+                                                        }
+                                                        onClick={() =>
+                                                            handleDeleteKeyword(
+                                                                i
+                                                            )
+                                                        }
+                                                    >
+                                                        ×
+                                                    </button>
+                                                ) : (
+                                                    <span
+                                                        className="cursor-pointer"
+                                                        onClick={() =>
+                                                            handleDeleteKeyword(
+                                                                i
+                                                            )
+                                                        }
+                                                    >
+                                                        x
+                                                    </span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -1222,7 +1251,13 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                     </TabsContent>
                                 </Tabs>
                                 {specOverlaps.length > 0 && (
-                                    <output className="mt-3 block rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                                    <output
+                                        className={
+                                            design === "seller"
+                                                ? `${sellerStyles.warning} mt-3 block text-sm`
+                                                : "mt-3 block rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"
+                                        }
+                                    >
                                         <p>
                                             These specifications duplicate
                                             attributes of this category. Enter
@@ -1396,7 +1431,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                     <SelectContent
                                                         className={
                                                             design === "seller"
-                                                                ? sellerStyles.theme
+                                                                ? `${sellerStyles.theme} ${sellerStyles.controls}`
                                                                 : undefined
                                                         }
                                                     >
@@ -1629,7 +1664,15 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                             </p>
                         )}
                         {design === "seller" && saveState !== "error" && (
-                            <p role="status" aria-live="polite">
+                            <p
+                                role="status"
+                                aria-live="polite"
+                                className={
+                                    saveState === "success"
+                                        ? sellerStyles.success
+                                        : undefined
+                                }
+                            >
                                 {saveState === "saving"
                                     ? "Saving product…"
                                     : saveState === "success"

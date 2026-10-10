@@ -105,3 +105,7 @@ KPIカードはサイドバーを除いた利用可能幅に応じて列数を�
 ### Step 5 メッセージ — DS-PAGE-056
 
 未読会話にはUnread文字と読み上げ説明を表示し、既読更新失敗時は維持、成功時に解除する。seller操作寸法/focusはseller-touch/ringに追従し、選択・送信・戻る・下書き・pollの既存挙動を維持する。
+
+### Step 6 商品登録 — DS-PAGE-061
+
+商品入力/選択/動的行/画像/キーワード操作は44px以上。属性ENUM/BOOLEANのPortalはseller themeと操作寸法を継承し、仕様重複の警告はwarning/cardトークンを使う。キーワードは名前付きbuttonで削除可能。checkboxは小さい表示器と大きなlabel操作領域を分離する。
