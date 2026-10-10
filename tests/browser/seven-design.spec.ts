@@ -693,7 +693,7 @@ for (const width of [1440, 768, 390])
             const dialog = page.getByRole("dialog", { name: "Create product" });
             await touchControl(dialog.getByRole("button", { name: "Close", exact: true }), true);
             await touchControl(dialog.getByPlaceholder("Product Name", { exact: true }));
-            await sellerEvidence(page, info);
+            await sellerEvidence(page, info, "seller-create-dialog.png");
             await page.keyboard.press("Escape");
             await expect(create).toBeFocused();
         });

@@ -70,10 +70,11 @@ for (const route of ROUTES)
                 page.on("pageerror", (error) => pageErrors.push(error.message));
                 try {
                     const response = await page.goto(`${base}${route.path}`, { waitUntil: "load", timeout: 90_000 });
-                    // Jodit は dynamic import のため、ツールバー描画後に axe を実行する（未描画だと判定が揺れる）
-                    if (route.name === "products-new") await expect(page.locator('.jodit-toolbar__box [role="listitem"]').first()).toBeVisible({ timeout: 30_000 });
+                    // リダイレクトや失敗応答を Jodit 待ちのタイムアウトに埋もれさせないため、先に判定する
                     expect(response?.status()).toBe(200);
                     expect(new URL(page.url()).pathname).toBe(`${base}${route.path}`);
+                    // Jodit は dynamic import のため、ツールバー描画後に axe を実行する（未描画だと判定が揺れる）
+                    if (route.name === "products-new") await expect(page.locator('.jodit-toolbar__box [role="listitem"]').first()).toBeVisible({ timeout: 30_000 });
                     await expect(page.locator("html")).toHaveClass(colorScheme === "dark" ? /dark/ : /^(?!.*dark)/);
                     await expect(page.getByText(/Application error|Unhandled Runtime Error/)).toHaveCount(0);
                     // 全条件の結果を集めるため soft で判定し、違反の有無にかかわらず証跡を残す
