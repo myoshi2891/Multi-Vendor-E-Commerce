@@ -87,3 +87,14 @@ it("ignores Escape and link clicks bubbled from portaled descendants", async () 
     fireEvent.keyDown(screen.getByText("Sidebar text"), { key: "Escape" });
     expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
+
+// Sidebar は Client Component（StoreSwitcher）へ店舗を渡すため、Decimal 列を含む Store 全体ではなく
+// 表示に使う name / url だけを取得する（RSC は Decimal を直列化できない）
+import { db } from "@/lib/db";
+it("loads only serializable store fields for the sidebar", async () => {
+    render(await Layout({ children: <h1>Overview</h1> }));
+    expect(db.store.findMany).toHaveBeenCalledWith({
+        where: { userId: "seller" },
+        select: { name: true, url: true },
+    });
+});

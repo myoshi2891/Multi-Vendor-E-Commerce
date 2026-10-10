@@ -17,13 +17,12 @@ import {
     SellerDashboardSidebarOptions,
 } from "@/constants/data";
 
-// Prisma models
-import { Store } from "@prisma/client";
 import StoreSwitcher from "./store-switcher";
 
 interface SideBarProps {
     isAdmin?: boolean;
-    stores?: Store[];
+    // Client Component へ渡るため直列化可能な列だけを受け取る
+    stores?: { name: string; url: string }[];
     design?: "seller";
 }
 
@@ -47,7 +46,7 @@ const Sidebar: FC<SideBarProps> = async ({ isAdmin, stores, design }) => {
             {isAdmin ? (
                 <SideBarNavAdmin menuLinks={adminDashboardSidebarOptions} design={design} />
             ) : (
-                <SideBarNavSeller menuLinks={SellerDashboardSidebarOptions} />
+                <SideBarNavSeller menuLinks={SellerDashboardSidebarOptions} design={design} />
             )}
         </div>
     );

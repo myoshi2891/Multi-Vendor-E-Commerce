@@ -16,12 +16,50 @@ import { usePathname } from 'next/navigation'
 
 export default function SideBarNavSeller({
     menuLinks,
+    design,
 }: {
+    design?: 'seller'
     menuLinks: DashboardSidebarMenuInterface[]
 }) {
     const pathname = usePathname()
     const storeUrlStart = pathname.split('/stores/')[1]
     const activeStore = storeUrlStart ? storeUrlStart.split('/')[0] : ''
+    const isActive = (link: DashboardSidebarMenuInterface) =>
+        link.link === ''
+            ? pathname === `/dashboard/seller/stores/${activeStore}`
+            : `/dashboard/seller/stores/${activeStore}/${link.link}` === pathname
+
+    // cmdk の CommandItem（role="option"）にリンクを入れると nested-interactive になるため、
+    // seller design は nav-admin と同じく素のリンクで描画する
+    if (design === 'seller')
+        return (
+            <nav aria-label="Store pages" className="relative grow py-2">
+                {menuLinks.map((link) => {
+                    const Icon = icons.find(
+                        (icon) => icon.value === link.icon
+                    )?.path
+                    return (
+                        <Link
+                            key={link.link}
+                            href={`/dashboard/seller/stores/${activeStore}/${link.link}`}
+                            aria-current={isActive(link) ? 'page' : undefined}
+                            className={cn(
+                                'mt-1 flex h-12 w-full items-center gap-2 rounded-md px-2 transition-all hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                isActive(link) &&
+                                    'bg-accent text-accent-foreground'
+                            )}
+                        >
+                            {Icon && (
+                                <span aria-hidden="true" className="contents">
+                                    <Icon />
+                                </span>
+                            )}
+                            <span>{link.label}</span>
+                        </Link>
+                    )
+                })}
+            </nav>
+        )
 
     return (
         <nav className="relative grow">
@@ -43,11 +81,7 @@ export default function SideBarNavSeller({
                                         'mt-1 h-12 w-full cursor-pointer',
                                         {
                                             'bg-accent text-accent-foreground':
-                                                link.link === ''
-                                                    ? pathname ===
-                                                      `/dashboard/seller/stores/${activeStore}`
-                                                    : `/dashboard/seller/stores/${activeStore}/${link.link}` ===
-                                                      pathname,
+                                                isActive(link),
                                         }
                                     )}
                                 >
