@@ -40,7 +40,12 @@ jest.mock("@/queries/attribute", () => ({
 jest.mock("@/hooks/use-toast");
 jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));
 jest.mock("uuid", () => ({ v4: () => "generated-uuid" }));
-jest.mock("next-themes", () => ({ useTheme: () => ({ theme: "light" }) }));
+// theme は利用者の選択（"system" を含む）、resolvedTheme は実際に適用中のテーマ
+let mockThemeState: { theme?: string; resolvedTheme?: string } = {
+    theme: "light",
+    resolvedTheme: "light",
+};
+jest.mock("next-themes", () => ({ useTheme: () => mockThemeState }));
 
 // 外部ウィジェットのスタブは「値を素通しする」だけでなく、**渡されたコールバックを
 // 発火できる操作面**を持たせる。product-details 側の配線（inline ハンドラ）は
@@ -51,13 +56,16 @@ jest.mock("jodit-react", () => ({
         value,
         onChange,
         onBlur,
+        config,
     }: {
         value?: string;
         onChange?: (value: string) => void;
         onBlur?: (value: string) => void;
+        config?: { theme?: string };
     }) => (
         <textarea
             data-testid="jodit"
+            data-theme={config?.theme}
             defaultValue={value}
             onChange={(e) => onChange?.(e.target.value)}
             onBlur={(e) => onBlur?.(e.target.value)}
@@ -1321,5 +1329,38 @@ describe("ProductDetails", () => {
                 mockUpsertProduct.mock.calls[0][0].attributes ?? [];
             expect(attributes.every((a) => a.scope === "VARIANT")).toBe(true);
         });
+    });
+});
+
+describe("ProductDetails editor theme", () => {
+    afterEach(() => {
+        mockThemeState = { theme: "light", resolvedTheme: "light" };
+    });
+
+    it("OS 設定（system）がダークのときもエディターをダークテーマで描画する", () => {
+        // Arrange: system 選択時、theme は "system" のままで実テーマは resolvedTheme に入る
+        mockThemeState = { theme: "system", resolvedTheme: "dark" };
+
+        // Act
+        renderForm();
+
+        // Assert
+        const editors = screen.getAllByTestId("jodit");
+        expect(editors.length).toBeGreaterThan(0);
+        editors.forEach((editor) =>
+            expect(editor).toHaveAttribute("data-theme", "dark")
+        );
+    });
+
+    it("ライト適用中は既定テーマで描画する", () => {
+        mockThemeState = { theme: "system", resolvedTheme: "light" };
+
+        renderForm();
+
+        screen
+            .getAllByTestId("jodit")
+            .forEach((editor) =>
+                expect(editor).toHaveAttribute("data-theme", "default")
+            );
     });
 });

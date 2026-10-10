@@ -270,6 +270,12 @@
 	margin: 0 6px !important;
 } */
 
+/* Jodit の既定プレースホルダー色（--jd-color-gray-dark）は背景とのコントラストが AA 未満のため、
+   アプリの補助テキスト色に揃える（ライト・ダークとも） */
+.jodit-placeholder {
+	color: hsl(var(--muted-foreground)) !important;
+}
+
 /* Jodit editor dark mode */
 .jodit_theme_dark.jodit-container {
 	background-color: #1a1b1f !important;
@@ -282,6 +288,17 @@
 
 .jodit_theme_dark .jodit-wysiwyg {
 	background-color: #1a1b1f !important;
+}
+
+/* ダークテーマのステータスバー（文字数・単語数・Powered by）は既定の中間グレー背景
+   （#5f5c5c）上でコントラストが AA 未満。ツールバー・本文と同じ背景に揃えて補助テキスト色にする */
+.jodit_theme_dark .jodit-status-bar {
+	background-color: #1a1b1f !important;
+}
+
+.jodit_theme_dark .jodit-status-bar,
+.jodit_theme_dark .jodit-status-bar a {
+	color: hsl(var(--muted-foreground)) !important;
 }
 
 .jodit_theme_dark .jodit-toolbar-button__button:hover svg {

@@ -6,6 +6,8 @@ export default function ProductsIcon() {
       viewBox="0 0 512 512"
       xmlns="http://www.w3.org/2000/svg"
       className="size-8 scale-150"
+      aria-hidden="true"
+      focusable="false"
     >
       <defs>
         <linearGradient id="boxGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -21,7 +23,6 @@ export default function ProductsIcon() {
         xmlns="http://www.w3.org/2000/svg"
         x={90}
         y={128}
-        role="img"
       >
         <g fill="currentColor">
           <path

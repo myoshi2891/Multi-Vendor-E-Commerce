@@ -79,6 +79,7 @@ import type { ProductFormData } from "@/lib/types";
 import ImagesPreviewGrid from "../shared/images-preview-grid";
 import ClickToAddInputs from "./click-to-add";
 import AttributeFields from "./attribute-fields";
+import { observeJoditA11y } from "./jodit-a11y";
 
 // React date time picker
 import DateTimePicker from "react-datetime-picker";
@@ -137,14 +138,16 @@ const ProductDetails: FC<ProductDetailsProps> = ({
     const variantDescEditor = useRef(null);
 
     // Jodit configuration
-    const { theme } = useTheme();
+    // theme は利用者の選択（"system" を含む）なので、実際に適用中の resolvedTheme で判定する。
+    // theme で判定すると OS ダーク時に白いエディターへダーク用の文字色が乗り、コントラスト不足になる
+    const { resolvedTheme } = useTheme();
 
     const config = useMemo(
         () => ({
-            theme: theme === "dark" ? "dark" : "default",
+            theme: resolvedTheme === "dark" ? "dark" : "default",
             readonly: false,
         }),
-        [theme]
+        [resolvedTheme]
     );
 
     // State for colors
@@ -730,7 +733,11 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                 control={form.control}
                                                 name="description"
                                                 render={({ field }) => (
-                                                    <FormItem className="flex-1">
+                                                    <FormItem
+                                                        // Jodit ツールバーの ARIA 不備（upstream）を描画後に補正する
+                                                        ref={observeJoditA11y}
+                                                        className="flex-1"
+                                                    >
                                                         <FormControl>
                                                             <JoditEditor
                                                                 ref={
@@ -765,7 +772,10 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                 control={form.control}
                                                 name="variantDescription"
                                                 render={({ field }) => (
-                                                    <FormItem className="flex-1">
+                                                    <FormItem
+                                                        ref={observeJoditA11y}
+                                                        className="flex-1"
+                                                    >
                                                         <FormControl>
                                                             <JoditEditor
                                                                 ref={
