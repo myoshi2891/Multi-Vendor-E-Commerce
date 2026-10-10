@@ -63,13 +63,38 @@ function pickSellerEditableStoreFields<T extends object>(
     return out;
 }
 
+/**
+ * upsertStore の戻り値。重複は利用者が直せる失敗なので理由を値で返す
+ * （本番の Server Action は throw したメッセージを client で伏せるため）。
+ * 理由は固定文言のみで、DB の値は含めない。
+ */
+export type UpsertStoreResult =
+    | { ok: true; id: string; url: string }
+    | { ok: false; reason: string };
+
+/** 重複した店舗と入力を比べ、利用者向けの理由を返す（name → url → email → phone の順）。 */
+function duplicateReason(
+    found: Pick<Store, "name" | "url" | "email" | "phone">,
+    store: Partial<Store>
+): string {
+    if (found.name === store.name)
+        return "A store with the same name already exists.";
+    if (found.url === store.url)
+        return "A store with the same URL already exists.";
+    if (found.email === store.email)
+        return "A store with the same email already exists.";
+    return "A store with the same phone number already exists.";
+}
+
 // Function: upsertStore
 // Description: Upsert store details into the database, ensuring uniqueness of name, url. email, and phone.
 // Access Level: Seller Only
 // Parameters:
 // - store: Store object containing details of the store to be upserted.
-// Returns: Updated or newly created store details.
-export const upsertStore = async (store: Partial<Store>) => {
+// Returns: { ok: true, id, url } on success, or { ok: false, reason } when a duplicate store exists.
+export const upsertStore = async (
+    store: Partial<Store>
+): Promise<UpsertStoreResult> => {
     // 認可ガードは try の外に置く（tech.md「認可ガード」）——
     // 中に入れると catch が認可エラーを汎用エラーで上書きしうる。
     const user = await requireSeller();
@@ -117,19 +142,7 @@ export const upsertStore = async (store: Partial<Store>) => {
             });
 
             if (duplicateStore) {
-                let errorMessage = "";
-                if (duplicateStore.name === store.name) {
-                    errorMessage = "A store with the same name already exists.";
-                } else if (duplicateStore.url === store.url) {
-                    errorMessage = "A store with the same URL already exists.";
-                } else if (duplicateStore.email === store.email) {
-                    errorMessage =
-                        "A store with the same email already exists.";
-                } else if (duplicateStore.phone === store.phone) {
-                    errorMessage =
-                        "A store with the same phone number already exists.";
-                }
-                throw new Error(errorMessage);
+                return { ok: false, reason: duplicateReason(duplicateStore, store) };
             }
 
             storeDetails = await db.store.update({
@@ -150,19 +163,7 @@ export const upsertStore = async (store: Partial<Store>) => {
             });
 
             if (existingStore) {
-                let errorMessage = "";
-                if (existingStore.name === store.name) {
-                    errorMessage = "A store with the same name already exists.";
-                } else if (existingStore.url === store.url) {
-                    errorMessage = "A store with the same URL already exists.";
-                } else if (existingStore.email === store.email) {
-                    errorMessage =
-                        "A store with the same email already exists.";
-                } else if (existingStore.phone === store.phone) {
-                    errorMessage =
-                        "A store with the same phone number already exists.";
-                }
-                throw new Error(errorMessage);
+                return { ok: false, reason: duplicateReason(existingStore, store) };
             }
 
             const createData = {
@@ -187,7 +188,7 @@ export const upsertStore = async (store: Partial<Store>) => {
 
         // 戻り値は Client Component（StoreDetails）へ直列化される。Decimal の配送料列を含む Store 全体は
         // RSC で直列化できないため、呼び出し側が使う id / url だけを返す
-        return { id: storeDetails.id, url: storeDetails.url };
+        return { ok: true, id: storeDetails.id, url: storeDetails.url };
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error in upsertStore:", error.message, error.stack);

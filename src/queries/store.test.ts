@@ -426,7 +426,9 @@ describe("upsertStore", () => {
         describe("重複チェック", () => {
             DUPLICATE_TEST_CASES.forEach(
                 ({ field, conflictingStore, error }) => {
-                    it(`${field}が重複している場合はエラーをスローする`, async () => {
+                    // 本番の Server Action は throw したメッセージを client で伏せるため、
+                    // 利用者が直せる重複は理由付きの戻り値で返す
+                    it(`${field}が重複している場合は理由を返し作成しない`, async () => {
                         const mockDb = TestHelpers.mockDbMethods();
                         mockDb.findFirst.mockResolvedValue(
                             TestDataFactory.existingStore(conflictingStore)
@@ -434,14 +436,15 @@ describe("upsertStore", () => {
 
                         const storeData = TestDataFactory.validStoreData();
 
-                        await TestHelpers.expectThrowError(
-                            upsertStore(storeData),
-                            error
-                        );
+                        await expect(upsertStore(storeData)).resolves.toEqual({
+                            ok: false,
+                            reason: error,
+                        });
                         TestHelpers.expectDuplicateCheck(
                             mockDb.findFirst,
                             storeData
                         );
+                        TestHelpers.expectDbMethodNotCalled(mockDb.create);
                     });
                 }
             );
@@ -467,7 +470,11 @@ describe("upsertStore", () => {
             const result = await upsertStore(storeData);
 
             // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
-            expect(result).toEqual({ id: expectedStore.id, url: expectedStore.url });
+            expect(result).toEqual({
+                ok: true,
+                id: expectedStore.id,
+                url: expectedStore.url,
+            });
             TestHelpers.expectStoreCreatedWith(
                 mockDb.create,
                 TestDataFactory.createStoreExpectedData(storeData)
@@ -492,7 +499,11 @@ describe("upsertStore", () => {
             const result = await upsertStore(storeData);
 
             // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
-            expect(result).toEqual({ id: expectedStore.id, url: expectedStore.url });
+            expect(result).toEqual({
+                ok: true,
+                id: expectedStore.id,
+                url: expectedStore.url,
+            });
             TestHelpers.expectStoreCreatedWith(
                 mockDb.create,
                 TestDataFactory.createStoreExpectedData(storeData)
@@ -567,7 +578,11 @@ describe("upsertStore", () => {
             const result = await upsertStore(updateData);
 
             // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
-            expect(result).toEqual({ id: updatedStore.id, url: updatedStore.url });
+            expect(result).toEqual({
+                ok: true,
+                id: updatedStore.id,
+                url: updatedStore.url,
+            });
             TestHelpers.expectDbMethodCalledTimes(mockDb.findFirst, 2);
 
             // 所有権チェックの確認
@@ -603,6 +618,44 @@ describe("upsertStore", () => {
             expect(updateCall.data).not.toHaveProperty("numReviews");
 
             TestHelpers.expectDbMethodNotCalled(mockDb.create);
+        });
+
+        it("他店舗と重複する場合は理由を返し更新しない", async () => {
+            const mockDb = TestHelpers.mockDbMethods();
+            mockDb.findFirst
+                .mockResolvedValueOnce(TestDataFactory.existingStore()) // 所有権チェック
+                .mockResolvedValueOnce(
+                    TestDataFactory.existingStore({
+                        id: "other-store",
+                        name: "Taken Store",
+                    })
+                ); // 重複チェック
+
+            const result = await upsertStore({
+                id: TEST_CONFIG.DEFAULT_STORE_ID,
+                name: "Taken Store",
+                email: "updated@example.com",
+                url: "updated-store",
+                phone: "9876543210",
+            });
+
+            expect(result).toEqual({
+                ok: false,
+                reason: TEST_ERRORS.DUPLICATE_NAME,
+            });
+            TestHelpers.expectDbMethodNotCalled(mockDb.update);
+        });
+
+        it("所有していない店舗の更新は従来どおりエラーをスローする", async () => {
+            const mockDb = TestHelpers.mockDbMethods();
+            mockDb.findFirst.mockResolvedValueOnce(null);
+
+            await expect(
+                upsertStore({ id: "someone-else", name: "Any" })
+            ).rejects.toThrow(
+                "Store not found or you don't have permission to update this store."
+            );
+            TestHelpers.expectDbMethodNotCalled(mockDb.update);
         });
     });
 });

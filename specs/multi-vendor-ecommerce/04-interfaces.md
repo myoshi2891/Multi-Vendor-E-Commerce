@@ -284,6 +284,8 @@ upsertStore retains its existing contract: absent id selects creation and presen
 
 Return values (2026-10-10): `upsertStore` returns `{ id, url }`, and `updateStoreDefaultShippingDetails` returns `{ url }`. Their results are serialized to Client Components, and the full `Store` contains `Decimal` shipping-fee columns that RSC cannot serialize. Callers only use `url`. Authorization, validation and persisted data are unchanged.
 
+Duplicate reason (2026-10-10, approved API change): `upsertStore` returns `UpsertStoreResult` = `{ ok: true, id, url } | { ok: false, reason }`. A duplicate name/URL/email/phone (checked in that order, excluding the store being updated) returns `{ ok: false, reason }` with a fixed English sentence and no database values, and does not write. Production Next.js hides thrown Server Action messages from the client, so a thrown reason could not reach the form. Authentication/role, missing data, ownership mismatch and database failures still throw. `StoreDetails` shows the reason in its alert, keeps the draft and clears the reason on resubmit. Other failures keep the generic "Could not save the store. Please try again." [Plan](../../plans/layout-design/store-save-duplicate-reason-plan.md).
+
 
 Seller presentation adapters additionally accept `Table.scrollLabel` for an opt-in named, keyboard-focusable scroll region and `ImagesPreviewGrid.design="seller"` for named image/removal actions. Default consumers preserve existing markup behavior. `ShippingFields` shares form controls while each caller retains its schema and field names. Store settings replace the route with the returned settings URL after a URL change; an unchanged URL refreshes the current route.
 

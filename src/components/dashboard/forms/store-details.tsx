@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -82,8 +82,11 @@ export default function StoreDetails({
     useEffect(() => {
         if (data) form.reset(valuesFor(data));
     }, [data, form]);
+    // 重複など利用者が直せる失敗の理由。その他の失敗は汎用文言のまま出す
+    const [failureReason, setFailureReason] = useState("");
     async function save(values: Values) {
         let destination = "";
+        setFailureReason("");
         await feedback.save(
             async () => {
                 const response = await upsertStoreAction({
@@ -99,6 +102,10 @@ export default function StoreDetails({
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 });
+                if (!response.ok) {
+                    setFailureReason(response.reason);
+                    throw new Error(response.reason);
+                }
                 destination = response.url;
             },
             () => {
@@ -306,7 +313,8 @@ export default function StoreDetails({
                         </fieldset>
                         {feedback.state === "error" ? (
                             <p role="alert" className={styles.alert}>
-                                Could not save the store. Please try again.
+                                {failureReason ||
+                                    "Could not save the store. Please try again."}
                             </p>
                         ) : (
                             <p

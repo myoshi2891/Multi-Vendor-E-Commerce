@@ -69,7 +69,11 @@ beforeEach(() => {
 });
 it("renders labeled store settings with existing values and server-injected save", async () => {
     jest.mocked(db.store.findUnique).mockResolvedValueOnce(store as never);
-    jest.mocked(upsertStore).mockResolvedValueOnce(store as never);
+    jest.mocked(upsertStore).mockResolvedValueOnce({
+        ok: true,
+        id: store.id,
+        url: store.url,
+    });
     render(await Page({ params: Promise.resolve({ storeUrl: "example" }) }));
     expect(
         screen.getByRole("region", { name: "Store settings" })
@@ -97,9 +101,10 @@ it("renders labeled store settings with existing values and server-injected save
 });
 it("moves to the renamed settings URL instead of refreshing the stale one", async () => {
     jest.mocked(upsertStore).mockResolvedValueOnce({
-        ...store,
+        ok: true,
+        id: store.id,
         url: "renamed",
-    } as never);
+    });
     render(
         <StoreDetails
             data={store as never}
@@ -129,7 +134,7 @@ it("locks store fields, blocks duplicates and retains the failed draft for an in
                     reject = r;
                 })
         )
-        .mockResolvedValueOnce(store);
+        .mockResolvedValueOnce({ ok: true, id: store.id, url: store.url });
     render(
         <StoreDetails
             data={store as never}
@@ -160,6 +165,40 @@ it("locks store fields, blocks duplicates and retains the failed draft for an in
     expect(screen.getByRole("status")).toHaveTextContent(
         "Store information saved"
     );
+});
+
+it("shows the duplicate reason returned by the action and clears it on a successful retry", async () => {
+    const action = jest
+        .fn()
+        .mockResolvedValueOnce({
+            ok: false,
+            reason: "A store with the same name already exists.",
+        })
+        .mockResolvedValueOnce({ ok: true, id: store.id, url: store.url });
+    render(
+        <StoreDetails
+            data={store as never}
+            {...{ upsertStoreAction: action, design: "seller" as const }}
+        />
+    );
+    const form = screen.getByRole("form", { name: "Store information" });
+    fireEvent.change(screen.getByRole("textbox", { name: "Store name" }), {
+        target: { value: "Taken store" },
+    });
+    fireEvent.submit(form);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+        "A store with the same name already exists."
+    );
+    expect(screen.getByRole("textbox", { name: "Store name" })).toHaveValue(
+        "Taken store"
+    );
+    expect(mockRefresh).not.toHaveBeenCalled();
+    fireEvent.submit(form);
+    await waitFor(() => expect(action).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole("status")).toHaveTextContent(
+        "Store information saved"
+    );
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 
 it("projects only store form fields and preserves missing-store redirection", async () => {
@@ -218,9 +257,10 @@ it("gives store creation its own main landmark, heading and theme control outsid
 });
 it("creates through the existing no-id API branch and uses the returned store URL", async () => {
     jest.mocked(upsertStore).mockResolvedValueOnce({
-        ...store,
+        ok: true,
+        id: "created-id",
         url: "created-store",
-    } as never);
+    });
     render(<NewStorePage />);
     for (const [label, value] of [
         ["Store name", "Created store"],
