@@ -43,7 +43,7 @@ export default function StatusEditor({
         <div
             role="group"
             aria-label={`${label} editor`}
-            className="min-w-48 space-y-2"
+            className={`${styles.controls} min-w-48 space-y-2`}
         >
             <label htmlFor={id} className="block text-sm">
                 {label}
@@ -83,7 +83,7 @@ export default function StatusEditor({
                 </p>
             )}
             {feedback === "saved" && (
-                <p role="status" className="text-sm">
+                <p role="status" className={`${styles.success} text-sm`}>
                     Status updated.
                 </p>
             )}

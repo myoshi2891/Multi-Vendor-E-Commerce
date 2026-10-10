@@ -52,7 +52,7 @@ TEST_IMPLEMENTATION_PLAN/QA_HANDOFFを更新、coverage変化はCOVERAGE_REPORT�
 - [x] Step 1 店舗概要。
 - [x] Step 2 商品一覧。
 - [x] Step 3 在庫。
-- [ ] Step 4 注文。
+- [x] Step 4 注文。
 - [ ] Step 5 メッセージ。
 - [ ] Step 6 商品登録。
 - [ ] Step 7 配送。

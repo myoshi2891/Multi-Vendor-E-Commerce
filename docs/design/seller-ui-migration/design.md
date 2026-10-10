@@ -61,3 +61,7 @@ DataTable seller toolbarにcontrolsを合成、New variantとProductActionsにco
 ### Step 3 在庫 — DS-PAGE-055
 
 StockNumberEditor groupにcontrolsを適用し、success表示をbrand-successへ接続。整数範囲/確定値復帰/失敗値再送/Enter/二重送信ガードを維持。
+
+### Step 4 注文 — DS-PAGE-057
+
+StatusEditorにcontrols/success、詳細buttonにcontrol。支払状態のspan/paymentStateを一覧と詳細に共用し、data-payment-stateで表示のみ分岐。enum/Action/金額/pending/値保持を維持する。

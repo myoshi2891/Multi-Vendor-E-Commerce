@@ -1233,3 +1233,9 @@ Red: New variantの操作高24pxでbrowser6件失敗。Green/Refactor: seven pro
 Red: 数量入力高36pxで新browser6件失敗。Green/Refactor: seven inventory 12/12、関連RTL5 suites 16/16、lint/tsc成功。3幅/light-dark、validation/Enter/pending/error/retry/success、全数量44px、検索空、意味色/axe AAを確認。390px darkを画像目視。
 
 認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。
+
+### Step 4 注文 — DS-PAGE-057
+
+Red: 状態selectの操作高不足でbrowser6件失敗。Green/Refactor: seven orders 12/12、関連RTL3 suites 7/7、lint/tsc成功。3幅/light-dark、group/item state pending/error/retry/success、Paid意味色、44px、詳細/Escape/focus復帰、axe AA、390px dark画像目視。
+
+認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。

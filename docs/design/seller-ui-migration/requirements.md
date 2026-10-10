@@ -97,3 +97,7 @@ KPIカードはサイドバーを除いた利用可能幅に応じて列数を�
 ### Step 3 在庫 — DS-PAGE-055
 
 数量・しきい値・保存・再試行は44px以上。保存成功は文字とブランド成功色で通知し、在庫切れ/過小在庫の意味色と判定を維持する。
+
+### Step 4 注文 — DS-PAGE-057
+
+状態select・保存・再試行・詳細起動は44px以上。成功はブランド成功色、Paidは成功、Pending/PartiallyRefundedは警告、Failed/Declined/ChargeBackは危険色と状態文字を併用する。他状態は中立表示。

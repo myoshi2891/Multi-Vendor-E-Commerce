@@ -501,3 +501,23 @@
     align-items: center;
     justify-content: center;
 }
+
+.paymentState {
+    display: inline-flex;
+    border: 1px solid currentColor;
+    border-radius: var(--seller-radius);
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+.paymentState[data-payment-state="Paid"] {
+    color: var(--brand-success);
+}
+.paymentState[data-payment-state="Pending"],
+.paymentState[data-payment-state="PartiallyRefunded"] {
+    color: hsl(var(--warning));
+}
+.paymentState[data-payment-state="Failed"],
+.paymentState[data-payment-state="Declined"],
+.paymentState[data-payment-state="ChargeBack"] {
+    color: hsl(var(--destructive));
+}

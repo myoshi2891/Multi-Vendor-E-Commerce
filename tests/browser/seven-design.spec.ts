@@ -717,3 +717,30 @@ for (const width of [1440, 768, 390])
             for (const input of await page.getByRole("spinbutton").all()) await touchControl(input);
             await sellerEvidence(page, info);
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual orders ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=orders");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const editor = page.getByRole("group", { name: "Order status order-1 editor" });
+            await touchControl(editor.getByRole("combobox"));
+            await touchControl(editor.getByRole("button", { name: "Save status" }));
+            await editor.getByRole("combobox").selectOption("Processing");
+            await editor.getByRole("button", { name: "Save status" }).click();
+            await expect(editor.getByRole("alert")).toContainText("try again");
+            await editor.getByRole("button", { name: "Retry" }).click();
+            await expect(editor.getByRole("status")).toHaveText("Status updated.");
+            await expect(editor.getByRole("status")).toHaveCSS("color", theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)");
+            await expect(page.getByText("Paid", { exact: true })).toHaveCSS("color", theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)");
+            const view = page.getByRole("button", { name: "View order order-1" });
+            await touchControl(view);
+            await view.click();
+            const dialog = page.getByRole("dialog", { name: "Order details" });
+            await touchControl(dialog.getByRole("button", { name: "Close", exact: true }), true);
+            for (const control of await dialog.getByRole("combobox").all()) await touchControl(control);
+            await sellerEvidence(page, info);
+            await page.keyboard.press("Escape");
+            await expect(view).toBeFocused();
+        });

@@ -9,6 +9,7 @@ import DataTable from "@/components/ui/data-table";
 import { ProductImagesCell } from "../shared/order-table-cells";
 import CustomModal from "../shared/custom-modal";
 import { useModal } from "@/providers/modal-provider";
+import styles from "../design/seller.module.css";
 import SellerPage from "../design/seller-page";
 import StatusEditor from "./status-editor";
 import SellerOrderSummary from "./seller-order-summary";
@@ -24,6 +25,7 @@ function OrderDetails({
     return (
         <Button
             ref={trigger}
+            className={styles.control}
             type="button"
             variant="outline"
             onClick={() =>
@@ -67,7 +69,11 @@ export function getSellerOrderColumns(
                 </div>
             ),
         },
-        { accessorKey: "paymentStatus", header: "Payment status" },
+        {
+            accessorKey: "paymentStatus",
+            header: "Payment status",
+            cell: ({ row }) => <span className={styles.paymentState} data-payment-state={row.original.paymentStatus}>{row.original.paymentStatus}</span>,
+        },
         {
             accessorKey: "status",
             header: "Status",

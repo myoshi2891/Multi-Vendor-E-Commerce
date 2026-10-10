@@ -14,7 +14,7 @@ export default function SellerOrderSummary({
     return (
         <div className="space-y-6 text-left">
             <p>
-                #{order.id} · {order.paymentStatus} · ${order.total.toFixed(2)}
+                #{order.id} · <span className={styles.paymentState} data-payment-state={order.paymentStatus}>{order.paymentStatus}</span> · ${order.total.toFixed(2)}
             </p>
             <StatusEditor
                 label={`Order status ${order.id}`}

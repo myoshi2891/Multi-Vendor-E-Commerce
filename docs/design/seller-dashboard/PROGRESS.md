@@ -97,3 +97,5 @@ DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失�
 - 2026-10-10 Step 2 商品一覧 — DS-PAGE-062: 実装・補助検証済み。[証跡](../design-system/PROGRESS.md#販売者優先8画面残存移行記録)。認証後受け入れは保留。
 
 - 2026-10-10 Step 3 在庫 — DS-PAGE-055: 実装・補助検証済み。[証跡](../design-system/PROGRESS.md#販売者優先8画面残存移行記録)。認証後受け入れは保留。
+
+- 2026-10-10 Step 4 注文 — DS-PAGE-057: 実装・補助検証済み。[証跡](../design-system/PROGRESS.md#販売者優先8画面残存移行記録)。認証後受け入れは保留。
