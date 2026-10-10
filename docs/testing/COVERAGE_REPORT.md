@@ -18,8 +18,8 @@
 | テスト総数 | **3136 unit/component passed**（3139 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **18/80（23%）**（2026-10-10 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **404**（2026-10-10全体coverage/dashboard実測）。 |
+| カバー済みセル | **18/80（23%）**（2026-10-11 dashboard実測、セル状態変化なし）。 |
+| lcov エントリ数 | **405**（2026-10-11全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
 | 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
@@ -598,13 +598,13 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 | 指標 | 過去の値 |
 |---|---|
 | Jestテスト総数（2026-10-04） | **2742 passed / 2745 total、3 skipped、127 snapshots passed、257 スイート（failed 0）**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。plan 077 の cookie 回帰 +3 と `bc4be297` の未同期分 +13。以前の記録: 2726 passed / 2729 total（2026-10-04・`extractAttributeParams` 空キー回帰後）。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
-| 全体coverage（2026-10-10実測） | Statements87.91%（10837/12327）／Branches78.08%（6651/8518）／Functions84.11%（2107/2505）／Lines88.41%（9871/11164）。 |
+| 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
 | テストファイル総数 | **371ファイル**（2026-10-06 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **299スイート**（298 passed／1 skipped、2026-10-06全体実測）。 |
-| テスト総数 | **3095 unit/component passed**（3098 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
-| カバー済みセル | **18/80（23%）**（2026-10-10 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **403**（2026-10-10全体coverage/dashboard実測）。 |
-| 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| テスト総数 | **2903 unit/component passed**（2906 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
+| カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
+| lcov エントリ数 | **383**（2026-10-06全体coverage/dashboard実測）。 |
+| 型エラー | **0件**（2026-10-06実測）。 |
 
 </details>
 

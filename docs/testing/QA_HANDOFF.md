@@ -110,7 +110,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-10実測 / lcov: 2026-10-10実測 / Integration: 2026-10-08実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-10実測）
+### テスト統計（Jest: 2026-10-11実測 / lcov: 2026-10-11実測 / Integration: 2026-10-08実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-10実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -128,7 +128,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 | 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **399ファイル**／lcov **404エントリ**／マトリクス18/80（23%）。2026-10-10再生成実測。 |
+| テストファイル総数（dashboard） | **402ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 
