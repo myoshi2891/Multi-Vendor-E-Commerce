@@ -58,6 +58,17 @@ TEST_IMPLEMENTATION_PLAN/QA_HANDOFFを更新、coverage変化はCOVERAGE_REPORT�
 - [x] Step 7 配送。
 - [x] Step 8 店舗設定。
 - [x] 最終回帰・仕様/QA/統計同期。
-- [ ] 認証後8実ルート/実SDK受け入れ。
+- [x] 認証後8実ルート/実SDK受け入れ（2026-10-10、Cloudinary はウィジェット表示まで）。
 
 最終実測: Jest3095/3098（3 skipped）、ブラウザー256/256＋最終Refactor10/10。認証後保留の解除条件は[QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser)。
+
+## 認証後8実ルート受け入れ（2026-10-10 追記）
+
+- 承認: ユーザーが「専用テスト販売者を作成」「Cloudinary はSDK表示までに留める」を選択（2026-10-10）。
+- 環境: ローカルDockerの専用DB `multivendor_e2e`（`multivendor_dev` とは別）。`DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を同値にし、`migrate deploy` + `seed:e2e` 済み。
+- 準備: `scripts/design/prepare-seller-route.ts` が (1) 3変数の一致とローカル・専用DB名を検査、(2) Clerk dev に `+clerk_test` 販売者を作成または再利用し `privateMetadata.role=SELLER`、(3) Clerk ID の User へ seed 店舗を付け替え、注文・会話・国別配送料率を冪等に投入。
+- 検証: `DESIGN_SUITES` に route suite `seller-eight-route` を1行追加し、spec は `tests/browser/`。`@clerk/testing` の `clerk.signIn({ emailAddress })` でログインする（storageStateは保存しない）。
+- 受け入れ条件: 8実ルート × 1440/768/390 × light/dark で 200・横はみ出しなし・axe AA違反0・スクリーンショット。実保存→再読込（在庫しきい値・注文状態・店舗設定・配送）で値保持。非SELLERは `/` へリダイレクト、他店舗URLは表示されない。Dialog の Escape でフォーカス復帰。画像SDKはウィジェット起動・表示まで（ファイル送信なし）。
+- 対象外: Cloudinary への実アップロード、Neon/`multivendor_dev` への書き込み、本体E2E設定の変更。
+- 実施結果（2026-10-10）: 表示48ケース全件200・はみ出し0、操作27/27。axe違反34/48（サイドバー、Jodit）と不具合2件（Cloudinary open の読込前クリック、Store の Decimal 受け渡し）により受け入れは保留。[QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser)。
+- 修正と再検証（2026-10-10）: ユーザー承認のもと、サイドバーを素の nav（検索欄なし）へ、Jodit の ARIA 補正・テーマ判定・コントラスト、Cloudinary の読込中無効化、Store の Decimal を Client へ渡さない射影（`upsertStore`→`{ id, url }`、`updateStoreDefaultShippingDetails`→`{ url }`）を TDD で実施。seller-eight-route 57/57、Jest 3111/3114、321 suites。

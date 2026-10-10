@@ -282,6 +282,8 @@ StoreDetails accepts required upsertStoreAction and optional seller design. Stor
 
 upsertStore retains its existing contract: absent id selects creation and present id selects owner-checked update. The UI no longer supplies a generated id for new-store submissions. API/query/schema/authorization are unchanged.
 
+Return values (2026-10-10): `upsertStore` returns `{ id, url }`, and `updateStoreDefaultShippingDetails` returns `{ url }`. Their results are serialized to Client Components, and the full `Store` contains `Decimal` shipping-fee columns that RSC cannot serialize. Callers only use `url`. Authorization, validation and persisted data are unchanged.
+
 
 Seller presentation adapters additionally accept `Table.scrollLabel` for an opt-in named, keyboard-focusable scroll region and `ImagesPreviewGrid.design="seller"` for named image/removal actions. Default consumers preserve existing markup behavior. `ShippingFields` shares form controls while each caller retains its schema and field names. Store settings replace the route with the returned settings URL after a URL change; an unchanged URL refreshes the current route.
 

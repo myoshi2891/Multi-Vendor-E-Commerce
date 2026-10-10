@@ -29,7 +29,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3095 passed / 3098 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 販売者優先8画面の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3111 passed / 3114 total、3 skipped、127 snapshots passed、321 スイート（320 passed／1 skipped、failed 0）**。2026-10-10 販売者8実ルート不具合修正後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5568,4 +5568,30 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 |------|--------|--------|
 | テスト総数 | 3092 passed / 3095 total | **3094 passed / 3097 total** |
 | スイート数 | 319（318 passed／1 skipped） | **319（不変）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者8実ルート不具合修正・受け入れ (2026-10-10)
+
+#### 概要
+
+実環境検証（専用DB＋Clerk テスト販売者）で見つかったサイドバー・Jodit の axe 違反、Cloudinary の読込前クリック、Decimal の Client Component への受け渡しを TDD で修正し、販売者8画面の認証後実ルート受け入れを完了した。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/sidebar/nav-seller.tsx` ほか | seller design を素の nav＋リンクへ、ProductsIcon の role 除去 | 未コミット |
+| `src/components/dashboard/forms/jodit-a11y.ts`、`product-details.tsx`、`globals.css` | Jodit ARIA 補正、resolvedTheme、コントラスト | 未コミット |
+| `src/components/dashboard/shared/image-upload.tsx`、`src/components/store/shared/upload-images.tsx` | Cloudinary 読込中の無効化 | 未コミット |
+| `src/app/dashboard/seller/stores/[storeUrl]/layout.tsx`、`src/queries/store.ts` | Store の select と Server Action 戻り値の絞り込み | 未コミット |
+| `scripts/design/prepare-seller-route.ts`、`tests/browser/seller-eight-route-design.spec.ts` | 実ルート受け入れ suite `seller-eight-route` | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3095 passed / 3098 total | **3111 passed / 3114 total** |
+| スイート数 | 319（318 passed／1 skipped） | **321（320 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
