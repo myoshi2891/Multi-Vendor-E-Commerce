@@ -86,6 +86,7 @@ const ClickToAddInputs = <T extends Detail>({
                 onClick={onClick}
                 type="button"
                 title="Add new detail"
+                aria-label="Add new detail"
                 className={
                     design === "seller"
                         ? sellerStyles.iconControl
@@ -98,6 +99,7 @@ const ClickToAddInputs = <T extends Detail>({
                     width="50px"
                     height="50px"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                     className="size-8 fill-none stroke-blue-400 duration-300 group-hover:fill-blue-primary group-active:fill-blue-700 group-active:stroke-blue-200 group-active:duration-0"
                 >
                     <path
@@ -117,6 +119,7 @@ const ClickToAddInputs = <T extends Detail>({
             <button
                 type="button"
                 title="Remove detail"
+                aria-label="Remove detail"
                 className={
                     design === "seller"
                         ? sellerStyles.iconControl
@@ -130,6 +133,7 @@ const ClickToAddInputs = <T extends Detail>({
                     width="50px"
                     height="50px"
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                     className="size-8 fill-none stroke-blue-400 duration-300 group-hover:fill-white group-active:fill-blue-700 group-active:stroke-blue-200 group-active:duration-0"
                 >
                     <path

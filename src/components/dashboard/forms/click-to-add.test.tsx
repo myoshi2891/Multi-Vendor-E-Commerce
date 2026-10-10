@@ -104,3 +104,24 @@ describe("ClickToAddInputs", () => {
         expect(screen.getByTestId("count")).toHaveTextContent("0");
     });
 });
+
+describe("ClickToAddInputs icon controls", () => {
+    it("title に頼らず aria-label で名前を持ち、SVG は名前の競合を起こさない", () => {
+        // Arrange & Act
+        render(<Harness initial={[{ size: "M", quantity: 3 }]} />);
+
+        // Assert
+        const add = screen.getByRole("button", { name: "Add new detail" });
+        const remove = screen.getByRole("button", { name: "Remove detail" });
+        for (const [button, label] of [
+            [add, "Add new detail"],
+            [remove, "Remove detail"],
+        ] as const) {
+            expect(button).toHaveAttribute("aria-label", label);
+            expect(button.querySelector("svg")).toHaveAttribute(
+                "aria-hidden",
+                "true"
+            );
+        }
+    });
+});
