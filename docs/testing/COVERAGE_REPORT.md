@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-10） | **3113 passed / 3116 total、3 skipped、127 snapshots passed、321 スイート（320 passed／1 skipped、failed 0）**。2026-10-10 販売者8実ルート不具合修正後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestテスト総数（2026-10-10） | **3122 passed / 3125 total、3 skipped、127 snapshots passed、322 スイート（321 passed／1 skipped、failed 0）**。2026-10-10 DataTable 列定義の固定・管理者ナビ整理後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | 全体coverage（2026-10-10実測） | Statements88.06%（10893/12369）／Branches78.27%（6701/8561）／Functions84.37%（2123/2516）／Lines88.59%（9921/11198）。 |
 | テストファイル総数（dashboard） | **399ファイル**／lcov **404エントリ**／マトリクス18/80（23%）。2026-10-10再生成実測。 |
 | Jest スイート総数（unit/component） | **321スイート**（320 passed／1 skipped、2026-10-10実測）。 |
-| テスト総数 | **3113 unit/component passed**（3116 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| テスト総数 | **3122 unit/component passed**（3125 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-10 dashboard実測、セル状態変化なし）。 |
@@ -524,6 +524,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-10 | **販売者8実ルート不具合修正 — Jest +16（3095 → 3111 passed / 3098 → 3114 total・319 → 321 スイート）**。新規 `nav-seller.test.tsx`（+3）、`jodit-a11y.test.ts`（+5）、`image-upload` の読込中無効化（+3）、`upload-images`（+2）、`product-details` の resolvedTheme（+2）、`seller-shell` の店舗 select（+1）。`store.test.ts` は戻り値契約の変更で期待値を4件更新（件数不変）。coverage Statements87.91→88.06%／Branches78.08→78.27%／Functions84.11→84.36%／Lines88.41→88.59%。dashboard 396→399 files／403→404 lcov、セル不変。seller-eight-route 57/57（axe 0）、seven 82/82、six 56/56。コミット未作成（作業ツリー）。 |
 | 2026-10-10 | **click-to-add のアイコン操作に aria-label — Jest +1（3111 → 3112 passed / 3114 → 3115 total・321 スイート不変）**。PlusButton／MinusButton に `aria-label`（Add new detail／Remove detail）、SVG に `aria-hidden`。coverage・dashboard（399 files／404 lcov／18 of 80）は不変。 |
 | 2026-10-10 | **配送の料率 Dialog のフォーカス復帰修正 — Jest +1（3112 → 3113 passed / 3115 → 3116 total・321 スイート不変）**。`SellerShipping` の列定義を `useMemo`＋Server Action 参照の固定で安定化し、refresh 後も行の操作ボタンを remount しない（`seller-shipping-design.test.tsx` +1）。coverage Statements88.06%（10893/12369）／Functions84.37%（2123/2516）／Lines88.59%（9921/11198）、Branches・dashboard（399 files／404 lcov／18 of 80）は不変。seller-eight-route の該当テスト ×5 で 5/5。 |
+| 2026-10-10 | **DataTable 列定義の固定・管理者ナビ整理 — Jest +9（3113 → 3122 passed / 3116 → 3125 total・321 → 322 スイート）**。新規 `table-columns-stability.test.tsx`（販売者3表・管理者5表の列定義の参照同一性 +8）、`seller-inventory-design.test.tsx` のしきい値変更時の在庫エディター維持（+1）、`nav-admin.test.tsx` は既定分岐削除に合わせ2件を書き換え（件数不変）。coverage Statements88.06→88.09%／Branches78.27→78.26%／Functions84.37→84.47%／Lines88.59→88.62%。dashboard 399→400 files／404 lcov／18 of 80（セル不変）。コミット未作成（作業ツリー）。 |
 
 ### 2026-09-30 compareデザイン移行
 

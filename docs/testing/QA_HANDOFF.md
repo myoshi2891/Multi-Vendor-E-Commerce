@@ -1,6 +1,15 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-10 販売者8実ルート不具合修正・受け入れ（最新）
+## 2026-10-10 DataTable 列定義の固定・レビュー対応（最新）
+
+下記 DS-SELLER-EIGHT-BROWSER の「今後の課題」7件を確認し、コードで直せる4件を TDD で修正。PR レビュー指摘2件（`seven-design.spec.ts` の作成 Dialog 証跡を `seller-create-dialog.png` へ分離、`seller-eight-route-design.spec.ts` の応答・URL 判定を Jodit 待ちより前へ）も反映。作業ツリーのみ（コミットなし）。
+
+- 修正: 販売者3表・管理者5表で Server Action 参照を `useState` で固定し列定義を `useMemo` で固定（`admin-categories` の親候補は `table.options.data` から読む）。在庫のしきい値は列定義の引数から行データ（`InventoryTableRow.lowStockThreshold`）へ移し、しきい値保存後も在庫数エディターを remount しない。`nav-admin.tsx` の未使用 cmdk 分岐を削除し `design` prop を廃止。既存の Prettier 未整形6ファイルを整形のみ。
+- 実測: 全体Jest 3122/3125（3 skipped、`table-columns-stability.test.tsx` +8・在庫 +1。`nav-admin.test.tsx` は2件を書き換え）、322 suites（321 passed/1 skipped）、127 snapshots。coverage Statements88.09%／Branches78.26%／Functions84.47%／Lines88.62%。dashboard 400 files／404 lcov／18 of 80（セル不変）。lintエラー0／既存警告8、tscエラー0。
+- 先行 Red: 列定義の参照同一性 8/8 失敗（同内容の別参照）、在庫エディターの要素同一性で失敗、nav-admin の option ロール検出で失敗を確認してから Green。
+- ブラウザー（seller-eight-route・seven）は今回未再実行。spec の変更は証跡ファイル名と判定順のみ。
+
+## 2026-10-10 販売者8実ルート不具合修正・受け入れ（履歴）
 
 実環境検証で見つかった不具合をTDDで修正し、販売者8画面の認証後実ルート受け入れを完了（配送の Dialog フォーカス復帰の間欠失敗も原因を修正して再実行で解消）。[保存計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#認証後8実ルート受け入れ2026-10-10)。
 
@@ -22,13 +31,13 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 - **受け入れ（2026-10-10）**: 専用DB `multivendor_e2e`＋Clerk dev の `+clerk_test` 販売者で suite `seller-eight-route` を実行。表示48ケース（axe AA 違反0）と操作9件。配送の Dialog フォーカス復帰は再実行で間欠失敗（3/5）したため一度保留に戻し、原因を修正して ×5 再実行 5/5 を確認したうえで、**8画面とも受け入れ完了**。初回検証で見つかったサイドバー・Jodit の axe 違反と、Cloudinary の読込前クリック、Decimal 受け渡しの不具合は修正済み（上記「最新」節）。
 - 再実行手順: `DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を同じ専用DBへ揃え、`bunx prisma migrate deploy` → `bun run seed:e2e` → `bun scripts/design/prepare-seller-route.ts <out.json>`（seed の後に毎回実行）→ `DESIGN_SELLER_ROUTE=<out.json> DESIGN_SUITE=seller-eight-route bun run test:design`。:3000 の Docker app は同じ `.next` を共有するため、本番ビルドでの再検証は別ディレクトリで行う。
 - 今後の課題（2026-10-10 の実ルート検証・修正中に見つかり、未対応のもの）:
-  - [ ] **列定義を毎 render 作り直す DataTable（8 か所）**: `flexRender` は cell 関数をコンポーネント型として描画するため、`router.refresh()` のたびに行内の要素が remount され、行内の状態や Dialog のフォーカス復帰先が失われうる（配送で実害を確認し修正済み）。対象: 販売者 `seller-orders.tsx`（`getSellerOrderColumns`）・`seller-products.tsx`（`getProductColumns`）・`seller-coupons.tsx`（`getSellerCouponColumns`）、管理者 `admin-categories.tsx`・`admin-coupons.tsx`・`admin-offer-tags.tsx`・`admin-orders.tsx`・`admin-stores.tsx`。修正は `inventory-table-client.tsx`／`seller-shipping.tsx` と同じく、Server Action 参照を `useState` で固定し列定義を `useMemo` で固定する。各表で「refresh 後も行の操作ボタンが同一要素」の RTL を先行 Red にする。注文の状態保存で、2 回目の成功表示が消える事象を初回検証時に観測済み。
-  - [ ] **在庫のしきい値変更で在庫数エディターが remount される**: `inventory-table-client.tsx` は `threshold` を `useMemo` の依存に含むため、しきい値を保存すると列定義が作り直され、続けて保存した在庫数の成功表示が消える（DB への保存は成功。2026-10-10 に再現）。受け入れテストは保存ごとに再読込を挟んで回避している。しきい値は表示の判定にだけ使うため、列定義の外（行データまたは table meta）から渡す形にする。
-  - [ ] **管理者ナビの既定（cmdk）分岐の nested-interactive**: `nav-admin.tsx` の既定分岐は、販売者側で修正したのと同じ構造（`role="option"` の中にリンク）。admin layout は seller design を渡すため実画面では未使用。使わない分岐を削除するか、seller 分岐へ統一する。
-  - [ ] **店舗保存失敗時の理由が画面に出ない**: `upsertStore` は「同名／同メール／同電話番号の店舗が存在する」を投げるが、画面は汎用の「Could not save the store. Please try again.」だけを出す。重複は利用者が直せる失敗なので、メッセージ衛生（tech.md）を保てる範囲で理由を伝えるかを検討する。
+  - [x] **（2026-10-10 解消: 8表とも列定義を固定。`table-columns-stability.test.tsx` で参照同一性を検証）列定義を毎 render 作り直す DataTable（8 か所）**: `flexRender` は cell 関数をコンポーネント型として描画するため、`router.refresh()` のたびに行内の要素が remount され、行内の状態や Dialog のフォーカス復帰先が失われうる（配送で実害を確認し修正済み）。対象: 販売者 `seller-orders.tsx`（`getSellerOrderColumns`）・`seller-products.tsx`（`getProductColumns`）・`seller-coupons.tsx`（`getSellerCouponColumns`）、管理者 `admin-categories.tsx`・`admin-coupons.tsx`・`admin-offer-tags.tsx`・`admin-orders.tsx`・`admin-stores.tsx`。修正は `inventory-table-client.tsx`／`seller-shipping.tsx` と同じく、Server Action 参照を `useState` で固定し列定義を `useMemo` で固定する。各表で「refresh 後も行の操作ボタンが同一要素」の RTL を先行 Red にする。注文の状態保存で、2 回目の成功表示が消える事象を初回検証時に観測済み。
+  - [x] **（2026-10-10 解消: しきい値を行データへ移動。受け入れテストの保存ごと再読込は残している）在庫のしきい値変更で在庫数エディターが remount される**: `inventory-table-client.tsx` は `threshold` を `useMemo` の依存に含むため、しきい値を保存すると列定義が作り直され、続けて保存した在庫数の成功表示が消える（DB への保存は成功。2026-10-10 に再現）。受け入れテストは保存ごとに再読込を挟んで回避している。しきい値は表示の判定にだけ使うため、列定義の外（行データまたは table meta）から渡す形にする。
+  - [x] **（2026-10-10 解消: 既定分岐を削除し素のリンクの nav へ一本化）管理者ナビの既定（cmdk）分岐の nested-interactive**: `nav-admin.tsx` の既定分岐は、販売者側で修正したのと同じ構造（`role="option"` の中にリンク）。admin layout は seller design を渡すため実画面では未使用。使わない分岐を削除するか、seller 分岐へ統一する。
+  - [ ] **店舗保存失敗時の理由が画面に出ない**: `upsertStore` は「同名／同メール／同電話番号の店舗が存在する」を投げるが、画面は汎用の「Could not save the store. Please try again.」だけを出す。重複は利用者が直せる失敗なので、メッセージ衛生（tech.md）を保てる範囲で理由を伝えるかを検討する。2026-10-10 確認: Next.js 本番は Server Action が throw したメッセージを伏せて client へ渡すため、画面側の変更だけでは理由を出せない。重複を `{ ok: false, reason }` などの戻り値で返す契約変更（`store-details.tsx`・`store.test.ts` も更新）が必要で、既存 API の変更として方針の承認待ち。
   - [ ] **Cloudinary への実アップロードは未検証**: 承認範囲どおりウィジェット表示まで確認した。実アップロード→保存→再表示を確認するには、テスト用の upload preset／フォルダと、アップロード後の削除手順を用意する。
   - [ ] **本番ビルドでの実ルート再検証**: 今回の実ルート検証は dev サーバー上で行った。:3000 の Docker app がリポジトリの `.next` を共有しているため、本番ビルド（`next build && next start`）での確認は worktree など別ディレクトリで行う。
-  - [ ] **既存ファイルの Prettier 未整形**: 今回触れた `nav-seller.tsx`・`sidebar.tsx`・`icons/products.tsx`・`upload-images.tsx`・`click-to-add.test.tsx`・`globals.css` は変更前から Prettier 未適合（無関係な差分を避けるため整形していない）。整形だけの独立コミットで解消する。
+  - [x] **（2026-10-10 解消: 6ファイルを整形のみ。空白以外の差分は引用符・改行だけ）既存ファイルの Prettier 未整形**: 今回触れた `nav-seller.tsx`・`sidebar.tsx`・`icons/products.tsx`・`upload-images.tsx`・`click-to-add.test.tsx`・`globals.css` は変更前から Prettier 未適合（無関係な差分を避けるため整形していない）。整形だけの独立コミットで解消する。
 - API・DB・認可・金額/在庫計算・状態遷移・payload・URLは変更なし。既存画面/部品の判定を維持し、AttributeFieldsのseller opt-inのみ保留へ反映。
 
 ## 2026-10-10 購入後P2 6画面（履歴）
@@ -88,7 +97,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3113 passed / 3116 total、3 skipped、127 snapshots passed、321 スイート（320 passed／1 skipped、failed 0）**。2026-10-10 販売者8実ルート不具合修正後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jest テスト総数 (unit/component) | **3122 passed / 3125 total、3 skipped、127 snapshots passed、322 スイート（321 passed／1 skipped、failed 0）**。2026-10-10 DataTable 列定義の固定・管理者ナビ整理後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | 全体coverage（2026-10-10実測） | Statements88.06%（10893/12369）／Branches78.27%（6701/8561）／Functions84.37%（2123/2516）／Lines88.59%（9921/11198）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 plan 087 実施時の実測: 238/238 pass**・`bun run test:integration`。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
