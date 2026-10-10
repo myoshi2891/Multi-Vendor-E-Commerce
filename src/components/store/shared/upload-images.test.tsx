@@ -23,15 +23,18 @@ jest.mock("react", () => {
     };
 });
 
+const mockPresets: (string | undefined)[] = [];
 interface CldUploadWidgetProps {
+    uploadPreset?: string;
     onSuccess: (result: unknown) => void;
     children: (args: { open: () => void; isLoading?: boolean }) => React.ReactNode;
 }
 
 // Mock next-cloudinary
 jest.mock("next-cloudinary", () => ({
-    CldUploadWidget: ({ onSuccess, children }: CldUploadWidgetProps) => {
+    CldUploadWidget: ({ onSuccess, children, uploadPreset }: CldUploadWidgetProps) => {
         triggerSuccess = onSuccess;
+        mockPresets.push(uploadPreset);
         return children({
             open: () => onSuccess({ info: { secure_url: "https://example.com/mock.jpg" } }),
             isLoading: mockIsLoading,
@@ -55,6 +58,27 @@ describe("ImageUploadStore Component", () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockIsMounted = true;
+        mockPresets.length = 0;
+    });
+
+    it("passes the configured upload preset to the widget", () => {
+        // Arrange
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET = "test-preset";
+
+        // Act
+        render(
+            <ImageUploadStore
+                onChange={mockOnChange}
+                onRemove={mockOnRemove}
+                value={[]}
+                maxImages={3}
+            />
+        );
+        delete process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+        // Assert
+        expect(mockPresets.length).toBeGreaterThan(0);
+        expect(new Set(mockPresets)).toEqual(new Set(["test-preset"]));
     });
 
     it("returns null when not mounted (SSR phase)", () => {

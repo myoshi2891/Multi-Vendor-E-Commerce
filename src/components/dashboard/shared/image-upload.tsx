@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Trash } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getCloudinaryUploadPreset } from "@/lib/cloudinary";
 
 interface ImageUploadProps {
     disabled?: boolean;
@@ -102,7 +103,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
                         className="absolute inset-0 size-52 rounded-full object-cover"
                     />
                 )}
-                <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
+                <CldUploadWidget
+                    onSuccess={onUpload}
+                    uploadPreset={getCloudinaryUploadPreset()}
+                >
                     {({ open, isLoading }) => {
                         // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                         const onClick = () => {
@@ -161,7 +165,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
                         className="size-full rounded-lg object-cover"
                     />
                 )}
-                <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
+                <CldUploadWidget
+                    onSuccess={onUpload}
+                    uploadPreset={getCloudinaryUploadPreset()}
+                >
                     {({ open, isLoading }) => {
                         // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                         const onClick = () => {
@@ -237,7 +244,10 @@ const ImageUpload: FC<ImageUploadProps> = ({
                             </div>
                         ))}
                 </div>
-                <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
+                <CldUploadWidget
+                    onSuccess={onUpload}
+                    uploadPreset={getCloudinaryUploadPreset()}
+                >
                     {({ open, isLoading }) => {
                         // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                         const onClick = () => {

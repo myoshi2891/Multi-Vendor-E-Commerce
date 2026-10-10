@@ -9,11 +9,14 @@ const open = jest.fn();
 let lastOnSuccess: ((result: unknown) => void) | undefined;
 // 実 SDK の isLoading はスクリプト読込（onLoad）まで true。読込前の open() は内部で例外になる
 let mockIsLoading = false;
+const mockPresets: (string | undefined)[] = [];
 jest.mock("next-cloudinary", () => ({
     CldUploadWidget: ({
         children,
         onSuccess,
+        uploadPreset,
     }: {
+        uploadPreset?: string;
         children: (api: {
             open: () => void;
             isLoading?: boolean;
@@ -21,6 +24,7 @@ jest.mock("next-cloudinary", () => ({
         onSuccess: (result: unknown) => void;
     }) => {
         lastOnSuccess = onSuccess;
+        mockPresets.push(uploadPreset);
         return <>{children({ open, isLoading: mockIsLoading })}</>;
     },
 }));
@@ -29,11 +33,28 @@ beforeEach(() => {
     open.mockClear();
     lastOnSuccess = undefined;
     mockIsLoading = false;
+    mockPresets.length = 0;
 });
 
 const baseProps = { onChange: jest.fn(), onRemove: jest.fn() };
 
 describe("ImageUpload", () => {
+    it.each(["standard", "profile", "cover"] as const)(
+        "passes the configured upload preset to the %s widget",
+        (type) => {
+            // Arrange
+            process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET = "test-preset";
+
+            // Act
+            render(<ImageUpload {...baseProps} type={type} value={[]} />);
+            delete process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+            // Assert
+            expect(mockPresets.length).toBeGreaterThan(0);
+            expect(new Set(mockPresets)).toEqual(new Set(["test-preset"]));
+        }
+    );
+
     it("opens the widget and forwards only results with a secure_url", async () => {
         // Arrange
         const user = userEvent.setup();

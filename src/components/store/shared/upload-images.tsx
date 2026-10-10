@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Plus, Trash } from "lucide-react";
 import { CldUploadWidget } from "next-cloudinary";
+import { getCloudinaryUploadPreset } from "@/lib/cloudinary";
 import Image from "next/image";
 import { FC, useRef, useSyncExternalStore } from "react";
 
@@ -80,7 +81,10 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
                     )
                 )}
             </div>
-            <CldUploadWidget onSuccess={onUpload} uploadPreset="fefik77l">
+            <CldUploadWidget
+                onSuccess={onUpload}
+                uploadPreset={getCloudinaryUploadPreset()}
+            >
                 {({ open, isLoading }) => {
                     // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                     const onClick = () => {
