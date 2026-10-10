@@ -30,6 +30,15 @@ type DesignSuite = {
 };
 
 const DESIGN_SUITES = {
+    "seller-eight-route": {
+        testMatch: "seller-eight-route-design.spec.ts",
+        port: 3131,
+        kind: "route",
+        // DB は呼び出し側の DATABASE_URL 等（scripts/design/prepare-seller-route.ts で検査済みの専用DB）を使う
+        command:
+            "NEXT_DEV_DIST_DIR=.next/seller-eight-route bun run dev -- --webpack --port 3131",
+        timeout: 180000,
+    },
     postpurchase: {
         testMatch: "postpurchase-design.spec.ts",
         port: 3130,
