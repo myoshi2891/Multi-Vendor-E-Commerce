@@ -30,7 +30,7 @@
 .support {
     display: inline-flex;
     align-items: center;
-    min-height: var(--purchase-touch, 44px);
+    min-height: var(--purchase-touch);
     flex-shrink: 0;
     color: var(--purchase-link);
     font-size: 12px;
@@ -52,7 +52,7 @@
 .addresses button,
 .dialog button {
     cursor: pointer;
-    min-height: var(--purchase-touch, 44px);
+    min-height: var(--purchase-touch);
 }
 .addresses button:disabled,
 .dialog button:disabled {
@@ -79,7 +79,7 @@
     background: var(--purchase-gold);
     color: var(--purchase-ink);
     padding: 12px 22px;
-    min-height: var(--purchase-touch, 44px);
+    min-height: var(--purchase-touch);
     font-size: 12px !important;
 }
 .primary:hover {
@@ -222,7 +222,7 @@
     top: 16px;
     right: 16px;
     width: 44px;
-    min-height: var(--purchase-touch, 44px);
+    min-height: var(--purchase-touch);
     color: var(--purchase-link);
     font-size: 26px !important;
 }
@@ -247,7 +247,7 @@
 .field input,
 .field select {
     width: 100%;
-    min-height: var(--purchase-touch, 44px);
+    min-height: var(--purchase-touch);
     min-width: 0;
     background: var(--purchase-input);
     border: 1px solid var(--purchase-line);
@@ -262,7 +262,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: var(--purchase-touch, 44px);
+    min-height: var(--purchase-touch);
     margin-top: 20px;
     font-size: 12px;
 }
