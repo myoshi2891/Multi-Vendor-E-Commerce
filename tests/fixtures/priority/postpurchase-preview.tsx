@@ -13,9 +13,8 @@ import ReviewsContainer, {
 } from "@/components/store/profile/reviews/reviews-container";
 import MessagesContainer from "@/components/store/profile/messages/messages-container";
 import MessagesLoading from "@/app/(store)/profile/messages/loading";
-import ProfilePage from "@/app/(store)/profile/page";
+import AccountView from "@/components/store/profile/account-view";
 import ProfileOverview from "@/components/store/profile/overview";
-import OrdersOverview from "@/components/store/profile/orders-overview";
 import styles from "@/components/store/profile/profile.module.css";
 import type { AddressActions, ProfileAddress } from "@/lib/profile-addresses";
 import type {
@@ -212,20 +211,10 @@ async function preview() {
                 />
             );
             break;
-        case "overview": {
-            // Resolve the RSC identity before client render; retain the production heading and order panel.
-            const page = ProfilePage();
-            body = (
-                <>
-                    {page.props.children[0]}
-                    <div className={styles.overview}>
-                        {await ProfileOverview()}
-                        <OrdersOverview />
-                    </div>
-                </>
-            );
+        case "overview":
+            // Resolve the RSC identity before client render; the frame is the production AccountView.
+            body = <AccountView identity={await ProfileOverview()} />;
             break;
-        }
         default:
             body = (
                 <OrdersTable
