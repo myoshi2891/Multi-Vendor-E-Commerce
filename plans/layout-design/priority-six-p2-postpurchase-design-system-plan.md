@@ -49,3 +49,15 @@
 - [x] 最終検証・文書同期
 
 認証後実ルートの今回の変更受け入れは保留。既存認証helperはユーザー作成/削除を伴い、保存済みstorageStateなし。補助91ケース成功。詳細は[進捗](../../docs/design/design-system/PROGRESS.md#購入後p2-6画面移行記録)。
+
+## PR #199 レビュー対応（2026-10-10）
+
+| # | 指摘 | 対応 |
+|---|---|---|
+| 1 | 概要fixtureが`ProfilePage().props.children[0]`と`.overview`枠の複製に依存 | 見出し＋概要枠を`AccountView`へ抽出し、会員情報RSCを`identity`で受ける。pageとfixtureが同じ部品を描画 |
+| 2 | `--purchase-touch`だけフォールバック残存 | 4モジュールで外して統一。shellとDialogがthemeを合成済みのため不要 |
+| 3 | 主操作の配色・高さ変更 | 06-quality記載済みの意図的変更。PR説明への追記文を用意（PR編集は外部操作のため依頼時のみ） |
+| 4 | Clerkモックが全priority suiteへ適用、entryが三項入れ子 | entryを対応表化し、Clerkモックはpostpurchaseのみに限定 |
+| 5 | fixtureの`getElementById("root")!` | 全7fixture共通の既存慣習。1ファイルだけ変えると不統一になるため今回は変更しない |
+
+受け入れ条件: 表示・DOM・テスト件数は不変（リファクタのためRedなし。既存postpurchase概要ケースが回帰ガード）。検証はtsc、lint、check:playwright、design suite postpurchase/priority/purchase/commerce、Jest関連（profile-overview）。

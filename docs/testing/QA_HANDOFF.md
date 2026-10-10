@@ -11,6 +11,7 @@
 - 今回の6画面変更の認証後実ルート受け入れは保留。既存E2EのcreateCustomerSessionはClerk/DBへのユーザー作成・cleanup削除を伴う。保存済み顧客storageStateは見つからず、今回そのhelperを実行していない。
 - 解除条件・次着手: 既存顧客の検証用ログイン状態と対応する読取可能なデータを用意し、6実ルートと注文filter routeを3幅で確認する。fixture成功を実認証/実データ取得の成功へ読み替えない。
 - 本作業はAPI/DB/認可/業務仕様変更なし。文書リンク・形式・SDD整合を確認。既存画面・部品の検証履歴を維持し、今回の未確認範囲を別記した。
+- PR #199レビュー対応（2026-10-10）: 概要枠を`AccountView`へ抽出しfixtureと共有、`--purchase-touch`のフォールバック統一、Clerkモックをpostpurchaseのみに限定。件数不変。postpurchase25/priority29/purchase53/commerce24成功、tsc/lintエラー0、check:playwright成功。[計画](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md#pr-199-レビュー対応2026-10-10)
 
 ## 2026-10-09 監査指摘6画面の実装（履歴）
 
