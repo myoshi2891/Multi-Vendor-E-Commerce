@@ -1,6 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-10 店舗保存の重複理由・残課題対応（最新）
+## 2026-10-11 レビュー対応（最新）
+
+レビュー指摘4件を現行コードで確認し、すべて有効だったため修正。作業ツリーのみ（コミットなし）。
+
+- 状態エディターの key: 管理者注文（`admin-orders.tsx`）・管理者店舗（`admin-stores.tsx`）に加え、同じ形の販売者注文（`seller-orders.tsx`）も key を `id:status` から行の同一性だけへ。key に status があると、自分の保存 → `router.refresh()` で remount され「Status updated.」が消えていた（初回の実ルート検証で観測した「2 回目の成功表示が消える」の原因）。`StatusEditor` は refresh で届いた値が自分の保存（committed）と異なるときだけ取り込み、成功表示を消す。先行 Red: 3表とも refresh 後に status が見つからず失敗。
+- 重複理由: email／phone の一致は「A store with the same contact details already exists.」に統一（店舗ページで公開されない連絡先の登録有無を推測させない）。name／url は公開値なので個別のまま。04-interfaces 更新。先行 Red: email/phone 2件。
+- テスト: `image-upload.test.tsx`／`upload-images.test.tsx` の env 後始末を try/finally に。
+- 文書: COVERAGE_REPORT の「テストファイル総数」「Jest スイート総数」が古い値（399 files／321 スイート）のままだったのを実測へ。
+- 実測: 全体Jest 3136/3139（3 skipped）、324 suites（323 passed/1 skipped）、127 snapshots。coverage Statements88.19%／Branches78.42%／Functions84.49%／Lines88.73%。dashboard 402 files／405 lcov／18 of 80（セル不変）。lintエラー0／既存警告8、tscエラー0。ブラウザー suite は未再実行（状態保存は seller-eight-route の orders 操作で確認できる）。
+
+## 2026-10-10 店舗保存の重複理由・残課題対応（履歴）
 
 DS-SELLER-EIGHT-BROWSER「今後の課題」の残り3件に対応（本番ビルド再検証と preset の env 化は追加承認後に実施）。作業ツリーのみ（コミットなし）。[計画](../../plans/layout-design/store-save-duplicate-reason-plan.md)。
 
@@ -108,8 +118,8 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3132 passed / 3135 total、3 skipped、127 snapshots passed、323 スイート（322 passed／1 skipped、failed 0）**。2026-10-10 Cloudinary preset の env 化・本番ビルド再検証後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-10実測） | Statements88.18%（10936/12401）／Branches78.39%（6708/8557）／Functions84.49%（2141/2534）／Lines88.71%（9956/11222）。 |
+| Jest テスト総数 (unit/component) | **3136 passed / 3139 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 レビュー対応（状態エディターの key・連絡先の重複理由）後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-11実測） | Statements88.19%（10942/12406）／Branches78.42%（6712/8559）／Functions84.49%（2141/2534）／Lines88.73%（9962/11227）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 plan 087 実施時の実測: 238/238 pass**・`bun run test:integration`。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |

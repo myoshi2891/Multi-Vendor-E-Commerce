@@ -29,7 +29,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3132 passed / 3135 total、3 skipped、127 snapshots passed、323 スイート（322 passed／1 skipped、failed 0）**。2026-10-10 Cloudinary preset の env 化・本番ビルド再検証後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3136 passed / 3139 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 レビュー対応（状態エディターの key・連絡先の重複理由）後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5669,4 +5669,28 @@ design config の seller-eight-route に本番ビルド起動の切替を追加�
 |------|--------|--------|
 | テスト総数 | 3125 passed / 3128 total | **3132 passed / 3135 total** |
 | スイート数 | 322（321 passed／1 skipped） | **323（322 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### レビュー対応：状態エディターの key・連絡先の重複理由 (2026-10-11)
+
+#### 概要
+
+状態エディターの key から status を外して自分の保存後の成功表示を保ち、他者の変更は `StatusEditor` が取り込む。email/phone の重複理由を共通の連絡先文言にした。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `admin-orders.tsx`、`admin-stores.tsx`、`seller-orders.tsx`、`status-editor.tsx` | key を行の同一性へ、外部変更の取り込み | 未コミット |
+| `src/queries/store.ts` | email/phone の理由を共通化 | 未コミット |
+| `status-editor-refresh.test.tsx`、`store.test.ts`、`image-upload.test.tsx`、`upload-images.test.tsx` | +4、env 後始末 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3132 passed / 3135 total | **3136 passed / 3139 total** |
+| スイート数 | 323（322 passed／1 skipped） | **324（323 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
