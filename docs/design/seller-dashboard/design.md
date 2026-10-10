@@ -680,3 +680,7 @@ ProductDetails seller editorへcontrols、警告へwarning、成功時のみsucc
 ### Step 7 配送 — DS-PAGE-064
 
 配送2フォームのdesign propをcontrols/successへのopt-inに使用。国別Actions/iconControlとPortal/controls。既存save hook/編集pending dismissal lock/Escape focus復帰を維持する。
+
+### Step 8 店舗設定 — 操作と保存状態
+
+既存design="seller"のCardにcontrolsを適用し、Featuredラベルをcontrolで拡張。default表示と店舗保存payloadを維持する。

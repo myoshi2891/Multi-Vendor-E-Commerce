@@ -221,3 +221,5 @@ DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失�
 - [x] Step 6 商品登録 — DS-PAGE-061: 表示移行・関連検証・仕様同期。
 
 - [x] Step 7 配送 — DS-PAGE-064: 表示移行・関連検証・仕様同期。
+
+- [x] Step 8 店舗設定 — 操作と保存状態: 表示移行・関連検証・仕様同期。

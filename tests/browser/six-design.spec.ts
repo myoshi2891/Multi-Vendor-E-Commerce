@@ -592,3 +592,28 @@ for (const width of [1440, 768, 390])
             await page.keyboard.press("Escape");
             await expect(actions).toBeFocused();
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual storesettings ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=storesettings&failure=1");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const form = page.getByRole("form", { name: "Store information" });
+            const name = form.getByRole("textbox", { name: "Store name", exact: true });
+            await touchControl(name);
+            const label = form.getByText("Featured", { exact: true });
+            await touchControl(label);
+            await label.click();
+            await expect(form.getByRole("checkbox", { name: "Featured" })).toBeChecked();
+            await name.fill("Updated store");
+            await form.getByRole("button", { name: "Save store information", exact: true }).click();
+            await expect(name).toBeDisabled();
+            await expect(form.getByRole("alert")).toContainText("Please try again");
+            await expect(name).toHaveValue("Updated store");
+            await form.getByRole("button", { name: "Save store information", exact: true }).click();
+            await expect(form.getByRole("status")).toHaveText("Store information saved.");
+            await expect(form.getByRole("status")).toHaveCSS("color", theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)");
+            for (const button of await form.getByRole("button").all()) if (await button.isVisible()) await touchControl(button);
+            await sellerEvidence(page, info);
+        });

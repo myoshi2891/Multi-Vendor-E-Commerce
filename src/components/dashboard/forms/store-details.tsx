@@ -118,7 +118,13 @@ export default function StoreDetails({
         );
     }
     return (
-        <Card className={design === "seller" ? styles.editor : "w-full"}>
+        <Card
+            className={
+                design === "seller"
+                    ? `${styles.editor} ${styles.controls}`
+                    : "w-full"
+            }
+        >
             <CardHeader>
                 <CardTitle role="heading" aria-level={2}>
                     Store information
@@ -255,7 +261,13 @@ export default function StoreDetails({
                                 control={form.control}
                                 name="featured"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 border p-4">
+                                    <FormItem
+                                        className={
+                                            design === "seller"
+                                                ? "flex flex-row items-center space-x-3 space-y-0 border p-4"
+                                                : "flex flex-row items-start space-x-3 space-y-0 border p-4"
+                                        }
+                                    >
                                         <FormControl>
                                             <Checkbox
                                                 checked={field.value}
@@ -267,7 +279,15 @@ export default function StoreDetails({
                                             />
                                         </FormControl>
                                         <div className="space-y-1">
-                                            <FormLabel>Featured</FormLabel>
+                                            <FormLabel
+                                                className={
+                                                    design === "seller"
+                                                        ? styles.control
+                                                        : undefined
+                                                }
+                                            >
+                                                Featured
+                                            </FormLabel>
                                             <FormDescription>
                                                 This store will appear on the
                                                 home page.
@@ -289,7 +309,16 @@ export default function StoreDetails({
                                 Could not save the store. Please try again.
                             </p>
                         ) : (
-                            <p role="status" aria-live="polite">
+                            <p
+                                role="status"
+                                aria-live="polite"
+                                className={
+                                    design === "seller" &&
+                                    feedback.state === "success"
+                                        ? styles.success
+                                        : undefined
+                                }
+                            >
                                 {feedback.pending
                                     ? "Saving store…"
                                     : feedback.state === "success"

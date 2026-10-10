@@ -1257,3 +1257,9 @@ Red: standalone入力高40pxのbrowser6件とkeyword button不在のbrowser1件�
 Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gallery13/13、関連RTL1 suite 6/6、lint/tsc成功。3幅/light-dark、保存成功/失敗/retry、default/free/empty/search、国別編集/44px menu/close、料金12.5、axe AA、390px dark画像目視。
 
 認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。
+
+### Step 8 店舗設定 — 操作と保存状態
+
+先行Red: 名前入力40pxで新規6ケース失敗。Green: 店舗設定／店舗作成の既存12ケース＋残存6ケース、計18成功。関連Jest 1 suite/7 tests成功。lint・tsc・diff確認成功。
+
+認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。
