@@ -350,7 +350,8 @@ const TEST_ERRORS = {
     MISSING_STORE_DATA: "Please provide store data.",
     DUPLICATE_NAME: "A store with the same name already exists.",
     DUPLICATE_URL: "A store with the same URL already exists.",
-    DUPLICATE_PHONE: "A store with the same phone number already exists.",
+    // email / phone は公開されない連絡先のため、どちらが一致したかを返さない（登録有無の推測を防ぐ）
+    DUPLICATE_CONTACT: "A store with the same contact details already exists.",
     MISSING_STORE_URL: "Please provide store URL.",
     MISSING_SHIPPING_DETAILS: "Please provide shipping details.",
     // requireStoreOwner (src/lib/auth-guards.ts) のエラーメッセージ統一に合わせる
@@ -371,9 +372,14 @@ const DUPLICATE_TEST_CASES = [
         error: TEST_ERRORS.DUPLICATE_URL,
     },
     {
+        field: "email",
+        conflictingStore: { email: TEST_CONFIG.TEST_EMAIL },
+        error: TEST_ERRORS.DUPLICATE_CONTACT,
+    },
+    {
         field: "phone",
         conflictingStore: { phone: TEST_CONFIG.TEST_PHONE },
-        error: TEST_ERRORS.DUPLICATE_PHONE,
+        error: TEST_ERRORS.DUPLICATE_CONTACT,
     },
 ] as const;
 

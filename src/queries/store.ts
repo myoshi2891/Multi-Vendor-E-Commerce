@@ -72,18 +72,20 @@ export type UpsertStoreResult =
     | { ok: true; id: string; url: string }
     | { ok: false; reason: string };
 
-/** 重複した店舗と入力を比べ、利用者向けの理由を返す（name → url → email → phone の順）。 */
+/**
+ * 重複した店舗と入力を比べ、利用者向けの理由を返す（name → url → 連絡先の順）。
+ * name / url は店舗ページで公開される値なので個別に伝える。email / phone は公開されないため、
+ * どちらが一致したかを伏せて同じ文言にする（任意の連絡先の登録有無を推測させない）。
+ */
 function duplicateReason(
-    found: Pick<Store, "name" | "url" | "email" | "phone">,
+    found: Pick<Store, "name" | "url">,
     store: Partial<Store>
 ): string {
     if (found.name === store.name)
         return "A store with the same name already exists.";
     if (found.url === store.url)
         return "A store with the same URL already exists.";
-    if (found.email === store.email)
-        return "A store with the same email already exists.";
-    return "A store with the same phone number already exists.";
+    return "A store with the same contact details already exists.";
 }
 
 // Function: upsertStore
