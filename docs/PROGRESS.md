@@ -29,7 +29,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3122 passed / 3125 total、3 skipped、127 snapshots passed、322 スイート（321 passed／1 skipped、failed 0）**。2026-10-10 DataTable 列定義の固定・管理者ナビ整理後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3132 passed / 3135 total、3 skipped、127 snapshots passed、323 スイート（322 passed／1 skipped、failed 0）**。2026-10-10 Cloudinary preset の env 化・本番ビルド再検証後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5619,4 +5619,54 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 |------|--------|--------|
 | テスト総数 | 3113 passed / 3116 total | **3122 passed / 3125 total** |
 | スイート数 | 321（320 passed／1 skipped） | **322（321 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 店舗保存の重複理由を画面に表示 (2026-10-10)
+
+#### 概要
+
+本番の Server Action は throw したメッセージを client で伏せるため、`upsertStore` の重複を `{ ok: false, reason }` の戻り値で返し、店舗設定・作成フォームに理由を表示した（承認済みの既存 API 変更）。本番ビルド再検証と Cloudinary 実アップロードは前提が揃わず保留。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/store.ts` | `UpsertStoreResult` と `duplicateReason` を追加、重複は値で返す | 未コミット |
+| `src/components/dashboard/forms/store-details.tsx` | 理由を alert に表示、再送信で消去 | 未コミット |
+| `src/queries/store.test.ts`、`tests/component/dashboard/seller-store-pages-design.test.tsx` | 新契約の検証（+3） | 未コミット |
+| `seller-orders.tsx`、`tests/browser/{seven,seller-eight-route}-design.spec.ts` | Prettier 整形のみ | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3122 passed / 3125 total | **3125 passed / 3128 total** |
+| スイート数 | 322（321 passed／1 skipped） | **322（321 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 販売者実ルートの本番ビルド再検証・Cloudinary preset の env 化 (2026-10-10)
+
+#### 概要
+
+design config の seller-eight-route に本番ビルド起動の切替を追加し、git worktree で 58/58 を確認した。Cloudinary の upload preset を新変数で切り替え可能にした（既定は従来値）。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `playwright.design.config.ts` | `DESIGN_SELLER_ROUTE_SERVER=prod` で `next build && next start` | 未コミット |
+| `tests/browser/seller-eight-route-design.spec.ts` | 重複 URL の理由表示 +1、画像SDK の再押下をウィジェット未表示時だけに | 未コミット |
+| `src/lib/cloudinary.ts`、`image-upload.tsx`、`upload-images.tsx`、`.env.example` | `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`（既定 `fefik77l`） | 未コミット |
+| `src/lib/cloudinary.test.ts`、`image-upload.test.tsx`、`upload-images.test.tsx` | preset の検証（+7） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3125 passed / 3128 total | **3132 passed / 3135 total** |
+| スイート数 | 322（321 passed／1 skipped） | **323（322 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |

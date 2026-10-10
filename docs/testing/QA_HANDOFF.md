@@ -1,6 +1,17 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-10 DataTable 列定義の固定・レビュー対応（最新）
+## 2026-10-10 店舗保存の重複理由・残課題対応（最新）
+
+DS-SELLER-EIGHT-BROWSER「今後の課題」の残り3件に対応（本番ビルド再検証と preset の env 化は追加承認後に実施）。作業ツリーのみ（コミットなし）。[計画](../../plans/layout-design/store-save-duplicate-reason-plan.md)。
+
+- 修正: `upsertStore` の戻り値を `{ ok: true, id, url } | { ok: false, reason }` へ変更し（承認済みの既存 API 変更）、重複は throw せず理由を返す。`StoreDetails` は理由を alert に出し、入力を保持、再送信で消す。認可・所有者不一致・DB 障害は従来どおり throw（汎用表示）。04-interfaces を更新。直近コミットで未整形になった `seller-orders.tsx`・`seller-eight-route-design.spec.ts`・`seven-design.spec.ts` を Prettier 整形のみ（`store.ts`／`store.test.ts` は変更前から未整形で、無関係な差分を避けるため整形していない）。
+- 実測: 全体Jest 3125/3128（3 skipped、`store.test.ts` +2・`seller-store-pages-design.test.tsx` +1）、322 suites（321 passed/1 skipped）、127 snapshots。coverage Statements88.18%／Branches78.37%／Functions84.48%／Lines88.71%。dashboard 400 files／404 lcov／18 of 80（セル不変）。lintエラー0／既存警告8、tscエラー0、check:playwright成功。
+- 先行 Red: 単体7件（重複3件が throw・成功の戻り値形・更新経路の重複）とRTL1件（汎用文言のまま）の失敗を確認してから Green。所有者不一致は回帰として最初から成功。
+- 本番ビルド再検証（承認後に実施）: `playwright.design.config.ts` の seller-eight-route に `DESIGN_SELLER_ROUTE_SERVER=prod` を追加（webServer を `bun run build && bun run start -- --port 3131` に切り替え、timeout 600000。既定は従来の dev）。git worktree で実行し **58/58**（3.8m、build 除く）、WebServer の Decimal 警告0。spec に「重複した店舗 URL で理由が出て保存されない」+1（本番で Server Action のメッセージが伏せられても reason が届くことの確認）。初回は画像SDK 2件が失敗（55/57）: 本番は SDK の読込が速く、先の `dispatchEvent` 押下でウィジェットが開き、全画面 iframe がボタンを覆って続く `click()` が操作可能待ちでタイムアウトしていた（アプリの不具合ではない）。開いていれば再押下しない形に spec を直し、本番 58/58、dev でも変更した4件 4/4。[計画](../../plans/layout-design/seller-route-prod-and-cloudinary-preset-plan.md)
+- Cloudinary preset の env 化（承認後に実施）: 新変数 `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET`（未設定・空白は既存の `fefik77l`）を `src/lib/cloudinary.ts` の `getCloudinaryUploadPreset()` に集約し、`image-upload.tsx`（3箇所）・`upload-images.tsx` から使用。既存の `NEXT_PUBLIC_CLOUDINARY_PRESET_NAME` は `.env` で別値・`.env.docker` で `ci-stub` のため流用していない。`.env.example` に追記。Jest +7。先行 Red: コンポーネント4件が `fefik77l` を受け取り失敗、helper はモジュール未作成で失敗。実アップロード→保存→再表示は、テスト用 preset と削除手順が揃うまで保留。
+- 実測（最終）: 全体Jest 3132/3135（3 skipped）、323 suites（322 passed/1 skipped）、127 snapshots。coverage Statements88.18%／Branches78.39%／Functions84.49%／Lines88.71%。dashboard 401 files／405 lcov／18 of 80（セル不変）。lintエラー0／既存警告8、tscエラー0、check:playwright成功。
+
+## 2026-10-10 DataTable 列定義の固定・レビュー対応（履歴）
 
 下記 DS-SELLER-EIGHT-BROWSER の「今後の課題」7件を確認し、コードで直せる4件を TDD で修正。PR レビュー指摘2件（`seven-design.spec.ts` の作成 Dialog 証跡を `seller-create-dialog.png` へ分離、`seller-eight-route-design.spec.ts` の応答・URL 判定を Jodit 待ちより前へ）も反映。作業ツリーのみ（コミットなし）。
 
@@ -29,14 +40,14 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 ### DS-SELLER-EIGHT-BROWSER
 
 - **受け入れ（2026-10-10）**: 専用DB `multivendor_e2e`＋Clerk dev の `+clerk_test` 販売者で suite `seller-eight-route` を実行。表示48ケース（axe AA 違反0）と操作9件。配送の Dialog フォーカス復帰は再実行で間欠失敗（3/5）したため一度保留に戻し、原因を修正して ×5 再実行 5/5 を確認したうえで、**8画面とも受け入れ完了**。初回検証で見つかったサイドバー・Jodit の axe 違反と、Cloudinary の読込前クリック、Decimal 受け渡しの不具合は修正済み（上記「最新」節）。
-- 再実行手順: `DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を同じ専用DBへ揃え、`bunx prisma migrate deploy` → `bun run seed:e2e` → `bun scripts/design/prepare-seller-route.ts <out.json>`（seed の後に毎回実行）→ `DESIGN_SELLER_ROUTE=<out.json> DESIGN_SUITE=seller-eight-route bun run test:design`。:3000 の Docker app は同じ `.next` を共有するため、本番ビルドでの再検証は別ディレクトリで行う。
+- 再実行手順: `DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を同じ専用DBへ揃え、`bunx prisma migrate deploy` → `bun run seed:e2e` → `bun scripts/design/prepare-seller-route.ts <out.json>`（seed の後に毎回実行）→ `DESIGN_SELLER_ROUTE=<out.json> DESIGN_SUITE=seller-eight-route bun run test:design`。本番ビルドは `DESIGN_SELLER_ROUTE_SERVER=prod` を付ける。:3000 の Docker app は同じ `.next` を共有するため、本番ビルドは `git worktree` など別ディレクトリで実行する（`.env` をコピーし、作業ツリーの未コミット差分を適用、`bun install`→`bunx prisma generate`）。
 - 今後の課題（2026-10-10 の実ルート検証・修正中に見つかり、未対応のもの）:
   - [x] **（2026-10-10 解消: 8表とも列定義を固定。`table-columns-stability.test.tsx` で参照同一性を検証）列定義を毎 render 作り直す DataTable（8 か所）**: `flexRender` は cell 関数をコンポーネント型として描画するため、`router.refresh()` のたびに行内の要素が remount され、行内の状態や Dialog のフォーカス復帰先が失われうる（配送で実害を確認し修正済み）。対象: 販売者 `seller-orders.tsx`（`getSellerOrderColumns`）・`seller-products.tsx`（`getProductColumns`）・`seller-coupons.tsx`（`getSellerCouponColumns`）、管理者 `admin-categories.tsx`・`admin-coupons.tsx`・`admin-offer-tags.tsx`・`admin-orders.tsx`・`admin-stores.tsx`。修正は `inventory-table-client.tsx`／`seller-shipping.tsx` と同じく、Server Action 参照を `useState` で固定し列定義を `useMemo` で固定する。各表で「refresh 後も行の操作ボタンが同一要素」の RTL を先行 Red にする。注文の状態保存で、2 回目の成功表示が消える事象を初回検証時に観測済み。
   - [x] **（2026-10-10 解消: しきい値を行データへ移動。受け入れテストの保存ごと再読込は残している）在庫のしきい値変更で在庫数エディターが remount される**: `inventory-table-client.tsx` は `threshold` を `useMemo` の依存に含むため、しきい値を保存すると列定義が作り直され、続けて保存した在庫数の成功表示が消える（DB への保存は成功。2026-10-10 に再現）。受け入れテストは保存ごとに再読込を挟んで回避している。しきい値は表示の判定にだけ使うため、列定義の外（行データまたは table meta）から渡す形にする。
   - [x] **（2026-10-10 解消: 既定分岐を削除し素のリンクの nav へ一本化）管理者ナビの既定（cmdk）分岐の nested-interactive**: `nav-admin.tsx` の既定分岐は、販売者側で修正したのと同じ構造（`role="option"` の中にリンク）。admin layout は seller design を渡すため実画面では未使用。使わない分岐を削除するか、seller 分岐へ統一する。
-  - [ ] **店舗保存失敗時の理由が画面に出ない**: `upsertStore` は「同名／同メール／同電話番号の店舗が存在する」を投げるが、画面は汎用の「Could not save the store. Please try again.」だけを出す。重複は利用者が直せる失敗なので、メッセージ衛生（tech.md）を保てる範囲で理由を伝えるかを検討する。2026-10-10 確認: Next.js 本番は Server Action が throw したメッセージを伏せて client へ渡すため、画面側の変更だけでは理由を出せない。重複を `{ ok: false, reason }` などの戻り値で返す契約変更（`store-details.tsx`・`store.test.ts` も更新）が必要で、既存 API の変更として方針の承認待ち。
-  - [ ] **Cloudinary への実アップロードは未検証**: 承認範囲どおりウィジェット表示まで確認した。実アップロード→保存→再表示を確認するには、テスト用の upload preset／フォルダと、アップロード後の削除手順を用意する。
-  - [ ] **本番ビルドでの実ルート再検証**: 今回の実ルート検証は dev サーバー上で行った。:3000 の Docker app がリポジトリの `.next` を共有しているため、本番ビルド（`next build && next start`）での確認は worktree など別ディレクトリで行う。
+  - [x] **（2026-10-10 解消: `upsertStore` が重複を `{ ok: false, reason }` で返し、画面の alert に表示）店舗保存失敗時の理由が画面に出ない**: `upsertStore` は「同名／同メール／同電話番号の店舗が存在する」を投げるが、画面は汎用の「Could not save the store. Please try again.」だけを出す。重複は利用者が直せる失敗なので、メッセージ衛生（tech.md）を保てる範囲で理由を伝えるかを検討する。2026-10-10 確認: Next.js 本番は Server Action が throw したメッセージを伏せて client へ渡すため、画面側の変更だけでは理由を出せない。重複を `{ ok: false, reason }` などの戻り値で返す契約変更（`store-details.tsx`・`store.test.ts` も更新）が必要で、既存 API の変更として方針の承認待ち。
+  - [ ] **Cloudinary への実アップロードは未検証**（2026-10-10: preset を `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` で切り替え可能にした。残りはテスト用 preset／フォルダとアップロード後の削除手順の用意。`NEXT_PUBLIC_*` はビルド時に埋め込まれるため、本番ビルドで検証する場合は build 時に指定する）: 承認範囲どおりウィジェット表示まで確認した。実アップロード→保存→再表示を確認するには、テスト用の upload preset／フォルダと、アップロード後の削除手順を用意する。
+  - [x] **（2026-10-10 解消: `DESIGN_SELLER_ROUTE_SERVER=prod` を追加し、git worktree の本番ビルドで 58/58）本番ビルドでの実ルート再検証**: 今回の実ルート検証は dev サーバー上で行った。:3000 の Docker app がリポジトリの `.next` を共有しているため、本番ビルド（`next build && next start`）での確認は worktree など別ディレクトリで行う。
   - [x] **（2026-10-10 解消: 6ファイルを整形のみ。空白以外の差分は引用符・改行だけ）既存ファイルの Prettier 未整形**: 今回触れた `nav-seller.tsx`・`sidebar.tsx`・`icons/products.tsx`・`upload-images.tsx`・`click-to-add.test.tsx`・`globals.css` は変更前から Prettier 未適合（無関係な差分を避けるため整形していない）。整形だけの独立コミットで解消する。
 - API・DB・認可・金額/在庫計算・状態遷移・payload・URLは変更なし。既存画面/部品の判定を維持し、AttributeFieldsのseller opt-inのみ保留へ反映。
 
@@ -97,8 +108,8 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3122 passed / 3125 total、3 skipped、127 snapshots passed、322 スイート（321 passed／1 skipped、failed 0）**。2026-10-10 DataTable 列定義の固定・管理者ナビ整理後の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-10実測） | Statements88.06%（10893/12369）／Branches78.27%（6701/8561）／Functions84.37%（2123/2516）／Lines88.59%（9921/11198）。 |
+| Jest テスト総数 (unit/component) | **3132 passed / 3135 total、3 skipped、127 snapshots passed、323 スイート（322 passed／1 skipped、failed 0）**。2026-10-10 Cloudinary preset の env 化・本番ビルド再検証後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-10実測） | Statements88.18%（10936/12401）／Branches78.39%（6708/8557）／Functions84.49%（2141/2534）／Lines88.71%（9956/11222）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 plan 087 実施時の実測: 238/238 pass**・`bun run test:integration`。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
