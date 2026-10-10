@@ -302,6 +302,7 @@ const screens = [
 ];
 
 async function accessible(page: Page) {
+    await expect(page.locator("[data-postpurchase-shell]")).toBeVisible();
     expect(
         await page.evaluate(
             () => document.documentElement.scrollWidth <= innerWidth
