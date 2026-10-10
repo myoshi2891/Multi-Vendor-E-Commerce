@@ -11,3 +11,7 @@
 ## 購入後6画面の共通表示（2026-10-10）
 
 [保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。Red: 取得失敗時のReload accountのmin-heightが0pxでtouch52pxに追従せず失敗（通常表示の既存token接続は回帰確認）。Green/Refactor: postpurchase --grep overview 4/4（3幅、axe AA、長い氏名、未提供機能、URL/Enter/focus、error）；概要/sidebar/layout RTL3 suites 16/16。今回の表示変更は補助検証済み。認証後実ルートは保存ログイン状態がなく保留。既存の検証履歴を上書きしない。
+
+## PR #199 レビュー対応（2026-10-10）
+
+見出し・概要枠を`AccountView`へ抽出しpage/fixtureで共有（表示・DOM不変、postpurchase overview 4/4含む25/25成功）。抽出先がcoverage計測対象になったため`tests/component/store/profile-overview.test.tsx`に`AccountView` RTL +2（見出し・identity配置・identity無し時の注文概要維持、Lines 100%）。

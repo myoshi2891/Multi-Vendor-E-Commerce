@@ -81,7 +81,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-026 | `/profile/messages` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/messages/page.tsx](<../../../src/app/(store)/profile/messages/page.tsx>) | [messages実施記録](#profile-messages移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-027 | `/profile/orders/[filter]` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../../src/app/(store)/profile/orders/[filter]/page.tsx>) | [orders実施記録](#profile-orders移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-028 | `/profile/orders` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/orders/page.tsx](<../../../src/app/(store)/profile/orders/page.tsx>) | [orders実施記録](#profile-orders移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
-| DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>) | [profile実施記録](#profile移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
+| DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>)、[account-view.tsx](../../../src/components/store/profile/account-view.tsx) | [profile実施記録](#profile移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-030 | `/profile/payment` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/payment/page.tsx](<../../../src/app/(store)/profile/payment/page.tsx>) | [payment実施記録](#profile-payment移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-031 | `/profile/reviews` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/reviews/page.tsx](<../../../src/app/(store)/profile/reviews/page.tsx>) | [reviews実施記録](#profile-reviews移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-032 | `/profile/settings` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
@@ -1195,7 +1195,11 @@ Red: 取得失敗時のReload accountのmin-heightが0pxでtouch52pxに追従せ
 
 最終追加Red: messages route loadingのstatusが固定83/99/86で注入71/89/75へ追従しない。buyer aliasesをloadingにも適用しGreen。住所フォームの旧default palette検証を今回の承認済みgold/inkへ同期し、Checkout本体・保存・focusを含むcommerce全24件成功。
 
-計画ea1a5f4a、注文124bcd86、支払いc8ccbb76、住所1c2a28ff、レビュー23cc7bc2、メッセージ8e81589a、概要cf73d7d7。最終検証commitは当節を含む。画面台帳の過去の検証済み履歴は維持し、今回の認証後実ルート受け入れは別途保留。新規production部品はなく既存IDを維持。
+計画ea1a5f4a、注文124bcd86、支払いc8ccbb76、住所1c2a28ff、レビュー23cc7bc2、メッセージ8e81589a、概要cf73d7d7。最終検証commitは当節を含む。画面台帳の過去の検証済み履歴は維持し、今回の認証後実ルート受け入れは別途保留。6画面実装時点で新規production部品はなく既存IDを維持（レビュー対応で概要の内部構成部品`AccountView`を抽出。共有UI部品ではないため部品台帳IDは追加しない。下記参照）。
+
+### PR #199 レビュー対応（2026-10-10）
+
+概要の見出し・枠を`AccountView`へ抽出しfixtureと共有（`a0daf52f`／`b836b749`）、`--purchase-touch`フォールバック統一（`2631ae72`）、ClerkモックをDESIGN_SUITE=postpurchaseに限定。表示・DOM不変、postpurchase25/priority29/purchase53/commerce24成功。抽出先はcoverage計測対象のためSonar New Code 0%となり、`profile-overview.test.tsx`に`AccountView` RTL +2（Lines 100%、全体Jest3094/3097）。
 
 [SDD overview](../../../specs/multi-vendor-ecommerce/00-overview.md)、[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)、[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示トークンのみのため変更不要。要件・品質・テスト、6領域の仕様/設計/タスク/進捗とQAを同期。全体coverageは計測せず、COVERAGE_REPORTセル/coverage dashboardは更新不要。
 

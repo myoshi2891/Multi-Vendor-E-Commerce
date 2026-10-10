@@ -14,3 +14,4 @@
 
 [保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。- [x] Step 6: 先行Red、Green/Refactor、補助表示検証・既存操作回帰・文書同期。
 - [ ] 認証後実ルートの今回の変更受け入れ（既存ログイン状態が必要）。
+- [x] PR #199レビュー対応: `AccountView`抽出とRTL +2（Sonar New Code coverage回復）。

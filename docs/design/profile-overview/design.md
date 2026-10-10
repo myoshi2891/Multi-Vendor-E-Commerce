@@ -6,7 +6,7 @@
 - `src/components/store/profile/profile.module.css`をlayout・sidebar・会員情報・注文概要で共有。テーマ変数はshell内に限定し、他のページやPortalへグローバルな上書きを追加しない。
 - 色: 深緑#0b100e、アイボリー#f3f0e8、面#faf8f2、文字#17251d、本文#536356、装飾#d4ba83、明るい面のリンク／focus#75613b。見出しはGeorgia、日本語本文は既存本文フォント。
 - PCは220pxナビゲーションと残り本文の2列。1000px以下でsidebar185px、800px以下で1列と3列メニュー、480px以下で2列メニュー。注文カードは4列→2列、ショートカットは5列→3列→2列。
-- page.tsxにMy accountのh1とブランドmetadata。既存ProfileOverview／OrdersOverviewをServer Componentとして描画。
+- page.tsxはブランドmetadataを持ち、`AccountView`（`src/components/store/profile/account-view.tsx`）にMy accountのh1・概要枠・OrdersOverviewを集約する。会員情報のServer Component `ProfileOverview` は`identity`として渡す（2026-10-10、browser fixtureと同一構成を共有するため抽出）。
 
 ## 会員情報と取得状態
 
