@@ -61,3 +61,7 @@
 | 5 | fixtureの`getElementById("root")!` | 全7fixture共通の既存慣習。1ファイルだけ変えると不統一になるため今回は変更しない |
 
 受け入れ条件: 表示・DOM・テスト件数は不変（リファクタのためRedなし。既存postpurchase概要ケースが回帰ガード）。検証はtsc、lint、check:playwright、design suite postpurchase/priority/purchase/commerce、Jest関連（profile-overview）。
+
+### 追補: SonarCloud New Code coverage 0%（account-view.tsx）
+
+原因: 抽出元の`src/app/**/page.tsx`はJest`collectCoverageFrom`とSonar`coverage.exclusions`の両方で除外されていたが、抽出先`src/components/`は計測対象。描画はbrowser suiteのみでlcovに載らない。対応: 既存`tests/component/store/profile-overview.test.tsx`へ`AccountView`のRTLを追加（見出し・identity差し込み・identity無し時も注文概要維持）。既存実装の回帰テストのためRedは不要。受け入れ: 当該ファイルLines 100%、件数変動分をspec-sync。
