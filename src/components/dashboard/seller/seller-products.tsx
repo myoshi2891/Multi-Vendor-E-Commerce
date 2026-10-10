@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useState } from "react";
 import type { Category, Country, OfferTag } from "@prisma/client";
 import type {
     ProductListActions,
@@ -23,6 +24,14 @@ export default function SellerProducts({
     storeUrl: string;
     actions: ProductListActions;
 }) {
+    // 列定義を毎 render 作ると router.refresh() のたびに行内の要素が remount され、成功表示や
+    // Dialog のフォーカス復帰先が失われる。refresh ごとに別参照になる Server Action は初回の参照を
+    // 固定し、列定義を useMemo で固定する（seller-shipping.tsx と同じ）
+    const [stableDeleteAction] = useState(() => actions.deleteProductAction);
+    const columns = useMemo(
+        () => getProductColumns(stableDeleteAction),
+        [stableDeleteAction]
+    );
     return (
         <SellerPage
             id="store-products"
@@ -38,7 +47,7 @@ export default function SellerProducts({
                 searchPlaceholder="Search product name..."
                 filterValue="name"
                 data={products}
-                columns={getProductColumns(actions.deleteProductAction)}
+                columns={columns}
                 modalChildren={
                     <ProductDetails
                         design="seller"

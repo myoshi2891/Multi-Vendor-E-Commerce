@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { OrderStatus } from "@/lib/types";
 import type { AdminOrderRow } from "@/lib/admin-orders";
@@ -121,6 +122,14 @@ export default function AdminOrders({
     orders: AdminOrderRow[];
     actions: SellerOrderActions;
 }) {
+    // 列定義を毎 render 作ると router.refresh() のたびに行内の要素が remount され、成功表示や
+    // Dialog のフォーカス復帰先が失われる。refresh ごとに別参照になる Server Action は初回の参照を
+    // 固定し、列定義を useMemo で固定する（seller-shipping.tsx と同じ）
+    const [stableActions] = useState(() => actions);
+    const columns = useMemo(
+        () => getAdminOrderColumns(stableActions),
+        [stableActions]
+    );
     return (
         <SellerPage
             workspace="Administration"
@@ -131,7 +140,7 @@ export default function AdminOrders({
             <DataTable
                 design="seller"
                 data={orders}
-                columns={getAdminOrderColumns(actions)}
+                columns={columns}
                 filterValue="id"
                 searchPlaceholder="Search order by id ..."
             />

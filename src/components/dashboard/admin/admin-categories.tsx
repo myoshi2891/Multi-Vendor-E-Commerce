@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import type { Category } from "@prisma/client";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -17,8 +18,9 @@ export type CategoryActions = {
     saveAction: typeof upsertCategory;
     deleteAction: typeof deleteCategory;
 };
+// 親候補の categories は引数ではなく表データ（table.options.data）から読む。引数にすると refresh の
+// たびに新しい配列となり、列定義が作り直されて行が remount されるため
 export function getCategoryColumns(
-    categories: Category[],
     actions: CategoryActions
 ): ColumnDef<Category>[] {
     return [
@@ -71,7 +73,7 @@ export function getCategoryColumns(
         {
             id: "actions",
             header: "Actions",
-            cell: ({ row }) => (
+            cell: ({ row, table }) => (
                 <div className="space-y-3">
                     <MasterDialog
                         label={`Edit category ${row.original.name}`}
@@ -80,7 +82,7 @@ export function getCategoryColumns(
                         {(data, onBusyChange) => (
                             <CategoryForm
                                 data={data}
-                                categories={categories}
+                                categories={table.options.data}
                                 saveAction={actions.saveAction}
                                 onBusyChange={onBusyChange}
                             />
@@ -104,6 +106,14 @@ export default function AdminCategories({
     categories: Category[];
     actions: CategoryActions;
 }) {
+    // 列定義を毎 render 作ると router.refresh() のたびに行内の要素が remount され、成功表示や
+    // Dialog のフォーカス復帰先が失われる。refresh ごとに別参照になる Server Action は初回の参照を
+    // 固定し、列定義を useMemo で固定する（seller-shipping.tsx と同じ）
+    const [stableActions] = useState(() => actions);
+    const columns = useMemo(
+        () => getCategoryColumns(stableActions),
+        [stableActions]
+    );
     return (
         <SellerPage
             workspace="Administration"
@@ -125,7 +135,7 @@ export default function AdminCategories({
             <DataTable
                 design="seller"
                 data={categories}
-                columns={getCategoryColumns(categories, actions)}
+                columns={columns}
                 filterValue="name"
                 searchPlaceholder="Search category name ..."
                 newTabLink="/dashboard/admin/categories/new"
