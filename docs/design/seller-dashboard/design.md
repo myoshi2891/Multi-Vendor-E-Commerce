@@ -652,3 +652,7 @@ DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失�
 ### 共通基盤
 
 seller-touch/seller-radiusをthemeに定義。control/iconControl/controlsはopt-in。ThemeToggleのsellerだけを適用し、Portalにcontrolsを合成する。
+
+### Step 1 店舗概要 — DS-PAGE-058
+
+StoreStatsCardsをstatsGridへ変更。auto-fit/minmaxでviewportではなくcontent幅に応じて配置。Card/theme/chartの既存継承を維持する。

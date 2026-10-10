@@ -483,3 +483,13 @@
     padding: 1rem;
     background: hsl(var(--card));
 }
+
+/* Use available content width rather than the viewport behind the sidebar. */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    gap: 1rem;
+}
+.statsGrid > div {
+    min-width: 0;
+}

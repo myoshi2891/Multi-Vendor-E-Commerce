@@ -649,3 +649,22 @@ for (const width of [390, 767])
             await expect(page.locator("#root")).not.toHaveAttribute("aria-hidden", "true");
             await sellerEvidence(page, info);
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual overview ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=overview&large=1");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const revenue = page.getByText("$9,007,199,254,740,991.00", { exact: true });
+            expect(await revenue.evaluate(node => node.parentElement!.parentElement!.clientWidth), "KPI cards retain readable width beside the sidebar").toBeGreaterThanOrEqual(160);
+            await expect(revenue).toBeVisible();
+            expect(await revenue.evaluate(node => {
+                const card = node.parentElement!.parentElement!;
+                return card.scrollWidth <= card.clientWidth;
+            }), "KPI must contain large monetary values").toBe(true);
+            await sellerEvidence(page, info);
+            await page.goto("/?screen=overview&empty=1");
+            await expect(page.getByText("注文がありません。", { exact: true })).toBeVisible();
+            await sellerEvidence(page, info);
+        });

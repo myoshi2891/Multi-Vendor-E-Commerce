@@ -1215,3 +1215,9 @@ Red: 取得失敗時のReload accountのmin-heightが0pxでtouch52pxに追従せ
 Red: 390/767px×light/darkのナビ42pxで4件失敗。Green/Refactor: seven residual foundation 4/4、shell RTL3/3、lint/tsc成功。Tab/Enter/Escape/focus復帰、themeメニュー44px、axe AAを確認。listen EPERM/Chromium未導入と開いたRadix menuの検査配置は環境/テスト調整でありRedに含めない。
 
 認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。
+
+### Step 1 店舗概要 — DS-PAGE-058
+
+Red: 768px/light-darkでKPI幅87pxの2件失敗。大きな金額の既存折り返しは先行回帰6/6で確認しRedと混同しない。Green/Refactor: seven overview 12/12、関連RTL3 suites 5/5、lint/tsc成功。3幅/light-dark、axe AA、long/large/empty、チャートを確認。
+
+認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。

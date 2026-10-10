@@ -809,3 +809,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。本体適用済みの8画面の残存部品を対象とし、認証後実ルート保留と画面件数を維持する。
 
 - [x] 共通基盤: 実装・補助検証・仕様同期。
+
+- [x] Step 1 店舗概要 — DS-PAGE-058: 実装・補助検証・仕様同期。

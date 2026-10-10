@@ -1204,3 +1204,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 2026-10-10。[保存計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
 
 - ✅ Completed (2026-10-10): 共通基盤 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 1 店舗概要 — DS-PAGE-058 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。

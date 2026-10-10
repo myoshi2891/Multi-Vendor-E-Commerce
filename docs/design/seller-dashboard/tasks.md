@@ -207,3 +207,5 @@ DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失�
 2026-10-10。[保存計画](../../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
 
 - [x] 共通基盤: 表示移行・関連検証・仕様同期。
+
+- [x] Step 1 店舗概要 — DS-PAGE-058: 表示移行・関連検証・仕様同期。

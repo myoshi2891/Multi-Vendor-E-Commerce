@@ -33,3 +33,5 @@
 2026-10-10。[保存計画](../../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
 
 - [x] 共通基盤: TDD・実装・関連検証・文書同期。認証後実ルート受け入れは別途保留。
+
+- [x] Step 1 店舗概要 — DS-PAGE-058: TDD・実装・関連検証・文書同期。認証後実ルート受け入れは別途保留。
