@@ -76,3 +76,12 @@ DS-PAGE-065 店舗作成: 先行RTL2件でmain/h1/theme control不足と新規ID
 深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+
+## 販売者優先8画面残存移行
+
+2026-10-10。[保存計画](../../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
+
+### 共通基盤
+
+共有ナビとsellerテーマ切替は44px以上。面・状態色・focusを既存のスコープ付きテーマから参照する。

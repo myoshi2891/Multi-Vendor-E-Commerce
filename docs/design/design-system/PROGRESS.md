@@ -1204,3 +1204,14 @@ Red: 取得失敗時のReload accountのmin-heightが0pxでtouch52pxに追従せ
 [SDD overview](../../../specs/multi-vendor-ecommerce/00-overview.md)、[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)、[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示トークンのみのため変更不要。要件・品質・テスト、6領域の仕様/設計/タスク/進捗とQAを同期。全体coverageは計測せず、COVERAGE_REPORTセル/coverage dashboardは更新不要。
 
 最終全体Jest3092/3095（3 skipped）、319 suites（318 passed/1 skipped）、127 snapshots成功。lint 0 errors/既存8 warnings、tsc 0 errors、check:playwright成功。文書のリンクと差分形式を検証。全体統計はQA_HANDOFFへ同期し、coverage値は以前の実測を維持。
+
+
+## 販売者優先8画面残存移行記録
+
+2026-10-10。[保存計画](../../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
+
+### 共通基盤
+
+Red: 390/767px×light/darkのナビ42pxで4件失敗。Green/Refactor: seven residual foundation 4/4、shell RTL3/3、lint/tsc成功。Tab/Enter/Escape/focus復帰、themeメニュー44px、axe AAを確認。listen EPERM/Chromium未導入と開いたRadix menuの検査配置は環境/テスト調整でありRedに含めない。
+
+認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。

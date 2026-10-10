@@ -624,3 +624,28 @@ for (const width of [1440, 768, 767, 390]) {
         await expect(portal.getByRole("button")).toHaveCSS("animation-name", "none");
     });
 }
+
+// Residual adoption: production shell and controls, using the existing seven harness.
+import { touchControl, sellerEvidence } from "./seller-eight-assertions";
+for (const width of [390, 767])
+    for (const theme of ["light", "dark"])
+        test(`residual foundation ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const toggle = page.getByRole("button", { name: "Store navigation" });
+            await touchControl(toggle);
+            await touchControl(page.getByRole("button", { name: "Toggle theme" }), true);
+            await toggle.focus();
+            await page.keyboard.press("Enter");
+            await expect(toggle).toHaveAttribute("aria-expanded", "true");
+            await page.getByRole("link", { name: "Products", exact: true }).focus();
+            await page.keyboard.press("Escape");
+            await expect(toggle).toBeFocused();
+            await expect(toggle).toHaveCSS("outline-style", "solid");
+            await page.getByRole("button", { name: "Toggle theme" }).click();
+            for (const name of ["Light", "Dark", "System"]) await touchControl(page.getByRole("menuitem", { name, exact: true }));
+            await page.keyboard.press("Escape");
+            await expect(page.locator("#root")).not.toHaveAttribute("aria-hidden", "true");
+            await sellerEvidence(page, info);
+        });

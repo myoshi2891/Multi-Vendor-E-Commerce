@@ -40,3 +40,12 @@ StoreDetailsDataはid/name/description/email/phone/logo/cover/url/featured/statu
 既存scopedブランド基盤を利用し、対象本体と展開UIを統一。Serverから型付きAction Propsを渡す。Legalは公開Server Componentと既存本文/アンカーを保持。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+
+## 販売者優先8画面残存移行
+
+2026-10-10。[保存計画](../../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
+
+### 共通基盤
+
+seller-touch/seller-radiusをthemeに定義。control/iconControl/controlsはopt-in。ThemeToggleのsellerだけを適用し、Portalにcontrolsを合成する。

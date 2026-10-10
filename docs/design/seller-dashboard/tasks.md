@@ -200,3 +200,10 @@ DS-PAGE-055: SellerPage、テーマ対応の一覧・検索、在庫数/しき�
 ## 注文一覧のデザイン移行（2026-10-05）
 
 DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失敗と空を区別し、一覧・明細状態は明示保存とpending/error/retry/statusを表示する。既存enum・更新action・金額単位を維持。RTL12/12、補助Chromium6/6。認証後実ルートは保留。[要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。
+
+
+## 販売者優先8画面残存移行
+
+2026-10-10。[保存計画](../../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
+
+- [x] 共通基盤: 表示移行・関連検証・仕様同期。

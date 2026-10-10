@@ -1,5 +1,7 @@
 /* Scoped brand tokens: shared primitives inherit only inside an opted-in surface. */
 .theme {
+    --seller-touch: 44px;
+    --seller-radius: 3px;
     --background: 43 31% 93%;
     --foreground: 143 23% 12%;
     --card: 45 38% 97%;
@@ -73,7 +75,7 @@
     border-color: hsl(var(--input));
 }
 .theme :is(button, input, textarea, select) {
-    border-radius: 3px;
+    border-radius: var(--seller-radius);
 }
 .theme button:disabled {
     opacity: 0.65;
@@ -126,6 +128,7 @@
     max-width: 100%;
 }
 .navToggle {
+    min-height: var(--seller-touch);
     padding: 0.5rem 0.75rem;
     border: 1px solid hsl(var(--border));
     background: hsl(var(--card));
@@ -266,7 +269,7 @@
     max-height: 90dvh;
     height: auto;
     overflow: auto;
-    border-radius: 3px;
+    border-radius: var(--seller-radius);
 }
 .alert {
     padding: 1rem;
@@ -291,6 +294,7 @@
         padding: 2rem;
     }
     .navToggle {
+    min-height: var(--seller-touch);
         display: none;
     }
 }
@@ -310,7 +314,7 @@
 }
 
 .theme :global(.rounded-lg) {
-    border-radius: 3px;
+    border-radius: var(--seller-radius);
 }
 .theme :global(.shadow-sm) {
     box-shadow: none;
@@ -452,4 +456,30 @@
 }
 .theme :global([data-table-tools] > div:first-child > svg) {
     flex-shrink: 0;
+}
+
+/* Opt-in controls keep compact primitives in other callers unchanged. */
+.control {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--seller-touch);
+}
+.iconControl {
+    min-width: var(--seller-touch);
+    min-height: var(--seller-touch);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.controls :is(button, input:not([type="checkbox"]):not([type="radio"]), select, [role="combobox"], [role="menuitem"], [role="tab"]) {
+    min-height: var(--seller-touch);
+}
+.success {
+    color: var(--brand-success);
+}
+.warning {
+    color: hsl(var(--warning));
+    border: 1px solid currentColor;
+    padding: 1rem;
+    background: hsl(var(--card));
 }

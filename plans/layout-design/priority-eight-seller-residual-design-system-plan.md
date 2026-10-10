@@ -48,7 +48,7 @@ TEST_IMPLEMENTATION_PLAN/QA_HANDOFFを更新、coverage変化はCOVERAGE_REPORT�
 ## 実施チェック
 
 - [x] 計画保存。
-- [ ] 共通基盤。
+- [x] 共通基盤。
 - [ ] Step 1 店舗概要。
 - [ ] Step 2 商品一覧。
 - [ ] Step 3 在庫。
