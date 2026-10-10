@@ -12,19 +12,9 @@ const menuLinks = [
     { label: "Stores", icon: "unknown-icon", link: "/dashboard/admin/stores" },
 ];
 
-beforeAll(() => {
-    // cmdk が jsdom に無い API を参照するため最小限のスタブを置く
-    global.ResizeObserver = class {
-        observe() {}
-        unobserve() {}
-        disconnect() {}
-    } as unknown as typeof ResizeObserver;
-    Element.prototype.scrollIntoView = jest.fn();
-});
-
 describe("SideBarNavAdmin", () => {
-    it("seller design: 現在のリンクだけに aria-current=page を付ける", () => {
-        render(<SideBarNavAdmin menuLinks={menuLinks} design="seller" />);
+    it("現在のリンクだけに aria-current=page を付ける", () => {
+        render(<SideBarNavAdmin menuLinks={menuLinks} />);
         expect(
             screen.getByRole("navigation", { name: "Administration" })
         ).toBeVisible();
@@ -37,8 +27,12 @@ describe("SideBarNavAdmin", () => {
         ).not.toHaveAttribute("aria-current");
     });
 
-    it("既定 design: コマンドリストで全リンクを描画する", () => {
+    // cmdk の CommandItem（role="option"）にリンクを入れると axe の nested-interactive になる。
+    // 既定分岐は実画面で未使用だったため削除し、素のリンクの nav に一本化した
+    it("リンクを option ロールの中に入れず、全リンクを描画する", () => {
         render(<SideBarNavAdmin menuLinks={menuLinks} />);
+        expect(screen.queryByRole("option")).not.toBeInTheDocument();
+        expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
             "href",
             "/dashboard/admin"

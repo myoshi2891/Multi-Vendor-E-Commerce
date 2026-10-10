@@ -44,9 +44,12 @@ const Sidebar: FC<SideBarProps> = async ({ isAdmin, stores, design }) => {
                 <StoreSwitcher stores={stores} design={design} />
             )}
             {isAdmin ? (
-                <SideBarNavAdmin menuLinks={adminDashboardSidebarOptions} design={design} />
+                <SideBarNavAdmin menuLinks={adminDashboardSidebarOptions} />
             ) : (
-                <SideBarNavSeller menuLinks={SellerDashboardSidebarOptions} design={design} />
+                <SideBarNavSeller
+                    menuLinks={SellerDashboardSidebarOptions}
+                    design={design}
+                />
             )}
         </div>
     );
