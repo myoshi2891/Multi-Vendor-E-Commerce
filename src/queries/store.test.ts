@@ -466,7 +466,8 @@ describe("upsertStore", () => {
 
             const result = await upsertStore(storeData);
 
-            expect(result).toEqual(expectedStore);
+            // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
+            expect(result).toEqual({ id: expectedStore.id, url: expectedStore.url });
             TestHelpers.expectStoreCreatedWith(
                 mockDb.create,
                 TestDataFactory.createStoreExpectedData(storeData)
@@ -490,7 +491,8 @@ describe("upsertStore", () => {
 
             const result = await upsertStore(storeData);
 
-            expect(result).toEqual(expectedStore);
+            // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
+            expect(result).toEqual({ id: expectedStore.id, url: expectedStore.url });
             TestHelpers.expectStoreCreatedWith(
                 mockDb.create,
                 TestDataFactory.createStoreExpectedData(storeData)
@@ -564,7 +566,8 @@ describe("upsertStore", () => {
 
             const result = await upsertStore(updateData);
 
-            expect(result).toEqual(updatedStore);
+            // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
+            expect(result).toEqual({ id: updatedStore.id, url: updatedStore.url });
             TestHelpers.expectDbMethodCalledTimes(mockDb.findFirst, 2);
 
             // 所有権チェックの確認
@@ -748,7 +751,8 @@ describe("updateStoreDefaultShippingDetails", () => {
                 shippingDetails
             );
 
-            expect(result).toEqual(updatedStore);
+            // 戻り値は Client Component へ直列化されるため、Decimal の配送料列を含まない url だけを返す
+            expect(result).toEqual({ url: updatedStore.url });
 
             TestHelpers.expectStoreOwnershipCheck(
                 mockDb.findUnique,

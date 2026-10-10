@@ -185,7 +185,9 @@ export const upsertStore = async (store: Partial<Store>) => {
             storeDetails = await db.store.create({ data: createData });
         }
 
-        return storeDetails;
+        // 戻り値は Client Component（StoreDetails）へ直列化される。Decimal の配送料列を含む Store 全体は
+        // RSC で直列化できないため、呼び出し側が使う id / url だけを返す
+        return { id: storeDetails.id, url: storeDetails.url };
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error in upsertStore:", error.message, error.stack);
@@ -262,7 +264,8 @@ export const updateStoreDefaultShippingDetails = async (
             data: details,
         });
 
-        return updatedStore;
+        // 戻り値は Client Component へ直列化されるため、Decimal の配送料列を含まない url だけを返す
+        return { url: updatedStore.url };
     } catch (error: unknown) {
         if (error instanceof Error) {
             console.error("Error in updateStoreDefaultShippingDetails:", error.message, error.stack);
