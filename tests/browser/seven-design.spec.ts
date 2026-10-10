@@ -668,3 +668,30 @@ for (const width of [1440, 768, 390])
             await expect(page.getByText("注文がありません。", { exact: true })).toBeVisible();
             await sellerEvidence(page, info);
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual products ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=products");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            await touchControl(page.getByRole("link", { name: "New variant", exact: true }));
+            for (const control of await page.locator("main button, main input").all()) await touchControl(control);
+            const actions = page.getByRole("button", { name: /Actions for/ });
+            await actions.click();
+            await touchControl(page.getByRole("menuitem", { name: "Delete product" }));
+            await page.getByRole("menuitem", { name: "Delete product" }).click();
+            const confirm = page.getByRole("alertdialog");
+            await touchControl(confirm.getByRole("button", { name: "Delete", exact: true }));
+            await touchControl(confirm.getByRole("button", { name: "Cancel", exact: true }));
+            await sellerEvidence(page, info);
+            await confirm.getByRole("button", { name: "Cancel", exact: true }).click();
+            const create = page.getByRole("button", { name: "Create New Product" });
+            await create.click();
+            const dialog = page.getByRole("dialog", { name: "Create product" });
+            await touchControl(dialog.getByRole("button", { name: "Close", exact: true }), true);
+            await touchControl(dialog.getByPlaceholder("Product Name", { exact: true }));
+            await sellerEvidence(page, info);
+            await page.keyboard.press("Escape");
+            await expect(create).toBeFocused();
+        });

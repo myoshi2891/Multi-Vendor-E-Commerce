@@ -89,3 +89,7 @@ DS-PAGE-065 店舗作成: 先行RTL2件でmain/h1/theme control不足と新規ID
 ### Step 1 店舗概要 — DS-PAGE-058
 
 KPIカードはサイドバーを除いた利用可能幅に応じて列数を変え、160px以上の可読幅を保つ。大きな金額・長い商品名は面の内側で折り返す。6指標・売上推移・注文・商品・空状態は維持する。
+
+### Step 2 商品一覧 — DS-PAGE-062
+
+検索・新規作成・新規バリアント・行操作・削除確認・作成Dialogの主要操作を44px以上にする。Dialog closeは44×44px、Portalもlight/darkの面・文字・focusを継承する。

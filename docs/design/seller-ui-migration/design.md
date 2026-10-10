@@ -53,3 +53,7 @@ seller-touch/seller-radiusをthemeに定義。control/iconControl/controlsはopt
 ### Step 1 店舗概要 — DS-PAGE-058
 
 StoreStatsCardsをstatsGridへ変更。auto-fit/minmaxでviewportではなくcontent幅に応じて配置。Card/theme/chartの既存継承を維持する。
+
+### Step 2 商品一覧 — DS-PAGE-062
+
+DataTable seller toolbarにcontrolsを合成、New variantとProductActionsにcontrol、メニュー/確認Dialog/CustomModalにcontrolsを適用。Dialog直下のclose buttonを44px化。共有callerの機能と既定scopeは維持する。

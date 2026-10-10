@@ -493,3 +493,11 @@
 .statsGrid > div {
     min-width: 0;
 }
+
+.dialog > button {
+    min-width: var(--seller-touch);
+    min-height: var(--seller-touch);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}

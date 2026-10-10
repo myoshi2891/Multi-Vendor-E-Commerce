@@ -121,7 +121,7 @@ export function getProductColumns(
             cell: ({ row }) => (
                 <Link
                     href={`/dashboard/seller/stores/${row.original.store.url}/products/${row.original.id}/variants/new`}
-                    className="underline"
+                    className={`${styles.control} underline`}
                 >
                     New variant
                 </Link>
@@ -177,13 +177,14 @@ export function ProductActions({
                 <DropdownMenuTrigger asChild>
                     <Button
                         ref={trigger}
+                        className={styles.control}
                         variant="outline"
                         aria-label={`Actions for ${name}`}
                     >
                         Actions
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className={styles.theme}>
+                <DropdownMenuContent className={`${styles.theme} ${styles.controls}`}>
                     <DropdownMenuItem onSelect={() => setOpen(true)}>
                         Delete product
                     </DropdownMenuItem>
@@ -196,7 +197,7 @@ export function ProductActions({
                 }}
             >
                 <AlertDialogContent
-                    className={`${styles.theme} ${styles.dialog}`}
+                    className={`${styles.theme} ${styles.dialog} ${styles.controls}`}
                     onCloseAutoFocus={(event) => {
                         event.preventDefault();
                         trigger.current?.focus();
