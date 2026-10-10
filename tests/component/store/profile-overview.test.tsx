@@ -5,6 +5,7 @@ import "@testing-library/jest-dom";
 import { currentUser } from "@clerk/nextjs/server";
 import ProfileOverview from "@/components/store/profile/overview";
 import OrdersOverview from "@/components/store/profile/orders-overview";
+import AccountView from "@/components/store/profile/account-view";
 
 jest.mock("@clerk/nextjs/server", () => ({ currentUser: jest.fn() }));
 jest.mock("next/image", () => ({
@@ -112,5 +113,37 @@ describe("Profile orders overview", () => {
         expect(
             screen.getByRole("link", { name: /Open a dispute/ })
         ).toHaveAttribute("href", "/dispute");
+    });
+});
+
+describe("Account view", () => {
+    it("renders the page heading and places the identity before the orders overview", () => {
+        // Arrange
+        const identity = <section aria-label="Identity slot">Mina</section>;
+        // Act
+        render(<AccountView identity={identity} />);
+        // Assert
+        expect(
+            screen.getByRole("heading", { level: 1, name: "My account" })
+        ).toBeVisible();
+        expect(
+            screen.getByText(/お気に入りも、お買い物の記録も/)
+        ).toHaveAttribute("lang", "ja");
+        const slot = screen.getByRole("region", { name: "Identity slot" });
+        const orders = screen.getByRole("region", { name: "My orders" });
+        expect(slot.parentElement).toBe(orders.parentElement);
+        expect(
+            slot.compareDocumentPosition(orders) &
+                Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+    it("keeps the heading and orders overview when identity renders nothing", () => {
+        // Arrange / Act（ProfileOverview はユーザー不在時に null を返す）
+        render(<AccountView identity={null} />);
+        // Assert
+        expect(
+            screen.getByRole("heading", { level: 1, name: "My account" })
+        ).toBeVisible();
+        expect(screen.getByRole("region", { name: "My orders" })).toBeVisible();
     });
 });
