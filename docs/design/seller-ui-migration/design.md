@@ -65,3 +65,7 @@ StockNumberEditor groupにcontrolsを適用し、success表示をbrand-success�
 ### Step 4 注文 — DS-PAGE-057
 
 StatusEditorにcontrols/success、詳細buttonにcontrol。支払状態のspan/paymentStateを一覧と詳細に共用し、data-payment-stateで表示のみ分岐。enum/Action/金額/pending/値保持を維持する。
+
+### Step 5 メッセージ — DS-PAGE-056
+
+messages.sellerへmessage-touch/message-focusを接続。useIdで未読説明IDを生成しaria-describedbyで会話buttonに関連付ける。markRead成功時の既存unreadLatest更新のみで解除。buyerスタイルとprops APIは維持。

@@ -1239,3 +1239,9 @@ Red: 数量入力高36pxで新browser6件失敗。Green/Refactor: seven inventor
 Red: 状態selectの操作高不足でbrowser6件失敗。Green/Refactor: seven orders 12/12、関連RTL3 suites 7/7、lint/tsc成功。3幅/light-dark、group/item state pending/error/retry/success、Paid意味色、44px、詳細/Escape/focus復帰、axe AA、390px dark画像目視。
 
 認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。
+
+### Step 5 メッセージ — DS-PAGE-056
+
+Red: 未読accessible description不足のRTL1件（既存11成功）とseller-touchに追従せず44pxのbrowser8件。Green/Refactor: seven messages 14/14、関連Jestは下記統合実績に記録、lint/tsc成功。1440/1000/768/390×light-dark、未読/既読失敗再試行/送信値保持/戻るfocus/52px注入/ring追従/axe AA、390px dark画像目視。
+
+認証後実ルート/実SDK受け入れは保留。既存の台帳判定と過去履歴を保持。

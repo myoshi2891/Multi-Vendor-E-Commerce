@@ -317,3 +317,18 @@ it("turns an initial server load failure into generic retry feedback", async () 
     );
     expect(screen.queryByText("private details")).not.toBeInTheDocument();
 });
+
+it("announces unread conversations and clears the indicator only after mark-read succeeds", async () => {
+    const markReadAction = jest.fn().mockRejectedValueOnce(new Error("Fixture failure")).mockResolvedValue({ count: 1 });
+    const { user } = setup({
+        initialConversations: conversations.map(conversation => ({ ...conversation, unreadLatest: true })),
+        markReadAction,
+    });
+    const open = screen.getByRole("button", { name: "Open conversation with Alice Buyer" });
+    expect(open).toHaveAccessibleDescription("Unread");
+    await user.click(open);
+    await screen.findByRole("button", { name: "Retry read status" });
+    expect(open).toHaveAccessibleDescription("Unread");
+    await user.click(screen.getByRole("button", { name: "Retry read status" }));
+    await waitFor(() => expect(open).not.toHaveAccessibleDescription("Unread"));
+});

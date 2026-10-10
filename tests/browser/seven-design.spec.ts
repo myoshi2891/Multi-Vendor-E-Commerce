@@ -744,3 +744,31 @@ for (const width of [1440, 768, 390])
             await page.keyboard.press("Escape");
             await expect(view).toBeFocused();
         });
+
+for (const width of [1440, 1000, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual messages ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=messages");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const workspace = page.getByRole("region", { name: "Message management" });
+            await workspace.evaluate(node => { (node as HTMLElement).style.setProperty("--seller-touch", "52px"); (node as HTMLElement).style.setProperty("--ring", "120 100% 20%"); });
+            const refresh = page.getByRole("button", { name: "Refresh conversations" });
+            await expect(refresh).toHaveCSS("min-height", "52px");
+            await refresh.focus();
+            await expect(refresh).toHaveCSS("outline-color", "rgb(0, 102, 0)");
+            const open = page.getByRole("button", { name: /Open conversation with/ });
+            await expect(open).toHaveAccessibleDescription("Unread");
+            await open.click();
+            await page.getByRole("button", { name: "Retry read status" }).click();
+            await page.getByRole("button", { name: "Retry messages" }).click();
+            if (width <= 1000) {
+                await expect(open).toBeHidden();
+                const back = page.getByRole("button", { name: "Back to conversations" });
+                await expect(back).toHaveCSS("min-height", "52px");
+                await back.click();
+                await expect(open).toBeFocused();
+            }
+            await expect(open).not.toHaveAccessibleDescription("Unread");
+            await sellerEvidence(page, info);
+        });

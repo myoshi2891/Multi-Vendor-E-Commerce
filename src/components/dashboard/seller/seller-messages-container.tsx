@@ -4,7 +4,7 @@ import type {
     SellerMessageActions,
 } from "@/lib/seller-messages";
 import Image from "next/image";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import SellerPage from "../design/seller-page";
 import ProfileConversationThread from "@/components/store/profile/messages/profile-conversation-thread";
 import { useProfileConversation } from "@/components/store/profile/messages/use-profile-conversation";
@@ -17,6 +17,7 @@ export default function SellerMessagesContainer({
     initialConversations: SellerConversation[];
     initialError?: boolean;
 } & SellerMessageActions) {
+    const unreadId = useId();
     const selectedTrigger = useRef<HTMLButtonElement | null>(null);
     const threadPane = useRef<HTMLDivElement>(null);
     const [conversations, setConversations] = useState(initialConversations);
@@ -134,6 +135,7 @@ export default function SellerMessagesContainer({
                                     key={conversation.id}
                                     className={styles.conversation}
                                     aria-label={`Open conversation with ${conversation.user.name}`}
+                                    aria-describedby={conversation.unreadLatest ? `${unreadId}-${conversation.id}` : undefined}
                                     aria-pressed={
                                         thread.selectedId === conversation.id
                                     }
@@ -161,6 +163,9 @@ export default function SellerMessagesContainer({
                                         <strong>
                                             {conversation.user.name}
                                         </strong>
+                                        {conversation.unreadLatest && (
+                                            <span id={`${unreadId}-${conversation.id}`} className={styles.unread}>Unread</span>
+                                        )}
                                         <span className={styles.preview}>
                                             {conversation.messages[0]
                                                 ?.content ?? "No messages"}

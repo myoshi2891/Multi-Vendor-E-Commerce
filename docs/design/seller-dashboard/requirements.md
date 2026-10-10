@@ -188,3 +188,7 @@ KPIカードはサイドバーを除いた利用可能幅に応じて列数を�
 ### Step 4 注文 — DS-PAGE-057
 
 状態select・保存・再試行・詳細起動は44px以上。成功はブランド成功色、Paidは成功、Pending/PartiallyRefundedは警告、Failed/Declined/ChargeBackは危険色と状態文字を併用する。他状態は中立表示。
+
+### Step 5 メッセージ — DS-PAGE-056
+
+未読会話にはUnread文字と読み上げ説明を表示し、既読更新失敗時は維持、成功時に解除する。seller操作寸法/focusはseller-touch/ringに追従し、選択・送信・戻る・下書き・pollの既存挙動を維持する。
