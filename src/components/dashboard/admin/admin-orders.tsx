@@ -85,7 +85,7 @@ export function getAdminOrderColumns(
                 <div className="space-y-3">
                     {row.original.groups.map((group) => (
                         <StatusEditor
-                            key={`${group.id}:${group.status}`}
+                            key={group.id}
                             label={`Order status ${group.id}`}
                             initialStatus={group.status}
                             options={Object.values(OrderStatus)}

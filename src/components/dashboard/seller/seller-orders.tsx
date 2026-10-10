@@ -86,7 +86,7 @@ export function getSellerOrderColumns(
             header: "Status",
             cell: ({ row }) => (
                 <StatusEditor
-                    key={`${row.original.id}:${row.original.status}`}
+                    key={row.original.id}
                     label={`Order status ${row.original.id}`}
                     initialStatus={row.original.status}
                     options={Object.values(OrderStatus)}

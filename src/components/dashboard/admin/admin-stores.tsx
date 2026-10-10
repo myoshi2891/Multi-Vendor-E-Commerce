@@ -133,7 +133,7 @@ export function getAdminStoreColumns(
             header: "Status",
             cell: ({ row }) => (
                 <StoreState
-                    key={`${row.original.id}:${row.original.status}`}
+                    key={row.original.id}
                     store={row.original}
                     actions={actions}
                 />

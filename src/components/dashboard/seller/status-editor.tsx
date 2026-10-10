@@ -20,7 +20,18 @@ export default function StatusEditor({
     const [value, setValue] = useState(initialStatus),
         [committed, setCommitted] = useState(initialStatus),
         [busy, setBusy] = useState(false),
-        [feedback, setFeedback] = useState<"failed" | "saved" | null>(null);
+        [feedback, setFeedback] = useState<"failed" | "saved" | null>(null),
+        [seenInitial, setSeenInitial] = useState(initialStatus);
+    // refresh で届いた値の取り込み。自分の保存は committed と一致するので成功表示を残し、
+    // 他者による変更だけを反映する（key に status を含めて remount すると成功表示まで消える）
+    if (initialStatus !== seenInitial) {
+        setSeenInitial(initialStatus);
+        if (initialStatus !== committed) {
+            setValue(initialStatus);
+            setCommitted(initialStatus);
+            setFeedback(null);
+        }
+    }
     const save = async () => {
         if (pending.current || value === committed || !options.includes(value))
             return;
