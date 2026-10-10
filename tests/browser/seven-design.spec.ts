@@ -663,8 +663,10 @@ for (const width of [1440, 768, 390])
                 const card = node.parentElement!.parentElement!;
                 return card.scrollWidth <= card.clientWidth;
             }), "KPI must contain large monetary values").toBe(true);
-            await sellerEvidence(page, info);
+            await sellerEvidence(page, info, "seller-large.png");
             await page.goto("/?screen=overview&empty=1");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            await expect(page.locator("html")).toHaveClass(theme === "dark" ? /dark/ : /^$/);
             await expect(page.getByText("注文がありません。", { exact: true })).toBeVisible();
             await sellerEvidence(page, info);
         });

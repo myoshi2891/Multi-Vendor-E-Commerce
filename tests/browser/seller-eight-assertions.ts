@@ -8,12 +8,12 @@ export async function touchControl(control: Locator, icon = false) {
     if (icon) expect(box?.width, "icon width must be at least 44px").toBeGreaterThanOrEqual(44);
 }
 
-export async function sellerEvidence(page: Page, info: TestInfo) {
+export async function sellerEvidence(page: Page, info: TestInfo, filename = "seller-residual.png") {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"]).analyze()).violations).toEqual([]);
     await page.evaluate(() => {
         window.scrollTo(0, 0);
         document.querySelectorAll('[role="dialog"], [role="alertdialog"]').forEach(node => { node.scrollTop = 0; });
     });
-    await page.screenshot({ path: info.outputPath("seller-residual.png"), fullPage: true });
+    await page.screenshot({ path: info.outputPath(filename), fullPage: true });
 }

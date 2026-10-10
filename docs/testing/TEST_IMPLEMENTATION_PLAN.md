@@ -1220,3 +1220,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-10): Step 7 配送 — DS-PAGE-064 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
 
 - ✅ Completed (2026-10-10): Step 8 店舗設定 — 操作と保存状態 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): 販売者優先8画面の最終統合回帰（Jest3095/3098、補助ブラウザー256/256、Refactor10/10、tsc/lint/check:playwright、coverage dashboard）。認証後8実ルートは[QA](QA_HANDOFF.md#ds-seller-eight-browser)で別途保留。

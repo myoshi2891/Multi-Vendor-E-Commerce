@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-10） | **3094 passed / 3097 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 PR #199 `AccountView` RTL +2 後の全体Jest実測（coverageなし、coverage率はP2残存6画面時の実測を維持）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（P2残存6画面時の実測・Jest 3077/3080時点。key重複修正後は未再計測） | Statements87.84%（10745/12232）／Branches78.05%（6578/8427）／Functions84.12%（2098/2494）／Lines88.34%（9780/11070）。 |
-| テストファイル総数（dashboard） | **395ファイル**／lcov **400エントリ**／マトリクス18/80（23%）。2026-10-09再生成実測。 |
-| Jest スイート総数（unit/component） | **319スイート**（318 passed／1 skipped、2026-10-09実測）。 |
-| テスト総数 | **3094 unit/component passed**（3097 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestテスト総数（2026-10-10） | **3095 passed / 3098 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 販売者優先8画面の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-10実測） | Statements87.91%（10837/12327）／Branches78.08%（6651/8518）／Functions84.11%（2107/2505）／Lines88.41%（9871/11164）。 |
+| テストファイル総数（dashboard） | **396ファイル**／lcov **403エントリ**／マトリクス18/80（23%）。2026-10-10再生成実測。 |
+| Jest スイート総数（unit/component） | **319スイート**（318 passed／1 skipped、2026-10-10実測）。 |
+| テスト総数 | **3095 unit/component passed**（3098 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **400**（2026-10-09全体coverage/dashboard実測）。 |
+| カバー済みセル | **18/80（23%）**（2026-10-10 dashboard実測、セル状態変化なし）。 |
+| lcov エントリ数 | **403**（2026-10-10全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0件**（2026-10-09 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -99,6 +99,8 @@
 ---
 
 ## 3. Next Actions (カバレッジ観点の戦略台帳)
+
+**販売者優先8画面残存移行（2026-10-10、実装・補助検証済み）**: 寸法・意味色・Portal・未読識別の受け入れを追加。分類の列は増えず、生成matrixの全80セル状態は変更前と同一。実認証後の受け入れをfixture成功と区別する。[QA解除条件](QA_HANDOFF.md#ds-seller-eight-browser)。
 
 **DS-SIX（実装完了・認証後受け入れ保留）**: 販売者6画面は補助fixture37ケースと既存seven回帰42ケースが成功。専用test DB/Clerk環境で実ルート・SDK・保存後遷移を確認する。分類の列は増えていないためマトリクス18/80セルは不変。新規テストを実行した事実と、認証後検証の保留を別に記録する。[QA解除条件](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)。
 
@@ -589,13 +591,13 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 | 指標 | 過去の値 |
 |---|---|
 | Jestテスト総数（2026-10-04） | **2742 passed / 2745 total、3 skipped、127 snapshots passed、257 スイート（failed 0）**。正本は[QA_HANDOFF](./QA_HANDOFF.md)。plan 077 の cookie 回帰 +3 と `bc4be297` の未同期分 +13。以前の記録: 2726 passed / 2729 total（2026-10-04・`extractAttributeParams` 空キー回帰後）。`extractAttributeParams` の空キー回帰で +1（スイート不変）。以前の記録: 2725 passed / 2728 total（2026-10-04・browse の `attr.*` チップ回帰後）、2723 passed / 2726 total（2026-10-04・小数トークン後）。 |
-| 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
+| 全体coverage（2026-10-10実測） | Statements87.91%（10837/12327）／Branches78.08%（6651/8518）／Functions84.11%（2107/2505）／Lines88.41%（9871/11164）。 |
 | テストファイル総数 | **371ファイル**（2026-10-06 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **299スイート**（298 passed／1 skipped、2026-10-06全体実測）。 |
-| テスト総数 | **2903 unit/component passed**（2906 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
-| カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **383**（2026-10-06全体coverage/dashboard実測）。 |
-| 型エラー | **0件**（2026-10-06実測）。 |
+| テスト総数 | **3095 unit/component passed**（3098 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| カバー済みセル | **18/80（23%）**（2026-10-10 dashboard実測、セル状態変化なし）。 |
+| lcov エントリ数 | **403**（2026-10-10全体coverage/dashboard実測）。 |
+| 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
 </details>
 
@@ -666,3 +668,7 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 ### 2026-10-09: P2残存6画面
 
 計画commit `3821597d`〜実装HEAD `042d5518`、最終同期でPortal reduced-motionを修正。全体Jestは3075/3078→3077/3080、317→318 suites（1 skip維持）。Statements87.84%、Branches78.05%、Functions84.12%、Lines88.34%。dashboard392→393 files、400 lcov、18/80 cells。priority29＋settings7＝補助Chromium36件成功。Integration238/18の以前の実測は維持。認証後実ルート/実Clerkは[QA解除条件](./QA_HANDOFF.md#ds-p2-residual-browser)まで保留。
+
+### 2026-10-10 販売者優先8画面の全体再計測
+
+**3095 passed / 3098 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 販売者優先8画面の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 Statements87.91%（10837/12327）／Branches78.08%（6651/8518）／Functions84.11%（2107/2505）／Lines88.41%（9871/11164）。 dashboard **396ファイル**／lcov **403エントリ**／マトリクス18/80（23%）。2026-10-10再生成実測。 ブラウザーの表示・操作テストはlcovへ算入しない。Functionsは84.12%→84.11%で、表示opt-inの分岐増加を含む実測値。

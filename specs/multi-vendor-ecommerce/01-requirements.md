@@ -124,3 +124,10 @@ TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/desig
 ## Post-purchase account presentation (2026-10-10)
 
 Orders, payment history, addresses, reviews, buyer messages and account overview consume the existing scoped purchase/account tokens for surfaces, text, borders, selection, focus and touch targets. Existing primary form actions use gold with dark text; links use readable dark gold. The address portal owns its theme, and buyer messages (including route loading) map message roles to storefront tokens without changing seller themes. Existing filters, paging, monetary units, actions, polling, authorization and destinations remain unchanged. [Plan](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md).
+
+
+## 販売者優先8画面の残存表示（2026-10-10）
+
+店舗概要・商品一覧・在庫・注文・メッセージ・商品登録・配送・店舗設定は既存の販売者themeを使用し、主要操作は高さ44px以上、アイコン操作は幅も44px以上。checkboxはラベルを含む領域で判定する。保存成功・支払状態・属性重複警告は意味色と文字を併用する。メッセージ未読は色だけでなく表示テキストとaccessible descriptionで識別する。
+
+[計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。

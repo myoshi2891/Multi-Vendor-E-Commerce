@@ -825,3 +825,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 7 配送 — DS-PAGE-064: 実装・補助検証・仕様同期。
 
 - [x] Step 8 店舗設定 — 操作と保存状態: 実装・補助検証・仕様同期。
+
+- [x] 販売者8画面の最終回帰・仕様/QA/統計同期。補助ブラウザー256/256、認証後8実ルートは[QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser)の条件待ち。

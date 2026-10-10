@@ -294,7 +294,6 @@
         padding: 2rem;
     }
     .navToggle {
-    min-height: var(--seller-touch);
         display: none;
     }
 }

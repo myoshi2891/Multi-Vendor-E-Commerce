@@ -57,5 +57,7 @@ TEST_IMPLEMENTATION_PLAN/QA_HANDOFFを更新、coverage変化はCOVERAGE_REPORT�
 - [x] Step 6 商品登録。
 - [x] Step 7 配送。
 - [x] Step 8 店舗設定。
-- [ ] 最終回帰・仕様/QA/統計同期。
+- [x] 最終回帰・仕様/QA/統計同期。
 - [ ] 認証後8実ルート/実SDK受け入れ。
+
+最終実測: Jest3095/3098（3 skipped）、ブラウザー256/256＋最終Refactor10/10。認証後保留の解除条件は[QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser)。

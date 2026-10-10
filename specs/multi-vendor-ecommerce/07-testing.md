@@ -1336,3 +1336,10 @@ Refactor後の属性関連+P4 RTL66/66、purchase53/53、p4全56/56、公開実3
 ## 購入後P2 6画面の表示検証（2026-10-10）
 
 既存design configのpostpurchase suite（3130）はpriority serverを再利用し、本番部品をaction/Clerk adapters付きで描画する。25/25成功（3幅・axe AA・focus・長文・空/失敗/再試行/処理中・住所保存と既定・message draft保持）。先行Redは表示トークン追従と概要再読込の寸法、追加のmessages route loading。既存機能は回帰確認。priority29/29、seven settings/messages13/13、commerce24/24。全体coverage/Integration/E2Eの以前の実測は維持する。[保存計画](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。認証後実ルートは既存顧客storageState不在で保留。
+
+
+## 販売者優先8画面の残存表示（2026-10-10）
+
+既存seven/six specに表示寸法・computed style・focus・overflow・操作と保存状態の先行Redを追加する。環境起動失敗や既存回帰をRed実績に含めない。既存config/serverを再利用し、specはtests/browserに置く。管理者p3/p4と購入後postpurchaseも共有caller回帰を確認する。全体Jest/coverage統計はQA_HANDOFFへ実測後同期する。認証後8実ルートと実画像/編集SDKは検証用SELLER状態・専用DBで別途受け入れる。
+
+[計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。
