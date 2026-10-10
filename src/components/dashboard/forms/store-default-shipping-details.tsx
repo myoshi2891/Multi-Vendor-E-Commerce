@@ -55,6 +55,7 @@ const valuesFor = (
     returnPolicy: data?.returnPolicy ?? "",
 });
 export default function StoreDefaultShippingDetails({
+    design,
     data,
     storeUrl,
     updateDefaultsAction,
@@ -75,7 +76,13 @@ export default function StoreDefaultShippingDetails({
         if (data) form.reset(valuesFor(data));
     }, [data, form]);
     return (
-        <Card className={styles.editor}>
+        <Card
+            className={
+                design === "seller"
+                    ? `${styles.editor} ${styles.controls}`
+                    : styles.editor
+            }
+        >
             <CardHeader>
                 <CardTitle role="heading" aria-level={2}>
                     Default shipping details
@@ -124,7 +131,16 @@ export default function StoreDefaultShippingDetails({
                                 again.
                             </p>
                         ) : (
-                            <p role="status" aria-live="polite">
+                            <p
+                                role="status"
+                                aria-live="polite"
+                                className={
+                                    design === "seller" &&
+                                    feedback.state === "success"
+                                        ? styles.success
+                                        : undefined
+                                }
+                            >
                                 {feedback.pending
                                     ? "Saving shipping details…"
                                     : feedback.state === "success"

@@ -191,7 +191,7 @@ function CellActions({
                 <Button
                     ref={trigger}
                     variant="ghost"
-                    className="size-8 p-0"
+                    className={`${styles.iconControl} p-0`}
                     aria-label={`Actions for ${rowData.countryName}`}
                 >
                     <MoreHorizontal className="size-4" />
@@ -199,7 +199,7 @@ function CellActions({
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
-                className={styles.theme}
+                className={`${styles.theme} ${styles.controls}`}
                 onCloseAutoFocus={(event) => {
                     if (openingDialog.current) {
                         event.preventDefault();

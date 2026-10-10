@@ -676,3 +676,7 @@ messages.sellerへmessage-touch/message-focusを接続。useIdで未読説明ID�
 ### Step 6 商品登録 — DS-PAGE-061
 
 ProductDetails seller editorへcontrols、警告へwarning、成功時のみsuccessを適用。AttributeFieldsに任意design propを追加し属性Select Portalに渡す。ClickToAddのiconControlとseller専用keyword button。既定scope/payload/validationを維持。
+
+### Step 7 配送 — DS-PAGE-064
+
+配送2フォームのdesign propをcontrols/successへのopt-inに使用。国別Actions/iconControlとPortal/controls。既存save hook/編集pending dismissal lock/Escape focus復帰を維持する。

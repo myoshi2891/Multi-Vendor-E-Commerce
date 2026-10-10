@@ -567,3 +567,28 @@ test("residual product keyword keyboard removal preserves sibling values", async
     expect(saved.sizes[0].price).toBe(12.5);
     await sellerEvidence(page, info);
 });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual shipping ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=shipping");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const defaults = page.getByRole("form", { name: "Default shipping details" });
+            await touchControl(defaults.getByRole("textbox", { name: "Shipping service", exact: true }));
+            for (const field of await defaults.getByRole("spinbutton").all()) await touchControl(field);
+            await defaults.getByRole("button", { name: "Save changes" }).click();
+            await expect(defaults.getByRole("status")).toHaveText("Shipping details saved.");
+            await expect(defaults.getByRole("status")).toHaveCSS("color", theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)");
+            const actions = page.getByRole("button", { name: "Actions for Japan" });
+            await touchControl(actions, true);
+            await actions.click();
+            await touchControl(page.getByRole("menuitem", { name: "Edit details" }));
+            await page.getByRole("menuitem", { name: "Edit details" }).click();
+            const dialog = page.getByRole("dialog", { name: "Edit shipping for Japan" });
+            await touchControl(dialog.getByRole("button", { name: "Close", exact: true }), true);
+            await expect(dialog.getByRole("spinbutton", { name: "Shipping fee per item", exact: true })).toHaveValue("12.5");
+            await sellerEvidence(page, info);
+            await page.keyboard.press("Escape");
+            await expect(actions).toBeFocused();
+        });
