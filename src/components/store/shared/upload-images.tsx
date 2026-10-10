@@ -1,17 +1,17 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { Plus, Trash } from 'lucide-react'
-import { CldUploadWidget } from 'next-cloudinary'
-import Image from 'next/image'
-import { FC, useRef, useSyncExternalStore } from 'react'
+import { Button } from "@/components/ui/button";
+import { Plus, Trash } from "lucide-react";
+import { CldUploadWidget } from "next-cloudinary";
+import Image from "next/image";
+import { FC, useRef, useSyncExternalStore } from "react";
 
 interface ImageUploadProps {
-    disabled?: boolean
-    onChange: (value: string) => void
-    onRemove: (value: string) => void
-    value: string[]
-    maxImages: number
+    disabled?: boolean;
+    onChange: (value: string) => void;
+    onRemove: (value: string) => void;
+    value: string[];
+    maxImages: number;
 }
 
 const ImageUploadStore: FC<ImageUploadProps> = ({
@@ -21,23 +21,23 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
     value,
     maxImages,
 }) => {
-    const btnRef = useRef<HTMLButtonElement | null>(null)
+    const btnRef = useRef<HTMLButtonElement | null>(null);
     const isMounted = useSyncExternalStore(
         () => () => {},
         () => true,
         () => false
-    )
+    );
 
-    if (!isMounted) return null
+    if (!isMounted) return null;
 
     // Cloudinary のコールバック結果は unknown として受け、secure_url を型ガードで安全に取り出す
     const onUpload = (result: unknown) => {
-        if (typeof result !== 'object' || result === null) return
-        const info = (result as { info?: unknown }).info
-        if (typeof info !== 'object' || info === null) return
-        const secureUrl = (info as { secure_url?: unknown }).secure_url
-        if (typeof secureUrl === 'string') onChange(secureUrl)
-    }
+        if (typeof result !== "object" || result === null) return;
+        const info = (result as { info?: unknown }).info;
+        if (typeof info !== "object" || info === null) return;
+        const secureUrl = (info as { secure_url?: unknown }).secure_url;
+        if (typeof secureUrl === "string") onChange(secureUrl);
+    };
 
     return (
         <div>
@@ -84,9 +84,9 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
                 {({ open, isLoading }) => {
                     // SDK 読込前（isLoading）は内部ウィジェットが未生成で open() が例外になる
                     const onClick = () => {
-                        if (isLoading) return
-                        open()
-                    }
+                        if (isLoading) return;
+                        open();
+                    };
 
                     return (
                         <>
@@ -98,11 +98,11 @@ const ImageUploadStore: FC<ImageUploadProps> = ({
                                 className="hidden"
                             ></button>
                         </>
-                    )
+                    );
                 }}
             </CldUploadWidget>
         </div>
-    )
-}
+    );
+};
 
-export default ImageUploadStore
+export default ImageUploadStore;

@@ -61,7 +61,7 @@ describe("ClickToAddInputs", () => {
                     { size: "M", quantity: 3 },
                     { size: "L", quantity: 5 },
                 ]}
-            />,
+            />
         );
 
         // Act: 先頭行の MinusButton を押す
