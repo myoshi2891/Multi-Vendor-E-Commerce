@@ -136,3 +136,40 @@ it("logs a failed inventory lookup with structured context", async () => {
     });
     spy.mockRestore();
 });
+// しきい値は列定義の依存に含めない。含めると保存後の refresh で列定義が作り直され、
+// 在庫数エディターが remount されて直前の成功表示が消える（実ルートで再現）
+it("keeps the stock editor mounted when the refreshed threshold changes", () => {
+    // Arrange
+    const row = {
+        sizeId: "s1",
+        productName: "Shoe",
+        variantName: "Red",
+        size: "M",
+        quantity: 3,
+        price: 10,
+    } as unknown as StoreInventoryRow;
+    const props = () => ({
+        rows: [row],
+        storeUrl: "example",
+        updateStockAction: jest.fn(),
+        updateThresholdAction: jest.fn(),
+    });
+    const { rerender } = render(
+        <ModalProvider>
+            <SellerInventory {...props()} threshold={5} />
+        </ModalProvider>
+    );
+    const before = screen.getByRole("group", { name: "在庫数の編集" });
+
+    // Act: しきい値保存後の router.refresh() 相当
+    rerender(
+        <ModalProvider>
+            <SellerInventory {...props()} threshold={2} />
+        </ModalProvider>
+    );
+
+    // Assert: 同一要素のまま、ステータスは新しいしきい値で再判定される
+    expect(screen.getByRole("group", { name: "在庫数の編集" })).toBe(before);
+    expect(before).toBeInTheDocument();
+    expect(screen.getByRole("table")).toHaveTextContent("在庫あり");
+});

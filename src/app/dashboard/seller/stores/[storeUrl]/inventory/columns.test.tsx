@@ -2,8 +2,10 @@
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import type { CellContext } from "@tanstack/react-table";
-import { getInventoryColumns } from "@/app/dashboard/seller/stores/[storeUrl]/inventory/columns";
-import type { StoreInventoryRow } from "@/lib/types";
+import {
+    getInventoryColumns,
+    type InventoryTableRow,
+} from "@/app/dashboard/seller/stores/[storeUrl]/inventory/columns";
 
 // 子コンポーネント（client・query 依存）はスタブ化し、列定義の描画ロジックに集中する
 jest.mock("@/components/dashboard/seller/inventory-quantity-cell", () => ({
@@ -34,7 +36,7 @@ jest.mock("@/components/dashboard/seller/stock-status-badge", () => ({
 const THRESHOLD = 5;
 const STORE_URL = "my-store";
 
-const sampleRow: StoreInventoryRow = {
+const sampleRow: InventoryTableRow = {
     sizeId: "size-1",
     productName: "T-Shirt",
     variantName: "Red",
@@ -44,15 +46,16 @@ const sampleRow: StoreInventoryRow = {
     sku: "SKU-1",
     productSlug: "t-shirt",
     variantId: "variant-1",
+    lowStockThreshold: THRESHOLD,
 };
 
 /** 指定列の cell レンダラを最小 CellContext で描画する */
-function renderCell(index: number, row: StoreInventoryRow) {
-    const columns = getInventoryColumns(THRESHOLD, STORE_URL, jest.fn());
+function renderCell(index: number, row: InventoryTableRow) {
+    const columns = getInventoryColumns(STORE_URL, jest.fn());
     const cell = columns[index].cell;
     if (typeof cell !== "function") throw new Error("cell is not a function");
     const ctx = { row: { original: row } } as CellContext<
-        StoreInventoryRow,
+        InventoryTableRow,
         unknown
     >;
     return render(<>{cell(ctx)}</>);
@@ -60,7 +63,7 @@ function renderCell(index: number, row: StoreInventoryRow) {
 
 describe("seller/inventory columns", () => {
     it("declares the expected accessor keys in order", () => {
-        const columns = getInventoryColumns(THRESHOLD, STORE_URL, jest.fn());
+        const columns = getInventoryColumns(STORE_URL, jest.fn());
         const keys = columns.map((c) =>
             "accessorKey" in c ? c.accessorKey : c.id
         );
