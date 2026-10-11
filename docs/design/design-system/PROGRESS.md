@@ -1328,3 +1328,8 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 - Red: keyboard modality補正後、カテゴリリンクのfocus contrast 1.67:1でbrowser3/3失敗。RTLのEscape後focus復帰不足で1件失敗。初回RTL matcher名の誤りとpointer modalityの失敗はRedから除外。
 - Green/Refactor: lightカテゴリ/商品面のfocusを濃金へ、Escapeでtrigger復帰、gallery切替/closeを44pxへ。既存Action/購入/在庫の契約は不変。helperはTabでkeyboard modalityへ切替。
 - 最終: 関連Chrome22/22（先行2画面/foundation含む）、Jest39/39、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。実ルート/SDKの受け入れは最終記録へ。
+
+### Step 4 カート — DS-PAGE-007
+
+- Red: breadcrumb高さ16.5pxで3/3失敗。Green/Refactor: 導線44px、残存固定色をdanger-surface/image/divider/muted tokensへ接続。初回GreenのCheckout disabled期待は既存仕様にないため修正し、数量増加disabledを回帰確認（この失敗はRedに算入しない）。
+- 最終Chrome新規3/3＋既存8/8（3幅・在庫切れ/空/数量/選択/保存失敗/retry/同期失敗・axe AA）、Jest28/28、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。既存の検証済み履歴は保持。

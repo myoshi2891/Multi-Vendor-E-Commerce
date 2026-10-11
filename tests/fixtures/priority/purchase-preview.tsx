@@ -50,7 +50,7 @@ if (screen === "cart")
                           variantImage: "/assets/images/no_image.png",
                           price: 10,
                           quantity: 1,
-                          stock: 3,
+                          stock: new URLSearchParams(location.search).has("unavailable") ? 0 : 3,
                       }),
                   ]
         );
