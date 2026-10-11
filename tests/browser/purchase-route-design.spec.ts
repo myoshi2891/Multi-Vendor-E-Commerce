@@ -492,3 +492,46 @@ test("P2 notifications existing customer route at three widths", async ({browser
     });
 });
 
+test("P2 settings real Clerk appearance hash and inline editor without saving", async ({browser}, info) => {
+    await withCustomer(browser, async page => {
+        for (const width of WIDTHS) {
+            await page.setViewportSize({width, height:1000});
+            await page.goto("/profile/settings");
+            const region = page.getByRole("region", {name:"Account settings", exact:true});
+            await expect(region.getByRole("heading", {name:"Account settings", exact:true})).toBeVisible();
+            const update = region.getByRole("button", {name:"Update profile", exact:true});
+            await expect(update).toBeVisible();
+            await expectReadableFocus(update);
+            const box = await update.boundingBox();
+            expect(box?.width).toBeGreaterThanOrEqual(44);
+            expect(box?.height).toBeGreaterThanOrEqual(44);
+            expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+            expect((await new AxeBuilder({page}).include("main").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+            await page.screenshot({path:info.outputPath(`p2-settings-route-${width}.png`),fullPage:true});
+            await page.keyboard.press("Enter");
+            await expect(region.getByRole("textbox", {name:"First name", exact:true})).toBeVisible();
+            await expect(region.getByRole("button", {name:"Save", exact:true})).toBeDisabled();
+            expect((await new AxeBuilder({page}).include("main").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+            await page.screenshot({path:info.outputPath(`p2-settings-editor-route-${width}.png`),fullPage:true});
+            const cancel = region.getByRole("button", {name:"Cancel", exact:true});
+            await cancel.focus();
+            await page.keyboard.press("Enter");
+            await expect(update).toBeVisible();
+            for (const button of await region.locator('button:not([aria-hidden="true"])').all()) {
+                const target = await button.boundingBox();
+                if (!target) continue;
+                expect(target.width, await button.innerText()).toBeGreaterThanOrEqual(44);
+                expect(target.height, await button.innerText()).toBeGreaterThanOrEqual(44);
+            }
+            const security = page.getByRole("button", {name:"Security", exact:true});
+            if (!await security.isVisible()) {
+                await region.locator(".cl-navbarMobileMenuButton").click({timeout:10000});
+                await expect(security).toBeVisible();
+                await page.screenshot({path:info.outputPath(`p2-settings-menu-route-${width}.png`),fullPage:true});
+            }
+            await security.click({timeout:10000});
+            await expect(page).toHaveURL(/#.*security/);
+            await expect(region.getByText("Password", {exact:true})).toBeVisible();
+        }
+    });
+});

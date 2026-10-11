@@ -84,3 +84,9 @@
     min-height: var(--purchase-touch);
     max-width: 100%;
 }
+
+/* Clerk icon-only actions need a full touch target as well as the input height. */
+.root button,
+.portal button {
+    min-width: var(--purchase-touch);
+}
