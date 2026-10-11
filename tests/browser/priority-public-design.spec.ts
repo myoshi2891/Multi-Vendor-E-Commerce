@@ -159,3 +159,48 @@ for (const path of ["/profile/following/1", "/profile/history/1"]) {
         );
     });
 }
+
+import { expectSupportTokens, supportAccessible, supportTargets } from "./support-eight-assertions";
+for (const width of [1440, 768, 390]) {
+    for (const path of ["/track-order", "/customer-service", "/returns-exchange", "/dispute", "/report-problem", "/offers"]) {
+        test(`P2 support actual route ${path} ${width}`, async ({page}, info) => {
+            await page.setViewportSize({width,height:1000});
+            await page.goto(path);
+            await expect(page.getByRole("main").getByRole("heading", {level:1})).toBeVisible();
+            if (path === "/offers") await expect(page.getByText("Loading offers…")).toHaveCount(0);
+            await expectSupportTokens(page, "");
+            await supportTargets(page);
+            const home=page.getByRole("main").getByRole("navigation", {name:"Breadcrumb"}).getByRole("link", {name:"Home"});
+            await home.focus();
+            await expect(home).toHaveCSS("outline-style","solid");
+            await supportAccessible(page);
+            const submit=page.getByRole("main").locator('form button[type="submit"]');
+            if (await submit.count()) {
+                await submit.click();
+                await expect(page.getByText(path === "/track-order" ? "注文番号を入力してください。" : "お名前を入力してください。")).toBeVisible();
+                await supportAccessible(page);
+            }
+            await page.screenshot({path:info.outputPath(`p2-support-route-${path.slice(1)}-${width}.png`),fullPage:true});
+        });
+    }
+}
+
+// Actual lookup uses a previously prepared order; no test data is inserted.
+import { readFileSync } from "node:fs";
+const trackingDataPath = process.env.DESIGN_PURCHASE_ROUTE;
+const trackingData: {customerEmail: string; trackingOrderId?: string} | null = trackingDataPath ? JSON.parse(readFileSync(trackingDataPath, "utf8")) : null;
+test("P2 tracking existing order read-only lookup at three widths", async ({page}, info) => {
+    test.skip(!trackingData?.trackingOrderId, "Existing dedicated test order required; do not create data for verification.");
+    for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/track-order");
+        await page.getByLabel("注文番号", {exact:true}).fill(trackingData!.trackingOrderId!);
+        await page.getByLabel("メールアドレス").fill(trackingData!.customerEmail);
+        await page.getByRole("button", {name:"追跡する"}).click();
+        const result=page.getByRole("region", {name:"注文追跡の結果"});
+        await expect(result).toBeVisible();
+        expect(await result.locator('[data-appearance="store"]').count()).toBeGreaterThanOrEqual(2);
+        await supportAccessible(page);
+        await page.screenshot({path:info.outputPath(`p2-tracking-existing-${width}.png`),fullPage:true});
+    }
+});

@@ -124,7 +124,7 @@ const DESIGN_SUITES = {
         testMatch: "priority-public-design.spec.ts",
         port: 3109,
         kind: "route",
-        command: "bun run dev -- --port 3109",
+        command: "NEXT_DEV_DIST_DIR=.next/priority-public bun run dev -- --webpack --port 3109",
     },
     priority: {
         testMatch: "priority-design.spec.ts",

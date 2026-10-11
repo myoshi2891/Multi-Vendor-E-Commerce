@@ -32,7 +32,7 @@ for (const width of [1440, 390, 768]) {
         await contact.hover();
         await expect(contact).toHaveCSS(
             "background-color",
-            "rgb(232, 226, 214)"
+            "rgb(236, 231, 218)"
         );
         expect(
             await page.evaluate(

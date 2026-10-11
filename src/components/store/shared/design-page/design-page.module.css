@@ -10,7 +10,7 @@
 }
 .page a:focus-visible,
 .page button:focus-visible {
-    outline: 2px solid var(--purchase-link, #75613b);
+    outline: 2px solid var(--purchase-focus, #75613b);
     outline-offset: 4px;
 }
 .hero {
