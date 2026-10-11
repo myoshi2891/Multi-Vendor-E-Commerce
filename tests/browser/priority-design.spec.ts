@@ -392,3 +392,106 @@ for (const width of [1440, 768, 390]) {
         await accessible(page);
     });
 }
+
+// P2 support eight: actual page bodies and mock actions, no external submissions.
+import { expectSupportTokens, supportAccessible, supportTargets } from "./support-eight-assertions";
+
+test("support-eight foundation opt-in inherits tokens and leaves default caller unchanged", async ({page}) => {
+    await page.goto("/?scenario=support-frame");
+    await expectSupportTokens(page, "section");
+    await supportTargets(page);
+    await supportAccessible(page);
+    await page.goto("/?scenario=support-frame-default");
+    await expect(page.getByRole("main")).toHaveCSS("background-color", "rgb(243, 240, 232)");
+    await expect(page.getByRole("main").locator("section")).toHaveCSS("background-color", "rgb(250, 248, 242)");
+});
+
+for (const width of [1440, 768, 390]) {
+    for (const [scenario, surface] of [
+        ["support-track-retry", "section[aria-labelledby='tracking-form-title']"],
+        ["support-hub", ""],
+        ["support-returns-retry", "section[aria-labelledby='returns-form-title']"],
+        ["support-dispute-retry", "section"],
+        ["support-problem-retry", "section"],
+        ["support-offers", "a[href^='/browse?offer=']"],
+    ]) {
+        test(`support-eight ${scenario} ${width}: tokens, keyboard and states`, async ({page}, info) => {
+            await page.setViewportSize({width, height:1000});
+            await page.goto(`/?scenario=${scenario}`);
+            await expect(page.getByRole("heading", {level:1})).toHaveCSS("font-family", /Georgia/);
+            await expectSupportTokens(page, surface);
+            await supportTargets(page);
+            const home = page.getByRole("navigation", {name:"Breadcrumb"}).getByRole("link", {name:"Home"});
+            await home.focus();
+            await expectReadableFocus(home);
+            await supportAccessible(page);
+            if (scenario === "support-hub") {
+                const menu = page.getByRole("navigation", {name:"サポートメニュー"});
+                await expect(menu.getByRole("link")).toHaveCount(5);
+                const contact = menu.getByRole("link").first();
+                await contact.hover();
+                await expect(contact).toHaveCSS("background-color", "rgb(236, 231, 218)");
+                await contact.focus();
+                await expectReadableFocus(contact);
+            } else if (scenario.startsWith("support-track")) {
+                await page.getByLabel("注文番号", {exact:true}).fill("order-001");
+                await page.getByLabel("メールアドレス").fill("owner@example.com");
+                const submit = page.locator("form button[type=submit]");
+                await submit.focus();
+                await page.keyboard.press("Enter");
+                await expect(submit).toBeDisabled();
+                await expect(page.getByLabel("注文番号", {exact:true})).toBeDisabled();
+                await supportAccessible(page);
+                await expect(page.getByRole("status")).toContainText("注文の照会に失敗しました。");
+                await expect(page.getByLabel("注文番号", {exact:true})).toHaveValue("order-001");
+                await submit.click();
+                const result = page.getByRole("region", {name:"注文追跡の結果"});
+                await expect(result).toBeVisible();
+                await expect(result.locator('[data-appearance="store"]')).toHaveCount(3);
+                await supportAccessible(page);
+                await page.goto("/?scenario=support-track-missing");
+                await page.getByLabel("注文番号", {exact:true}).fill("unknown-order");
+                await page.getByLabel("メールアドレス").fill("owner@example.com");
+                await page.getByRole("button", {name:"追跡する"}).click();
+                await expect(page.getByText("注文が見つかりませんでした。")).toBeVisible();
+            } else if (!scenario.startsWith("support-offers")) {
+                const submit = page.locator("form button[type=submit]");
+                await submit.click();
+                await expect(page.getByText("お名前を入力してください。")).toBeVisible();
+                for (const [name, value] of [["お名前","Test Customer"],["メールアドレス","customer@example.test"],["件名","Test request"],["内容","Test details"]]) await page.getByLabel(name, {exact:true}).fill(value);
+                const order = page.getByLabel("対象の注文番号", {exact:true});
+                if (scenario.startsWith("support-problem")) await expect(order).toHaveCount(0);
+                else {
+                    await order.fill("invalid");
+                    await submit.click();
+                    await expect(page.getByText("有効な注文番号を入力してください。")).toBeVisible();
+                    await order.fill("123e4567-e89b-12d3-a456-426614174000");
+                }
+                await submit.focus();
+                await page.keyboard.press("Enter");
+                await expect(page.getByRole("button", {name:"送信中…"})).toBeDisabled();
+                await expect(page.getByLabel("内容", {exact:true})).toBeDisabled();
+                await supportAccessible(page);
+                await expect(page.getByRole("alert")).toBeVisible();
+                await expect(page.getByLabel("内容", {exact:true})).toHaveValue("Test details");
+                await submit.click();
+                await expect(page.getByRole("status")).toContainText("受け付けました。");
+                await expect(page.getByRole("status")).toHaveCSS("background-color", "rgb(228, 238, 229)");
+            } else {
+                const offer = page.getByRole("link", {name:/beautiful offer/});
+                await expect(offer).toHaveAttribute("href", "/browse?offer=spring");
+                await expect(offer).toContainText("2 商品");
+                for (const state of ["empty", "error", "loading"]) {
+                    await page.goto(`/?scenario=support-offers-${state}`);
+                    await expect(page.getByRole("heading", {level:1})).toBeVisible();
+                    await expectSupportTokens(page, state === "loading" ? "" : "section");
+                    if (state === "loading") await expect(page.getByRole("status")).toHaveText("Loading offers…");
+                    else await expect(page.getByRole(state === "error" ? "alert" : "region")).toBeVisible();
+                    await supportAccessible(page);
+                }
+            }
+            await supportAccessible(page);
+            await page.screenshot({path:info.outputPath(`support-eight-${scenario}-${width}.png`),fullPage:true});
+        });
+    }
+}

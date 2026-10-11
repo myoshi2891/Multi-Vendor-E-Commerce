@@ -8,14 +8,19 @@ export default function DesignPage({
     eyebrow,
     description,
     children,
+    appearance = "default",
 }: {
     title: string;
     eyebrow: string;
     description: string;
     children: ReactNode;
+    appearance?: "default" | "purchase";
 }) {
     return (
-        <main className={styles.page}>
+        <main
+            className={`${styles.page} ${appearance === "purchase" ? styles.purchase : ""}`}
+            data-appearance={appearance === "purchase" ? appearance : undefined}
+        >
             <header className={styles.hero}>
                 <div className={styles.inner}>
                     <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
