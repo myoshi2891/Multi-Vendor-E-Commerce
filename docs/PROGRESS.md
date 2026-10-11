@@ -33,7 +33,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3139 passed / 3142 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3140 passed / 3143 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 保留分の実ルート受け入れ後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5697,4 +5697,28 @@ design config の seller-eight-route に本番ビルド起動の切替を追加�
 |------|--------|--------|
 | テスト総数 | 3132 passed / 3135 total | **3136 passed / 3139 total** |
 | スイート数 | 323（322 passed／1 skipped） | **324（323 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 購入優先8画面 保留分の実ルート受け入れ (2026-10-11)
+
+#### 概要
+
+専用DBと Clerk テスト顧客で、実データ・認証後の受け入れを実施。実データで見つかった wishlist の表示バリアント不具合を修正。Stripe はテストキー期限切れで保留。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/profile.ts`、`profile.test.ts` | `getUserWishlist` が保存したバリアントを返す（+1） | 未コミット |
+| `tests/browser/purchase-public-design.spec.ts` | 店舗詳細・比較（実API）3幅 +3 | 未コミット |
+| `scripts/design/prepare-purchase-route.ts`、`tests/browser/purchase-route-design.spec.ts`、`playwright.design.config.ts` | 認証後実ルート suite `purchase-route` | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3139 passed / 3142 total | **3140 passed / 3143 total** |
+| スイート数 | 324（323 passed／1 skipped） | **324（323 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
