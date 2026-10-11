@@ -131,3 +131,10 @@ Orders, payment history, addresses, reviews, buyer messages and account overview
 店舗概要・商品一覧・在庫・注文・メッセージ・商品登録・配送・店舗設定は既存の販売者themeを使用し、主要操作は高さ44px以上、アイコン操作は幅も44px以上。checkboxはラベルを含む領域で判定する。保存成功・支払状態・属性重複警告は意味色と文字を併用する。メッセージ未読は色だけでなく表示テキストとaccessible descriptionで識別する。
 
 [計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。
+
+
+## 購入優先8画面の表示受け入れ（2026-10-11）
+
+browse/store/product/cart/checkout/order/compare/wishlistの残存表示はscoped purchase themeで面・罫線・意味色・focusを統一する。明るい面のfocusと入力境界は3:1以上、対象breadcrumb/gallery/page操作は44×44px以上。カテゴリEscapeはtriggerへ、比較削除/全消去は残る選択見出しへfocusを戻す。請求書生成失敗は暗い面のdanger色で通知し再操作可能とする。既存検索条件・URL/current・最大比較4件・価格/在庫/送料/認可・注文/決済契約を保持。
+
+[保存計画](../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)／[実装証跡](../../docs/design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)。

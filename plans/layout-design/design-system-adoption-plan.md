@@ -841,5 +841,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 6 DS-PAGE-003 注文詳細。
 - [x] Step 7 DS-PAGE-009 比較。
 - [x] Step 8 DS-PAGE-033 Wishlist。
-- [ ] 最終統合検証・文書同期。
+- [x] 最終統合検証・文書同期。
 - [ ] 既存環境の認証後実ルート/SDK受け入れ。

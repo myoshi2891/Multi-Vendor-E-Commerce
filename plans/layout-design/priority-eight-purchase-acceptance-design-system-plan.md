@@ -51,5 +51,10 @@
 - [x] Step 6 注文詳細。
 - [x] Step 7 比較。
 - [x] Step 8 Wishlist。
-- [ ] 最終統合検証・文書同期。
+- [x] 最終統合検証・文書同期。
 - [ ] 既存環境の実ルート受け入れ（未検証は理由付き保留）。
+
+
+## 最終結果
+
+8ステップ実装/回帰・仕様同期済み。全体Jest3139/3142（3skip）・324suites・127snapshots、補助Chrome131/131、公開実11成功/6skip。実ルート受け入れの未確認範囲と解除条件は[QA](../../docs/testing/QA_HANDOFF.md#ds-purchase-eight-browser)。既存環境のみの範囲で検証し、保留をfixture成功へ読み替えない。

@@ -1241,3 +1241,6 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 
 - ✅ Completed: 優先8画面 Step 8Wishlist。既存実装の回帰（Red追加なし）、Chrome7/7、関連Jest18/18。最終ページkeyboardとbrowser historyを追加。
+
+
+- ✅ Completed: 優先8画面最終統合。全体Jest3139/3142（3skip）、324suites、127snapshots、補助Chrome131/131、公開Next11成功/6skip、coverage/dashboard同期。認証後/実データ/SDKは[QA](QA_HANDOFF.md#ds-purchase-eight-browser)の条件待ち。

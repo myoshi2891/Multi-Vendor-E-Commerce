@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21（**最終更新**: 2026-10-10）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-10-11）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-11） | **3136 passed / 3139 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 レビュー対応（状態エディターの key・連絡先の重複理由）後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-11実測） | Statements88.19%（10942/12406）／Branches78.42%（6712/8559）／Functions84.49%（2141/2534）／Lines88.73%（9962/11227）。 |
+| Jestテスト総数（2026-10-11） | **3139 passed / 3142 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-11実測） | Statements88.2%（10949/12413）／Branches78.42%（6723/8573）／Functions84.49%（2142/2535）／Lines88.74%（9970/11235）。 |
 | テストファイル総数（dashboard） | **402ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 |
 | Jest スイート総数（unit/component） | **324スイート**（323 passed／1 skipped、2026-10-11実測）。 |
-| テスト総数 | **3136 unit/component passed**（3139 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| テスト総数 | **3139 unit/component passed**（3142 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-11 dashboard実測、セル状態変化なし）。 |
 | lcov エントリ数 | **405**（2026-10-11全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-11 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -679,3 +679,8 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 ### 2026-10-10 販売者優先8画面の全体再計測
 
 **3095 passed / 3098 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 販売者優先8画面の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 Statements87.91%（10837/12327）／Branches78.08%（6651/8518）／Functions84.11%（2107/2505）／Lines88.41%（9871/11164）。 dashboard **396ファイル**／lcov **403エントリ**／マトリクス18/80（23%）。2026-10-10再生成実測。 ブラウザーの表示・操作テストはlcovへ算入しない。Functionsは84.12%→84.11%で、表示opt-inの分岐増加を含む実測値。
+
+
+## 購入優先8画面の最終回帰（2026-10-11）
+
+全体Jest3139/3142、3 skipped、324 suites、127 snapshots。purchase66/commerce30/priority35の131補助ケースと公開Next11/17（6skip）を確認。dashboard402files/405lcov/18 of 80、全80セルの状態不変。[QA正本・未確認範囲](QA_HANDOFF.md#ds-purchase-eight-browser)。

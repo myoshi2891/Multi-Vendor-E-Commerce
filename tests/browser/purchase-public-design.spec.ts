@@ -1,9 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
+import { expectReadableFocus } from "./purchase-assertions";
 
 for (const width of [1440, 768, 390]) {
-    for (const route of ["/", "/browse", "/cart"]) {
+    for (const route of ["/", "/browse", "/cart", "/compare"]) {
         test(`${route} ${width}: public route and shared header`, async ({
             page,
         }, info) => {
@@ -16,6 +17,12 @@ for (const width of [1440, 768, 390]) {
             await page.goto(route);
             await expect(page.getByTestId("store-header")).toBeVisible();
             await expect(page.getByRole("main")).toBeVisible();
+            if (route === "/compare") {
+                await expect(page.getByRole("heading", { name: "Compare products" })).toBeVisible();
+                await expect(page.getByTestId("compare-empty")).toBeVisible();
+                await expectReadableFocus(page.getByRole("link", { name: "Explore the collection" }));
+                expect((await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+            }
             await page.getByLabel("Account menu", { exact: true }).click();
             await expect(
                 page.getByRole("link", { name: "Sign in", exact: true })
@@ -52,6 +59,12 @@ test("checkout guest sign-in preserves its return destination", async ({
             url.searchParams.get("redirect_url") ===
                 new URL("/checkout", url.origin).href
     );
+});
+
+test("wishlist guest sign-in preserves its return destination", async ({ page }) => {
+    await page.goto("/profile/wishlist/1");
+    await expect(page).toHaveURL(url => url.pathname === "/sign-in" &&
+        url.searchParams.get("redirect_url") === new URL("/profile/wishlist/1", url.origin).href);
 });
 
 for (const width of [1440, 768, 390]) {

@@ -15,3 +15,8 @@
 ## 残存部品のtheme境界（2026-10-08）
 
 Cartのpage rootにpurchase-themeをCSS compositionで適用。商品checkboxは既存IDとaria-labelを維持したlabelで囲み、44pxを確保する。業務状態とstore action Propsは不変。[受け入れ](../purchase-residual/requirements.md)。
+
+
+## 優先8画面受け入れ（2026-10-11）
+
+breadcrumbをflex-wrap・縦中央・最小44px導線にする。image/danger-surface/muted/divider/dark-hoverは共有purchase rolesを使用。選択・数量・送料・保存/同期失敗後の保持は既存ロジックを維持。関連Chrome新規3/3＋既存8/8、Jest28/28の証跡は[進捗](../design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)。

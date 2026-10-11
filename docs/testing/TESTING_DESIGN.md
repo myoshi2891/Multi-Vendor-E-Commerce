@@ -33,7 +33,7 @@
 
 > **経緯**: 当初は「単一 `jest.config.js` を維持し、スコープは `--testPathPattern` で分ける」
 > 方針だった。下記「再検討のタイミング」に挙げた **DB リセットが実際に必要になった**ため
-> （testcontainers による実 PostgreSQL・[ADR-004](../architecture/decisions/004-integration-test-infrastructure.md)）、
+> （testcontainers による実 PostgreSQL・[ADR-004](../architecture/decisions/004-integration-test-db-strategy.md)）、
 > Integration のみ専用 config へ分割済み。現行は **2 config 体制**。
 
 | 判断 | 内容 |
@@ -513,3 +513,10 @@ Purchase design fixtures use the existing priority server and production HeaderF
 ## 既存Chromeによるデザイン検証（2026-10-11）
 
 Playwright配布Chromiumが未導入の場合、既存のGoogle Chromeを`DESIGN_BROWSER_CHANNEL=chrome DESIGN_SUITE=<suite> bun run test:design`で利用できる。未指定時のChromiumは不変。config/serverを新設しない。purchase-assertionsのfocus検証は可視outlineと周囲の不透明面のcontrast 3:1を確認する（画像/半透明/gradientの目視も併用）。
+
+
+## 優先8画面の追加受け入れ（2026-10-11）
+
+purchaseはbrowse/store/product/cartのfocus・breadcrumb・galleryと空/在庫切れ、commerceはcheckout入力境界/住所Portalとinvoice失敗・再試行、priorityは比較削除後focusとWishlist最終ページのkeyboard/historyを担当する。purchase-publicは公開Nextルートとguest checkout/wishlistのredirect_urlを確認。既存config/fixtureだけを拡張する。PDF失敗adapterはcommerce内だけに閉じ、実PDF/決済送信は実行しない。
+
+expectReadableFocusは先にTabでkeyboard modalityへ切り替える。contrast helperは周囲の最初の不透明面を探し、outlineとborder-topを測定する。outline-styleのsolidを確認し、不透明な指示色だけを数値判定する。画像/gradient/半透明色の合成はこのhelperの対象外として目視/axeも行う。CSS文字列をなぞるだけのJestは追加せず、カテゴリEscapeと比較削除後focusをRTLで検証する。[QA](QA_HANDOFF.md#ds-purchase-eight-browser)。

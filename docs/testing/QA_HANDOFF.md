@@ -1,6 +1,24 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-11 レビュー対応（最新）
+## 2026-10-11 購入優先8画面の受け入れ（最新）
+
+[計画](../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)に従い、browse・店舗詳細・商品詳細・cart・checkout・注文詳細・compare・wishlistの残存表示と操作を対応。計画→基盤→8ステップ→最終統合の11コミット。先行Redと環境/テスト側の失敗を分け、既存実装が満たすWishlistは回帰追加のみ。仕様と[進捗](../design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)を同期。
+
+- Jest: **3139 passed / 3142 total、3 skipped、324 suites（323 passed／1 skipped）、127 snapshots passed**。`bun run test -- --runInBand --coverage --silent`（lcov/text-summary/json-summary）実測。
+- coverage: Statements **88.2%（10949/12413）**／Branches **78.42%（6723/8573）**／Functions **84.49%（2142/2535）**／Lines **88.74%（9970/11235）**。
+- 補助Chrome: purchase **66/66**、commerce **30/30**、priority **35/35**＝**131/131**。3幅・axe AA（contrast含む）・focus/境界contrast・44px・長文/空/在庫切れ/pending/error/retry/success・Portal・URL/history・reduced-motionを回帰確認。各ステップ390px画像目視。
+- 実Next purchase-public: **11 passed / 6 skipped**。home/cart/compareの3幅とguest checkout/wishlistのsign-in・redirect_urlを確認。compareは実mainの空状態/keyboard focus/axeも確認。header以外の全共有領域、通常比較データや認証後表示の合格ではない。
+- dashboard再生成: **402 files／405 lcov／18 of 80 cells（23%）**。80セルの状態は変更前と一致。Integration238/18 suitesと全E2Eの以前の実測は維持（今回未実行）。型/lint/check:playwright/diff/文書リンクの最終結果は[進捗](../design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)に記録。
+
+### DS-PURCHASE-EIGHT-BROWSER
+
+- 実装・補助検証・仕様同期は完了。今回の認証後/実データ/外部SDK受け入れは一部保留。既存環境だけを使い、DB初期化・顧客作成・実購入/決済送信・新ブラウザー導入は実行していない。
+- `E2E_DATABASE_URL`と`DESIGN_AUDIT_INVENTORY`が未設定のため、browseのdedicated DB受け入れ3件とbrowse/product実inventory監査3件はskip。既存Dockerは開発app/DBのみ。過去のinventoryを現行の検証用データとして再利用しない。
+- 保存済み顧客storageStateがなく、checkout/order/wishlistの認証後データ表示と注文・住所・クーポン操作は未確認。Stripe/PayPal/外部共有/PDFの実動作もfixtureでは受け入れない。既存の顧客作成helperは使用していない。
+- 解除条件: 既存のschema-current専用DBと最新の読取inventory、既存顧客の検証用storageState・対象注文/保存商品を用意し、browse/store/productと認証後3実ルートを3幅で再検証する。比較の通常データも実APIで確認する。外部SDKは検証用設定と送信不要の表示/失敗手順を揃え、必要な送信は別途明示承認する。
+- 本体59/仮実装1/転送7＝67画面・部品245のIDと既存判定は維持。DS-BASE-001や共有部品の全callerを完了扱いにしない。API/DB/認可/金額/決済遷移の契約変更なし。
+
+## 2026-10-11 レビュー対応（履歴）
 
 レビュー指摘4件を現行コードで確認し、すべて有効だったため修正。作業ツリーのみ（コミットなし）。
 
