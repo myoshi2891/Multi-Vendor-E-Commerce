@@ -861,7 +861,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] Step 5 DS-PAGE-035 問題報告。
 
-- [ ] Step 6 DS-PAGE-016 オファー。
+- [x] Step 6 DS-PAGE-016 オファー。
 
 - [ ] Step 7 DS-PAGE-067 通知。
 
