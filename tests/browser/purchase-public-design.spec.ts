@@ -134,3 +134,98 @@ for (const width of [1440, 768, 390]) {
         });
     });
 }
+
+// 店舗詳細と比較の通常データは実 DB の inventory（DS-PAGE-037）から辿る。比較は localStorage の選択を
+// 実 getProductsByIds で解決するため、fixture では確認できない「実 API の商品を並べた状態」を受け入れる。
+for (const width of [1440, 768, 390]) {
+    test(`audit store ${width}: real store detail and compare with API data`, async ({
+        page,
+    }, info) => {
+        test.setTimeout(120000);
+        const inventoryPath = process.env.DESIGN_AUDIT_INVENTORY;
+        test.skip(!inventoryPath, "Read-only DB inventory is required.");
+        const inventory: Array<{ id: string; actualPath: string }> = JSON.parse(
+            readFileSync(inventoryPath!, "utf8")
+        );
+        const storeRow = inventory.find((row) => row.id === "DS-PAGE-037");
+        expect(storeRow, "inventory row DS-PAGE-037 is missing").toBeDefined();
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto(storeRow!.actualPath);
+        await expect(page.getByTestId("store-header")).toBeVisible();
+        await expect(page.getByRole("main")).toBeVisible();
+        const addButtons = page.getByRole("button", {
+            name: "Add to compare",
+            exact: true,
+        });
+        await expect(addButtons.first()).toBeVisible();
+        expect(await addButtons.count()).toBeGreaterThanOrEqual(2);
+        for (const button of (await addButtons.all()).slice(0, 2)) {
+            const box = await button.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+        }
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .include("main")
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        await page.screenshot({
+            path: info.outputPath(`audit-real-store-${width}.png`),
+            fullPage: true,
+        });
+
+        // 押すたびに該当ボタンが Remove へ変わり first() が次の商品を指す
+        for (let i = 0; i < 2; i++) {
+            await addButtons.first().focus();
+            await addButtons.first().press("Enter");
+        }
+        await expect(
+            page.getByRole("button", { name: "Remove from compare", exact: true })
+        ).toHaveCount(2);
+
+        await page.goto("/compare");
+        const selection = page.getByRole("region", { name: "Selected products" });
+        await expect(selection.getByRole("article")).toHaveCount(2);
+        await expect(page.getByText("2 of 4 selected")).toBeVisible();
+        for (const link of await selection
+            .getByRole("link", { name: /^View / })
+            .all()) {
+            await expect(link).toHaveAttribute("href", /^\/product\//);
+        }
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .include("main")
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        await page.screenshot({
+            path: info.outputPath(`audit-real-compare-${width}.png`),
+            fullPage: true,
+        });
+
+        const remove = selection
+            .getByRole("button", { name: "Remove from compare" })
+            .first();
+        await expectReadableFocus(remove);
+        await remove.press("Enter");
+        await expect(selection.getByRole("article")).toHaveCount(1);
+        await expect(
+            page.getByRole("heading", { name: "Your selection" })
+        ).toBeFocused();
+    });
+}
