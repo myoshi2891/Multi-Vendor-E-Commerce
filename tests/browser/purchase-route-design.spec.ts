@@ -465,3 +465,30 @@ test("wishlist: real items, pagination and history", async ({
         }
     });
 });
+
+// P2 support acceptance: reuse an existing customer and DB; no preparation, purchase or settings writes.
+test("P2 notifications existing customer route at three widths", async ({browser}, info) => {
+    await withCustomer(browser, async page => {
+        for (const width of WIDTHS) {
+            await page.setViewportSize({width, height:1000});
+            await page.goto("/profile/notifications");
+            const region = page.getByRole("region", {name:"Notifications", exact:true});
+            await expect(region.getByRole("heading", {level:1})).toBeVisible();
+            await expect(region).toHaveCSS("color", "rgb(23, 37, 29)");
+            await expect(region.getByRole("alert")).toHaveCount(0);
+            expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+            const markAll = region.getByRole("button", {name:"Mark all as read"});
+            if (await markAll.count()) {
+                if (await markAll.isEnabled()) {
+                    await expectReadableFocus(markAll);
+                    await page.keyboard.press("Enter");
+                    await expect(region.getByRole("status")).toHaveText("Notifications marked as read.");
+                    await expect(markAll).toBeDisabled();
+                }
+            } else await expect(region.getByText("No notifications yet.")).toBeVisible();
+            expect((await new AxeBuilder({page}).include("main").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+            await page.screenshot({path:info.outputPath(`p2-notifications-route-${width}.png`),fullPage:true});
+        }
+    });
+});
+
