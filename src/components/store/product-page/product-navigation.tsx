@@ -23,7 +23,8 @@ export default function ProductNavigation({
         const close = (event: KeyboardEvent | MouseEvent) => {
             if (event instanceof KeyboardEvent && event.key === 'Escape') {
                 setOpen(false)
-                trigger.current?.focus()
+                // メニュー/トリガー内で押された場合のみフォーカスを戻す（外側のフォーカスを奪わない）
+                if (event.target instanceof Node && root.current?.contains(event.target)) trigger.current?.focus()
             }
             if (event instanceof MouseEvent && !root.current?.contains(event.target as Node)) setOpen(false)
         }
