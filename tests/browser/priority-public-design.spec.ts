@@ -13,6 +13,16 @@ async function accessible(page: Page) {
         .analyze();
     expect(result.violations).toEqual([]);
 }
+// クライアント側バリデーションのハンドラーが付くまで待つ（未 hydrate だとネイティブ送信になる）
+async function waitForFormHydration(page: Page) {
+    await page.waitForFunction(() => {
+        const form = document.querySelector("main form");
+        return (
+            form &&
+            Object.keys(form).some((key) => key.startsWith("__reactProps$"))
+        );
+    });
+}
 for (const width of [1440, 768, 390]) {
     test(`offers actual route at ${width}px`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
@@ -62,15 +72,7 @@ for (const width of [1440, 768, 390]) {
                 "background-color",
                 "rgb(243, 240, 232)"
             );
-            await page.waitForFunction(() => {
-                const form = document.querySelector("main form");
-                return (
-                    form &&
-                    Object.keys(form).some((key) =>
-                        key.startsWith("__reactProps$")
-                    )
-                );
-            });
+            await waitForFormHydration(page);
             const submit = main.getByRole("button", { name: submitLabel });
             await accessible(page);
             await page.screenshot({
@@ -176,6 +178,7 @@ for (const width of [1440, 768, 390]) {
             await supportAccessible(page);
             const submit=page.getByRole("main").locator('form button[type="submit"]');
             if (await submit.count()) {
+                await waitForFormHydration(page);
                 await submit.click();
                 await expect(page.getByText(path === "/track-order" ? "注文番号を入力してください。" : "お名前を入力してください。")).toBeVisible();
                 await supportAccessible(page);

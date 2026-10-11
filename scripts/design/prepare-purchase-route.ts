@@ -277,6 +277,14 @@ try {
         { key: "nolink", type: "order.group.delivered", linkUrl: null },
         { key: "nolink-2", type: "order.group.delivered", linkUrl: null },
     ] as const;
+    // テストは件数（3 件・Unread/Read 数）と一括既読を検証するため、専用顧客の固定キー以外の通知を
+    // 先に除いて 3 件だけにする（wishlist と同じく専用テスト顧客に限った再準備。配信行は Cascade）
+    await prisma.notification.deleteMany({
+        where: {
+            userId: customer.id,
+            NOT: { dedupeKey: { startsWith: "design-p2:" } },
+        },
+    });
     for (const [index, notification] of notifications.entries()) {
         const fields = {
             type: notification.type,

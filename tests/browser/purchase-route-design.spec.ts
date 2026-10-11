@@ -466,8 +466,9 @@ test("wishlist: real items, pagination and history", async ({
     });
 });
 
-// P2 support acceptance: prepare-purchase-route.ts resets three unread notifications for the customer
-// (shipped with a link, two delivered without one). Every read path must survive a reload (DB persisted).
+// P2 support acceptance: prepare-purchase-route.ts removes the customer's other notifications and resets
+// three unread `design-p2:*` ones (shipped with a link, two delivered without one), so the counts below
+// and "Mark all as read" cover exactly those three. Every read path must survive a reload (DB persisted).
 test("P2 notifications real route: unread states and persisted read paths", async ({browser}, info) => {
     await withCustomer(browser, async page => {
         const region = page.getByRole("region", {name:"Notifications", exact:true});
