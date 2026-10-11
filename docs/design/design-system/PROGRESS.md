@@ -1446,3 +1446,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 既存本体の回帰/受け入れ追加でありRedは創作しない。通知関連RTL11/11、priority通知6/6（3幅、pending/error/retry/read/unread/リンクなし/cursor/長文・axe AA）。既存専用DBのClerk顧客で実route1/1内3幅（空状態・見出し/配色/overflow/focus/axe）を確認。通知0件のため実通知あり/既読永続化は未確認・保留。解除条件は既存テスト顧客に通知が存在する環境。今回データ追加なし。単独再実行で認証後2テスト2/2、初回一度のSyntaxErrorは再現せず、フィルターで抑制していない。型0、lint0 errors/既存8 warnings。
 
 仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
+
+### Step 8 設定（DS-PAGE-032）
+
+実SDKの24pxアイコンbuttonで44px基準のRedを確認。root/Portal buttonへ最小幅44pxを追加。関連settings RTL2/2、seven settings7/7（1440/768/767/390px、独立Portal adapter/reduced-motion/axe）、実Clerk route1/1内3幅（配色/全表示button44px/inline編集キャンセル/Security hash/モバイルmenu/axe）。初回テストのdialog期待とmobile非展開はSDK実動作に合わせ訂正しRedに含めない。実設定保存/削除なし。UserProfileの編集はinline、modalContentの独立Portalはadapterのみで実SDK生成経路は未確認・保留。型0、lint0 errors/既存8 warnings。
+
+仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。

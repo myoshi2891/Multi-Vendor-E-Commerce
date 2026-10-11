@@ -865,4 +865,4 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] Step 7 DS-PAGE-067 通知。
 
-- [ ] Step 8 DS-PAGE-032 設定。
+- [x] Step 8 DS-PAGE-032 設定。

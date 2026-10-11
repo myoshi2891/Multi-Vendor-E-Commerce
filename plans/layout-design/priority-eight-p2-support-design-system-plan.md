@@ -47,5 +47,5 @@ API/DB schema/認可/分類/照合/通知永続化/Clerk公式UIは変更しな�
 - [x] Step 5 問題報告。
 - [x] Step 6 オファー。
 - [x] Step 7 通知。
-- [ ] Step 8 設定。
+- [x] Step 8 設定。
 - [ ] 最終統合検証・文書同期。
