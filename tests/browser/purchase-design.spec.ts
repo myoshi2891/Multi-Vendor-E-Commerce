@@ -3,6 +3,26 @@ import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus } from "./purchase-assertions";
 
 for (const width of [1440, 768, 390]) {
+    test(`acceptance product ${width}: light category portal focus and gallery controls`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=product&audit=1&gallery=1");
+        const category = page.getByRole("button", { name: "Browse categories" });
+        await category.click();
+        await expectReadableFocus(page.getByRole("link", { name: "Art", exact: true }));
+        await page.keyboard.press("Escape");
+        await expect(category).toBeFocused();
+        for (const name of ["Previous image", "Next image"]) {
+            const box = await page.getByRole("button", { name, exact: true }).boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+        }
+        await page.getByRole("button", { name: "Next image", exact: true }).click();
+        await expect(page.getByRole("button", { name: "View image 2" })).toHaveAttribute("aria-pressed", "true");
+        await page.screenshot({ path: info.outputPath(`acceptance-product-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
     test(`acceptance store ${width}: breadcrumb touch targets and brand roles`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?screen=store&pieces=1");

@@ -2,6 +2,8 @@ import { expect, type Locator } from "@playwright/test";
 
 /** Verify the visible focus indicator against its painted surrounding surface. */
 export async function expectReadableFocus(control: Locator) {
+    // Switch to keyboard modality even if the preceding interaction used a pointer.
+    await control.page().keyboard.press("Tab");
     await control.focus();
     await expect(control).toBeFocused();
     await expect(control).toHaveCSS("outline-style", "solid");

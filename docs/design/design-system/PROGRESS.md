@@ -1322,3 +1322,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 
 - Red: 3幅のbreadcrumb高さ16.5px（期待44px）で3/3失敗。Green/Refactor: breadcrumbの操作領域拡張、heroの補助文字/goldを共通tokensへ接続。
 - 最終Chrome12/12（3幅・長文/空/商品あり・keyboard/axe・カード・store導線）、関連Jest17/17、tsc exit0、lint 0 errors/8既存warnings。390px画像目視。実データの受け入れ状態は維持。
+
+### Step 3 商品詳細 — DS-PAGE-019
+
+- Red: keyboard modality補正後、カテゴリリンクのfocus contrast 1.67:1でbrowser3/3失敗。RTLのEscape後focus復帰不足で1件失敗。初回RTL matcher名の誤りとpointer modalityの失敗はRedから除外。
+- Green/Refactor: lightカテゴリ/商品面のfocusを濃金へ、Escapeでtrigger復帰、gallery切替/closeを44pxへ。既存Action/購入/在庫の契約は不変。helperはTabでkeyboard modalityへ切替。
+- 最終: 関連Chrome22/22（先行2画面/foundation含む）、Jest39/39、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。実ルート/SDKの受け入れは最終記録へ。

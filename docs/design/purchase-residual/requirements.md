@@ -30,3 +30,7 @@ Product（DS-PAGE-019）のカテゴリ、評価フィルター、boutique操作
 ### Step 2 店舗詳細
 
 店舗heroのbreadcrumbリンクは44×44px以上、暗い面で可読focusを持つ。heroのgold/補助文字とcollection導線はpurchaseの意味別tokensへ接続し、既存rating・長文・storeのfilter/sortを保持する。
+
+### Step 3 商品詳細
+
+カテゴリdropdownと明るい商品情報面は濃いfocus、暗い購入面はgoldを使う。カテゴリリンクからEscapeで閉じるとtriggerへfocusを戻す。画像切替・拡大画像closeは44×44px以上。画像/variant/size/価格/在庫・レビュー・共有契約は保持する。

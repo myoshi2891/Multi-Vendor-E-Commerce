@@ -45,7 +45,7 @@
 - [x] 共通基盤。
 - [x] Step 1 商品一覧。
 - [x] Step 2 店舗詳細。
-- [ ] Step 3 商品詳細。
+- [x] Step 3 商品詳細。
 - [ ] Step 4 カート。
 - [ ] Step 5 Checkout。
 - [ ] Step 6 注文詳細。

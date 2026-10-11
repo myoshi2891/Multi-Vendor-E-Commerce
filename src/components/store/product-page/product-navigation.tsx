@@ -16,11 +16,15 @@ export default function ProductNavigation({
 }>) {
     const [open, setOpen] = useState(false)
     const root = useRef<HTMLDivElement>(null)
+    const trigger = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {
         if (!open) return
         const close = (event: KeyboardEvent | MouseEvent) => {
-            if (event instanceof KeyboardEvent && event.key === 'Escape') setOpen(false)
+            if (event instanceof KeyboardEvent && event.key === 'Escape') {
+                setOpen(false)
+                trigger.current?.focus()
+            }
             if (event instanceof MouseEvent && !root.current?.contains(event.target as Node)) setOpen(false)
         }
         document.addEventListener('keydown', close)
@@ -36,7 +40,7 @@ export default function ProductNavigation({
             <div className={styles.discoveryInner}>
                 <span className={styles.discoveryLabel}>DISCOVER <span>✦</span></span>
                 <div className={styles.categoryMenu} ref={root}>
-                    <button type="button" aria-label="Browse categories" aria-expanded={open} aria-controls="product-category-menu" onClick={() => setOpen(!open)}>
+                    <button ref={trigger} type="button" aria-label="Browse categories" aria-expanded={open} aria-controls="product-category-menu" onClick={() => setOpen(!open)}>
                         <Menu size={16} /><span>Categories</span><ChevronDown size={14} />
                     </button>
                     <div id="product-category-menu" className={styles.categoryDropdown} hidden={!open}>
