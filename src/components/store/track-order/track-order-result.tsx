@@ -23,9 +23,10 @@ export default function TrackOrderResult({
         <section className={styles.result} aria-label="注文追跡の結果">
             <div className={styles.resultHeading}>
                 <h2 className={styles.orderId}>注文 #{order.id}</h2>
-                <OrderStatusTag status={order.orderStatus as OrderStatus} />
+                <OrderStatusTag status={order.orderStatus as OrderStatus} variant="store" />
                 <PaymentStatusTag
                     status={order.paymentStatus as PaymentStatus}
+                    variant="store"
                 />
             </div>
 
@@ -61,6 +62,7 @@ export default function TrackOrderResult({
                                     </div>
                                     <ProductStatusTag
                                         status={item.status as ProductStatus}
+                                        variant="store"
                                     />
                                 </li>
                             ))}

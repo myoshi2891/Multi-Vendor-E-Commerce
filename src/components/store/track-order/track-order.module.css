@@ -1,9 +1,11 @@
 .page {
-    --ink: #17251d;
-    --muted: #536356;
-    --accent: #75613b;
-    --line: #c9c7b8;
-    background: #f3f0e8;
+    composes: theme from "../shared/purchase-theme.module.css";
+    --destructive: 6 48% 39%;
+    --ink: var(--purchase-ink);
+    --muted: var(--purchase-muted);
+    --accent: var(--purchase-focus);
+    --line: var(--purchase-line);
+    background: var(--purchase-page);
     color: var(--ink);
 }
 .page :is(a, input, button):focus-visible {
@@ -12,8 +14,8 @@
     box-shadow: none;
 }
 .hero {
-    background: #0b100e;
-    color: #f3f0e8;
+    background: var(--purchase-dark);
+    color: var(--purchase-page);
 }
 .heroInner {
     position: relative;
@@ -26,7 +28,7 @@
     flex-wrap: wrap;
     gap: 12px;
     font-size: 11px;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
     margin-bottom: 60px;
 }
 .eyebrow {
@@ -35,7 +37,7 @@
     line-height: 1.8;
 }
 .hero .eyebrow {
-    color: #d4ba83;
+    color: var(--purchase-gold);
 }
 .hero h1 {
     font:
@@ -47,11 +49,11 @@
     max-width: 85%;
 }
 .hero h1 em {
-    color: #d4ba83;
+    color: var(--purchase-gold);
 }
 .hero p[lang] {
     margin-top: 24px;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
     font-size: 13px;
 }
 .star {
@@ -59,7 +61,7 @@
     right: 8%;
     top: 95px;
     font-size: 110px;
-    color: #d4ba83;
+    color: var(--purchase-gold);
     opacity: 0.5;
 }
 .content {
@@ -107,7 +109,7 @@
 .panel {
     padding: clamp(22px, 3vw, 40px);
     border: 1px solid var(--line);
-    background: #faf8f2;
+    background: var(--purchase-panel);
 }
 .panel > h2 {
     font-size: 20px;
@@ -121,8 +123,8 @@
 .input {
     height: 48px;
     border-radius: 0;
-    border-color: var(--line);
-    background: #faf8f2;
+    border-color: var(--purchase-control-line);
+    background: var(--purchase-input);
     color: var(--ink);
     font-size: 16px;
 }
@@ -133,11 +135,11 @@
     height: 48px;
     width: 100%;
     border-radius: 0;
-    background: #17251d;
-    color: #faf8f2;
+    background: var(--purchase-ink);
+    color: var(--purchase-panel);
 }
 .submit:hover {
-    background: #304a39;
+    background: var(--purchase-dark-hover);
 }
 .message {
     display: block;
@@ -218,4 +220,24 @@
 @media (max-width: 480px) {
     .item { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: start; }
     .item > :last-child { grid-column: 2; justify-self: start; }
+}
+
+.breadcrumb a,
+.guide a {
+    display: inline-flex;
+    align-items: center;
+    min-width: var(--purchase-touch);
+    min-height: var(--purchase-touch);
+}
+.hero a:focus-visible {
+    outline-color: var(--purchase-gold);
+}
+.page {
+    overflow-wrap: anywhere;
+}
+@media (prefers-reduced-motion: reduce) {
+    .page * {
+        animation: none !important;
+        transition: none !important;
+    }
 }
