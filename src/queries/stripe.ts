@@ -60,6 +60,14 @@ const toOrderPaymentStatus = (
     }
 };
 
+// createStripePaymentIntent が投げる意図した拒否。呼び出し側（StripePayment）は
+// メッセージを画面に出すため、これ以外（Stripe / Prisma の生エラー）は汎用文言へ畳む
+const INTENT_REJECTIONS: ReadonlySet<string> = new Set([
+    "Order not found.",
+    "Order payment is already settled.",
+    "Stripe payment intent could not be recreated.",
+]);
+
 const toStripeAmount = (total: Prisma.Decimal): number =>
     total.mul(100).toDecimalPlaces(0).toNumber();
 
@@ -188,7 +196,10 @@ export const createStripePaymentIntent = async (orderId: string) => {
         } else {
             console.error("Error creating payment intent:", error);
         }
-        throw error;
+        if (error instanceof Error && INTENT_REJECTIONS.has(error.message)) {
+            throw error;
+        }
+        throw new Error("Payment could not be initialized.");
     }
 };
 
