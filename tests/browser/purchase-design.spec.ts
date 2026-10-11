@@ -1,5 +1,19 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectReadableFocus } from "./purchase-assertions";
+
+test("acceptance foundation: scoped light surface survives a dark ancestor", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1000 });
+    await page.goto("/?screen=browse");
+    await page.evaluate(() => document.documentElement.classList.add("dark"));
+    const trigger = page.getByRole("button", { name: "Show filters" });
+    await expectReadableFocus(trigger);
+    await trigger.click();
+    const category = page.getByRole("button", { name: "Art", exact: true });
+    await expect(category).toBeVisible();
+    await expectReadableFocus(category);
+    expect((await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+});
 
 for (const width of [1440, 768, 390]) {
     test(`header panels ${width}: brand, keyboard, search, country states`, async ({

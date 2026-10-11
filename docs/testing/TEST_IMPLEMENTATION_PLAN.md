@@ -1222,3 +1222,7 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-10): Step 8 店舗設定 — 操作と保存状態 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
 
 - ✅ Completed (2026-10-10): 販売者優先8画面の最終統合回帰（Jest3095/3098、補助ブラウザー256/256、Refactor10/10、tsc/lint/check:playwright、coverage dashboard）。認証後8実ルートは[QA](QA_HANDOFF.md#ds-seller-eight-browser)で別途保留。
+
+## P1・P2優先8画面受け入れ（2026-10-11）
+
+[保存計画](../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。共通基盤 ✅ Completed (2026-10-11)。各画面の状態とRed/Green/Refactorの正本は[進捗](../design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)。実ルート保留はQAへ記録する。

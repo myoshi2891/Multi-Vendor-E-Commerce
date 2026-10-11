@@ -6,11 +6,17 @@
     --purchase-ink: #17251d;
     --purchase-muted: #536054;
     --purchase-line: #ccc7b9;
+    --purchase-control-line: #a99c84;
+    --purchase-line-on-dark: #657163;
+    --purchase-divider-on-dark: #435047;
     --purchase-gold: #d4ba83;
     --purchase-gold-hover: #e4cca0;
     --purchase-link: #75613b;
     --purchase-focus: #786035;
     --purchase-dark: #0b100e;
+    --purchase-dark-hover: #21382a;
+    --purchase-image: #e6e1d5;
+    --purchase-overlay: #0b100eb3;
     --purchase-on-dark: #f1eee4;
     --purchase-muted-on-dark: #c4ccbf;
     --purchase-selected: #ece7da;

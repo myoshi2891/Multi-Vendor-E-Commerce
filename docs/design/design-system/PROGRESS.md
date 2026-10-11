@@ -1305,3 +1305,10 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 - 2026-10-11。状態: 対応中。対象DS-PAGE-006/037/019/007/008/003/009/033。既存全画面状態・過去の検証履歴は保持し、今回の変更受け入れを別記録する。
 - [保存計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。既存環境のみ利用。実購入・DB初期化・顧客作成なし。
 - 計画保存の文書検証: 対象ID・順序・受け入れ条件・検証・文書同期・段階的コミットを確認。
+
+### 共通基盤
+
+- 既存purchase themeに入力境界・暗い面の罫線・画像面・overlay・hoverの役割を追加。dashboard/旧callerへの適用なし。
+- 既存実装の回帰確認: dark祖先でもlightのfilter面と可読focus/axe AAを確認、Chrome 1/1。Redは新規に主張しない。
+- 最初のbrowser失敗はlisten EPERM、次は配布Chromium不在で環境エラー。既存Chromeを使用して解消（新規インストールなし）。lint 0 errors/8既存warnings、tsc exit0、check:playwright成功。
+- 関連Jest: filter-panel/browse-pagination 8/8。config/検証helper追加後の型検査もexit0。

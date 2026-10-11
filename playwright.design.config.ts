@@ -168,6 +168,8 @@ export default defineConfig({
     use: {
         baseURL,
         browserName: "chromium",
+        // Reuse installed Chrome when the Playwright Chromium download is unavailable.
+        ...(process.env.DESIGN_BROWSER_CHANNEL === "chrome" ? { channel: "chrome" as const } : {}),
         contextOptions: { reducedMotion: "reduce" },
         trace: "retain-on-failure",
         ...(suite.screenshot ? { screenshot: suite.screenshot } : {}),

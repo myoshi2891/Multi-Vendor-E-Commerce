@@ -509,3 +509,7 @@ Purchase design fixtures use the existing priority server and production HeaderF
 ## 購入後6画面のfixture検証（2026-10-10）
 
 `DESIGN_SUITE=postpurchase bun run test:design`。既存priority serverのentry分岐でpostpurchase-previewを描画し、`screen`と`state`パラメーターで本番部品の表示を切り替える。Action Propsのadapterはoperation単位で初回失敗/再試行、pendingを再現し外部書き込みをしない。RSC概要は会員情報を`await ProfileOverview()`で解決し、本番の`AccountView`へ`identity`として渡す（page構成を複製しない）。`@clerk/nextjs/server`のモックは`DESIGN_SUITE=postpurchase`のときだけ注入し、他のpriority系suiteへ波及させない。page.tsx等の計測除外パスから抽出した表示部品はbrowser検証だけではlcovに載らないため、RTLも併置する。Portalのトークン注入は表示面自身に、その他は共通shellに行いcomputed styleを測る。focus-visibleはキーボード入力後に検証。fixtureは認証後実ルートの受け入れを証明しない。
+
+## 既存Chromeによるデザイン検証（2026-10-11）
+
+Playwright配布Chromiumが未導入の場合、既存のGoogle Chromeを`DESIGN_BROWSER_CHANNEL=chrome DESIGN_SUITE=<suite> bun run test:design`で利用できる。未指定時のChromiumは不変。config/serverを新設しない。purchase-assertionsのfocus検証は可視outlineと周囲の不透明面のcontrast 3:1を確認する（画像/半透明/gradientの目視も併用）。
