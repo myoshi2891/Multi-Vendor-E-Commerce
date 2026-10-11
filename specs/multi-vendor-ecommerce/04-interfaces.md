@@ -330,3 +330,8 @@ Paginationの任意ariaLabel（既定Review pages）をbrowseでCollection pages
 AttributeFieldsと内部属性選択には任意design?: "seller"を追加する。ProductDetailsが既存designを渡す。保存引数・Zod検証・属性値・金額単位・画像・公開URL・レスポンス契約は維持する。未読表示は既存unreadLatestを投影するだけで、未読データ契約を追加しない。
 
 [計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。
+
+
+### Tracking page display boundary (2026-10-11)
+
+The public `trackOrder({ orderId, email })` query facade keeps its existing return/error contract. The tracking page injects a Server Action into `TrackOrderForm`; that action returns only id, order/payment statuses and group id, shipping service/delivery range, store name/url and selected item fields. `TrackingDisplayData` derives these fields from the query return type. Unused monetary Decimal values and internal group identifiers are omitted at this presentation boundary; missing responses remain null and lookup errors propagate to the existing generic retry feedback. No new public API or schema.

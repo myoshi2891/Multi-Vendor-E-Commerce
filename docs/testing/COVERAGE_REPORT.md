@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-11） | **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 残り保留の解消後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-11実測） | Statements88.21%（10953/12416）／Branches78.44%（6728/8577）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 |
-| テストファイル総数（dashboard） | **402ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 |
-| Jest スイート総数（unit/component） | **324スイート**（323 passed／1 skipped、2026-10-11実測）。 |
-| テスト総数 | **3141 unit/component passed**（3144 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestテスト総数（2026-10-11） | **3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-11実測） | Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.53%（2143/2535）／Lines88.76%（9975/11238）。 |
+| テストファイル総数（dashboard） | **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 |
+| Jest スイート総数（unit/component） | **326スイート**（325 passed／1 skipped、2026-10-11実測）。 |
+| テスト総数 | **3146 unit/component passed**（3149 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-11 dashboard実測、セル状態変化なし）。 |
@@ -686,3 +686,10 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 ## 購入優先8画面の最終回帰（2026-10-11）
 
 全体Jest3139/3142、3 skipped、324 suites、127 snapshots（保留分の実ルート受け入れ後は3140/3143、[QA](QA_HANDOFF.md#ds-purchase-eight-browser)）。purchase66/commerce30/priority35の131補助ケースと公開Next11/17（6skip）を確認。dashboard402files/405lcov/18 of 80、全80セルの状態不変。[QA正本・未確認範囲](QA_HANDOFF.md#ds-purchase-eight-browser)。
+
+
+### 2026-10-11 P2サポート8画面の全体実測
+
+直前: 3141/3144、324 suites、127 snapshots、Statements88.21%／Branches78.44%／Functions84.49%／Lines88.75%、dashboard402files/405lcov。今回: **3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。
+
+Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.53%（2143/2535）／Lines88.76%（9975/11238）。 **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 セル状態は変更なし。基盤・追跡表示境界の先行テストを追加。既存業務契約保持。[証跡](../design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。

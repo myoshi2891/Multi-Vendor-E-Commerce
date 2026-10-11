@@ -48,4 +48,25 @@ API/DB schema/認可/分類/照合/通知永続化/Clerk公式UIは変更しな�
 - [x] Step 6 オファー。
 - [x] Step 7 通知。
 - [x] Step 8 設定。
-- [ ] 最終統合検証・文書同期。
+- [x] 最終統合検証・文書同期（実データ/SDKの限定保留は下記参照）。
+
+## 最終結果・段階コミット
+
+全体Jest3146/3149（3 skipped）・127 snapshots、priority54/54、公開実route19/19、認証後実route2/2、settings adapter7/7。型・lint（既存8 warnings）・harness・diff・文書リンクを検証。最終画像の返品番号改行はbrowser Red→Greenで修正。詳細と解除条件は[QA](../../docs/testing/QA_HANDOFF.md)、[TDD記録](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。通知の実既読化とClerk独立Portalは保留を維持。
+
+| 段階 | 実装・検証コミット | 仕様・証跡コミット |
+|---|---|---|
+| 計画 | 8befa370 | — |
+| 共通表示 | 19b8c365 | 5c15e461 |
+| 配送追跡 | 9f0c457a | 3fcef013 |
+| サポート窓口 | 5c3c8752 | 9623a36d |
+| 返品交換 | 31205725 | f2b835d5 |
+| 紛争申請 | 8b4139fd | b6c33660 |
+| 問題報告 | ace533b0 | 9c58f2e3 |
+| オファー | a55ecc35 | 87319da5 |
+| 通知 | 5aa648f3 | af295980 |
+| Clerk設定 | 6a6f32d6 | 4f7ccf20 |
+| 追跡DTO・実route回帰 | a42c3c2a / 76b346c8 | 最終同期コミット |
+| モバイル番号の追加TDD | 144d4bbe | 同コミット内の進捗記録 |
+
+コミットはローカルのみ。push/PRは実施しない。

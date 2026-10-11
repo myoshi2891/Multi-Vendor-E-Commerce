@@ -1,5 +1,9 @@
 # デザインシステム移行 — 進捗ノート
 
+## 2026-10-11 P2サポート・通知等8画面（現在地）
+
+公開6画面の残存表示統一、通知の実route空状態、実Clerk設定と24px操作修正を実施。[今回の証跡](#p2サポート通知等8画面移行記録)。通知あり/実既読化とSDK独立Portalの受け入れは[QA](../../testing/QA_HANDOFF.md#2026-10-11-p2サポート通知等8画面最新)で保留。過去の実装・検証履歴は保持。
+
 ## 2026-10-11 購入優先8画面 残り保留の解消（現在地）
 
 DS-PAGE-003 注文詳細を検証済みへ更新（Stripe Elements 描画・テストカード決済・PayPal ボタン描画・PDF 生成・印刷）。checkout の注文確定と商品詳細の外部共有も実ルートで確認。Stripe intent 作成の生エラー文を汎用文言化。PayPal sandbox 承認は購入者の認証情報待ちで保留（仕様書に記録）。Pay Now のクリック空振りは自動操作固有と精査済み。[記録](#残り保留の解消2026-10-11)。
@@ -79,12 +83,12 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-008 | `/checkout` | 本体適用・検証保留 | P1 | 検証済み | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-010 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
-| DS-PAGE-011 | `/customer-service` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | [customer-service移行記録](#customer-service移行記録) |
-| DS-PAGE-012 | `/dispute` | 検証済み | P2 | 検証済み | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
+| DS-PAGE-011 | `/customer-service` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | [customer-service移行記録](#customer-service移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
+| DS-PAGE-012 | `/dispute` | 検証済み | P2 | 検証済み | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | [P2実施記録](#p2優先5画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-013 | `/faq` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/faq/page.tsx](<../../../src/app/(store)/faq/page.tsx>) | 未実施 |
 | DS-PAGE-014 | `/faqs` | 本体適用（2026-09-30移行） | P3 | 検証済み | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | [FAQs実施記録](#faqs移行記録) |
 | DS-PAGE-015 | `/legal` | 検証済み | P3 | 検証済み | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
-| DS-PAGE-016 | `/offers` | 検証済み | P2 | 検証済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
+| DS-PAGE-016 | `/offers` | 検証済み | P2 | 検証済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [P2実施記録](#p2優先5画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、header/reduced-motion回帰済み、商品あり実route保留 |
 | DS-PAGE-018 | `/product-support` | 本体適用（2026-10-01移行） | P3 | 検証済み | [src/app/(store)/product-support/page.tsx](<../../../src/app/(store)/product-support/page.tsx>) | [product-support移行記録](#product-support移行記録) |
 | DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、操作/ページング補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
@@ -100,13 +104,13 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>)、[account-view.tsx](../../../src/components/store/profile/account-view.tsx) | [profile実施記録](#profile移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-030 | `/profile/payment` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/payment/page.tsx](<../../../src/app/(store)/profile/payment/page.tsx>) | [payment実施記録](#profile-payment移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-031 | `/profile/reviews` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/reviews/page.tsx](<../../../src/app/(store)/profile/reviews/page.tsx>) | [reviews実施記録](#profile-reviews移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
-| DS-PAGE-032 | `/profile/settings` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
+| DS-PAGE-032 | `/profile/settings` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) （未確認範囲あり） |
 | DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
-| DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
-| DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録) |
+| DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
+| DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
-| DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録) |
+| DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
 | DS-PAGE-040 | `/dashboard/admin/attributes/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
 | DS-PAGE-041 | `/dashboard/admin/attributes` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
@@ -135,7 +139,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
-| DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-07新規・plan 086） | P2 | 実装済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。部品は fixture で検証済み、Clerk 認証後の実ルートは未確認。P2表示追加は[残存6画面](#p2残存6画面移行記録)、認証後実ルート保留 |
+| DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-07新規・plan 086） | P2 | 保留 | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。部品は fixture で検証済み、Clerk 認証後の実ルートは未確認。P2表示追加は[残存6画面](#p2残存6画面移行記録)、認証後実ルート保留／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) （未確認範囲あり） | | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)／[残存6画面](#p2残存6画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)。実Clerk認証後の空状態3幅を確認、通知あり・実既読化は既存通知0件のため保留 |
 
 ## 部品台帳
 
@@ -1452,3 +1456,15 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 実SDKの24pxアイコンbuttonで44px基準のRedを確認。root/Portal buttonへ最小幅44pxを追加。関連settings RTL2/2、seven settings7/7（1440/768/767/390px、独立Portal adapter/reduced-motion/axe）、実Clerk route1/1内3幅（配色/全表示button44px/inline編集キャンセル/Security hash/モバイルmenu/axe）。初回テストのdialog期待とmobile非展開はSDK実動作に合わせ訂正しRedに含めない。実設定保存/削除なし。UserProfileの編集はinline、modalContentの独立Portalはadapterのみで実SDK生成経路は未確認・保留。型0、lint0 errors/既存8 warnings。
 
 仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
+
+### 実照会の表示境界と追加回帰
+
+追跡の既存注文照会で未表示DecimalのClient境界警告を確認。先行RTL1件で余分な金額/内部IDの返却をRed確認し、query facadeを保持したままページ注入ActionでTrackingDisplayDataへ投影。null/例外・表示項目は保持。関連Jest103/103、公開実照会1/1内3幅で警告解消。共通focusをfocus tokenへ接続し、重複page selectorを整理。実Clerkの24px Redは44pxへ解消。route実行が自動追加したtsconfig includeのTS6053は環境副作用であり、元includeへ戻して型チェックをやり直す。
+
+### 最終統合検証（2026-10-11）
+
+- 全体Jest: **3146 passed / 3149 total、3 skipped、325 passed / 326 suites、127 snapshots passed**。Statements88.23%（10956/12417）、Branches78.47%（6741/8590）、Functions84.53%（2143/2535）、Lines88.76%（9975/11238）。全体coverageを実測しdashboard再生成（405 test files / 405 lcov / 18 of 80 cells）。
+- Chrome: priority54/54、priority-public P2 19/19（公開6route×3幅と既存注文照会3幅）、purchase-route P2 2/2（通知・Clerk各3幅）、seven settings adapter7/7。axe AAはcontrastを除外せず確認。公開画面・通知・設定の画像を確認。
+- 型チェック・Playwright harness・diffチェック成功。lint0 errors／既存8 warnings。IntegrationとフルE2Eは今回未実行。
+- 最終画像確認で返品番号の改行を発見し、Range行数のbrowser Red（2行）→縮小禁止・nowrapでGreen（1行）を追加。入力/申請契約は保持。
+- 未確認: 通知0件のため実通知あり・既読永続化、実Clerkの独立modalContent Portal生成経路。fixtureで代替完了扱いせず保留。設定保存・外部申請送信・データ追加は実施しない。[解除条件](../../testing/QA_HANDOFF.md)。

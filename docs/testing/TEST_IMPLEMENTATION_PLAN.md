@@ -1244,3 +1244,28 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 
 - ✅ Completed: 優先8画面最終統合。全体Jest3139/3142（3skip）、324suites、127snapshots、補助Chrome131/131、公開Next11成功/6skip、coverage/dashboard同期。認証後/実データ/SDKは[QA](QA_HANDOFF.md#ds-purchase-eight-browser)の条件待ち。
+
+
+## P2サポート・通知等8画面（2026-10-11）
+
+[計画](../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)。
+
+- Step 0 共通表示: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+- Step 1 配送追跡: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+- Step 2 サポート窓口: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+- Step 3 返品交換: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+- Step 4 紛争申請: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+- Step 5 問題報告: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+- Step 6 オファー: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+- Step 7 通知: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+- Step 8 設定: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
+
+実route/SDKの未確認範囲は[QA](QA_HANDOFF.md#2026-10-11-p2サポート通知等8画面最新)を参照し、実装完了と受け入れ保留を区別する。

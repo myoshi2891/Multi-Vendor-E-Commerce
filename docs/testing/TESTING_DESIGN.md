@@ -520,3 +520,12 @@ Playwright配布Chromiumが未導入の場合、既存のGoogle Chromeを`DESIGN
 purchaseはbrowse/store/product/cartのfocus・breadcrumb・galleryと空/在庫切れ、commerceはcheckout入力境界/住所Portalとinvoice失敗・再試行、priorityは比較削除後focusとWishlist最終ページのkeyboard/historyを担当する。purchase-publicは公開Nextルートとguest checkout/wishlistのredirect_urlを確認。既存config/fixtureだけを拡張する。PDF失敗adapterはcommerce内だけに閉じ、実PDF/決済送信は実行しない。
 
 expectReadableFocusは先にTabでkeyboard modalityへ切り替える。contrast helperは周囲の最初の不透明面を探し、outlineとborder-topを測定する。outline-styleのsolidを確認し、不透明な指示色だけを数値判定する。画像/gradient/半透明色の合成はこのhelperの対象外として目視/axeも行う。CSS文字列をなぞるだけのJestは追加せず、カテゴリEscapeと比較削除後focusをRTLで検証する。[QA](QA_HANDOFF.md#ds-purchase-eight-browser)。
+
+
+### P2 support eight — existing-data route acceptance
+
+Reuse priority/priority-public/seven and purchase-route in `playwright.design.config.ts`; no extra config or fixture server. priority-public uses an isolated webpack distDir. Production page bodies in the shared priority fixture use mock query/action adapters for pending/error/retry/receipt and long text.
+
+For read-only real-route checks, point DATABASE_URL/DIRECT_URL/E2E_DATABASE_URL at the same existing local dedicated test DB. `DESIGN_PURCHASE_ROUTE` can reference existing prepared metadata; P2-only checks require customerEmail, with optional trackingOrderId for the public tracking check. Run purchase-route with `--grep '^P2 '` and priority-public with `--grep '^P2 '`. This subset does not run the purchase/SDK payment tests or preparation script. Do not seed/reset/create customers to run it. Populated notification read persistence requires existing notifications; absence is a documented data gap, not fixture proof.
+
+Clerk's embedded UserProfile editor is inline. At narrower widths, open its mobile navigation before Security; retain hash routing and cancel edits without saving. Standalone modalContent is covered by the existing adapter suite, not claimed as a real SDK modal check. Restore only Next-generated tsconfig include additions after route servers stop.
