@@ -1226,3 +1226,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 ## P1・P2優先8画面受け入れ（2026-10-11）
 
 [保存計画](../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。共通基盤 ✅ Completed (2026-10-11)。各画面の状態とRed/Green/Refactorの正本は[進捗](../design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)。実ルート保留はQAへ記録する。
+
+- Step 1 商品一覧 ✅ Completed (2026-10-11)。

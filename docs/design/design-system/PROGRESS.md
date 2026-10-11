@@ -1312,3 +1312,8 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 - 既存実装の回帰確認: dark祖先でもlightのfilter面と可読focus/axe AAを確認、Chrome 1/1。Redは新規に主張しない。
 - 最初のbrowser失敗はlisten EPERM、次は配布Chromium不在で環境エラー。既存Chromeを使用して解消（新規インストールなし）。lint 0 errors/8既存warnings、tsc exit0、check:playwright成功。
 - 関連Jest: filter-panel/browse-pagination 8/8。config/検証helper追加後の型検査もexit0。
+
+### Step 1 商品一覧 — DS-PAGE-006
+
+- Red: acceptance browse 3/3がfocus contrast 1.65:1（期待3:1以上）で失敗。Green: 主商品リンクのfocusを濃金へ変更し、空状態を専用theme付きCSSへ整理、導線44pxを確保。
+- Refactor後: Chrome関連15/15（3幅・focus・filter/sort Portal・variant preview・ページャ/URL）、Jest19/19、tsc exit0、lint 0 errors/8既存warnings。390px画像を目視。既存画面判定は維持、実データ受け入れは最終チェックへ。

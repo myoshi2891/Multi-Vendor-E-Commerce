@@ -22,3 +22,7 @@ Product（DS-PAGE-019）のカテゴリ、評価フィルター、boutique操作
 ## P1・P2優先8画面受け入れ（2026-10-11）
 
 対象はDS-PAGE-006/037/019/007/008/003/009/033。[計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。store限定の意味別tokensに入力境界・暗い面の罫線・画像面・overlay・暗いhoverを追加。focusは周囲の面とのcontrast 3:1以上をブラウザーで確認する。既存表示の回帰確認と新要件Redを区別し、認証後受け入れは別記録する。
+
+### Step 1 商品一覧
+
+商品カードの主商品リンクは明るい面で濃いfocusを使い、暗い操作パネルはgoldのfocusを保持する。editorial商品一覧の空状態は同じpurchase themeの面・文字・罫線を使用し、Explore all piecesは44px以上・可視focus・既存/browseリンクを持つ。旧variantの見た目は維持する。

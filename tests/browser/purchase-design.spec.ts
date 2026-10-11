@@ -2,6 +2,21 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus } from "./purchase-assertions";
 
+for (const width of [1440, 768, 390]) {
+    test(`acceptance browse ${width}: product focus and empty collection action`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=browse&pieces=1");
+        await expectReadableFocus(page.getByTestId("product-card-considered-piece"));
+        await page.screenshot({ path: info.outputPath(`acceptance-browse-${width}.png`), fullPage: true });
+        await page.goto("/?screen=browse");
+        const explore = page.getByRole("link", { name: "Explore all pieces" });
+        const box = await explore.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        await expectReadableFocus(explore);
+        await expect(explore).toHaveAttribute("href", "/browse");
+    });
+}
+
 test("acceptance foundation: scoped light surface survives a dark ancestor", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 1000 });
     await page.goto("/?screen=browse");
