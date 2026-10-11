@@ -1404,3 +1404,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 先行RTLでappearance未反映をRed確認、ブラウザーで共通token変更が固定色へ反映されないRedを確認。任意appearance="purchase"、CSS fallbackと44px操作/reduced-motionを実装。Green/Refactor: RTL5/5（Legal回帰含む）、priorityのfoundation1/1。型0、lint0 errors/既存8 warnings。公開6画面の390px先行テストは全6件token不継承でRed。localhost listen EPERMは環境エラーとして除外し、許可後再実行。共有基盤コードコミット19b8c365。
 
 仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
+
+### Step 1 配送追跡（DS-PAGE-038）
+
+先行RTL1件でstore状態タグ未接続のRed、390px browserでtoken非継承のRed。rootにpurchase theme、入力control-line/input色、dark heroのgold focusと44pxリンク、3状態タグvariant="store"を適用。Green/Refactor: track-order-form Jest6/6、priority browser3/3（1440/768/390px、pending lock/error/retry/missing/success/長文、axe contrast含む）。型0、lint0 errors/既存8 warnings。実照会は既存専用DBの公開routeで別確認、ここはmock Actionによる補助検証。
+
+仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。

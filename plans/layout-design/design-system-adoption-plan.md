@@ -851,7 +851,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] Step 0 DS-COMP-205 共通表示。
 
-- [ ] Step 1 DS-PAGE-038 配送追跡。
+- [x] Step 1 DS-PAGE-038 配送追跡。
 
 - [ ] Step 2 DS-PAGE-011 サポート窓口。
 
