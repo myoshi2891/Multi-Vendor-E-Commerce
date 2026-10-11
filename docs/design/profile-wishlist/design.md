@@ -30,3 +30,8 @@ WishlistContainerはClient state／useEffect／router.pushを除去し、Server 
 Wishlistの見出し・件数・状態・罫線・ページャーをprofile shellのaccount aliasesへ接続。番号リンクは44×44px以上、current/disabled/hover/focusを統一。商品カードの既存editorial操作、URL・範囲補正・alias・取得失敗のreloadを保持する。
 
 [計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+
+## 優先8画面受け入れ（2026-10-11）
+
+既存purchase-theme/account shell、windowed paginationとprops由来currentで要件を満たすことを再確認。productionへの追加変更は不要。priority fixtureで20ページ目→Previous→browser Backを実リンクで検証する。

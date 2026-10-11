@@ -1350,3 +1350,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 
 - Red: 削除/全消去後にfocusがbodyへ落ち、RTL2/2・browser3/3が期待したfocus復帰で失敗。Green/Refactor: 残る見出しへ復帰、3:1以上のoutline、選択件数polite通知。最大4件・永続化・取得/取消契約を保持。
 - Chrome7/7（4幅の局所scroll・error/retry/pending/unavailable・3幅の削除focus・axe AA）、Jest28/28、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。
+
+
+### Step 8 Wishlist — DS-PAGE-033
+
+- 既存実装の回帰確認。最終ページの非リンクNext、Previous keyboard→URL/current→履歴復帰、全リンク44pxと可読focusを3幅で追加検証。先行修正済み商品カード/account shellを含め要件を満たし、production追加変更・Redの主張なし。
+- Chrome7/7（既存4幅通常/empty/error/pending含む）、Jest18/18、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。認証後の実データ受け入れは保留。

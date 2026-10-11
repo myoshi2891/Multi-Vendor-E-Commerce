@@ -1238,3 +1238,6 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 
 - ✅ Completed: 優先8画面 Step 7比較。削除/全消去後のfocus TDD、Chrome7/7、関連Jest28/28。
+
+
+- ✅ Completed: 優先8画面 Step 8Wishlist。既存実装の回帰（Red追加なし）、Chrome7/7、関連Jest18/18。最終ページkeyboardとbrowser historyを追加。
