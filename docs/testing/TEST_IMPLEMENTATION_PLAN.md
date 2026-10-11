@@ -1235,3 +1235,6 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 
 - ✅ Completed: 優先8画面 Step 6注文詳細。3幅breadcrumb/invoice failure/retry、Chrome15/15、関連Jest11/11。実認証後受け入れは最終QAで別記録。
+
+
+- ✅ Completed: 優先8画面 Step 7比較。削除/全消去後のfocus TDD、Chrome7/7、関連Jest28/28。

@@ -109,3 +109,9 @@
 - [x] token継承のbrowser Red→Green、4幅（700px境界含む）の局所スクロール/focus/価格/状態回帰。
 - [x] 関連Jest・lint・型チェックと要件/設計/進捗同期。
 - [ ] 専用DBでの今回の実データ取得受け入れ（補助fixtureと区別）。
+
+
+## 優先8画面受け入れ（2026-10-11）
+
+- [x] RTL2件・browser3幅のfocus欠落Red→修正→回帰。Chrome7/7、Jest28/28、lint 0 errors/8既存warnings、tsc exit0、390px画像目視。
+- [ ] 実ルート受け入れは最終QAに記録。

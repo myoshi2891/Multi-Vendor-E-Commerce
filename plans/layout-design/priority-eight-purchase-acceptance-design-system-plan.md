@@ -49,7 +49,7 @@
 - [x] Step 4 カート。
 - [x] Step 5 Checkout。
 - [x] Step 6 注文詳細。
-- [ ] Step 7 比較。
+- [x] Step 7 比較。
 - [ ] Step 8 Wishlist。
 - [ ] 最終統合検証・文書同期。
 - [ ] 既存環境の実ルート受け入れ（未検証は理由付き保留）。

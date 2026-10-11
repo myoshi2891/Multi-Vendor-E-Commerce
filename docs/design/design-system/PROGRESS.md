@@ -1344,3 +1344,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 
 - Red: breadcrumb高さ18px（期待44px）で3/3失敗。Green/Refactor: 導線44pxと暗いheroのinvoice error tokenを明示適用。生成失敗→再操作とpending lockをfixtureで確認、PDF/支払契約は保持。
 - 最終Chrome15/15（checkout回帰含む、3幅・全状態・単一合計・invoice error/retry・axe AA）、Jest11/11、tsc exit0、lint 0 errors/8既存warnings。390px画像目視。実認証/SDK受け入れは保留。
+
+
+### Step 7 比較 — DS-PAGE-009
+
+- Red: 削除/全消去後にfocusがbodyへ落ち、RTL2/2・browser3/3が期待したfocus復帰で失敗。Green/Refactor: 残る見出しへ復帰、3:1以上のoutline、選択件数polite通知。最大4件・永続化・取得/取消契約を保持。
+- Chrome7/7（4幅の局所scroll・error/retry/pending/unavailable・3幅の削除focus・axe AA）、Jest28/28、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。

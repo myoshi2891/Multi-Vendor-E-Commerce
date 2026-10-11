@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectReadableFocus } from "./purchase-assertions";
 async function accessible(page: Page) {
     expect(
         await page.evaluate(
@@ -15,6 +16,25 @@ async function accessible(page: Page) {
     ).toEqual([]);
 }
 for (const width of [1440, 768, 390]) {
+    test(`acceptance compare ${width}: removal restores selection focus`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=compare");
+        await expect(page.getByRole("region", { name: "Selected products" })).toBeVisible();
+        await page.getByRole("button", { name: "Remove from compare" }).first().focus();
+        await page.keyboard.press("Enter");
+        const heading = page.getByRole("heading", { name: "Your selection" });
+        await expect(heading).toBeFocused();
+        await expectReadableFocus(heading);
+        await expect(page.getByText("3 of 4 selected")).toBeVisible();
+        await expect(page.getByRole("region", { name: "Selected products" })).toBeVisible();
+        await page.getByRole("button", { name: "Clear all" }).focus();
+        await page.keyboard.press("Enter");
+        await expect(heading).toBeFocused();
+        await expect(page.getByText("0 of 4 selected")).toBeVisible();
+        await expect(page.getByRole("link", { name: "Explore the collection" })).toBeVisible();
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`acceptance-compare-${width}.png`), fullPage: true });
+    });
     test(`following component states at ${width}px`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?scenario=following-error&page=2");
