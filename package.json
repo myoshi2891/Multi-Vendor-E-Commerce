@@ -117,6 +117,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
+    "@clerk/backend": "^3.11.6",
     "@clerk/testing": "^2.2.9",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.57.0",
