@@ -466,32 +466,61 @@ test("wishlist: real items, pagination and history", async ({
     });
 });
 
-// P2 support acceptance: reuse an existing customer and DB; no preparation, purchase or settings writes.
-test("P2 notifications existing customer route at three widths", async ({browser}, info) => {
+// P2 support acceptance: prepare-purchase-route.ts resets three unread notifications for the customer
+// (shipped with a link, two delivered without one). Every read path must survive a reload (DB persisted).
+test("P2 notifications real route: unread states and persisted read paths", async ({browser}, info) => {
     await withCustomer(browser, async page => {
+        const region = page.getByRole("region", {name:"Notifications", exact:true});
+        const items = region.getByRole("listitem");
+        const shipped = items.filter({hasText:"Your items have shipped"});
+        const delivered = items.filter({hasText:"Your items were delivered"});
+        const markAll = region.getByRole("button", {name:"Mark all as read"});
         for (const width of WIDTHS) {
             await page.setViewportSize({width, height:1000});
-            await page.goto("/profile/notifications");
-            const region = page.getByRole("region", {name:"Notifications", exact:true});
+            await gotoRoute(page, "/profile/notifications");
             await expect(region.getByRole("heading", {level:1})).toBeVisible();
             await expect(region).toHaveCSS("color", "rgb(23, 37, 29)");
             await expect(region.getByRole("alert")).toHaveCount(0);
+            await expect(items).toHaveCount(3);
+            await expect(region.getByText("Unread", {exact:true})).toHaveCount(3);
+            await expect(markAll).toBeEnabled();
             expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-            const markAll = region.getByRole("button", {name:"Mark all as read"});
-            if (await markAll.count()) {
-                if (await markAll.isEnabled()) {
-                    await expectReadableFocus(markAll);
-                    await page.keyboard.press("Enter");
-                    await expect(region.getByRole("status")).toHaveText("Notifications marked as read.");
-                    await expect(markAll).toBeDisabled();
-                }
-            } else await expect(region.getByText("No notifications yet.")).toBeVisible();
             expect((await new AxeBuilder({page}).include("main").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
             await page.screenshot({path:info.outputPath(`p2-notifications-route-${width}.png`),fullPage:true});
         }
+
+        // 1) リンク無しの未読はボタン。キーボードで既読にし、再読み込み後も保持される
+        const firstDelivered = delivered.first().getByRole("button");
+        await expectReadableFocus(firstDelivered);
+        await page.keyboard.press("Enter");
+        await expect(region.getByRole("status")).toHaveText("Notification marked as read.");
+        await expect(delivered.filter({hasNotText:"Unread"})).toHaveCount(1);
+        await page.reload();
+        await expect(region.getByText("Unread", {exact:true})).toHaveCount(2);
+        await expect(delivered.filter({hasNotText:"Unread"})).toHaveCount(1);
+
+        // 2) リンク付きの未読は開くと既読になり、戻って再読み込みしても保持される
+        await shipped.getByRole("link").click();
+        await expect(page).toHaveURL(new RegExp(`/order/${prepared.paidOrderId}$`));
+        await gotoRoute(page, "/profile/notifications");
+        await expect(shipped).not.toContainText("Unread");
+        await expect(region.getByText("Unread", {exact:true})).toHaveCount(1);
+
+        // 3) 残り 1 件を一括既読にし、再読み込み後も全件既読・ボタン無効
+        await expectReadableFocus(markAll);
+        await page.keyboard.press("Enter");
+        await expect(region.getByRole("status")).toHaveText("Notifications marked as read.");
+        await expect(markAll).toBeDisabled();
+        await page.reload();
+        await expect(region.getByText("Unread", {exact:true})).toHaveCount(0);
+        await expect(region.getByText("Read", {exact:true})).toHaveCount(3);
+        await expect(markAll).toBeDisabled();
+        expect((await new AxeBuilder({page}).include("main").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+        await page.screenshot({path:info.outputPath("p2-notifications-route-read.png"),fullPage:true});
     });
 });
 
+// P2 support acceptance: reuse the same customer; no settings writes.
 test("P2 settings real Clerk appearance hash and inline editor without saving", async ({browser}, info) => {
     await withCustomer(browser, async page => {
         for (const width of WIDTHS) {
