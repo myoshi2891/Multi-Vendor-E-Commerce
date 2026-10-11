@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -82,8 +82,11 @@ export default function StoreDetails({
     useEffect(() => {
         if (data) form.reset(valuesFor(data));
     }, [data, form]);
+    // 重複など利用者が直せる失敗の理由。その他の失敗は汎用文言のまま出す
+    const [failureReason, setFailureReason] = useState("");
     async function save(values: Values) {
         let destination = "";
+        setFailureReason("");
         await feedback.save(
             async () => {
                 const response = await upsertStoreAction({
@@ -99,6 +102,10 @@ export default function StoreDetails({
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 });
+                if (!response.ok) {
+                    setFailureReason(response.reason);
+                    throw new Error(response.reason);
+                }
                 destination = response.url;
             },
             () => {
@@ -118,7 +125,13 @@ export default function StoreDetails({
         );
     }
     return (
-        <Card className={design === "seller" ? styles.editor : "w-full"}>
+        <Card
+            className={
+                design === "seller"
+                    ? `${styles.editor} ${styles.controls}`
+                    : "w-full"
+            }
+        >
             <CardHeader>
                 <CardTitle role="heading" aria-level={2}>
                     Store information
@@ -255,7 +268,13 @@ export default function StoreDetails({
                                 control={form.control}
                                 name="featured"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 border p-4">
+                                    <FormItem
+                                        className={
+                                            design === "seller"
+                                                ? "flex flex-row items-center space-x-3 space-y-0 border p-4"
+                                                : "flex flex-row items-start space-x-3 space-y-0 border p-4"
+                                        }
+                                    >
                                         <FormControl>
                                             <Checkbox
                                                 checked={field.value}
@@ -267,7 +286,15 @@ export default function StoreDetails({
                                             />
                                         </FormControl>
                                         <div className="space-y-1">
-                                            <FormLabel>Featured</FormLabel>
+                                            <FormLabel
+                                                className={
+                                                    design === "seller"
+                                                        ? styles.control
+                                                        : undefined
+                                                }
+                                            >
+                                                Featured
+                                            </FormLabel>
                                             <FormDescription>
                                                 This store will appear on the
                                                 home page.
@@ -286,10 +313,20 @@ export default function StoreDetails({
                         </fieldset>
                         {feedback.state === "error" ? (
                             <p role="alert" className={styles.alert}>
-                                Could not save the store. Please try again.
+                                {failureReason ||
+                                    "Could not save the store. Please try again."}
                             </p>
                         ) : (
-                            <p role="status" aria-live="polite">
+                            <p
+                                role="status"
+                                aria-live="polite"
+                                className={
+                                    design === "seller" &&
+                                    feedback.state === "success"
+                                        ? styles.success
+                                        : undefined
+                                }
+                            >
                                 {feedback.pending
                                     ? "Saving store…"
                                     : feedback.state === "success"

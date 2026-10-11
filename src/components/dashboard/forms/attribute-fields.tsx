@@ -2,6 +2,7 @@
 
 // React
 import { FC } from "react";
+import styles from "../design/seller.module.css";
 
 // Form
 import type { Control } from "react-hook-form";
@@ -38,6 +39,7 @@ import type { ProductFormWithAttributes } from "@/lib/attribute-schema";
 const UNSET_VALUE = "__unset__";
 
 interface AttributeFieldsProps {
+    design?: "seller";
     control: Control<ProductFormWithAttributes>;
     prefix: "productAttributes" | "variantAttributes";
     definitions: readonly AttributeDefinitionDTO[];
@@ -66,6 +68,7 @@ const booleanSelectValue = (value: AttributeFormValue | undefined): string => {
 };
 
 interface ValueControlProps {
+    design?: "seller";
     value: AttributeFormValue | undefined;
     onChange: (value: AttributeFormValue) => void;
     disabled?: boolean;
@@ -81,6 +84,7 @@ interface ControlProps extends OptionControlProps {
 }
 
 const OptionSelect: FC<ControlProps> = ({
+    design,
     def,
     value,
     onChange,
@@ -97,7 +101,13 @@ const OptionSelect: FC<ControlProps> = ({
                 <SelectValue placeholder={`Select ${def.name}`} />
             </SelectTrigger>
         </FormControl>
-        <SelectContent>
+        <SelectContent
+            className={
+                design === "seller"
+                    ? `${styles.theme} ${styles.controls}`
+                    : undefined
+            }
+        >
             <SelectItem value={UNSET_VALUE}>Not specified</SelectItem>
             {options.map((option) => (
                 <SelectItem key={option.id} value={option.id}>
@@ -109,6 +119,7 @@ const OptionSelect: FC<ControlProps> = ({
 );
 
 const BooleanSelect: FC<ValueControlProps> = ({
+    design,
     value,
     onChange,
     disabled,
@@ -125,7 +136,13 @@ const BooleanSelect: FC<ValueControlProps> = ({
                 <SelectValue />
             </SelectTrigger>
         </FormControl>
-        <SelectContent>
+        <SelectContent
+            className={
+                design === "seller"
+                    ? `${styles.theme} ${styles.controls}`
+                    : undefined
+            }
+        >
             <SelectItem value={UNSET_VALUE}>Not specified</SelectItem>
             <SelectItem value="true">Yes</SelectItem>
             <SelectItem value="false">No</SelectItem>
@@ -193,6 +210,7 @@ const AttributeControl: FC<ControlProps> = (props) => {
         case "BOOLEAN":
             return (
                 <BooleanSelect
+                    design={props.design}
                     value={value}
                     onChange={onChange}
                     disabled={disabled}
@@ -234,6 +252,7 @@ const optionsFor = (
 };
 
 const AttributeFields: FC<AttributeFieldsProps> = ({
+    design,
     control,
     prefix,
     definitions,
@@ -250,6 +269,7 @@ const AttributeFields: FC<AttributeFieldsProps> = ({
                     <FormItem>
                         <FormLabel>{labelFor(def)}</FormLabel>
                         <AttributeControl
+                            design={design}
                             def={def}
                             options={optionsFor(def, archivedCurrent)}
                             value={field.value}

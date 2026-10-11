@@ -76,3 +76,44 @@ DS-PAGE-065 店舗作成: 先行RTL2件でmain/h1/theme control不足と新規ID
 深緑・アイボリー・ゴールド、セリフ見出し、ラベル・focus・状態通知、1440/768/390pxで全体横溢れなし。業務画面はlight/dark、Portal・pending/error/retry/successを含める。既存データ/業務契約を維持。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+
+## 販売者優先8画面残存移行
+
+2026-10-10。[保存計画](../../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
+
+### 共通基盤
+
+共有ナビとsellerテーマ切替は44px以上。面・状態色・focusを既存のスコープ付きテーマから参照する。
+
+### Step 1 店舗概要 — DS-PAGE-058
+
+KPIカードはサイドバーを除いた利用可能幅に応じて列数を変え、160px以上の可読幅を保つ。大きな金額・長い商品名は面の内側で折り返す。6指標・売上推移・注文・商品・空状態は維持する。
+
+### Step 2 商品一覧 — DS-PAGE-062
+
+検索・新規作成・新規バリアント・行操作・削除確認・作成Dialogの主要操作を44px以上にする。Dialog closeは44×44px、Portalもlight/darkの面・文字・focusを継承する。
+
+### Step 3 在庫 — DS-PAGE-055
+
+数量・しきい値・保存・再試行は44px以上。保存成功は文字とブランド成功色で通知し、在庫切れ/過小在庫の意味色と判定を維持する。
+
+### Step 4 注文 — DS-PAGE-057
+
+状態select・保存・再試行・詳細起動は44px以上。成功はブランド成功色、Paidは成功、Pending/PartiallyRefundedは警告、Failed/Declined/ChargeBackは危険色と状態文字を併用する。他状態は中立表示。
+
+### Step 5 メッセージ — DS-PAGE-056
+
+未読会話にはUnread文字と読み上げ説明を表示し、既読更新失敗時は維持、成功時に解除する。seller操作寸法/focusはseller-touch/ringに追従し、選択・送信・戻る・下書き・pollの既存挙動を維持する。
+
+### Step 6 商品登録 — DS-PAGE-061
+
+商品入力/選択/動的行/画像/キーワード操作は44px以上。属性ENUM/BOOLEANのPortalはseller themeと操作寸法を継承し、仕様重複の警告はwarning/cardトークンを使う。キーワードは名前付きbuttonで削除可能。checkboxは小さい表示器と大きなlabel操作領域を分離する。
+
+### Step 7 配送 — DS-PAGE-064
+
+既定配送・国別編集の入力と保存・再試行は44px以上。国別Actionsは44×44px、編集メニューは44px、成功はブランド成功色。Default/Free/数値単位と既存国検索・料金12.5ドルを維持する。
+
+### Step 8 店舗設定 — 操作と保存状態
+
+店舗設定の入力・保存・Featuredラベルは44px以上の操作領域を持ち、保存成功を意味色で表示する。失敗時の入力値を保持して再試行できる。

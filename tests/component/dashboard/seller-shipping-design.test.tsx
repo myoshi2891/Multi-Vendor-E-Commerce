@@ -220,3 +220,38 @@ it("keeps an empty country list distinct from missing shipping data", async () =
     ).toBeInTheDocument();
     expect(screen.getByText("No Results.")).toBeInTheDocument();
 });
+
+// flexRender は cell 関数をコンポーネント型として createElement するため、列定義を毎 render
+// 作り直すと router.refresh() のたびに行の操作ボタンが remount され、Dialog を閉じたときに
+// returnFocusTo が DOM から外れた古いボタンを指してフォーカスが失われる
+import SellerShipping from "@/components/dashboard/seller/seller-shipping";
+it("keeps the row action button mounted across a refresh so dialog focus can return", () => {
+    // Arrange
+    const props = () => ({
+        storeUrl: "example",
+        defaults: serializeShippingDefaults(defaults as never),
+        rates: serializeShippingCountries([row] as never),
+        // Server Action は refresh のたびに Flight デコードで別参照になる
+        updateDefaultsAction: jest.fn(),
+        upsertShippingRateAction: jest.fn(),
+    });
+    const { rerender } = render(
+        <ModalProvider>
+            <SellerShipping {...props()} />
+        </ModalProvider>
+    );
+    const before = screen.getByRole("button", { name: "Actions for Japan" });
+
+    // Act: router.refresh() 相当（同じ内容の新しい props で再描画）
+    rerender(
+        <ModalProvider>
+            <SellerShipping {...props()} />
+        </ModalProvider>
+    );
+
+    // Assert
+    expect(screen.getByRole("button", { name: "Actions for Japan" })).toBe(
+        before
+    );
+    expect(before).toBeInTheDocument();
+});

@@ -319,6 +319,8 @@
 
 /* Seller opt-in inherits the scoped dashboard theme; buyer defaults remain unchanged. */
 .seller {
+    --message-touch: var(--seller-touch, 44px);
+    --message-focus: hsl(var(--ring));
     --account-ink: hsl(var(--foreground));
     --message-ink: hsl(var(--foreground));
     --message-primary: hsl(var(--primary));
@@ -346,4 +348,14 @@
         text-decoration: underline;
         color: var(--brand-gold);
     }
+}
+
+.seller .unread {
+    display: inline-flex;
+    padding: 0.2rem 0.5rem;
+    margin-top: 0.5rem;
+    border: 1px solid var(--message-gold);
+    border-radius: var(--seller-radius, 3px);
+    color: var(--message-gold);
+    font: 600 0.75rem/1.4 Arial, Helvetica, sans-serif;
 }

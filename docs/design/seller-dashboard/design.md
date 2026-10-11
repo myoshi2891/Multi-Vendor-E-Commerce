@@ -643,3 +643,44 @@ DS-PAGE-055: SellerPage、テーマ対応の一覧・検索、在庫数/しき�
 ## 注文一覧のデザイン移行（2026-10-05）
 
 DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失敗と空を区別し、一覧・明細状態は明示保存とpending/error/retry/statusを表示する。既存enum・更新action・金額単位を維持。RTL12/12、補助Chromium6/6。認証後実ルートは保留。[要件](../seller-ui-migration/requirements.md)／[証跡](../design-system/PROGRESS.md#優先7画面移行記録)。
+
+
+## 販売者優先8画面残存移行
+
+2026-10-10。[保存計画](../../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
+
+### 共通基盤
+
+seller-touch/seller-radiusをthemeに定義。control/iconControl/controlsはopt-in。ThemeToggleのsellerだけを適用し、Portalにcontrolsを合成する。
+
+### Step 1 店舗概要 — DS-PAGE-058
+
+StoreStatsCardsをstatsGridへ変更。auto-fit/minmaxでviewportではなくcontent幅に応じて配置。Card/theme/chartの既存継承を維持する。
+
+### Step 2 商品一覧 — DS-PAGE-062
+
+DataTable seller toolbarにcontrolsを合成、New variantとProductActionsにcontrol、メニュー/確認Dialog/CustomModalにcontrolsを適用。Dialog直下のclose buttonを44px化。共有callerの機能と既定scopeは維持する。
+
+### Step 3 在庫 — DS-PAGE-055
+
+StockNumberEditor groupにcontrolsを適用し、success表示をbrand-successへ接続。整数範囲/確定値復帰/失敗値再送/Enter/二重送信ガードを維持。
+
+### Step 4 注文 — DS-PAGE-057
+
+StatusEditorにcontrols/success、詳細buttonにcontrol。支払状態のspan/paymentStateを一覧と詳細に共用し、data-payment-stateで表示のみ分岐。enum/Action/金額/pending/値保持を維持する。
+
+### Step 5 メッセージ — DS-PAGE-056
+
+messages.sellerへmessage-touch/message-focusを接続。useIdで未読説明IDを生成しaria-describedbyで会話buttonに関連付ける。markRead成功時の既存unreadLatest更新のみで解除。buyerスタイルとprops APIは維持。
+
+### Step 6 商品登録 — DS-PAGE-061
+
+ProductDetails seller editorへcontrols、警告へwarning、成功時のみsuccessを適用。AttributeFieldsに任意design propを追加し属性Select Portalに渡す。ClickToAddのiconControlとseller専用keyword button。既定scope/payload/validationを維持。
+
+### Step 7 配送 — DS-PAGE-064
+
+配送2フォームのdesign propをcontrols/successへのopt-inに使用。国別Actions/iconControlとPortal/controls。既存save hook/編集pending dismissal lock/Escape focus復帰を維持する。
+
+### Step 8 店舗設定 — 操作と保存状態
+
+既存design="seller"のCardにcontrolsを適用し、Featuredラベルをcontrolで拡張。default表示と店舗保存payloadを維持する。

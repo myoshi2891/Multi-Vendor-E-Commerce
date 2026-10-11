@@ -350,7 +350,8 @@ const TEST_ERRORS = {
     MISSING_STORE_DATA: "Please provide store data.",
     DUPLICATE_NAME: "A store with the same name already exists.",
     DUPLICATE_URL: "A store with the same URL already exists.",
-    DUPLICATE_PHONE: "A store with the same phone number already exists.",
+    // email / phone は公開されない連絡先のため、どちらが一致したかを返さない（登録有無の推測を防ぐ）
+    DUPLICATE_CONTACT: "A store with the same contact details already exists.",
     MISSING_STORE_URL: "Please provide store URL.",
     MISSING_SHIPPING_DETAILS: "Please provide shipping details.",
     // requireStoreOwner (src/lib/auth-guards.ts) のエラーメッセージ統一に合わせる
@@ -371,9 +372,14 @@ const DUPLICATE_TEST_CASES = [
         error: TEST_ERRORS.DUPLICATE_URL,
     },
     {
+        field: "email",
+        conflictingStore: { email: TEST_CONFIG.TEST_EMAIL },
+        error: TEST_ERRORS.DUPLICATE_CONTACT,
+    },
+    {
         field: "phone",
         conflictingStore: { phone: TEST_CONFIG.TEST_PHONE },
-        error: TEST_ERRORS.DUPLICATE_PHONE,
+        error: TEST_ERRORS.DUPLICATE_CONTACT,
     },
 ] as const;
 
@@ -426,7 +432,9 @@ describe("upsertStore", () => {
         describe("重複チェック", () => {
             DUPLICATE_TEST_CASES.forEach(
                 ({ field, conflictingStore, error }) => {
-                    it(`${field}が重複している場合はエラーをスローする`, async () => {
+                    // 本番の Server Action は throw したメッセージを client で伏せるため、
+                    // 利用者が直せる重複は理由付きの戻り値で返す
+                    it(`${field}が重複している場合は理由を返し作成しない`, async () => {
                         const mockDb = TestHelpers.mockDbMethods();
                         mockDb.findFirst.mockResolvedValue(
                             TestDataFactory.existingStore(conflictingStore)
@@ -434,14 +442,15 @@ describe("upsertStore", () => {
 
                         const storeData = TestDataFactory.validStoreData();
 
-                        await TestHelpers.expectThrowError(
-                            upsertStore(storeData),
-                            error
-                        );
+                        await expect(upsertStore(storeData)).resolves.toEqual({
+                            ok: false,
+                            reason: error,
+                        });
                         TestHelpers.expectDuplicateCheck(
                             mockDb.findFirst,
                             storeData
                         );
+                        TestHelpers.expectDbMethodNotCalled(mockDb.create);
                     });
                 }
             );
@@ -466,7 +475,12 @@ describe("upsertStore", () => {
 
             const result = await upsertStore(storeData);
 
-            expect(result).toEqual(expectedStore);
+            // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
+            expect(result).toEqual({
+                ok: true,
+                id: expectedStore.id,
+                url: expectedStore.url,
+            });
             TestHelpers.expectStoreCreatedWith(
                 mockDb.create,
                 TestDataFactory.createStoreExpectedData(storeData)
@@ -490,7 +504,12 @@ describe("upsertStore", () => {
 
             const result = await upsertStore(storeData);
 
-            expect(result).toEqual(expectedStore);
+            // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
+            expect(result).toEqual({
+                ok: true,
+                id: expectedStore.id,
+                url: expectedStore.url,
+            });
             TestHelpers.expectStoreCreatedWith(
                 mockDb.create,
                 TestDataFactory.createStoreExpectedData(storeData)
@@ -564,7 +583,12 @@ describe("upsertStore", () => {
 
             const result = await upsertStore(updateData);
 
-            expect(result).toEqual(updatedStore);
+            // 戻り値は Client Component へ直列化されるため、Decimal 列を含まない id / url だけを返す
+            expect(result).toEqual({
+                ok: true,
+                id: updatedStore.id,
+                url: updatedStore.url,
+            });
             TestHelpers.expectDbMethodCalledTimes(mockDb.findFirst, 2);
 
             // 所有権チェックの確認
@@ -600,6 +624,44 @@ describe("upsertStore", () => {
             expect(updateCall.data).not.toHaveProperty("numReviews");
 
             TestHelpers.expectDbMethodNotCalled(mockDb.create);
+        });
+
+        it("他店舗と重複する場合は理由を返し更新しない", async () => {
+            const mockDb = TestHelpers.mockDbMethods();
+            mockDb.findFirst
+                .mockResolvedValueOnce(TestDataFactory.existingStore()) // 所有権チェック
+                .mockResolvedValueOnce(
+                    TestDataFactory.existingStore({
+                        id: "other-store",
+                        name: "Taken Store",
+                    })
+                ); // 重複チェック
+
+            const result = await upsertStore({
+                id: TEST_CONFIG.DEFAULT_STORE_ID,
+                name: "Taken Store",
+                email: "updated@example.com",
+                url: "updated-store",
+                phone: "9876543210",
+            });
+
+            expect(result).toEqual({
+                ok: false,
+                reason: TEST_ERRORS.DUPLICATE_NAME,
+            });
+            TestHelpers.expectDbMethodNotCalled(mockDb.update);
+        });
+
+        it("所有していない店舗の更新は従来どおりエラーをスローする", async () => {
+            const mockDb = TestHelpers.mockDbMethods();
+            mockDb.findFirst.mockResolvedValueOnce(null);
+
+            await expect(
+                upsertStore({ id: "someone-else", name: "Any" })
+            ).rejects.toThrow(
+                "Store not found or you don't have permission to update this store."
+            );
+            TestHelpers.expectDbMethodNotCalled(mockDb.update);
         });
     });
 });
@@ -748,7 +810,8 @@ describe("updateStoreDefaultShippingDetails", () => {
                 shippingDetails
             );
 
-            expect(result).toEqual(updatedStore);
+            // 戻り値は Client Component へ直列化されるため、Decimal の配送料列を含まない url だけを返す
+            expect(result).toEqual({ url: updatedStore.url });
 
             TestHelpers.expectStoreOwnershipCheck(
                 mockDb.findUnique,

@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { OrderStatus } from "@/lib/types";
 import type { SellerOrderRow, SellerOrderActions } from "@/lib/seller-orders";
@@ -9,6 +9,7 @@ import DataTable from "@/components/ui/data-table";
 import { ProductImagesCell } from "../shared/order-table-cells";
 import CustomModal from "../shared/custom-modal";
 import { useModal } from "@/providers/modal-provider";
+import styles from "../design/seller.module.css";
 import SellerPage from "../design/seller-page";
 import StatusEditor from "./status-editor";
 import SellerOrderSummary from "./seller-order-summary";
@@ -24,6 +25,7 @@ function OrderDetails({
     return (
         <Button
             ref={trigger}
+            className={styles.control}
             type="button"
             variant="outline"
             onClick={() =>
@@ -67,13 +69,24 @@ export function getSellerOrderColumns(
                 </div>
             ),
         },
-        { accessorKey: "paymentStatus", header: "Payment status" },
+        {
+            accessorKey: "paymentStatus",
+            header: "Payment status",
+            cell: ({ row }) => (
+                <span
+                    className={styles.paymentState}
+                    data-payment-state={row.original.paymentStatus}
+                >
+                    {row.original.paymentStatus}
+                </span>
+            ),
+        },
         {
             accessorKey: "status",
             header: "Status",
             cell: ({ row }) => (
                 <StatusEditor
-                    key={`${row.original.id}:${row.original.status}`}
+                    key={row.original.id}
                     label={`Order status ${row.original.id}`}
                     initialStatus={row.original.status}
                     options={Object.values(OrderStatus)}
@@ -108,6 +121,14 @@ export default function SellerOrders({
     orders: SellerOrderRow[];
     actions: SellerOrderActions;
 }) {
+    // 列定義を毎 render 作ると router.refresh() のたびに行内の要素が remount され、成功表示や
+    // Dialog のフォーカス復帰先が失われる。refresh ごとに別参照になる Server Action は初回の参照を
+    // 固定し、列定義を useMemo で固定する（seller-shipping.tsx と同じ）
+    const [stableActions] = useState(() => actions);
+    const columns = useMemo(
+        () => getSellerOrderColumns(stableActions),
+        [stableActions]
+    );
     return (
         <SellerPage
             id="store-orders"
@@ -120,7 +141,7 @@ export default function SellerOrders({
             <DataTable
                 design="seller"
                 data={orders}
-                columns={getSellerOrderColumns(actions)}
+                columns={columns}
                 filterValue="id"
                 searchPlaceholder="Search order by id ..."
             />

@@ -802,3 +802,28 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] 最終回帰・関連仕様/QA/進捗同期（postpurchase25、priority29、seven13、commerce24）。
 - [ ] 今回の6画面変更の認証後実ルート受け入れ（既存顧客ログイン状態が必要）。全画面件数・既存履歴は保持。
+
+
+### 販売者優先8画面残存移行（2026-10-10）
+
+[保存計画](priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。本体適用済みの8画面の残存部品を対象とし、認証後実ルート保留と画面件数を維持する。
+
+- [x] 共通基盤: 実装・補助検証・仕様同期。
+
+- [x] Step 1 店舗概要 — DS-PAGE-058: 実装・補助検証・仕様同期。
+
+- [x] Step 2 商品一覧 — DS-PAGE-062: 実装・補助検証・仕様同期。
+
+- [x] Step 3 在庫 — DS-PAGE-055: 実装・補助検証・仕様同期。
+
+- [x] Step 4 注文 — DS-PAGE-057: 実装・補助検証・仕様同期。
+
+- [x] Step 5 メッセージ — DS-PAGE-056: 実装・補助検証・仕様同期。
+
+- [x] Step 6 商品登録 — DS-PAGE-061: 実装・補助検証・仕様同期。
+
+- [x] Step 7 配送 — DS-PAGE-064: 実装・補助検証・仕様同期。
+
+- [x] Step 8 店舗設定 — 操作と保存状態: 実装・補助検証・仕様同期。
+
+- [x] 販売者8画面の最終回帰・仕様/QA/統計同期。補助ブラウザー256/256、認証後8実ルートは[QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser)の条件待ち。

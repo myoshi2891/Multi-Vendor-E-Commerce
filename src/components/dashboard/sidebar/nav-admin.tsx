@@ -1,85 +1,34 @@
 "use client";
 
-import {
-    Command,
-    CommandEmpty,
-    CommandGroup,
-    CommandInput,
-    CommandItem,
-    CommandList,
-} from "@/components/ui/command";
-import { icons } from "@/constants/icons";
 import { DashboardSidebarMenuInterface } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+// cmdk の CommandItem（role="option"）にリンクを入れると nested-interactive になるため、
+// 素のリンクで描画する（旧 cmdk 分岐は admin layout が使っておらず削除した）
 export default function SideBarNavAdmin({
     menuLinks,
-    design,
 }: {
-    design?: "seller";
     menuLinks: DashboardSidebarMenuInterface[];
 }) {
     const pathname = usePathname();
-    if (design === "seller")
-        return (
-            <nav aria-label="Administration" className="flex flex-col gap-2">
-                {menuLinks.map((link) => (
-                    <Link
-                        key={link.link}
-                        href={link.link}
-                        aria-current={
-                            pathname === link.link ? "page" : undefined
-                        }
-                        className={cn(
-                            "block border px-3 py-3",
-                            pathname === link.link &&
-                                "bg-accent text-accent-foreground"
-                        )}
-                    >
-                        {link.label}
-                    </Link>
-                ))}
-            </nav>
-        );
     return (
-        <nav className="relative grow">
-            <Command className="overflow-visible rounded-lg bg-transparent">
-                <CommandInput placeholder="Search..." />
-                <CommandList className="overflow-visible py-2">
-                    <CommandEmpty>No Links Found.</CommandEmpty>
-                    <CommandGroup className="relative overflow-visible pt-0">
-                        {menuLinks.map((link, index) => {
-                            let icon;
-                            const iconSearch = icons.find(
-                                (icon) => icon.value === link.icon
-                            );
-                            if (iconSearch) icon = <iconSearch.path />;
-                            return (
-                                <CommandItem
-                                    key={index}
-                                    className={cn(
-                                        "mt-1 h-12 w-full cursor-pointer",
-                                        {
-                                            "bg-accent text-accent-foreground":
-                                                link.link === pathname,
-                                        }
-                                    )}
-                                >
-                                    <Link
-                                        href={link.link}
-                                        className="flex w-full items-center gap-2 rounded-md transition-all hover:bg-transparent"
-                                    >
-                                        {icon}
-                                        <span>{link.label}</span>
-                                    </Link>
-                                </CommandItem>
-                            );
-                        })}
-                    </CommandGroup>
-                </CommandList>
-            </Command>
+        <nav aria-label="Administration" className="flex flex-col gap-2">
+            {menuLinks.map((link) => (
+                <Link
+                    key={link.link}
+                    href={link.link}
+                    aria-current={pathname === link.link ? "page" : undefined}
+                    className={cn(
+                        "block border px-3 py-3",
+                        pathname === link.link &&
+                            "bg-accent text-accent-foreground"
+                    )}
+                >
+                    {link.label}
+                </Link>
+            ))}
         </nav>
     );
 }

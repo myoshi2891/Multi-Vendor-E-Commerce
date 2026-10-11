@@ -1197,3 +1197,28 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - Step 6 DS-PAGE-029 概要: ✅ Completed (2026-10-10)、実装/TDD/補助検証/仕様同期。
 - PR #199レビュー対応 `AccountView` RTL +2: ✅ Completed (2026-10-10)、Sonar New Code coverage回復（`profile-overview.test.tsx`）。
 - 認証後実ルートは保留。[QAの解除条件](QA_HANDOFF.md#ds-postpurchase-browser)。
+
+
+## 販売者優先8画面残存移行
+
+2026-10-10。[保存計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md). 既存本体適用と今回の残存受け入れを区別する。
+
+- ✅ Completed (2026-10-10): 共通基盤 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 1 店舗概要 — DS-PAGE-058 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 2 商品一覧 — DS-PAGE-062 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 3 在庫 — DS-PAGE-055 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 4 注文 — DS-PAGE-057 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 5 メッセージ — DS-PAGE-056 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 6 商品登録 — DS-PAGE-061 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 7 配送 — DS-PAGE-064 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): Step 8 店舗設定 — 操作と保存状態 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
+
+- ✅ Completed (2026-10-10): 販売者優先8画面の最終統合回帰（Jest3095/3098、補助ブラウザー256/256、Refactor10/10、tsc/lint/check:playwright、coverage dashboard）。認証後8実ルートは[QA](QA_HANDOFF.md#ds-seller-eight-browser)で別途保留。

@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { updateStoreStatus, deleteStore } from "@/queries/store";
@@ -132,7 +133,7 @@ export function getAdminStoreColumns(
             header: "Status",
             cell: ({ row }) => (
                 <StoreState
-                    key={`${row.original.id}:${row.original.status}`}
+                    key={row.original.id}
                     store={row.original}
                     actions={actions}
                 />
@@ -169,6 +170,14 @@ export default function AdminStores({
     stores: AdminStoreRow[];
     actions: Actions;
 }) {
+    // 列定義を毎 render 作ると router.refresh() のたびに行内の要素が remount され、成功表示や
+    // Dialog のフォーカス復帰先が失われる。refresh ごとに別参照になる Server Action は初回の参照を
+    // 固定し、列定義を useMemo で固定する（seller-shipping.tsx と同じ）
+    const [stableActions] = useState(() => actions);
+    const columns = useMemo(
+        () => getAdminStoreColumns(stableActions),
+        [stableActions]
+    );
     return (
         <SellerPage
             workspace="Administration"
@@ -179,7 +188,7 @@ export default function AdminStores({
             <DataTable
                 design="seller"
                 data={stores}
-                columns={getAdminStoreColumns(actions)}
+                columns={columns}
                 filterValue="name"
                 searchPlaceholder="Search store name ..."
             />

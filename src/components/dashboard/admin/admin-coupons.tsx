@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useState } from "react";
 import type { Coupon } from "@prisma/client";
 import type { ColumnDef } from "@tanstack/react-table";
 import type {
@@ -110,6 +111,14 @@ export default function AdminCoupons({
     coupons: AdminCouponRow[];
     actions: AdminCouponActions;
 }) {
+    // 列定義を毎 render 作ると router.refresh() のたびに行内の要素が remount され、成功表示や
+    // Dialog のフォーカス復帰先が失われる。refresh ごとに別参照になる Server Action は初回の参照を
+    // 固定し、列定義を useMemo で固定する（seller-shipping.tsx と同じ）
+    const [stableActions] = useState(() => actions);
+    const columns = useMemo(
+        () => getAdminCouponColumns(stableActions),
+        [stableActions]
+    );
     return (
         <SellerPage
             workspace="Administration"
@@ -130,7 +139,7 @@ export default function AdminCoupons({
             <DataTable
                 design="seller"
                 data={coupons}
-                columns={getAdminCouponColumns(actions)}
+                columns={columns}
                 filterValue="code"
                 searchPlaceholder="Search coupon code ..."
                 newTabLink="/dashboard/admin/coupons/new"

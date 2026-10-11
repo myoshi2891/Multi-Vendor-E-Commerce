@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { StoreDashboardStats } from "@/queries/store-dashboard";
 
+import styles from "../design/seller.module.css";
+
 interface Props {
     stats: StoreDashboardStats;
 }
@@ -35,7 +37,7 @@ export function StoreStatsCards({ stats }: Props) {
     ] as const;
 
     return (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className={styles.statsGrid}>
             {items.map(({ label, value }) => (
                 <Card key={label}>
                     <CardHeader className="pb-2">

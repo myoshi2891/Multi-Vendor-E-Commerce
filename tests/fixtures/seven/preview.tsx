@@ -259,7 +259,7 @@ createRoot(document.getElementById("root")!).render(
                 ) : screen === "overview" ? (
                     <StoreOverview
                         stats={{
-                            totalRevenue: 1234.5,
+                            totalRevenue: new URLSearchParams(location.search).has("large") ? Number.MAX_SAFE_INTEGER : 1234.5,
                             totalOrders: 2,
                             totalViews: 500,
                             totalSales: 3,

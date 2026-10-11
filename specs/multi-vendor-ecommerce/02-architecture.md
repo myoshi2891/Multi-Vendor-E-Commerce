@@ -93,3 +93,10 @@ TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/desig
 属性一覧のServer ComponentはAttributeActionsをClientへ注入する。属性フォームと行操作のClientはruntimeでsrc/queriesをimportしない。列定義はClient側に置く。既存管理者themeを個別UI/Portalへ適用し、requireAdminとデータ契約は維持する。
 
 属性選択肢も型付きAttributeOptionActionsを注入し、getAttributeOptionColumnsはClientで構築する。新規scopeのCSSは属性画面とその独立Portalのみに適用する。
+
+
+## 販売者優先8画面の残存表示（2026-10-10）
+
+seller.module.cssのtouch/radius/意味色とopt-in controlsを共有し、独立Select/Menu/Dialog Portalにもthemeを明示する。AttributeFieldsの任意design="seller"はENUM/BOOLEAN Portalへ伝播し、既定callerの表示を保持する。Server Actionsは型付きPropsを継続し、Clientからruntime importを追加しない。
+
+[計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。

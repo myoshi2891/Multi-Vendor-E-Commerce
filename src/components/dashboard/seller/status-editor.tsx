@@ -20,7 +20,18 @@ export default function StatusEditor({
     const [value, setValue] = useState(initialStatus),
         [committed, setCommitted] = useState(initialStatus),
         [busy, setBusy] = useState(false),
-        [feedback, setFeedback] = useState<"failed" | "saved" | null>(null);
+        [feedback, setFeedback] = useState<"failed" | "saved" | null>(null),
+        [seenInitial, setSeenInitial] = useState(initialStatus);
+    // refresh で届いた値の取り込み。自分の保存は committed と一致するので成功表示を残し、
+    // 他者による変更だけを反映する（key に status を含めて remount すると成功表示まで消える）
+    if (initialStatus !== seenInitial) {
+        setSeenInitial(initialStatus);
+        if (initialStatus !== committed) {
+            setValue(initialStatus);
+            setCommitted(initialStatus);
+            setFeedback(null);
+        }
+    }
     const save = async () => {
         if (pending.current || value === committed || !options.includes(value))
             return;
@@ -43,7 +54,7 @@ export default function StatusEditor({
         <div
             role="group"
             aria-label={`${label} editor`}
-            className="min-w-48 space-y-2"
+            className={`${styles.controls} min-w-48 space-y-2`}
         >
             <label htmlFor={id} className="block text-sm">
                 {label}
@@ -83,7 +94,7 @@ export default function StatusEditor({
                 </p>
             )}
             {feedback === "saved" && (
-                <p role="status" className="text-sm">
+                <p role="status" className={`${styles.success} text-sm`}>
                     Status updated.
                 </p>
             )}

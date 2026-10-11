@@ -17,7 +17,8 @@ import { getInventoryColumns } from "./columns";
  *
  * flexRender は cell 関数をコンポーネント型として createElement するため、列定義を毎 render
  * 作り直すと router.refresh() のたびに在庫セルが remount され、保存成功の表示が消える。
- * 列定義は useMemo で固定する。Server Action は refresh のたびに Flight デコードで別参照になるが、
+ * 列定義は useMemo で固定し、しきい値は依存に含めず行データへ載せる（しきい値保存後の refresh で
+ * 在庫数エディターを remount させないため）。Server Action は refresh のたびに Flight デコードで別参照になるが、
  * 呼び出しは action ID で解決され同一の処理を指すため、初回の参照を useState で固定して使う。
  */
 type Props = {
@@ -35,14 +36,18 @@ export default function InventoryTableClient({
 }: Props) {
     const [stableAction] = useState(() => updateStockAction);
     const columns = useMemo(
-        () => getInventoryColumns(threshold, storeUrl, stableAction),
-        [threshold, storeUrl, stableAction]
+        () => getInventoryColumns(storeUrl, stableAction),
+        [storeUrl, stableAction]
+    );
+    const data = useMemo(
+        () => rows.map((row) => ({ ...row, lowStockThreshold: threshold })),
+        [rows, threshold]
     );
     return (
         <DataTable
             design="seller"
             filterValue="productName"
-            data={rows}
+            data={data}
             columns={columns}
             searchPlaceholder="Search product ..."
         />

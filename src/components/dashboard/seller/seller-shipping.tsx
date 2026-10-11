@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useState } from "react";
 import StoreDefaultShippingDetails from "../forms/store-default-shipping-details";
 import DataTable from "@/components/ui/data-table";
 import { createShippingColumns } from "@/app/dashboard/seller/stores/[storeUrl]/shipping/columns";
@@ -18,6 +19,19 @@ export default function SellerShipping({
     defaults: StoreDefaultShippingInput;
     rates: ShippingCountryRow[];
 }) {
+    // flexRender は cell 関数をコンポーネント型として createElement するため、列定義を毎 render
+    // 作り直すと router.refresh() のたびに行の操作ボタンが remount され、料率 Dialog を閉じたときの
+    // フォーカス復帰先（returnFocusTo）が DOM から外れる。inventory-table-client と同じく、
+    // refresh ごとに別参照になる Server Action は初回の参照を固定し、列定義を useMemo で固定する
+    const [stableUpsertAction] = useState(() => upsertShippingRateAction);
+    const columns = useMemo(
+        () =>
+            createShippingColumns({
+                storeUrl,
+                upsertShippingRateAction: stableUpsertAction,
+            }),
+        [storeUrl, stableUpsertAction]
+    );
     return (
         <>
             <StoreDefaultShippingDetails
@@ -31,10 +45,7 @@ export default function SellerShipping({
                 <DataTable
                     filterValue="countryName"
                     data={rates}
-                    columns={createShippingColumns({
-                        storeUrl,
-                        upsertShippingRateAction,
-                    })}
+                    columns={columns}
                     searchPlaceholder="Search by country name..."
                     design="seller"
                 />

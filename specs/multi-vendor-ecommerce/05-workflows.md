@@ -219,3 +219,10 @@ New-store users complete validated profile/contact/logo/cover fields in the stan
 ### 属性管理の表示状態（2026-10-09）
 
 作成/編集はvalidation→保存中（入力/二重送信/dismiss禁止）→成功status/既存遷移、または入力保持/error→同じフォームでretry。定義編集keyと選択肢編集valueは不変。選択肢作成成功後は連続追加用にreset/sortOrder+1、archived定義で追加formを隠す。業務状態遷移/論理削除/型変換/ENUM限定404は従来契約を保持する。
+
+
+## 販売者優先8画面の残存表示（2026-10-10）
+
+数量・注文状態・配送・店舗設定は既存validation→pending lock→successまたは値保持/error→retryを維持する。商品keyword削除は名前付きbuttonでEnter操作でき、残るkeywordと価格を保持する。未読表示はmarkRead成功後にのみ消え、失敗時は残る。Dialog終了はEscapeとtriggerへのfocus復帰を維持する。
+
+[計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。

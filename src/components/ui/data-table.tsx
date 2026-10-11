@@ -80,7 +80,7 @@ export default function DataTable<TData, TValue>({
                 data-table-tools
                 className={
                     design === "seller"
-                        ? styles.tableTools
+                        ? `${styles.tableTools} ${styles.controls}`
                         : "flex items-center justify-between"
                 }
             >

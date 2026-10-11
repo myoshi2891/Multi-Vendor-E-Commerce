@@ -29,7 +29,24 @@ type DesignSuite = {
     screenshot?: "off" | "on" | "only-on-failure";
 };
 
+// seller-eight-route だけ、DESIGN_SELLER_ROUTE_SERVER=prod で本番ビルド（next build && next start）でも検証できる。
+// next build は .next へ出力し、:3000 の Docker app が同じ .next を使うため、リポジトリ内では使わず
+// git worktree などの別ディレクトリで実行する（plans/layout-design/seller-route-prod-and-cloudinary-preset-plan.md）
+const sellerRouteProd =
+    process.env.DESIGN_SELLER_ROUTE_SERVER?.trim() === "prod";
+
 const DESIGN_SUITES = {
+    "seller-eight-route": {
+        testMatch: "seller-eight-route-design.spec.ts",
+        port: 3131,
+        kind: "route",
+        // DB は呼び出し側の DATABASE_URL 等（scripts/design/prepare-seller-route.ts で検査済みの専用DB）を使う
+        command: sellerRouteProd
+            ? "bun run build && bun run start -- --port 3131"
+            : "NEXT_DEV_DIST_DIR=.next/seller-eight-route bun run dev -- --webpack --port 3131",
+        // 本番は webServer の起動待ちに build 時間を含む
+        timeout: sellerRouteProd ? 600000 : 180000,
+    },
     postpurchase: {
         testMatch: "postpurchase-design.spec.ts",
         port: 3130,

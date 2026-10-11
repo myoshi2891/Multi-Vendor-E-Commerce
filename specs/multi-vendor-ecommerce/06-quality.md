@@ -164,3 +164,10 @@ P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440px
 ### 購入後P2 6画面の品質条件（2026-10-10）
 
 1440/768/390pxで横溢れなし、長い氏名/ID/本文の折り返し、44px操作領域、keyboard/focus、axe AA（contrast含む）を確認する。独立住所Portalは自身にthemeを持ち、失敗後の入力保持・pending操作ロック・focus復帰を維持。画面と読み込み表示のトークン追従をcomputed styleで検証し、認証後実ルートとfixture証跡は分ける。[計画](../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。
+
+
+## 販売者優先8画面の残存表示（2026-10-10）
+
+1440/768/390px×light/dark、ナビ767px、メッセージ1000pxを確認する。KPIはsidebarを除いた利用可能幅に応じて列数を変え、大きな金額・長文を折り返す。seller touch/ringへの追従、44px操作、局所table scroll、keyboard/focus、axe A/AA（contrast含む）、reduced-motionを検証する。第三者SDK・認証後実ルートとfixtureの証跡を分ける。
+
+[計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。

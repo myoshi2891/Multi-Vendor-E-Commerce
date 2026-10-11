@@ -1,4 +1,5 @@
 "use client";
+import { useMemo, useState } from "react";
 import type { OfferTag } from "@prisma/client";
 import type { ColumnDef } from "@tanstack/react-table";
 import type {
@@ -61,6 +62,14 @@ export default function AdminOfferTags({
     tags: OfferTag[];
     actions: OfferTagActions;
 }) {
+    // 列定義を毎 render 作ると router.refresh() のたびに行内の要素が remount され、成功表示や
+    // Dialog のフォーカス復帰先が失われる。refresh ごとに別参照になる Server Action は初回の参照を
+    // 固定し、列定義を useMemo で固定する（seller-shipping.tsx と同じ）
+    const [stableActions] = useState(() => actions);
+    const columns = useMemo(
+        () => getOfferTagColumns(stableActions),
+        [stableActions]
+    );
     return (
         <SellerPage
             workspace="Administration"
@@ -81,7 +90,7 @@ export default function AdminOfferTags({
             <DataTable
                 design="seller"
                 data={tags}
-                columns={getOfferTagColumns(actions)}
+                columns={columns}
                 filterValue="name"
                 searchPlaceholder="Search offer tag name ..."
                 newTabLink="/dashboard/admin/offer-tags/new"

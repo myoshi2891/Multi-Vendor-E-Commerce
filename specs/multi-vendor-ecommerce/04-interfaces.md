@@ -282,6 +282,10 @@ StoreDetails accepts required upsertStoreAction and optional seller design. Stor
 
 upsertStore retains its existing contract: absent id selects creation and present id selects owner-checked update. The UI no longer supplies a generated id for new-store submissions. API/query/schema/authorization are unchanged.
 
+Return values (2026-10-10): `upsertStore` returns `{ id, url }`, and `updateStoreDefaultShippingDetails` returns `{ url }`. Their results are serialized to Client Components, and the full `Store` contains `Decimal` shipping-fee columns that RSC cannot serialize. Callers only use `url`. Authorization, validation and persisted data are unchanged.
+
+Duplicate reason (2026-10-10, approved API change): `upsertStore` returns `UpsertStoreResult` = `{ ok: true, id, url } | { ok: false, reason }`. A duplicate name/URL/email/phone (excluding the store being updated) returns `{ ok: false, reason }` with a fixed English sentence and no database values, and does not write. Name and URL are public on the store page and get their own reasons (checked in that order). Email and phone are not public, so both return "A store with the same contact details already exists." without saying which one matched. Production Next.js hides thrown Server Action messages from the client, so a thrown reason could not reach the form. Authentication/role, missing data, ownership mismatch and database failures still throw. `StoreDetails` shows the reason in its alert, keeps the draft and clears the reason on resubmit. Other failures keep the generic "Could not save the store. Please try again." [Plan](../../plans/layout-design/store-save-duplicate-reason-plan.md).
+
 
 Seller presentation adapters additionally accept `Table.scrollLabel` for an opt-in named, keyboard-focusable scroll region and `ImagesPreviewGrid.design="seller"` for named image/removal actions. Default consumers preserve existing markup behavior. `ShippingFields` shares form controls while each caller retains its schema and field names. Store settings replace the route with the returned settings URL after a URL change; an unchanged URL refreshes the current route.
 
@@ -314,3 +318,10 @@ TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/desig
 ### 監査指摘6画面の表示インターフェース（2026-10-09）
 
 Paginationの任意ariaLabel（既定Review pages）をbrowseでCollection pagesへ指定する。AttributeDetails/AttributeOptionDetailsは型付きsaveActionと任意onBusyChangeを受け取り、一覧の行操作はAttributeActions/AttributeOptionActions経由で既存queryを呼ぶ。MasterDialog/CustomModalは任意classNameで属性Portalの表示scopeを指定可能。Server Actionの引数/戻り値、DB/認可/公開URL変更なし。
+
+
+## 販売者優先8画面の残存表示（2026-10-10）
+
+AttributeFieldsと内部属性選択には任意design?: "seller"を追加する。ProductDetailsが既存designを渡す。保存引数・Zod検証・属性値・金額単位・画像・公開URL・レスポンス契約は維持する。未読表示は既存unreadLatestを投影するだけで、未読データ契約を追加しない。
+
+[計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。

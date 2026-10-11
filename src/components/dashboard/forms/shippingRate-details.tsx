@@ -53,6 +53,7 @@ function valuesFor(
     };
 }
 export default function ShippingRateDetails({
+    design,
     data,
     storeUrl,
     upsertShippingRateAction,
@@ -75,7 +76,13 @@ export default function ShippingRateDetails({
         form.reset(valuesFor(data));
     }, [data, form]);
     return (
-        <Card className={styles.editor}>
+        <Card
+            className={
+                design === "seller"
+                    ? `${styles.editor} ${styles.controls}`
+                    : styles.editor
+            }
+        >
             <CardHeader>
                 <CardTitle role="heading" aria-level={2}>
                     Shipping rate
@@ -144,7 +151,16 @@ export default function ShippingRateDetails({
                                 again.
                             </p>
                         ) : (
-                            <p role="status" aria-live="polite">
+                            <p
+                                role="status"
+                                aria-live="polite"
+                                className={
+                                    design === "seller" &&
+                                    feedback.state === "success"
+                                        ? styles.success
+                                        : undefined
+                                }
+                            >
                                 {feedback.pending
                                     ? "Saving shipping rate…"
                                     : feedback.state === "success"

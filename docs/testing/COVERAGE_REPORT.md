@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-10） | **3094 passed / 3097 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 PR #199 `AccountView` RTL +2 後の全体Jest実測（coverageなし、coverage率はP2残存6画面時の実測を維持）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（P2残存6画面時の実測・Jest 3077/3080時点。key重複修正後は未再計測） | Statements87.84%（10745/12232）／Branches78.05%（6578/8427）／Functions84.12%（2098/2494）／Lines88.34%（9780/11070）。 |
-| テストファイル総数（dashboard） | **395ファイル**／lcov **400エントリ**／マトリクス18/80（23%）。2026-10-09再生成実測。 |
-| Jest スイート総数（unit/component） | **319スイート**（318 passed／1 skipped、2026-10-09実測）。 |
-| テスト総数 | **3094 unit/component passed**（3097 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestテスト総数（2026-10-11） | **3136 passed / 3139 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 レビュー対応（状態エディターの key・連絡先の重複理由）後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-11実測） | Statements88.19%（10942/12406）／Branches78.42%（6712/8559）／Functions84.49%（2141/2534）／Lines88.73%（9962/11227）。 |
+| テストファイル総数（dashboard） | **402ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 |
+| Jest スイート総数（unit/component） | **324スイート**（323 passed／1 skipped、2026-10-11実測）。 |
+| テスト総数 | **3136 unit/component passed**（3139 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **400**（2026-10-09全体coverage/dashboard実測）。 |
+| カバー済みセル | **18/80（23%）**（2026-10-11 dashboard実測、セル状態変化なし）。 |
+| lcov エントリ数 | **405**（2026-10-11全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0件**（2026-10-09 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -99,6 +99,8 @@
 ---
 
 ## 3. Next Actions (カバレッジ観点の戦略台帳)
+
+**販売者優先8画面残存移行（2026-10-10、実装・補助検証済み）**: 寸法・意味色・Portal・未読識別の受け入れを追加。分類の列は増えず、生成matrixの全80セル状態は変更前と同一。実認証後の受け入れをfixture成功と区別する。[QA解除条件](QA_HANDOFF.md#ds-seller-eight-browser)。
 
 **DS-SIX（実装完了・認証後受け入れ保留）**: 販売者6画面は補助fixture37ケースと既存seven回帰42ケースが成功。専用test DB/Clerk環境で実ルート・SDK・保存後遷移を確認する。分類の列は増えていないためマトリクス18/80セルは不変。新規テストを実行した事実と、認証後検証の保留を別に記録する。[QA解除条件](QA_HANDOFF.md#ds-six-browser2026-10-05実装あり認証後検証保留)。
 
@@ -519,6 +521,13 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-08 | **plan 087 レビュー対応 — Jest +1（3038 → 3039 passed / 3041 → 3042 total・316 スイート不変）、Integration 不変（238）**（作業ツリー・コミット前、HEAD `e03a45a7`）: `applyOrderItemStatus` の終端パスで、遷移も付け替えも 0 件のとき `"ok"` を返していたのを `"settled"` に修正（書き込みが起きていないのに成功扱いにしない）。`order.test.ts` に回帰 +1。 |
 | 2026-10-09 | **閲覧履歴の key 重複修正 — Jest +1（3091 → 3092 passed / 3094 → 3095 total・319 スイート不変）**。同一商品の別バリアントを閲覧すると `ProductList` の `key={product.id}` が重複していたため、key に先頭バリアント ID を追加（`product-list.test.tsx` +1）。browse フィルタの `replace` に `{ scroll: false }` を付与（既存テスト 13 件の期待値変更、件数不変）。作業ツリー・未コミット（HEAD `a01b3321`） |
 | 2026-10-10 | **PR #199 Sonar New Code coverage対応 — Jest +2（3092 → 3094 passed / 3095 → 3097 total・319 スイート不変）**。レビュー対応で`page.tsx`（coverage除外）から`account-view.tsx`（計測対象）へ表示枠を抽出し、browser検証のみでlcov未カバー（0%）になったため`profile-overview.test.tsx`に`AccountView` RTL +2（Lines 100%）。ヒートマップ分類変更なし。作業ツリー・未コミット（HEAD `bd6633ea`） |
+| 2026-10-10 | **販売者8実ルート不具合修正 — Jest +16（3095 → 3111 passed / 3098 → 3114 total・319 → 321 スイート）**。新規 `nav-seller.test.tsx`（+3）、`jodit-a11y.test.ts`（+5）、`image-upload` の読込中無効化（+3）、`upload-images`（+2）、`product-details` の resolvedTheme（+2）、`seller-shell` の店舗 select（+1）。`store.test.ts` は戻り値契約の変更で期待値を4件更新（件数不変）。coverage Statements87.91→88.06%／Branches78.08→78.27%／Functions84.11→84.36%／Lines88.41→88.59%。dashboard 396→399 files／403→404 lcov、セル不変。seller-eight-route 57/57（axe 0）、seven 82/82、six 56/56。コミット未作成（作業ツリー）。 |
+| 2026-10-10 | **click-to-add のアイコン操作に aria-label — Jest +1（3111 → 3112 passed / 3114 → 3115 total・321 スイート不変）**。PlusButton／MinusButton に `aria-label`（Add new detail／Remove detail）、SVG に `aria-hidden`。coverage・dashboard（399 files／404 lcov／18 of 80）は不変。 |
+| 2026-10-10 | **配送の料率 Dialog のフォーカス復帰修正 — Jest +1（3112 → 3113 passed / 3115 → 3116 total・321 スイート不変）**。`SellerShipping` の列定義を `useMemo`＋Server Action 参照の固定で安定化し、refresh 後も行の操作ボタンを remount しない（`seller-shipping-design.test.tsx` +1）。coverage Statements88.06%（10893/12369）／Functions84.37%（2123/2516）／Lines88.59%（9921/11198）、Branches・dashboard（399 files／404 lcov／18 of 80）は不変。seller-eight-route の該当テスト ×5 で 5/5。 |
+| 2026-10-10 | **DataTable 列定義の固定・管理者ナビ整理 — Jest +9（3113 → 3122 passed / 3116 → 3125 total・321 → 322 スイート）**。新規 `table-columns-stability.test.tsx`（販売者3表・管理者5表の列定義の参照同一性 +8）、`seller-inventory-design.test.tsx` のしきい値変更時の在庫エディター維持（+1）、`nav-admin.test.tsx` は既定分岐削除に合わせ2件を書き換え（件数不変）。coverage Statements88.06→88.09%／Branches78.27→78.26%／Functions84.37→84.47%／Lines88.59→88.62%。dashboard 399→400 files／404 lcov／18 of 80（セル不変）。コミット未作成（作業ツリー）。 |
+| 2026-10-10 | **店舗保存の重複理由を画面に表示 — Jest +3（3122 → 3125 passed / 3125 → 3128 total・322 スイート不変）**。`upsertStore` は重複（name/url/email/phone）を throw せず `{ ok: false, reason }` で返す（本番の Server Action は throw メッセージを伏せるため）。`store.test.ts` は重複3件を戻り値検証へ書き換え、更新経路の重複・所有者不一致の回帰 +2。`seller-store-pages-design.test.tsx` に理由表示と再送信で消えるケース +1。coverage Statements88.09→88.18%／Branches78.26→78.37%／Functions84.47→84.48%／Lines88.62→88.71%。dashboard 400 files／404 lcov／18 of 80（セル不変）。Prettier 未整形3ファイルを整形のみ。コミット未作成（作業ツリー）。 |
+| 2026-10-10 | **販売者実ルートの本番ビルド再検証・Cloudinary preset の env 化 — Jest +7（3125 → 3132 passed / 3128 → 3135 total・322 → 323 スイート）**。新規 `src/lib/cloudinary.test.ts`（既定値・指定値・空白 +3）、`image-upload.test.tsx`（3種のウィジェットへ preset +3）、`upload-images.test.tsx`（+1）。coverage Statements88.18%（据え置き）／Branches78.37→78.39%／Functions84.48→84.49%／Lines88.71%（据え置き）。dashboard 400→401 files／404→405 lcov／18 of 80（セル不変）。ブラウザー: seller-eight-route を本番ビルド（`next build && next start`、git worktree）で 58/58（重複理由の表示 +1 を含む）、Decimal 警告0。コミット未作成（作業ツリー）。 |
+| 2026-10-11 | **レビュー対応 — Jest +4（3132 → 3136 passed / 3135 → 3139 total・323 → 324 スイート）**。新規 `status-editor-refresh.test.tsx`（販売者注文・管理者注文・管理者店舗で、自分の保存後の refresh で成功表示が残り、他者の変更は取り込む +3）。`store.test.ts` は email の重複 +1、email/phone の理由を共通の連絡先文言へ。`image-upload`／`upload-images` の env 後始末を try/finally に（件数不変）。coverage Statements88.18→88.19%／Branches78.39→78.42%／Functions84.49%（据え置き）／Lines88.71→88.73%。dashboard 401→402 files／405 lcov／18 of 80（セル不変）。この表上部の「テストファイル総数」「Jest スイート総数」の古い値（399 files／321 スイート）も実測へ更新。 |
 
 ### 2026-09-30 compareデザイン移行
 
@@ -666,3 +675,7 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 ### 2026-10-09: P2残存6画面
 
 計画commit `3821597d`〜実装HEAD `042d5518`、最終同期でPortal reduced-motionを修正。全体Jestは3075/3078→3077/3080、317→318 suites（1 skip維持）。Statements87.84%、Branches78.05%、Functions84.12%、Lines88.34%。dashboard392→393 files、400 lcov、18/80 cells。priority29＋settings7＝補助Chromium36件成功。Integration238/18の以前の実測は維持。認証後実ルート/実Clerkは[QA解除条件](./QA_HANDOFF.md#ds-p2-residual-browser)まで保留。
+
+### 2026-10-10 販売者優先8画面の全体再計測
+
+**3095 passed / 3098 total、3 skipped、127 snapshots passed、319 スイート（318 passed／1 skipped、failed 0）**。2026-10-10 販売者優先8画面の全体Jest/coverage実測（`--runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 Statements87.91%（10837/12327）／Branches78.08%（6651/8518）／Functions84.11%（2107/2505）／Lines88.41%（9871/11164）。 dashboard **396ファイル**／lcov **403エントリ**／マトリクス18/80（23%）。2026-10-10再生成実測。 ブラウザーの表示・操作テストはlcovへ算入しない。Functionsは84.12%→84.11%で、表示opt-inの分岐増加を含む実測値。

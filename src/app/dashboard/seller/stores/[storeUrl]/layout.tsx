@@ -8,7 +8,6 @@ import Sidebar from "@/components/dashboard/sidebar/sidebar";
 // Clerk
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
-import { Store } from "@prisma/client";
 export default async function SellerStoreDashboardLayout({
     children,
 }: {
@@ -26,12 +25,14 @@ export default async function SellerStoreDashboardLayout({
     }
 
     // Retrieve the list of stores associated with the authenticated user.
-    let stores: Store[] = [];
+    // Sidebar の StoreSwitcher（Client Component）へ渡すため、Decimal 列を含まない name / url だけを取得する
+    let stores: { name: string; url: string }[] = [];
     try {
         stores = await db.store.findMany({
             where: {
                 userId: user.id,
             },
+            select: { name: true, url: true },
         });
     } catch (error) {
         if (error instanceof Error) {

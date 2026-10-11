@@ -65,7 +65,7 @@ const CustomModal = ({
                     "h-screen overflow-y-scroll bg-card md:h-fit md:max-h-[700px]",
                     maxWidth,
                     className,
-                    design === "seller" && `${styles.theme} ${styles.dialog}`
+                    design === "seller" && `${styles.theme} ${styles.dialog} ${styles.controls}`
                 )}
             >
                 <DialogHeader className="pt-8 text-left">

@@ -11,16 +11,21 @@ import StockStatusBadge from "@/components/dashboard/seller/stock-status-badge";
  * src/app/dashboard/seller/stores/[storeUrl]/inventory/columns.tsx
  * 在庫一覧 DataTable の列定義（F2）。
  *
- * ステータスバッジは店舗ごとの lowStockThreshold、在庫数編集セルは storeUrl を必要とする。
- * 固定の columns 配列ではこれらを cell へ渡せないため、しきい値と storeUrl を引数に取る
- * ファクトリ関数として公開する（純粋・テスト容易）。商品名（productName）で検索するため
- * page 側の DataTable には filterValue="productName" を渡す。
+ * 在庫数編集セルは storeUrl を必要とするため、storeUrl を引数に取るファクトリ関数として公開する
+ * （純粋・テスト容易）。商品名（productName）で検索するため page 側の DataTable には
+ * filterValue="productName" を渡す。
+ *
+ * 店舗の lowStockThreshold は引数ではなく行データ（InventoryTableRow）から読む。引数にすると
+ * しきい値の保存で列定義が作り直され、在庫数エディターが remount されて成功表示が消えるため。
  */
+export type InventoryTableRow = StoreInventoryRow & {
+    lowStockThreshold: number;
+};
+
 export function getInventoryColumns(
-    threshold: number,
     storeUrl: string,
     updateStockAction: typeof updateSizeStock
-): ColumnDef<StoreInventoryRow>[] {
+): ColumnDef<InventoryTableRow>[] {
     return [
         {
             accessorKey: "productName",
@@ -61,7 +66,7 @@ export function getInventoryColumns(
             cell: ({ row }) => (
                 <StockStatusBadge
                     quantity={row.original.quantity}
-                    threshold={threshold}
+                    threshold={row.original.lowStockThreshold}
                 />
             ),
         },

@@ -592,35 +592,353 @@ for (const width of [1440, 768, 390])
         });
 
 for (const width of [1440, 768, 767, 390]) {
-    test(`settings token adapter at ${width}`, async ({page}, info) => {
-        await page.setViewportSize({width, height: 1000});
+    test(`settings token adapter at ${width}`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?screen=settings");
-        const settings = page.getByRole("region", {name: "Account settings"});
+        const settings = page.getByRole("region", { name: "Account settings" });
         // This adapter consumes production appearance; it does not prove real Clerk lifecycle.
-        await expect(page.getByRole("region", {name: "Clerk fixture"})).toHaveAttribute("data-routing", "hash");
-        await settings.evaluate(root => {
-            (root as HTMLElement).style.setProperty("--purchase-link", "#604a2b");
-            (root as HTMLElement).style.setProperty("--purchase-input", "#fffdf7");
+        await expect(
+            page.getByRole("region", { name: "Clerk fixture" })
+        ).toHaveAttribute("data-routing", "hash");
+        await settings.evaluate((root) => {
+            (root as HTMLElement).style.setProperty(
+                "--purchase-link",
+                "#604a2b"
+            );
+            (root as HTMLElement).style.setProperty(
+                "--purchase-input",
+                "#fffdf7"
+            );
         });
-        const save = page.getByRole("button", {name: "Save profile"});
+        const save = page.getByRole("button", { name: "Save profile" });
         await expect(save).toHaveCSS("background-color", "rgb(96, 74, 43)");
-        await expect(page.getByRole("textbox", {name: "Name"})).toHaveCSS("background-color", "rgb(255, 253, 247)");
-        await settings.evaluate(root => (root as HTMLElement).removeAttribute("style"));
+        await expect(page.getByRole("textbox", { name: "Name" })).toHaveCSS(
+            "background-color",
+            "rgb(255, 253, 247)"
+        );
+        await settings.evaluate((root) =>
+            (root as HTMLElement).removeAttribute("style")
+        );
         await save.focus();
         await expect(save).toHaveCSS("outline-style", "solid");
         const box = await save.boundingBox();
         expect(box?.height).toBeGreaterThanOrEqual(44);
-        await expect(page.getByRole("button", {name: "Delete account"})).toHaveCSS("color", "rgb(138, 48, 40)");
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-        expect((await new AxeBuilder({page}).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
-        await page.screenshot({path: info.outputPath(`settings-p2-${width}.png`), fullPage: true});
+        await expect(
+            page.getByRole("button", { name: "Delete account" })
+        ).toHaveCSS("color", "rgb(138, 48, 40)");
+        expect(
+            await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth
+            )
+        ).toBe(true);
+        expect(
+            (
+                await new AxeBuilder({ page })
+                    .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+                    .analyze()
+            ).violations
+        ).toEqual([]);
+        await page.screenshot({
+            path: info.outputPath(`settings-p2-${width}.png`),
+            fullPage: true,
+        });
         await page.goto("/?screen=settings&portal");
-        const portal = page.getByRole("region", {name: "Clerk portal adapter"});
-        await expect(portal).toHaveCSS("background-color", "rgb(248, 246, 239)");
-        await expect(portal.getByRole("button")).toHaveCSS("background-color", "rgb(117, 97, 59)");
+        const portal = page.getByRole("region", {
+            name: "Clerk portal adapter",
+        });
+        await expect(portal).toHaveCSS(
+            "background-color",
+            "rgb(248, 246, 239)"
+        );
+        await expect(portal.getByRole("button")).toHaveCSS(
+            "background-color",
+            "rgb(117, 97, 59)"
+        );
         await portal.getByRole("button").focus();
-        await expect(portal.getByRole("button")).toHaveCSS("outline-style", "solid");
-        await page.emulateMedia({reducedMotion: "reduce"});
-        await expect(portal.getByRole("button")).toHaveCSS("animation-name", "none");
+        await expect(portal.getByRole("button")).toHaveCSS(
+            "outline-style",
+            "solid"
+        );
+        await page.emulateMedia({ reducedMotion: "reduce" });
+        await expect(portal.getByRole("button")).toHaveCSS(
+            "animation-name",
+            "none"
+        );
     });
 }
+
+// Residual adoption: production shell and controls, using the existing seven harness.
+import { touchControl, sellerEvidence } from "./seller-eight-assertions";
+for (const width of [390, 767])
+    for (const theme of ["light", "dark"])
+        test(`residual foundation ${width} ${theme}`, async ({
+            page,
+        }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            const toggle = page.getByRole("button", {
+                name: "Store navigation",
+            });
+            await touchControl(toggle);
+            await touchControl(
+                page.getByRole("button", { name: "Toggle theme" }),
+                true
+            );
+            await toggle.focus();
+            await page.keyboard.press("Enter");
+            await expect(toggle).toHaveAttribute("aria-expanded", "true");
+            await page
+                .getByRole("link", { name: "Products", exact: true })
+                .focus();
+            await page.keyboard.press("Escape");
+            await expect(toggle).toBeFocused();
+            await expect(toggle).toHaveCSS("outline-style", "solid");
+            await page.getByRole("button", { name: "Toggle theme" }).click();
+            for (const name of ["Light", "Dark", "System"])
+                await touchControl(
+                    page.getByRole("menuitem", { name, exact: true })
+                );
+            await page.keyboard.press("Escape");
+            await expect(page.locator("#root")).not.toHaveAttribute(
+                "aria-hidden",
+                "true"
+            );
+            await sellerEvidence(page, info);
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual overview ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=overview&large=1");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            const revenue = page.getByText("$9,007,199,254,740,991.00", {
+                exact: true,
+            });
+            expect(
+                await revenue.evaluate(
+                    (node) => node.parentElement!.parentElement!.clientWidth
+                ),
+                "KPI cards retain readable width beside the sidebar"
+            ).toBeGreaterThanOrEqual(160);
+            await expect(revenue).toBeVisible();
+            expect(
+                await revenue.evaluate((node) => {
+                    const card = node.parentElement!.parentElement!;
+                    return card.scrollWidth <= card.clientWidth;
+                }),
+                "KPI must contain large monetary values"
+            ).toBe(true);
+            await sellerEvidence(page, info, "seller-large.png");
+            await page.goto("/?screen=overview&empty=1");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await expect(page.locator("html")).toHaveClass(
+                theme === "dark" ? /dark/ : /^$/
+            );
+            await expect(
+                page.getByText("注文がありません。", { exact: true })
+            ).toBeVisible();
+            await sellerEvidence(page, info);
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual products ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=products");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            await touchControl(
+                page.getByRole("link", { name: "New variant", exact: true })
+            );
+            for (const control of await page
+                .locator("main button, main input")
+                .all())
+                await touchControl(control);
+            const actions = page.getByRole("button", { name: /Actions for/ });
+            await actions.click();
+            await touchControl(
+                page.getByRole("menuitem", { name: "Delete product" })
+            );
+            await page
+                .getByRole("menuitem", { name: "Delete product" })
+                .click();
+            const confirm = page.getByRole("alertdialog");
+            await touchControl(
+                confirm.getByRole("button", { name: "Delete", exact: true })
+            );
+            await touchControl(
+                confirm.getByRole("button", { name: "Cancel", exact: true })
+            );
+            await sellerEvidence(page, info);
+            await confirm
+                .getByRole("button", { name: "Cancel", exact: true })
+                .click();
+            const create = page.getByRole("button", {
+                name: "Create New Product",
+            });
+            await create.click();
+            const dialog = page.getByRole("dialog", { name: "Create product" });
+            await touchControl(
+                dialog.getByRole("button", { name: "Close", exact: true }),
+                true
+            );
+            await touchControl(
+                dialog.getByPlaceholder("Product Name", { exact: true })
+            );
+            await sellerEvidence(page, info, "seller-create-dialog.png");
+            await page.keyboard.press("Escape");
+            await expect(create).toBeFocused();
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual inventory ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=inventory");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            const editor = page.getByRole("group", {
+                name: "過小在庫しきい値の編集",
+            });
+            await touchControl(editor.getByRole("spinbutton"));
+            await touchControl(
+                editor.getByRole("button", { name: "保存", exact: true })
+            );
+            await editor.getByRole("spinbutton").fill("7");
+            await page.keyboard.press("Enter");
+            await expect(
+                editor.getByRole("button", { name: "保存中…" })
+            ).toBeDisabled();
+            await expect(editor.getByRole("alert")).toContainText("失敗");
+            await touchControl(editor.getByRole("button", { name: "再試行" }));
+            await editor.getByRole("button", { name: "再試行" }).click();
+            const status = editor.getByRole("status");
+            await expect(status).toContainText("更新しました");
+            await expect(status).toHaveCSS(
+                "color",
+                theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)"
+            );
+            for (const input of await page.getByRole("spinbutton").all())
+                await touchControl(input);
+            await sellerEvidence(page, info);
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual orders ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=orders");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            const editor = page.getByRole("group", {
+                name: "Order status order-1 editor",
+            });
+            await touchControl(editor.getByRole("combobox"));
+            await touchControl(
+                editor.getByRole("button", { name: "Save status" })
+            );
+            await editor.getByRole("combobox").selectOption("Processing");
+            await editor.getByRole("button", { name: "Save status" }).click();
+            await expect(editor.getByRole("alert")).toContainText("try again");
+            await editor.getByRole("button", { name: "Retry" }).click();
+            await expect(editor.getByRole("status")).toHaveText(
+                "Status updated."
+            );
+            await expect(editor.getByRole("status")).toHaveCSS(
+                "color",
+                theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)"
+            );
+            await expect(page.getByText("Paid", { exact: true })).toHaveCSS(
+                "color",
+                theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)"
+            );
+            const view = page.getByRole("button", {
+                name: "View order order-1",
+            });
+            await touchControl(view);
+            await view.click();
+            const dialog = page.getByRole("dialog", { name: "Order details" });
+            await touchControl(
+                dialog.getByRole("button", { name: "Close", exact: true }),
+                true
+            );
+            for (const control of await dialog.getByRole("combobox").all())
+                await touchControl(control);
+            await sellerEvidence(page, info);
+            await page.keyboard.press("Escape");
+            await expect(view).toBeFocused();
+        });
+
+for (const width of [1440, 1000, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual messages ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=messages");
+            await page.evaluate(
+                (dark) =>
+                    document.documentElement.classList.toggle("dark", dark),
+                theme === "dark"
+            );
+            const workspace = page.getByRole("region", {
+                name: "Message management",
+            });
+            await workspace.evaluate((node) => {
+                (node as HTMLElement).style.setProperty(
+                    "--seller-touch",
+                    "52px"
+                );
+                (node as HTMLElement).style.setProperty(
+                    "--ring",
+                    "120 100% 20%"
+                );
+            });
+            const refresh = page.getByRole("button", {
+                name: "Refresh conversations",
+            });
+            await expect(refresh).toHaveCSS("min-height", "52px");
+            await refresh.focus();
+            await expect(refresh).toHaveCSS("outline-color", "rgb(0, 102, 0)");
+            const open = page.getByRole("button", {
+                name: /Open conversation with/,
+            });
+            await expect(open).toHaveAccessibleDescription("Unread");
+            await open.click();
+            await page
+                .getByRole("button", { name: "Retry read status" })
+                .click();
+            await page.getByRole("button", { name: "Retry messages" }).click();
+            if (width <= 1000) {
+                await expect(open).toBeHidden();
+                const back = page.getByRole("button", {
+                    name: "Back to conversations",
+                });
+                await expect(back).toHaveCSS("min-height", "52px");
+                await back.click();
+                await expect(open).toBeFocused();
+            }
+            await expect(open).not.toHaveAccessibleDescription("Unread");
+            await sellerEvidence(page, info);
+        });
