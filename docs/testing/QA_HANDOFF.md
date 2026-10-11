@@ -1,10 +1,20 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
+## 2026-10-11 P2サポート 保留2件の解消（最新）
+
+[計画](../../plans/layout-design/p2-support-pending-resolution-plan.md)／[証跡](../design/design-system/PROGRESS.md#p2保留2件の解消2026-10-11)。下節の DS-P2-SUPPORT-NOTIFICATIONS と DS-P2-SUPPORT-CLERK-PORTAL を解消。作業ツリーのみ（コミットなし）。
+
+- 通知: 専用DBへ検証用通知3件を冪等投入（ユーザー承認の範囲内）。purchase-route P2 2/2。実route通知テストは空状態分岐を除いて必須化（準備前の0件でRed確認）し、単件・リンク遷移・一括の既読がそれぞれ再読込後も保持されることを確認。
+- Clerk: 実SDKの設定画面で全表示buttonを調査し、modalContent/dialog/本人確認modalの生成は0件。受け入れ条件を「埋め込みには独立modal経路なし」に改め、adapter 7/7 を保険として維持。
+- Jest件数は不変（3146/3149）。型・lint（既存8 warnings）・check:playwright成功。
+- 再現: 下節の手順で `prepare-purchase-route.ts` を毎回実行してから（通知を未読へ戻す）、`DESIGN_SUITE=purchase-route bun run test:design -- -g "P2 "`。
+- 残り: 設定の実保存・MFA・アカウント削除・本人確認modal（送信を伴う）は未実行のまま。全Integration/フルE2Eも今回未実行。
+
 ## 2026-10-11 P2サポート・通知等8画面（最新）
 
 [計画](../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[TDD・受け入れ証跡](../design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。公開6画面の残存表示統一、通知の実route空状態受け入れ、実Clerkの24pxアイコン操作修正を実施。追跡のDecimal警告はページ注入Actionの表示DTOで解消し、query facade/API/DB/照合契約は保持。
 
-**Open issues / 次着手**: DS-P2-SUPPORT-NOTIFICATIONSは既存テスト顧客の通知0件のため、実通知あり・既読永続化が未確認。既存通知のある専用環境で解除する（今回データ追加なし）。DS-P2-SUPPORT-CLERK-PORTALは独立modalContentのSDK生成経路が未確認でadapterのみ。埋め込み・inline編集キャンセル・Security hash・mobile menuは実SDKで確認済み。設定の保存/MFA/アカウント削除は今回未実行。これらの解除条件の正本は本節。全Integration/フルE2Eも今回未実行。
+**Open issues / 次着手**（→2026-10-11 上節で2件とも解消）: DS-P2-SUPPORT-NOTIFICATIONSは既存テスト顧客の通知0件のため、実通知あり・既読永続化が未確認。既存通知のある専用環境で解除する（今回データ追加なし）。DS-P2-SUPPORT-CLERK-PORTALは独立modalContentのSDK生成経路が未確認でadapterのみ。埋め込み・inline編集キャンセル・Security hash・mobile menuは実SDKで確認済み。設定の保存/MFA/アカウント削除は今回未実行。これらの解除条件の正本は本節。全Integration/フルE2Eも今回未実行。
 
 
 - 最終全体Jest: **3146 passed / 3149 total、3 skipped、325 passed / 326 suites、127 snapshots passed**。Statements88.23%／Branches78.47%／Functions84.53%／Lines88.76%。dashboard405 test files／405 lcov／18 of 80 cells。
