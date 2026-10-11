@@ -14,6 +14,7 @@ export default async function OffersPage() {
     } catch {
         return (
             <DesignPage
+            appearance="purchase"
                 title="Discounts & Offers"
                 eyebrow="A LITTLE DISCOVERY"
                 description="Explore the latest offers from our collection."
@@ -28,6 +29,7 @@ export default async function OffersPage() {
     }
     return (
         <DesignPage
+            appearance="purchase"
             title="Discounts & Offers"
             eyebrow="A LITTLE DISCOVERY"
             description="Explore the latest offers from our collection."
