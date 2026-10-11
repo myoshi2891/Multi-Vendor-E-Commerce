@@ -853,7 +853,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] Step 1 DS-PAGE-038 配送追跡。
 
-- [ ] Step 2 DS-PAGE-011 サポート窓口。
+- [x] Step 2 DS-PAGE-011 サポート窓口。
 
 - [ ] Step 3 DS-PAGE-036 返品交換。
 
