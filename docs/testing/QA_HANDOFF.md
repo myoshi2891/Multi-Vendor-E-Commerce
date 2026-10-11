@@ -2,7 +2,7 @@
 
 ## 2026-10-11 購入優先8画面 残り保留の解消（最新）
 
-前節の残り保留を承認範囲（Stripe テスト決済・Place order・外部共有/印刷・PayPal sandbox、すべて専用DBと各 sandbox のみ）で解消。作業ツリーのみ（コミットなし）。[記録](../design/design-system/PROGRESS.md#残り保留の解消2026-10-11)。
+前節の残り保留のうち、Stripe テスト決済・Place order・外部共有/印刷は専用DBと sandbox で合格。PayPal sandbox 承認は購入者の認証情報が未設定のため保留。作業ツリーのみ（コミットなし）。[記録](../design/design-system/PROGRESS.md#残り保留の解消2026-10-11)。
 
 - Jest: **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage --silent` 実測。coverage Statements88.21%（10953/12416）／Branches78.44%（6728/8577）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。
 - 修正（TDD）: `createStripePaymentIntent` は意図した拒否3種だけ透過し、それ以外（Stripe/Prisma の生エラー）は `Payment could not be initialized.` を投げる（詳細はログのみ）。stripe.test の再送出テストを書き換え＋非 Error 1件追加（Red 2件確認）。04-interfaces に契約を追記。
