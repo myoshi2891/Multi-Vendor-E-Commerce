@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Columns2, X } from "lucide-react";
@@ -23,6 +23,7 @@ export default function CompareGrid({ fetchProductsAction }: Props) {
     const [loading, setLoading] = useState(false);
     const [failed, setFailed] = useState(false);
     const [attempt, setAttempt] = useState(0);
+    const selectionHeading = useRef<HTMLHeadingElement>(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -165,9 +166,10 @@ export default function CompareGrid({ fetchProductsAction }: Props) {
                                     type="button"
                                     aria-label="Remove from compare"
                                     className={styles.remove}
-                                    onClick={() =>
-                                        removeFromCompare(variant.variantId)
-                                    }
+                                    onClick={() => {
+                                        removeFromCompare(variant.variantId);
+                                        selectionHeading.current?.focus();
+                                    }}
                                 >
                                     <X size={17} aria-hidden="true" />
                                 </button>
@@ -219,17 +221,20 @@ export default function CompareGrid({ fetchProductsAction }: Props) {
             <div className={styles.toolbar}>
                 <div>
                     <p className={styles.sectionLabel}>SIDE BY SIDE</p>
-                    <h2>Your selection</h2>
+                    <h2 ref={selectionHeading} tabIndex={-1} className={styles.selectionHeading}>Your selection</h2>
                 </div>
                 <div className={styles.toolbarActions}>
-                    <span className={styles.count}>
+                    <span className={styles.count} aria-live="polite">
                         {items.length} of 4 selected
                     </span>
                     {items.length > 0 && (
                         <button
                             type="button"
                             className={styles.textButton}
-                            onClick={clearCompare}
+                            onClick={() => {
+                                clearCompare();
+                                selectionHeading.current?.focus();
+                            }}
                         >
                             Clear all
                         </button>

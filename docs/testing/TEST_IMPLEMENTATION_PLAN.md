@@ -1222,3 +1222,25 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-10): Step 8 店舗設定 — 操作と保存状態 の関連Jest／補助ブラウザー検証。認証後受け入れは別管理。
 
 - ✅ Completed (2026-10-10): 販売者優先8画面の最終統合回帰（Jest3095/3098、補助ブラウザー256/256、Refactor10/10、tsc/lint/check:playwright、coverage dashboard）。認証後8実ルートは[QA](QA_HANDOFF.md#ds-seller-eight-browser)で別途保留。
+
+## P1・P2優先8画面受け入れ（2026-10-11）
+
+[保存計画](../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。共通基盤 ✅ Completed (2026-10-11)。各画面の状態とRed/Green/Refactorの正本は[進捗](../design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)。実ルート保留はQAへ記録する。
+
+- Step 1 商品一覧 ✅ Completed (2026-10-11)。
+- Step 2 店舗詳細 ✅ Completed (2026-10-11)。
+- Step 3 商品詳細 ✅ Completed (2026-10-11)。
+- Step 4 カート ✅ Completed (2026-10-11)。
+- Step 5 Checkout ✅ Completed (2026-10-11)。
+
+
+- ✅ Completed: 優先8画面 Step 6注文詳細。3幅breadcrumb/invoice failure/retry、Chrome15/15、関連Jest11/11。実認証後受け入れは最終QAで別記録。
+
+
+- ✅ Completed: 優先8画面 Step 7比較。削除/全消去後のfocus TDD、Chrome7/7、関連Jest28/28。
+
+
+- ✅ Completed: 優先8画面 Step 8Wishlist。既存実装の回帰（Red追加なし）、Chrome7/7、関連Jest18/18。最終ページkeyboardとbrowser historyを追加。
+
+
+- ✅ Completed: 優先8画面最終統合。全体Jest3139/3142（3skip）、324suites、127snapshots、補助Chrome131/131、公開Next11成功/6skip、coverage/dashboard同期。認証後/実データ/SDKは[QA](QA_HANDOFF.md#ds-purchase-eight-browser)の条件待ち。

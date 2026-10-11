@@ -1,5 +1,9 @@
 # PROGRESS.md
 
+## 2026-10-11 購入優先8画面の表示受け入れ
+
+残存配色をpurchase rolesへ揃え、focusの可読性・breadcrumb/gallery操作領域・入力境界・カテゴリ/比較操作後のfocusを改善。8ステップのTDD/回帰・関連仕様更新と最終全体検証を完了。補助Chrome131/131、公開Next11成功/6skip。認証後・実データ/SDK受け入れは既存環境の条件待ちとして分けて記録。coverage/dashboardを再生成しセル状態は不変。[証跡](design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)／[QA正本](testing/QA_HANDOFF.md#ds-purchase-eight-browser)。
+
 ## 2026-10-10 販売者優先8画面の残存デザイン適用
 
 8画面の操作寸法・意味色・独立Portal・未読識別と概要のレスポンシブ表示を統一。TDD・仕様同期・全体Jest/coverage・補助ブラウザー256ケースを確認し、coverage dashboardを再生成。その後、専用test DBと Clerk テスト販売者で認証後8実ルートを検証し、見つかった不具合を修正（seller-eight-route 57/57）。配送の料率編集 Dialog のフォーカス復帰が再実行で間欠失敗（3/5）したため、列定義の再生成による remount を修正し 5/5 を確認。8画面とも受け入れ完了。Cloudinary への実アップロードは承認範囲外で未実施（ウィジェット表示までを確認）。[証跡](design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)／[QA正本](testing/QA_HANDOFF.md#ds-seller-eight-browser)。
@@ -29,7 +33,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3136 passed / 3139 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 レビュー対応（状態エディターの key・連絡先の重複理由）後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3140 passed / 3143 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 保留分の実ルート受け入れ後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -480,7 +484,7 @@ PR #133（dev → main）の SonarCloud Quality Gate が **New Code Coverage 63.
     - Scenario 3 (Coupon 適用 / 5 テスト): 正常適用 (`applyCoupon` server action) で `Cart.couponId` 更新 + `total` が store subtotal の 10% 分減算 / 異常系 4 つ（存在しない code / 期限切れ / クーポン対象店舗外 / 二重適用拒否）。
     - Scenario 4 (未認証 redirect / 1 テスト): `currentUser` を null モックで CheckoutPage を呼出 → `redirect("/cart")` が throw されることを `NEXT_REDIRECT:/cart` カスタムエラーで捕捉。重い transitive import (StoreHeader → flag-icons CSS / .webp 画像 / uuid ESM) は moduleNameMapper + transformIgnorePatterns で吸収。
 - **設計判断（ADR-003 flake 回避）**: ADR-003 で報告されている jsdom + RTL + userEvent + waitFor の CI flake を継承しないよう、本テストでは **React Testing Library によるコンポーネント描画を意図的に避けた**。検証はすべて store / DB / server-action 層で実施。Scenario 4 のみ CheckoutPage 関数の直接呼出を行うが、`redirect` が即時 throw するため React render に到達しない。
-- **コミット計画**（[`02-tdd-step-commit.md`](.claude/rules/02-tdd-step-commit.md) 準拠で 2 PR 構成）:
+- **コミット計画**（[`02-tdd-step-commit.md`](../.claude/rules/02-tdd-step-commit.md) 準拠で 2 PR 構成）:
   - **PR 1 (Phase 0 / インフラ)**: ADR-004 / docker-compose.test.yml + env templates / testcontainers setup / jest.integration.config.js + script / CI workflow の論理単位ごとに分割
   - **PR 2 (Phase 1〜2 / 本体 + 同期)**: cart-checkout.test.ts (Tier 1 単一新規ファイル = 1 commit) + spec-sync-after-test の SSOT 同期コミット
 - **影響**:
@@ -5693,4 +5697,28 @@ design config の seller-eight-route に本番ビルド起動の切替を追加�
 |------|--------|--------|
 | テスト総数 | 3132 passed / 3135 total | **3136 passed / 3139 total** |
 | スイート数 | 323（322 passed／1 skipped） | **324（323 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 購入優先8画面 保留分の実ルート受け入れ (2026-10-11)
+
+#### 概要
+
+専用DBと Clerk テスト顧客で、実データ・認証後の受け入れを実施。実データで見つかった wishlist の表示バリアント不具合を修正。Stripe はテストキー期限切れで保留。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/profile.ts`、`profile.test.ts` | `getUserWishlist` が保存したバリアントを返す（+1） | 未コミット |
+| `tests/browser/purchase-public-design.spec.ts` | 店舗詳細・比較（実API）3幅 +3 | 未コミット |
+| `scripts/design/prepare-purchase-route.ts`、`tests/browser/purchase-route-design.spec.ts`、`playwright.design.config.ts` | 認証後実ルート suite `purchase-route` | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3139 passed / 3142 total | **3140 passed / 3143 total** |
+| スイート数 | 324（323 passed／1 skipped） | **324（323 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |

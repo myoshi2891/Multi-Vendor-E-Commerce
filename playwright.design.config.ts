@@ -47,6 +47,15 @@ const DESIGN_SUITES = {
         // 本番は webServer の起動待ちに build 時間を含む
         timeout: sellerRouteProd ? 600000 : 180000,
     },
+    // DB は呼び出し側の DATABASE_URL 等（scripts/design/prepare-purchase-route.ts で検査済みの専用DB）を使う
+    "purchase-route": {
+        testMatch: "purchase-route-design.spec.ts",
+        port: 3132,
+        kind: "route",
+        command:
+            "NEXT_DEV_DIST_DIR=.next/purchase-route bun run dev -- --webpack --port 3132",
+        timeout: 180000,
+    },
     postpurchase: {
         testMatch: "postpurchase-design.spec.ts",
         port: 3130,
@@ -168,6 +177,8 @@ export default defineConfig({
     use: {
         baseURL,
         browserName: "chromium",
+        // Reuse installed Chrome when the Playwright Chromium download is unavailable.
+        ...(process.env.DESIGN_BROWSER_CHANNEL === "chrome" ? { channel: "chrome" as const } : {}),
         contextOptions: { reducedMotion: "reduce" },
         trace: "retain-on-failure",
         ...(suite.screenshot ? { screenshot: suite.screenshot } : {}),

@@ -171,3 +171,10 @@ P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440px
 1440/768/390px×light/dark、ナビ767px、メッセージ1000pxを確認する。KPIはsidebarを除いた利用可能幅に応じて列数を変え、大きな金額・長文を折り返す。seller touch/ringへの追従、44px操作、局所table scroll、keyboard/focus、axe A/AA（contrast含む）、reduced-motionを検証する。第三者SDK・認証後実ルートとfixtureの証跡を分ける。
 
 [計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。
+
+
+## 購入優先8画面の品質条件（2026-10-11）
+
+1440/768/390pxでfocus・44px操作・長文/空/在庫切れ/pending/error/retry/success・独立住所Portal・局所scroll・axe AA（contrast除外なし）を検証する。computed focus/border contrastは実面に対して3:1以上とする。helperが扱わない画像/gradient/透明合成は画像目視とaxeで補完。暗い面のinvoice失敗はalertと意味色を併用し、削除後のfocusは消えない要素へ戻す。
+
+既存Chromeを使う任意channelで補助fixtureを確認し、実Next/認証後/外部SDKの受け入れを分ける。新環境・DB初期化・顧客作成・実購入/送信なし。[QAの解除条件](../../docs/testing/QA_HANDOFF.md#ds-purchase-eight-browser)。

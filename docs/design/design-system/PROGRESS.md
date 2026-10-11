@@ -1,6 +1,10 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-10 販売者8画面の実ルート受け入れ（現在地）
+## 2026-10-11 購入優先8画面の実ルート受け入れ（現在地）
+
+保留していた実データ・認証後・外部SDKの受け入れを専用DB `multivendor_e2e` と Clerk テスト顧客で実施。DS-PAGE-006/008/009/019/037 を検証済みへ更新（033 は既に検証済み）。DS-PAGE-003 は Stripe テストキー期限切れで Elements 描画が未確認のため保留を維持。実データで wishlist が保存バリアントでなく商品の先頭バリアントを表示する不具合を見つけ TDD で修正。[記録](#保留分の実ルート受け入れ2026-10-11)・[QA](../../testing/QA_HANDOFF.md#ds-purchase-eight-browser)。
+
+## 2026-10-10 販売者8画面の実ルート受け入れ（履歴）
 
 認証後8実ルート（DS-PAGE-055〜058・061〜064）を専用DBと Clerk テスト販売者で受け入れ、検証済みへ更新。配送は料率編集 Dialog のフォーカス復帰が一度間欠失敗（3/5）したが、列定義の再生成による remount を修正し 5/5 を確認（[QA](../../testing/QA_HANDOFF.md#ds-seller-eight-browser)）。実環境で見つかった axe 違反（サイドバー・Jodit）と不具合（Cloudinary 読込前クリック、Decimal 受け渡し）は修正済み。部品の判定は変更しない（受け入れはページ単位）。[証跡](#認証後8実ルート受け入れ2026-10-10)。
 
@@ -63,13 +67,13 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 |---|---|---|---|---|---|---|
 | DS-PAGE-001 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-002 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
-| DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 保留 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
+| DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 保留 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
-| DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、補助/RTL済み、schema-current実route保留 |
-| DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録) |
-| DS-PAGE-008 | `/checkout` | 本体適用・検証保留 | P1 | 保留 | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録) |
-| DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 実装済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録) |
+| DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、補助/RTL済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
+| DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録) |
+| DS-PAGE-008 | `/checkout` | 本体適用・検証保留 | P1 | 検証済み | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
+| DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-010 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-011 | `/customer-service` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | [customer-service移行記録](#customer-service移行記録) |
 | DS-PAGE-012 | `/dispute` | 検証済み | P2 | 検証済み | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
@@ -79,7 +83,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-016 | `/offers` | 検証済み | P2 | 検証済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、header/reduced-motion回帰済み、商品あり実route保留 |
 | DS-PAGE-018 | `/product-support` | 本体適用（2026-10-01移行） | P3 | 検証済み | [src/app/(store)/product-support/page.tsx](<../../../src/app/(store)/product-support/page.tsx>) | [product-support移行記録](#product-support移行記録) |
-| DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、操作/ページング補助検証済み、実route保留 |
+| DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、操作/ページング補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-020 | `/product/[productSlug]` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/product/[productSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-021 | `/profile/addresses` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/addresses/page.tsx](<../../../src/app/(store)/profile/addresses/page.tsx>) | [addresses実施記録](#profile-addresses移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-022 | `/profile/following/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
@@ -93,11 +97,11 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-030 | `/profile/payment` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/payment/page.tsx](<../../../src/app/(store)/profile/payment/page.tsx>) | [payment実施記録](#profile-payment移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-031 | `/profile/reviews` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/reviews/page.tsx](<../../../src/app/(store)/profile/reviews/page.tsx>) | [reviews実施記録](#profile-reviews移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-032 | `/profile/settings` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
-| DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
+| DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
 | DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録) |
-| DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、実route保留 |
+| DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録) |
 | DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
 | DS-PAGE-040 | `/dashboard/admin/attributes/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
@@ -189,7 +193,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-052 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/cards/product/variant-switcher.tsx](<../../../src/components/store/cards/product/variant-switcher.tsx>) | TODO | 未実施 |
 | DS-COMP-053 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/product-page/product-info/product-price.tsx](<../../../src/components/store/product-page/product-info/product-price.tsx>) | TODO | 未実施 |
 | DS-COMP-054 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/cards/store-card.tsx](<../../../src/components/store/cards/store-card.tsx>) | TODO | 未実施 |
-| DS-COMP-055 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/shared/product-list.tsx](<../../../src/components/store/shared/product-list.tsx>) | TODO | 未実施 |
+| DS-COMP-055 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/shared/product-list.tsx](<../../../src/components/store/shared/product-list.tsx>) | TODO | editorial表示のみ追加検証、他callerの全体移行は未完了。[今回8画面](#購入優先8画面受け入れ移行記録) |
 | DS-COMP-056 | P2 | 商品・店舗カードと一覧（P2） | [src/components/store/compare/compare-grid.tsx](<../../../src/components/store/compare/compare-grid.tsx>) | 実装済み | [compare実施記録](#compare移行記録) |
 | DS-COMP-057 | P2 | ページング・フィルター（P2） | [src/components/store/shared/pagination.tsx](<../../../src/components/store/shared/pagination.tsx>) | 実装済み | product review opt-inのみ。[購入導線6画面](#購入導線優先6画面移行記録)。他callerは未移行 |
 | DS-COMP-058 | P2 | ページング・フィルター（P2） | [src/components/store/browse-page/browse-pagination.tsx](<../../../src/components/store/browse-page/browse-pagination.tsx>) | TODO | 未実施 |
@@ -378,7 +382,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-238 | P2 | Review pagination styles | [pagination.module.css](../../../src/components/store/shared/pagination.module.css) | 実装済み | product review opt-inの補助検証済み、実route保留 |
 | DS-COMP-239 | P2 | 通知一覧 | [notification-list.tsx](../../../src/components/store/profile/notifications/notification-list.tsx) | 検証済み | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。P2表示追加は[残存6画面](#p2残存6画面移行記録)、認証後実ルート保留 |
 | DS-COMP-240 | P2 | ヘッダーの未読バッジ・通知リンク | [account-menu.tsx](../../../src/components/store/layout/header/user-menu/account-menu.tsx) | 実装済み | RTL のみ。ブラウザー表示は認証後ヘッダーの fixture が無く未確認 |
-| DS-COMP-241 | P1 | 購入theme tokens | [purchase-theme.module.css](../../../src/components/store/shared/purchase-theme.module.css) | 保留 | store限定・補助検証済み、認証後実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
+| DS-COMP-241 | P1 | 購入theme tokens | [purchase-theme.module.css](../../../src/components/store/shared/purchase-theme.module.css) | 保留 | store限定・補助検証済み、認証後実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録) |
 | DS-COMP-242 | P1 | store状態タグCSS | [store-status.module.css](../../../src/components/shared/store-status.module.css) | 保留 | 34状態/明暗祖先/3幅/AA補助検証済み、認証後order実ルート保留。[残存6画面](#購入導線残存部品6画面移行記録) |
 | DS-COMP-243 | P4 | 属性一覧Client境界 | [AdminAttributes](../../../src/components/dashboard/admin/admin-attributes.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
 | DS-COMP-244 | P4 | 属性操作scope | [attribute CSS](../../../src/components/dashboard/admin/attribute.module.css) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
@@ -1298,3 +1302,79 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 `DESIGN_SUITE=seven/six/p3/p4/postpurchase bun run test:design`はそれぞれ82/56/37/56/25、合計256成功。最終レビューでoverviewのempty再navigation後のthemeを明示し、大金額/空の画像を別名保存。ナビの重複min-height宣言を除去後にseven foundation/overview10/10再確認。画像目視は各画面390px dark、overview768px light/darkと大きな金額を含む。fixtureの再navigation時のtheme欠落はテスト修正で、productionの不具合や先行Red実績へ加算しない。
 
 `bun run lint` 0 errors/既存8 warnings、最終変更specの限定ESLint無警告、`bunx tsc --noEmit` 0、`bun run check:playwright`成功、`git diff --check`成功。dashboard396files/403lcov/18 of 80cellsを再生成し、全セル状態が変更前と同一と確認。tsx IPC listen EPERMは許可付き再実行で解消し、テストRedとして扱わない。全体統計をQAからdocs/PROGRESSとCOVERAGE_REPORTへ同期。8画面の保留判定と本体59/仮1/転送7＝67、部品245のIDを維持。最終検証commitはこの記録を含む。
+
+
+## 購入優先8画面受け入れ移行記録
+
+- 2026-10-11。状態: 8ステップ実装・補助検証・仕様同期完了、認証後/実データ/SDKは一部保留。対象DS-PAGE-006/037/019/007/008/003/009/033。既存全画面状態・過去の検証履歴は保持し、今回の変更受け入れを別記録する。
+- [保存計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。既存環境のみ利用。実購入・DB初期化・顧客作成なし。
+- 計画保存の文書検証: 対象ID・順序・受け入れ条件・検証・文書同期・段階的コミットを確認。
+
+### 共通基盤
+
+- 既存purchase themeに入力境界・暗い面の罫線・画像面・overlay・hoverの役割を追加。dashboard/旧callerへの適用なし。
+- 既存実装の回帰確認: dark祖先でもlightのfilter面と可読focus/axe AAを確認、Chrome 1/1。Redは新規に主張しない。
+- 最初のbrowser失敗はlisten EPERM、次は配布Chromium不在で環境エラー。既存Chromeを使用して解消（新規インストールなし）。lint 0 errors/8既存warnings、tsc exit0、check:playwright成功。
+- 関連Jest: filter-panel/browse-pagination 8/8。config/検証helper追加後の型検査もexit0。
+
+### Step 1 商品一覧 — DS-PAGE-006
+
+- Red: acceptance browse 3/3がfocus contrast 1.65:1（期待3:1以上）で失敗。Green: 主商品リンクのfocusを濃金へ変更し、空状態を専用theme付きCSSへ整理、導線44pxを確保。
+- Refactor後: Chrome関連15/15（3幅・focus・filter/sort Portal・variant preview・ページャ/URL）、Jest19/19、tsc exit0、lint 0 errors/8既存warnings。390px画像を目視。既存画面判定は維持、実データ受け入れは最終チェックへ。
+
+### Step 2 店舗詳細 — DS-PAGE-037
+
+- Red: 3幅のbreadcrumb高さ16.5px（期待44px）で3/3失敗。Green/Refactor: breadcrumbの操作領域拡張、heroの補助文字/goldを共通tokensへ接続。
+- 最終Chrome12/12（3幅・長文/空/商品あり・keyboard/axe・カード・store導線）、関連Jest17/17、tsc exit0、lint 0 errors/8既存warnings。390px画像目視。実データの受け入れ状態は維持。
+
+### Step 3 商品詳細 — DS-PAGE-019
+
+- Red: keyboard modality補正後、カテゴリリンクのfocus contrast 1.67:1でbrowser3/3失敗。RTLのEscape後focus復帰不足で1件失敗。初回RTL matcher名の誤りとpointer modalityの失敗はRedから除外。
+- Green/Refactor: lightカテゴリ/商品面のfocusを濃金へ、Escapeでtrigger復帰、gallery切替/closeを44pxへ。既存Action/購入/在庫の契約は不変。helperはTabでkeyboard modalityへ切替。
+- 最終: 関連Chrome22/22（先行2画面/foundation含む）、Jest39/39、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。実ルート/SDKの受け入れは最終記録へ。
+
+### Step 4 カート — DS-PAGE-007
+
+- Red: breadcrumb高さ16.5pxで3/3失敗。Green/Refactor: 導線44px、残存固定色をdanger-surface/image/divider/muted tokensへ接続。初回GreenのCheckout disabled期待は既存仕様にないため修正し、数量増加disabledを回帰確認（この失敗はRedに算入しない）。
+- 最終Chrome新規3/3＋既存8/8（3幅・在庫切れ/空/数量/選択/保存失敗/retry/同期失敗・axe AA）、Jest28/28、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。既存の検証済み履歴は保持。
+
+### Step 5 Checkout — DS-PAGE-008
+
+- Red: coupon input境界contrast 2.50:1（期待3:1以上）で3/3失敗。Green/Refactor: control-lineを#877957へ、couponと住所Portalへ明示適用しinvalidの意味色は保持。残存固定色を役割別tokensへ接続。
+- 最終Chrome18/18（3幅・住所選択/Portal・pending lock・入力保持/失敗/retry/success・focus復帰・account caller互換・axe AA）、Jest18/18、tsc exit0、lint 0 errors/8既存warnings。390px画像目視。実認証後受け入れは保留。
+
+
+### Step 6 注文詳細 — DS-PAGE-003
+
+- Red: breadcrumb高さ18px（期待44px）で3/3失敗。Green/Refactor: 導線44pxと暗いheroのinvoice error tokenを明示適用。生成失敗→再操作とpending lockをfixtureで確認、PDF/支払契約は保持。
+- 最終Chrome15/15（checkout回帰含む、3幅・全状態・単一合計・invoice error/retry・axe AA）、Jest11/11、tsc exit0、lint 0 errors/8既存warnings。390px画像目視。実認証/SDK受け入れは保留。
+
+
+### Step 7 比較 — DS-PAGE-009
+
+- Red: 削除/全消去後にfocusがbodyへ落ち、RTL2/2・browser3/3が期待したfocus復帰で失敗。Green/Refactor: 残る見出しへ復帰、3:1以上のoutline、選択件数polite通知。最大4件・永続化・取得/取消契約を保持。
+- Chrome7/7（4幅の局所scroll・error/retry/pending/unavailable・3幅の削除focus・axe AA）、Jest28/28、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。
+
+
+### Step 8 Wishlist — DS-PAGE-033
+
+- 既存実装の回帰確認。最終ページの非リンクNext、Previous keyboard→URL/current→履歴復帰、全リンク44pxと可読focusを3幅で追加検証。先行修正済み商品カード/account shellを含め要件を満たし、production追加変更・Redの主張なし。
+- Chrome7/7（既存4幅通常/empty/error/pending含む）、Jest18/18、tsc exit0、lint 0 errors/8既存warnings、390px画像目視。認証後の実データ受け入れは保留。
+
+
+### 最終統合・既存環境受け入れ（2026-10-11）
+
+- 全体Jest3139 passed/3142 total、3 skipped、324 suites（323 pass/1 skip）、127 snapshots。Statements88.2%（10949/12413）／Branches78.42%（6723/8573）／Functions84.49%（2142/2535）／Lines88.74%（9970/11235）。
+- Chrome purchase66/66、commerce30/30、priority35/35＝131/131。公開Next11成功/6skip: home/cart/compareを3幅、guest checkout/wishlistのredirect_url。compare実空状態/main axe/focusを確認し390px画像目視。DB/inventory未設定・顧客storageState不在の範囲は[QAで保留](../../testing/QA_HANDOFF.md#ds-purchase-eight-browser)。実購入/送信・DB初期化・顧客作成なし。
+- dashboard402files/405lcov/18 of 80（全セル状態不変）。tsx IPC EPERMは許可付き再実行で解消（Red除外）。Nextが追加したpurchase-publicのtsconfig includeは元へ戻し、変更を残さない。過去の全体/Integration/E2E・台帳判定を保持し、今回の未確認範囲を別記録。
+
+- 最終lint 0 errors/8既存warnings、tsc exit0、check:playwright成功、diff --check成功。変更文書のローカルリンクと67画面/245部品の重複なしを確認。古い相対ルールリンクとADR参照も現存パスへ修正。SDD requirements/quality/testing、QA/TEST_IMPLEMENTATION_PLAN、全体統計を同期。
+
+### 保留分の実ルート受け入れ（2026-10-11）
+
+- 承認: 専用DB `multivendor_e2e`（最新 migration 適用済み・前日の販売者受け入れで作成）への冪等投入と Clerk dev の `+clerk_test` 顧客作成。決済は描画まで（送信・実購入なし）。開発DB `multivendor_dev` は不変。未払い注文の表示で Stripe テストモードの PaymentIntent が作られることも承認済み。
+- 実データ（read-only）: `prepare-route-audit.ts` で inventory 67ルートを生成。purchase-public **20/20（skip 0）**: 従来skipの browse 3幅・browse/home/product 実inventory監査 3幅に加え、店舗詳細 DS-PAGE-037 3幅（axe AA・44px・overflow）と、店舗カードから比較へ2件追加→実 `getProductsByIds` での比較表示・削除後の見出しfocus復帰 3幅を新規追加（既存実装への受け入れ追加のためRedなし）。
+- 認証後: `scripts/design/prepare-purchase-route.ts`（firefox 店舗。住所2・カート1・店舗クーポン・支払済/未払い注文・wishlist 12件）と suite `purchase-route`。**5 passed / 1 skipped**（2回実行で同結果）: checkout 3幅（実カート・住所radio切替・住所Dialogのfocus往復・axe）、クーポン無効コード→入力保持・店舗クーポン適用成功、支払済注文 3幅（breadcrumb 44px・実PDF生成とダウンロード `Order-<id>.pdf`）、未払い注文 3幅で PayPal ボタン描画（押さない）、wishlist 3幅（実12件・Page 2 へのkeyboard遷移・Next無効・履歴復帰）。
+- 不具合修正（TDD）: `getUserWishlist` が `product.variants[0]` を表示し、同一商品の別バリアントを保存すると同じカードが重複（React key 重複警告）していた。Red: 保存 variant-b に対し variant-a を返す 1件失敗。Green: 保存した `variant` を include して表示（`product.variants` は件数と同じ除外判定のみ）。profile.test 68/68、wishlist の key 警告解消を実ルートで確認。
+- 保留: Stripe Elements 描画は `STRIPE_SECRET_KEY` が `api_key_expired`（401）のため未確認。テストは `DESIGN_STRIPE_READY=1` でのみ実行。開発環境では Stripe の生エラー文（マスク済みキー末尾を含む）が顧客画面に表示される点を発見（[QA](../../testing/QA_HANDOFF.md#ds-purchase-eight-browser)、未修正）。
+- 全体Jest 3140/3143（3 skipped）、324 suites、127 snapshots。coverage 不変。dashboard 405 lcov／18 of 80。lint 0 errors/8既存warnings、tsc exit0、check:playwright成功。Next が追加した tsconfig include は元へ戻した。

@@ -29,6 +29,7 @@ import type { ReviewsOrderType } from "@/lib/types";
 import type { ReviewsFilterType } from "@/lib/types";
 import ProductNavigation from "@/components/store/product-page/product-navigation";
 import ProductInfo from "@/components/store/product-page/product-info/product-info";
+import ProductSwiper from "@/components/store/product-page/product-swiper";
 import StoreCard from "@/components/store/cards/store-card";
 import type { ProductPageDataType } from "@/lib/types";
 import productStyles from "@/components/store/product-page/product.module.css";
@@ -49,13 +50,15 @@ if (screen === "cart")
                           variantImage: "/assets/images/no_image.png",
                           price: 10,
                           quantity: 1,
-                          stock: 3,
+                          stock: new URLSearchParams(location.search).has("unavailable") ? 0 : 3,
                       }),
                   ]
         );
 function App({ storeCollection }: { storeCollection: React.ReactNode }) {
     const [page, setPage] = useState(1);
     const [quantity, setQuantity] = useState(1);
+    const galleryImages = [products[0].variants[0].images[0], { ...products[0].variants[0].images[0], id: "image-2" }];
+    const [activeImage, setActiveImage] = useState<(typeof galleryImages)[number] | null>(galleryImages[0]);
     const [reviews, setReviews] = useState<ReviewWithImageType[]>([]);
     const [reviewSort, setReviewSort] = useState<ReviewsOrderType>();
     const [filters, setFilters] = useState<ReviewsFilterType>({});
@@ -115,6 +118,7 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
                 </main>
             ) : screen === "product" ? (
                 <main className={productStyles.page}>
+                    {new URLSearchParams(location.search).has("gallery") && <ProductSwiper images={galleryImages} activeImage={activeImage} setActiveImage={setActiveImage} productName="Considered piece" />}
                     {new URLSearchParams(location.search).has("audit") ? <>
                         <StoreToaster />
                         <ProductNavigation categories={[{name: "Art", url: "art"}]} offers={[]} />

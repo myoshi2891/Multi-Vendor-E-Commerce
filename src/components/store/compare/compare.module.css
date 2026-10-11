@@ -7,6 +7,7 @@
 }
 .page a:focus-visible,
 .page button:focus-visible,
+.selectionHeading:focus,
 .scroller:focus-visible {
     outline: 2px solid var(--purchase-focus);
     outline-offset: 5px;

@@ -20,3 +20,7 @@
 ## 残存部品の購入theme（2026-10-08）
 
 [6画面受け入れ](../purchase-residual/requirements.md)。住所/coupon/明細/summaryはpurchase-themeのstore専用tokensを使用。page/Portal rootsに明示適用し固定light schemeを維持。住所フォームは継承tokensを使い、account callerでは従来のfallback値を維持する。注文/住所/coupon/pending/失敗後retryの契約は変更しない。
+
+## P1・P2優先8画面受け入れ（2026-10-11）
+
+クーポンと住所Portalの入力境界は周囲の明るい面に対し3:1以上のcontrastを持つ。focus/入力保持/pending dismiss lock/Escape復帰を維持。境界はpurchase-control-lineを使用し、区切り線と入力invalidの意味色は独立する。[計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。

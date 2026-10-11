@@ -23,3 +23,7 @@
 ## 残存操作部品（2026-10-08）
 
 [6画面受け入れ](../purchase-residual/requirements.md)。pageにstore専用tokensをcomposeし、全選択/商品選択はlabelを含む44pxの操作領域、一括削除/同期再試行は44px以上とする。商品列はラベル領域を確保し3幅で横あふれを防ぐ。数量・送料・wishlist・checkout失敗保持の契約は変更しない。
+
+## P1・P2優先8画面受け入れ（2026-10-11）
+
+breadcrumbは44×44px以上とし、在庫切れ面・画像面・hover・暗い罫線・補助文字を共通purchase tokensへ接続する。在庫切れの文言と数量増加disabledを保持し、カート保存/送料/選択の業務仕様は変更しない。[計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。

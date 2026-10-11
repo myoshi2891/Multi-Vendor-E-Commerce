@@ -15,3 +15,9 @@
 - [ ] 今回の認証後実ルート受け入れ（既存検証済み履歴は維持）。
 
 [証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+
+## 優先8画面受け入れ（2026-10-11）
+
+- [x] 3幅の最終ページkeyboard/history回帰を追加、既存4幅の通常/empty/error/pendingと併せChrome7/7。Jest18/18、lint 0 errors/8既存warnings、tsc exit0、390px画像目視。
+- [ ] 認証後の実データ受け入れは最終QAに条件を記録。

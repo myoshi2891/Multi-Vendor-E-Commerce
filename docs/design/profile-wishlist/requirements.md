@@ -19,3 +19,8 @@
 Wishlistの見出し・件数・状態・罫線・ページャーをprofile shellのaccount aliasesへ接続。番号リンクは44×44px以上、current/disabled/hover/focusを統一。商品カードの既存editorial操作、URL・範囲補正・alias・取得失敗のreloadを保持する。
 
 [計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+
+## 優先8画面受け入れ（2026-10-11）
+
+最終ページではNextを非リンク・aria-disabledとし、Previousのkeyboard操作と履歴復帰でもURL/currentを一致させる。全ページャリンク44×44px・focus contrast3:1以上。既存のeditorialカード・空/失敗/pending・件数は維持。
