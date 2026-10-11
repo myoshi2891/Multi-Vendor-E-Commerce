@@ -837,7 +837,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 2 DS-PAGE-037 店舗詳細。
 - [x] Step 3 DS-PAGE-019 商品詳細。
 - [x] Step 4 DS-PAGE-007 カート。
-- [ ] Step 5 DS-PAGE-008 Checkout。
+- [x] Step 5 DS-PAGE-008 Checkout。
 - [ ] Step 6 DS-PAGE-003 注文詳細。
 - [ ] Step 7 DS-PAGE-009 比較。
 - [ ] Step 8 DS-PAGE-033 Wishlist。

@@ -1,5 +1,24 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
+
+for (const width of [1440, 768, 390]) {
+    test(`acceptance checkout ${width}: input boundaries and portal focus`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=checkout");
+        await expect(page.getByRole("button", { name: "Place order", exact: true })).toBeEnabled();
+        await expectReadableBorder(page.getByLabel("Coupon code", { exact: true }));
+        const trigger = page.getByRole("button", { name: "Add new address" });
+        await trigger.click();
+        const firstName = page.getByLabel("First name", { exact: true });
+        await expectReadableBorder(firstName);
+        await expectReadableFocus(firstName);
+        await page.screenshot({ path: info.outputPath(`acceptance-checkout-${width}.png`), fullPage: true });
+        await page.keyboard.press("Escape");
+        await expect(trigger).toBeFocused();
+        await accessible(page);
+    });
+}
 
 // Supplemental component browser verification; never interpreted as authenticated route coverage.
 async function accessible(page: Page) {

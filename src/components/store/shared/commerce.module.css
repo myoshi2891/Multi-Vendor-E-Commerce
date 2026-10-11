@@ -28,7 +28,7 @@
     flex-wrap: wrap;
     gap: 16px;
     font-size: 12px;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
 }
 .hero h1 {
     font:
@@ -116,7 +116,7 @@
     overflow-wrap: anywhere;
 }
 .summary .row {
-    border-color: #435047;
+    border-color: var(--purchase-divider-on-dark);
 }
 .total {
     font-size: 20px;
@@ -147,11 +147,11 @@
 .secondary {
     background: transparent;
     color: var(--purchase-link);
-    border: 1px solid #a99c84;
+    border: 1px solid var(--purchase-control-line);
 }
 .hero .secondary {
     color: var(--purchase-on-dark);
-    border-color: #657163;
+    border-color: var(--purchase-line-on-dark);
 }
 .primary:disabled,
 .secondary:disabled {
@@ -235,7 +235,7 @@
     min-height: 44px;
     background: var(--purchase-panel);
     color: var(--purchase-ink);
-    border: 1px solid #a99c84;
+    border: 1px solid var(--purchase-control-line);
     padding: 12px;
 }
 .field input[aria-invalid="true"] {
@@ -257,7 +257,7 @@
     width: 90px;
     height: 110px;
     object-fit: cover;
-    background: #e6e1d5;
+    background: var(--purchase-image);
 }
 .product h3,
 .productTitle {
@@ -314,7 +314,7 @@
     position: fixed;
     inset: 0;
     z-index: 60;
-    background: #0b100eb3;
+    background: var(--purchase-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -329,7 +329,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 26px;
-    border: 1px solid #a99c84;
+    border: 1px solid var(--purchase-control-line);
 }
 .dialogHeader {
     display: flex;
@@ -388,3 +388,5 @@
 }
 
 .hero, .summary { --purchase-focus: var(--purchase-gold); }
+
+.dialog :is(input, select):not([type="checkbox"]):not([aria-invalid="true"]) { border-color: var(--purchase-control-line); }

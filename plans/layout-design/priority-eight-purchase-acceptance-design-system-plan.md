@@ -47,7 +47,7 @@
 - [x] Step 2 店舗詳細。
 - [x] Step 3 商品詳細。
 - [x] Step 4 カート。
-- [ ] Step 5 Checkout。
+- [x] Step 5 Checkout。
 - [ ] Step 6 注文詳細。
 - [ ] Step 7 比較。
 - [ ] Step 8 Wishlist。

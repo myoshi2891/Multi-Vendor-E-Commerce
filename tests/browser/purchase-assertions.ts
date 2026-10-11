@@ -7,7 +7,15 @@ export async function expectReadableFocus(control: Locator) {
     await control.focus();
     await expect(control).toBeFocused();
     await expect(control).toHaveCSS("outline-style", "solid");
-    const contrast = await control.evaluate((element) => {
+    expect(await contrastAgainstSurface(control, "outline-color"), "Focus indicator must contrast with the surrounding surface").toBeGreaterThanOrEqual(3);
+}
+
+export async function expectReadableBorder(control: Locator) {
+    expect(await contrastAgainstSurface(control, "border-top-color"), "Input boundary must contrast with the surrounding surface").toBeGreaterThanOrEqual(3);
+}
+
+async function contrastAgainstSurface(control: Locator, property: string) {
+    return control.evaluate((element, colorProperty) => {
         const rgb = (color: string) => color.match(/[\d.]+/g)!.map(Number);
         const luminance = (channels: number[]) =>
             channels.slice(0, 3).map(value => {
@@ -24,9 +32,8 @@ export async function expectReadableFocus(control: Locator) {
             }
             parent = parent.parentElement;
         }
-        const foreground = luminance(rgb(getComputedStyle(element).outlineColor));
+        const foreground = luminance(rgb(getComputedStyle(element).getPropertyValue(colorProperty)));
         const surface = luminance(background);
         return (Math.max(foreground, surface) + 0.05) / (Math.min(foreground, surface) + 0.05);
-    });
-    expect(contrast, "Focus indicator must contrast with the surrounding surface").toBeGreaterThanOrEqual(3);
+    }, property);
 }

@@ -1231,3 +1231,4 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - Step 2 店舗詳細 ✅ Completed (2026-10-11)。
 - Step 3 商品詳細 ✅ Completed (2026-10-11)。
 - Step 4 カート ✅ Completed (2026-10-11)。
+- Step 5 Checkout ✅ Completed (2026-10-11)。
