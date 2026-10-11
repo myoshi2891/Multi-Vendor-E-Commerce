@@ -1416,3 +1416,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 390pxの先行browserでtoken非継承をRed確認。purchase themeへ面/文字/hover/focusを接続、hero Homeを44pxとgold focusへ統一。priority browser3/3（1440/768/390px、5導線/説明/長文、hover/focus、axe AA）、共通関連Jest5/5、型0、lint0 errors/既存8 warnings。本文・リンク契約は変更なし。[既存仕様](../../../specs/multi-vendor-ecommerce/01-requirements.md)の公開hub要件を保持。
 
 仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
+
+### Step 3 返品交換（DS-PAGE-036）
+
+先行390px browserでtoken非継承をRed確認。returns rootにpurchase theme、フォームはbrand opt-inのtoken fallbackを使用し、既定フォーム保持。入力境界・placeholder・field error/root error・receiptを共通意味色へ統一。Refactor後関連Jest10/10、priority browser3/3（3幅、validation/UUID、pending lock、入力保持/error/retry/receipt、focus・axe AA）。型0、lint0 errors/既存8 warnings。ポリシー本文・RETURN_REQUEST契約を保持。外部送信はmock。
+
+仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
