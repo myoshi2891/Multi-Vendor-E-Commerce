@@ -199,3 +199,8 @@ export const useCompareStore = create(
 比較rootにstore限定purchase themeを合成し、hero/card/price/罫線/意味色/focusを役割別tokensへ統一。暗いheroのfocusには装飾gold、明るい面には濃いfocusを使う。ProductPriceの計算・4件制限・削除・全消去・保存方式・Action Propsは不変。
 
 [保存計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+
+## 優先8画面受け入れ（2026-10-11）
+
+CompareGridの選択見出しをrefとtabIndex=-1でprogrammatic focus先にする。削除/clear handlerで同期的に移動し、通常Tab順には追加しない。見出しのfocus outlineはpurchase-focus、件数はaria-live=polite。fetch/action/store契約は変更しない。

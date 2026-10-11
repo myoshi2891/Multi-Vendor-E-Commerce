@@ -444,7 +444,10 @@ describe("createStripePaymentIntent", () => {
     });
 
     describe("エラーハンドリング", () => {
-        it("Stripe APIエラーをログ出力し再スローする", async () => {
+        // 呼び出し側（StripePayment）はメッセージを画面に出すため、Stripe の生エラー
+        // （キー末尾などを含みうる）は汎用文言へ畳み、詳細はログにだけ残す
+        it("Stripe APIエラーは汎用メッセージで投げ、詳細はログにだけ残す", async () => {
+            // Arrange
             (currentUser as jest.Mock).mockResolvedValue({
                 id: TEST_CONFIG.DEFAULT_USER_ID,
             });
@@ -454,14 +457,43 @@ describe("createStripePaymentIntent", () => {
             mockDb.order.findUnique.mockResolvedValue(
                 createMockOrder({ total: 100 })
             );
-            const stripeError = new Error("Stripe API error");
+            const stripeError = new Error(
+                "Expired API Key provided: sk_test_****abcd"
+            );
             mockStripePaymentIntentsCreate.mockRejectedValue(stripeError);
 
+            // Act
+            const result = createStripePaymentIntent("order-001");
+
+            // Assert
+            await expect(result).rejects.toThrow(
+                new Error("Payment could not be initialized.")
+            );
+            expect(consoleSpy).toHaveBeenCalledWith(
+                "Error creating payment intent:",
+                stripeError.message,
+                stripeError.stack
+            );
+            consoleSpy.mockRestore();
+        });
+
+        it("非 Error の失敗も汎用メッセージで投げる", async () => {
+            // Arrange
+            (currentUser as jest.Mock).mockResolvedValue({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            const consoleSpy = jest
+                .spyOn(console, "error")
+                .mockImplementation(() => undefined);
+            mockDb.order.findUnique.mockResolvedValue(
+                createMockOrder({ total: 100 })
+            );
+            mockStripePaymentIntentsCreate.mockRejectedValue("raw failure");
+
+            // Act & Assert
             await expect(
                 createStripePaymentIntent("order-001")
-            ).rejects.toThrow(stripeError);
-
-            expect(consoleSpy).toHaveBeenCalled();
+            ).rejects.toThrow(new Error("Payment could not be initialized."));
             consoleSpy.mockRestore();
         });
     });

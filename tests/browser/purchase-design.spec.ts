@@ -1,5 +1,89 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectReadableFocus } from "./purchase-assertions";
+
+for (const width of [1440, 768, 390]) {
+    test(`acceptance cart ${width}: branded breadcrumb and unavailable item`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=cart&unavailable=1");
+        const breadcrumb = page.getByRole("main").getByRole("navigation", { name: "Breadcrumb" });
+        for (const link of await breadcrumb.getByRole("link").all()) {
+            const box = await link.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await expectReadableFocus(link);
+        }
+        const item = page.getByText("Out of stock", { exact: true }).locator("xpath=ancestor::article");
+        await expect(item).toHaveCSS("background-color", "rgb(244, 227, 221)");
+        await expect(page.getByRole("button", { name: "Increase quantity", exact: true })).toBeDisabled();
+        expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+        await page.screenshot({ path: info.outputPath(`acceptance-cart-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`acceptance product ${width}: light category portal focus and gallery controls`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=product&audit=1&gallery=1");
+        const category = page.getByRole("button", { name: "Browse categories" });
+        await category.click();
+        await expectReadableFocus(page.getByRole("link", { name: "Art", exact: true }));
+        await page.keyboard.press("Escape");
+        await expect(category).toBeFocused();
+        for (const name of ["Previous image", "Next image"]) {
+            const box = await page.getByRole("button", { name, exact: true }).boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+        }
+        await page.getByRole("button", { name: "Next image", exact: true }).click();
+        await expect(page.getByRole("button", { name: "View image 2" })).toHaveAttribute("aria-pressed", "true");
+        await page.screenshot({ path: info.outputPath(`acceptance-product-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`acceptance store ${width}: breadcrumb touch targets and brand roles`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=store&pieces=1");
+        const hero = page.getByRole("heading", { level: 1 }).locator("xpath=ancestor::header");
+        for (const link of await hero.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link").all()) {
+            const box = await link.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await expectReadableFocus(link);
+        }
+        await expect(hero.getByRole("link", { name: "Explore the collection" })).toHaveCSS("color", "rgb(212, 186, 131)");
+        await page.screenshot({ path: info.outputPath(`acceptance-store-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`acceptance browse ${width}: product focus and empty collection action`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=browse&pieces=1");
+        await expectReadableFocus(page.getByTestId("product-card-considered-piece"));
+        await page.screenshot({ path: info.outputPath(`acceptance-browse-${width}.png`), fullPage: true });
+        await page.goto("/?screen=browse");
+        const explore = page.getByRole("link", { name: "Explore all pieces" });
+        const box = await explore.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        await expectReadableFocus(explore);
+        await expect(explore).toHaveAttribute("href", "/browse");
+    });
+}
+
+test("acceptance foundation: scoped light surface survives a dark ancestor", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 1000 });
+    await page.goto("/?screen=browse");
+    await page.evaluate(() => document.documentElement.classList.add("dark"));
+    const trigger = page.getByRole("button", { name: "Show filters" });
+    await expectReadableFocus(trigger);
+    await trigger.click();
+    const category = page.getByRole("button", { name: "Art", exact: true });
+    await expect(category).toBeVisible();
+    await expectReadableFocus(category);
+    expect((await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+});
 
 for (const width of [1440, 768, 390]) {
     test(`header panels ${width}: brand, keyboard, search, country states`, async ({

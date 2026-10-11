@@ -76,6 +76,11 @@ Dashboard:
   state, so that a concurrent delete or a lost `connect` target is not misreported as
   "already paid"; returns `false` without throwing when the re-read itself fails, preserving
   the original P2025). Both are shared by `stripe.ts` and `paypal.ts`.
+- `createStripePaymentIntent` passes through only its intended rejections (`Order not found.`,
+  `Order payment is already settled.`, `Stripe payment intent could not be recreated.`) and
+  throws `Payment could not be initialized.` for any other failure (Stripe / Prisma errors are
+  logged only), because `StripePayment` renders the message to the customer. This mirrors
+  `paypal.ts`, which surfaces only verification rejections.
 - Helpers used by only one query module stay module-private inside that file
   (non-exported declarations are unconstrained by `"use server"`), e.g. `user.ts`'s cart-item
   validation helpers and `paypal.ts`'s `requirePayPalUser` / `findOwnedPayPalOrder`.

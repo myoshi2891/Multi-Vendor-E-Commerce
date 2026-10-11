@@ -499,15 +499,14 @@ describe("getUserWishlist", () => {
                         name: "Test Product",
                         rating: 4.5,
                         sales: 100,
-                        variants: [
-                            {
-                                id: "variant-001",
-                                slug: "variant-slug",
-                                variantName: "Black",
-                                images: [{ url: "https://example.com/img.jpg" }],
-                                sizes: [{ size: "M", price: 29.99 }],
-                            },
-                        ],
+                        variants: [{ id: "variant-001" }],
+                    },
+                    variant: {
+                        id: "variant-001",
+                        slug: "variant-slug",
+                        variantName: "Black",
+                        images: [{ url: "https://example.com/img.jpg" }],
+                        sizes: [{ size: "M", price: 29.99 }],
                     },
                 },
             ];
@@ -535,6 +534,50 @@ describe("getUserWishlist", () => {
                     variantImages: [],
                 },
             ]);
+        });
+
+        it("商品の先頭ではなく保存したバリアントを返す（同一商品の別バリアントを区別する）", async () => {
+            // Arrange: 同じ商品の 2 バリアントをそれぞれ保存している
+            const variantA = {
+                id: "variant-a",
+                slug: "variant-a-slug",
+                variantName: "Black",
+                images: [{ url: "https://example.com/a.jpg" }],
+                sizes: [{ size: "M", price: 10 }],
+            };
+            const variantB = {
+                id: "variant-b",
+                slug: "variant-b-slug",
+                variantName: "White",
+                images: [{ url: "https://example.com/b.jpg" }],
+                sizes: [{ size: "L", price: 12 }],
+            };
+            const product = {
+                id: "product-001",
+                slug: "product-slug",
+                name: "Test Product",
+                rating: 4.5,
+                sales: 100,
+                variants: [variantA, variantB],
+            };
+            mockDb.wishlist.findMany.mockResolvedValue([
+                { product, variant: variantB },
+                { product, variant: variantA },
+            ]);
+            mockDb.wishlist.count.mockResolvedValue(2);
+
+            // Act
+            const result = await getUserWishlist();
+
+            // Assert
+            expect(
+                result.wishlist.map((item) => item.variants[0].variantId)
+            ).toEqual(["variant-b", "variant-a"]);
+            expect(result.wishlist[0].variants[0]).toMatchObject({
+                variantSlug: "variant-b-slug",
+                variantName: "White",
+                images: [{ url: "https://example.com/b.jpg" }],
+            });
         });
 
         it("userIdでフィルタして取得する（IDOR防止）", async () => {

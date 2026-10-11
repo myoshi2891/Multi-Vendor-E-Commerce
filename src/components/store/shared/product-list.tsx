@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { FC } from 'react'
 import ProductCard from '../cards/product/product-card'
 import ReactStars from 'react-rating-stars-component'
+import styles from './product-list.module.css'
 
 interface Props {
     products: ProductType[] // Array of products data
@@ -35,7 +36,7 @@ const ProductList: FC<Props> = ({ products, title, link, arrow, variant }) => {
         }
     }
     return (
-        <div className="relative" data-variant={variant}>
+        <div className={cn("relative", variant === 'editorial' && styles.editorial)} data-variant={variant}>
             {title && renderTitle()}
             {/* 絞り込み結果の告知用。新規マウントされた空状態は読み上げられないため常設ノードの文言を更新する */}
             {variant === 'editorial' && (
@@ -60,10 +61,10 @@ const ProductList: FC<Props> = ({ products, title, link, arrow, variant }) => {
                     ))}
                 </div>
             ) : variant === 'editorial' ? (
-                <div className="min-h-64 border border-[#c9c8bb] px-6 py-16 text-center">
-                    <p className="font-serif text-2xl text-[#17251d]">No pieces found in this edit.</p>
-                    <p className="mt-3 text-sm text-[#536054]">Try another filter or explore the full collection.</p>
-                    <Link href="/browse" className="mt-7 inline-block border-b border-[#a68a56] pb-1 text-xs uppercase tracking-widest text-[#766541]">
+                <div className={styles.empty}>
+                    <p>No pieces found in this edit.</p>
+                    <p>Try another filter or explore the full collection.</p>
+                    <Link href="/browse">
                         Explore all pieces
                     </Link>
                 </div>

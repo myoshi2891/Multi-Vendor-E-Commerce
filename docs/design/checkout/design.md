@@ -12,3 +12,7 @@
 ## 購入tokensの継承（2026-10-08）
 
 commerceのpageとRadix Portal dialogにpurchase-themeをcompose。共用AddressFormのCSSはpurchase tokensと従来値のfallbackを使用し、checkoutの保存buttonだけgold/inkへ統一。profile側のmarkup/Props/既定配色は保持。[受け入れ](../purchase-residual/requirements.md)。
+
+### 入力境界の役割（2026-10-11）
+
+control-lineを#877957とし、coupon inputとcheckout dialog内の有効input/selectに明示適用。共有AddressFormのaccount表示とinvalidのdanger境界を保持。overlay/image/暗い罫線も既存purchase役割へ接続する。

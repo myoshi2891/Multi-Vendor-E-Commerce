@@ -18,3 +18,26 @@ Browseのページャはeditorialテーマと`Collection pages`のnavigation名�
 Home（DS-PAGE-017）のmotion切替は全幅で44×44px以上を確保する。設定reduce時のdisabledと静止表示、Pause/Resume・aria-pressed・focusを保持する。
 
 Product（DS-PAGE-019）のカテゴリ、評価フィルター、boutique操作、SKUコピーと共有操作は44×44px以上。共有SDKのinline outline resetはeditorial共有tile内のみ上書きして可視focusを確保し、共有URL/媒体/ブランドアイコンを保持する。
+
+## P1・P2優先8画面受け入れ（2026-10-11）
+
+対象はDS-PAGE-006/037/019/007/008/003/009/033。[計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。store限定の意味別tokensに入力境界・暗い面の罫線・画像面・overlay・暗いhoverを追加。focusは周囲の面とのcontrast 3:1以上をブラウザーで確認する。既存表示の回帰確認と新要件Redを区別し、認証後受け入れは別記録する。
+
+### Step 1 商品一覧
+
+商品カードの主商品リンクは明るい面で濃いfocusを使い、暗い操作パネルはgoldのfocusを保持する。editorial商品一覧の空状態は同じpurchase themeの面・文字・罫線を使用し、Explore all piecesは44px以上・可視focus・既存/browseリンクを持つ。旧variantの見た目は維持する。
+
+### Step 2 店舗詳細
+
+店舗heroのbreadcrumbリンクは44×44px以上、暗い面で可読focusを持つ。heroのgold/補助文字とcollection導線はpurchaseの意味別tokensへ接続し、既存rating・長文・storeのfilter/sortを保持する。
+
+### Step 3 商品詳細
+
+カテゴリdropdownと明るい商品情報面は濃いfocus、暗い購入面はgoldを使う。カテゴリリンクからEscapeで閉じるとtriggerへfocusを戻す。画像切替・拡大画像closeは44×44px以上。画像/variant/size/価格/在庫・レビュー・共有契約は保持する。
+
+
+## 8画面共通役割の受け入れ（2026-10-11）
+
+purchase-themeへcontrol-line（#877957）、line-on-dark、divider-on-dark、dark-hover、image、overlay、danger-on-darkを追加。roleごとに面との可読性を保ち、light入力境界とfocusは3:1以上。画像面・overlayは装飾役割で同じcontrast基準を直接適用しない。product-list空状態をCSS Moduleのthemeへ接続し、旧caller既定表示を保持。
+
+[計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。API/schema/認可/金額/注文決済/PDF内容は変更せず、[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は更新不要。

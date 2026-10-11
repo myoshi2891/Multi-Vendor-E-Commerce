@@ -8,6 +8,8 @@ await startFixtureServer({
     port: 3107,
     title: "Commerce browser fixture",
     mocks: {
+        // Exercise invoice failure/retry without generating downloads or opening print windows.
+        "./pdf-invoice": `export async function generateOrderPDFBlob(){await new Promise(resolve=>setTimeout(resolve,500));throw new Error("fixture invoice failure")}`,
         "@clerk/nextjs": `import React from "react"; export function SignOutButton({children}){return children} export function UserButton(){return React.createElement("button",null,"Manage account")}`,
         "next/navigation": `export function useSearchParams(){return new URLSearchParams(location.search)} export function usePathname(){return location.pathname} export function useRouter(){return {push(){},replace(){},refresh(){}}}`,
         "@stripe/stripe-js": `export function loadStripe(){return Promise.resolve(null)}`,

@@ -12,3 +12,8 @@
 ## 状態タグのopt-in境界（2026-10-08）
 
 既存OrderStatusTag/PaymentStatusTag/ProductStatusTagへ任意store variantを追加。store-status CSS Moduleがpurchase-themeをcomposeし、data-statusで状態色を選択。header/group/itemから指定し、既定callerは既存utilityクラスを維持。状態遷移・ラベル・支払い条件・PDFを変更しない。
+
+
+## 優先8画面受け入れ（2026-10-11）
+
+共有commerce breadcrumbの操作領域を44pxにし、headerの失敗段落に局所error classを付与。purchase-themeのdanger-on-darkをheroに明示適用する。fixtureのPDF importのみ失敗させ、productionの生成処理は変更しない。

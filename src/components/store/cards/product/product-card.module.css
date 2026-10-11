@@ -73,3 +73,4 @@
 .editorial .variantOption { display: grid; place-items: center; min-width: var(--purchase-touch); min-height: var(--purchase-touch); border-color: var(--purchase-line); border-radius: 0; background: var(--purchase-dark); }
 .editorial .variantOption[aria-current="true"] { border-color: var(--purchase-gold); }
 .editorial :is(a, button):focus-visible { outline: 2px solid var(--purchase-gold); outline-offset: 3px; }
+.editorial .card > div > a:focus-visible { outline-color: var(--purchase-focus); }

@@ -66,7 +66,7 @@ export default function OrderHeader({ order }: { order: OrderInvoice }) {
             </div>
             {busy && <p role="status">Preparing your invoice…</p>}
             {error && (
-                <p role="alert">
+                <p role="alert" className={styles.error}>
                     We couldn’t prepare your invoice. Please try again.
                 </p>
             )}

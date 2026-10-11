@@ -1,6 +1,45 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-11 レビュー対応（最新）
+## 2026-10-11 購入優先8画面 残り保留の解消（最新）
+
+前節の残り保留のうち、Stripe テスト決済・Place order・外部共有/印刷は専用DBと sandbox で合格。PayPal sandbox 承認は購入者の認証情報が未設定のため保留。作業ツリーのみ（コミットなし）。[記録](../design/design-system/PROGRESS.md#残り保留の解消2026-10-11)。
+
+- Jest: **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage --silent` 実測。coverage Statements88.21%（10953/12416）／Branches78.44%（6728/8577）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。
+- 修正（TDD）: `createStripePaymentIntent` は意図した拒否3種だけ透過し、それ以外（Stripe/Prisma の生エラー）は `Payment could not be initialized.` を投げる（詳細はログのみ）。stripe.test の再送出テストを書き換え＋非 Error 1件追加（Red 2件確認）。04-interfaces に契約を追記。
+- ブラウザー: purchase-route **9 passed / 1 skipped**（2回実行・各回再準備）、purchase-public **21/21**。追加: Place order→新規未払い注文へ遷移・カート空、印刷（全 frame の print を記録、呼び出し1回）、Stripe Elements 描画、Stripe テストカード 4242 で決済→支払い欄が消え再読込でも未表示（Stripe 側 `succeeded`）、外部共有4種の共有 URL に実商品 URL・Copy link の値。
+- 残る保留: **PayPal sandbox 承認** — `.env.local` に `PAYPAL_SANDBOX_BUYER_EMAIL` / `PAYPAL_SANDBOX_BUYER_PASSWORD` が未設定のため skip（テストは実装済み。設定後に purchase-route を再実行）。PayPal 側の captcha 等で自動化できない場合は理由を記録して保留。
+- 精査済み（アプリの不具合ではない）: 当初「Link 欄の展開で Pay Now が約1100pxずれる」と報告したが誤り。計測ではページ高さ・Stripe iframe 高さは blur の前後で不変で、差は計測時のスクロールだった。実際の原因は自動操作の条件の重なり: カード欄（別オリジン iframe）にフォーカスがある状態で `locator.click()` が瞬時スクロール直後にマウスを押すため、Chrome がクリックを古い位置の iframe（カード番号欄）へ配送する。人と同じホイール操作＋クリック、スクロール後に間を置いたクリックではいずれも送信・決済完了を確認。spec はキーボード送信のまま理由を訂正。
+- PayPal sandbox 承認は保留として [08-open-questions](../../specs/multi-vendor-ecommerce/08-open-questions.md#paypal-sandbox-決済の実ルート受け入れ保留) と 07-testing に記録。
+- 再現: 前節の手順に加え、`DESIGN_STRIPE_READY=1` で Stripe 2件を実行。未払い注文は準備スクリプトが3件（描画・Stripe・PayPal）まで補充する。
+
+## 2026-10-11 購入優先8画面 保留分の実ルート受け入れ（履歴）
+
+[DS-PURCHASE-EIGHT-BROWSER](#ds-purchase-eight-browser) の保留を承認範囲（専用DB `multivendor_e2e` への冪等投入・Clerk `+clerk_test` 顧客作成・決済は描画まで）で解除。作業ツリーのみ（コミットなし）。[記録](../design/design-system/PROGRESS.md#保留分の実ルート受け入れ2026-10-11)。
+
+- Jest: **3140 passed / 3143 total、3 skipped、324 suites（323 passed／1 skipped）、127 snapshots passed**。`bun run test -- --runInBand --coverage --silent` 実測。coverage は前回と同値。
+- 実Next purchase-public **20/20（skip 0）**、purchase-route **5 passed／1 skipped（Stripe）**。Chrome（`DESIGN_BROWSER_CHANNEL=chrome`）。
+- 修正: `getUserWishlist` が保存バリアントでなく商品の先頭バリアントを返していた（同一商品の別バリアントで重複カード・key 重複）。profile.test +1（先行 Red 確認済み）。
+- 再現手順: `.env` を読み込み、`DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を `localhost:5432/multivendor_e2e` に揃える → `bun scripts/design/prepare-route-audit.ts <inv.json>`（`DESIGN_AUDIT_INVENTORY`）→ `bun scripts/design/prepare-purchase-route.ts <out.json>`（`DESIGN_PURCHASE_ROUTE`、実行ごとに再準備）→ `DESIGN_SUITE=purchase-public|purchase-route bun run test:design`。
+
+## 2026-10-11 購入優先8画面の受け入れ（履歴）
+
+[計画](../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)に従い、browse・店舗詳細・商品詳細・cart・checkout・注文詳細・compare・wishlistの残存表示と操作を対応。計画→基盤→8ステップ→最終統合の11コミット。先行Redと環境/テスト側の失敗を分け、既存実装が満たすWishlistは回帰追加のみ。仕様と[進捗](../design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)を同期。
+
+- Jest: **3139 passed / 3142 total、3 skipped、324 suites（323 passed／1 skipped）、127 snapshots passed**。`bun run test -- --runInBand --coverage --silent`（lcov/text-summary/json-summary）実測。
+- coverage: Statements **88.2%（10949/12413）**／Branches **78.42%（6723/8573）**／Functions **84.49%（2142/2535）**／Lines **88.74%（9970/11235）**。
+- 補助Chrome: purchase **66/66**、commerce **30/30**、priority **35/35**＝**131/131**。3幅・axe AA（contrast含む）・focus/境界contrast・44px・長文/空/在庫切れ/pending/error/retry/success・Portal・URL/history・reduced-motionを回帰確認。各ステップ390px画像目視。
+- 実Next purchase-public: **11 passed / 6 skipped**。home/cart/compareの3幅とguest checkout/wishlistのsign-in・redirect_urlを確認。compareは実mainの空状態/keyboard focus/axeも確認。header以外の全共有領域、通常比較データや認証後表示の合格ではない。
+- dashboard再生成: **402 files／405 lcov／18 of 80 cells（23%）**。80セルの状態は変更前と一致。Integration238/18 suitesと全E2Eの以前の実測は維持（今回未実行）。型/lint/check:playwright/diff/文書リンクの最終結果は[進捗](../design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)に記録。
+
+### DS-PURCHASE-EIGHT-BROWSER
+
+- **現状（2026-10-11）**: 専用DB `multivendor_e2e`・Clerk テスト顧客・更新済み Stripe テストキーで、browse/store/product/compare/checkout（注文確定含む）/注文詳細（PDF・印刷・Stripe 描画とテストカード決済・PayPal 描画）/wishlist と外部共有を実ルートで受け入れ済み。手順と結果は [最新節](#2026-10-11-購入優先8画面-残り保留の解消最新) と [前節](#2026-10-11-購入優先8画面-保留分の実ルート受け入れ履歴)。
+- **残る保留**: PayPal sandbox 承認（購入者ログイン→承認→Paid）。`.env.local` に `PAYPAL_SANDBOX_BUYER_EMAIL` / `PAYPAL_SANDBOX_BUYER_PASSWORD` を設定して `DESIGN_SUITE=purchase-route` を再実行する（[08-open-questions](../../specs/multi-vendor-ecommerce/08-open-questions.md#paypal-sandbox-決済の実ルート受け入れ保留)）。
+- **範囲外**: 本番決済・実購入。共有先サイトへの実遷移と OS の印刷ダイアログは、共有 URL の組み立てと `print()` 呼び出しの確認で代替する。
+- 履歴（解消済み）: 当初は「既存環境のみ」の承認範囲で、専用DB/inventory 未設定と顧客 storageState 不在により browse/product の実データ 6 件を skip し、認証後3画面と外部SDKを保留していた。Stripe はキー期限切れと生エラー文の表示も保留していたが、いずれも上記の作業で解消した。
+- 本体59/仮実装1/転送7＝67画面・部品245のIDと既存判定は維持。DS-BASE-001や共有部品の全callerを完了扱いにしない。API/DB/認可/金額/決済遷移の契約変更なし。
+
+## 2026-10-11 レビュー対応（履歴）
 
 レビュー指摘4件を現行コードで確認し、すべて有効だったため修正。作業ツリーのみ（コミットなし）。
 
@@ -118,14 +157,14 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3136 passed / 3139 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 レビュー対応（状態エディターの key・連絡先の重複理由）後の全体Jest/coverage実測（`bunx jest --coverage`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-11実測） | Statements88.19%（10942/12406）／Branches78.42%（6712/8559）／Functions84.49%（2141/2534）／Lines88.73%（9962/11227）。 |
+| Jest テスト総数 (unit/component) | **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 残り保留の解消後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-11実測） | Statements88.21%（10953/12416）／Branches78.44%（6728/8577）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 plan 087 実施時の実測: 238/238 pass**・`bun run test:integration`。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**Chromium 7/7 passed**。2026-10-07 実測（plan 084・Docker DB 接続）。OI-10 解消に伴い 6 spec の `disabledRules:["color-contrast"]` 抑制を解除済み（抑制なしで違反 0）。home（`/`）は spec 未作成（OI-9 は 2026-06-06 に解消済みで阻害要因ではない。追加は本書の「A11y-home」タスクで扱う）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-10 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-11 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
 | テストファイル総数（dashboard） | **402ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 |

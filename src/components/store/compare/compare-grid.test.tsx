@@ -133,6 +133,24 @@ beforeEach(() => {
     jest.clearAllMocks();
 });
 
+it.each(["Remove from compare", "Clear all"])(
+    "%s 後は残る選択見出しへフォーカスを戻す",
+    async (name) => {
+        useCompareStore.setState({ items: ["v1"] });
+        mockedGetProductsByIds.mockResolvedValue({
+            products: [createProduct("v1", "Alpha Shirt")],
+            totalPages: 1,
+        });
+        render(<CompareGrid fetchProductsAction={mockedGetProductsByIds} />);
+        await screen.findByText("Alpha Shirt");
+        const button = screen.getByRole("button", { name });
+        button.focus();
+        fireEvent.click(button);
+        expect(screen.getByTestId("compare-empty")).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Your selection" })).toHaveFocus();
+    }
+);
+
 // T-CMP5 / AC-CMP5
 it("items が非空のとき getProductsByIds を呼び商品を描画する", async () => {
     useCompareStore.setState({ items: ["v1", "v2"] });

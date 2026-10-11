@@ -38,6 +38,15 @@ describe('ProductNavigation', () => {
             expect(trigger).toHaveAttribute('aria-expanded', 'true')
             fireEvent.keyDown(document, { key: 'Escape' })
             expect(trigger).toHaveAttribute('aria-expanded', 'false')
+            expect(trigger).not.toHaveFocus()
+        })
+
+        it('returns focus to the category trigger after Escape from a category link', () => {
+            const trigger = openMenu()
+            const link = screen.getByRole('link', { name: 'Watches' })
+            link.focus()
+            fireEvent.keyDown(link, { key: 'Escape' })
+            expect(trigger).toHaveFocus()
         })
 
         it('closes on an outside click but stays open for clicks inside the menu', () => {

@@ -827,3 +827,19 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 8 店舗設定 — 操作と保存状態: 実装・補助検証・仕様同期。
 
 - [x] 販売者8画面の最終回帰・仕様/QA/統計同期。補助ブラウザー256/256、認証後8実ルートは[QA](../../docs/testing/QA_HANDOFF.md#ds-seller-eight-browser)の条件待ち。
+
+
+### P1・P2優先8画面受け入れ（2026-10-11）
+
+[保存計画](priority-eight-purchase-acceptance-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)。既存の適用実績・全画面判定と今回の変更受け入れを区別する。
+
+- [x] 共通基盤・Step 1 DS-PAGE-006 商品一覧。
+- [x] Step 2 DS-PAGE-037 店舗詳細。
+- [x] Step 3 DS-PAGE-019 商品詳細。
+- [x] Step 4 DS-PAGE-007 カート。
+- [x] Step 5 DS-PAGE-008 Checkout。
+- [x] Step 6 DS-PAGE-003 注文詳細。
+- [x] Step 7 DS-PAGE-009 比較。
+- [x] Step 8 DS-PAGE-033 Wishlist。
+- [x] 最終統合検証・文書同期。
+- [ ] 既存環境の認証後実ルート/SDK受け入れ。

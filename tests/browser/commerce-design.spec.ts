@@ -1,5 +1,50 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
+
+for (const width of [1440, 768, 390]) {
+    test(`acceptance order ${width}: breadcrumb and invoice failure feedback`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=order-paid");
+        for (const link of await page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link").all()) {
+            const box = await link.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await expectReadableFocus(link);
+        }
+        await page.getByRole("button", { name: "Export", exact: true }).click();
+        await expect(page.getByRole("button", { name: "Print", exact: true })).toBeDisabled();
+        const failure = page.getByRole("alert").filter({ hasText: "couldn’t prepare your invoice" });
+        await expect(failure).toBeVisible();
+        await expect(failure).toHaveCSS("color", "rgb(244, 182, 174)");
+        await expect(page.getByRole("button", { name: "Export", exact: true })).toBeEnabled();
+        await page.getByRole("button", { name: "Print", exact: true }).click();
+        await expect(page.getByRole("status")).toHaveText("Preparing your invoice…");
+        await expect(failure).toBeVisible();
+        await expect(page.getByTestId("order-total")).toHaveCount(1);
+        await expect(page.getByTestId("order-payment")).toHaveCount(0);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`acceptance-order-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`acceptance checkout ${width}: input boundaries and portal focus`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=checkout");
+        await expect(page.getByRole("button", { name: "Place order", exact: true })).toBeEnabled();
+        await expectReadableBorder(page.getByLabel("Coupon code", { exact: true }));
+        const trigger = page.getByRole("button", { name: "Add new address" });
+        await trigger.click();
+        const firstName = page.getByLabel("First name", { exact: true });
+        await expectReadableBorder(firstName);
+        await expectReadableFocus(firstName);
+        await page.screenshot({ path: info.outputPath(`acceptance-checkout-${width}.png`), fullPage: true });
+        await page.keyboard.press("Escape");
+        await expect(trigger).toBeFocused();
+        await accessible(page);
+    });
+}
 
 // Supplemental component browser verification; never interpreted as authenticated route coverage.
 async function accessible(page: Page) {
