@@ -229,3 +229,50 @@ for (const width of [1440, 768, 390]) {
         ).toBeFocused();
     });
 }
+
+// 外部共有は遷移させず、各ボタンが実商品 URL を含む共有 URL を開こうとすることだけ確認する
+test("audit product share: real URLs without leaving the site", async ({
+    browser,
+}) => {
+    test.setTimeout(120000);
+    const inventoryPath = process.env.DESIGN_AUDIT_INVENTORY;
+    test.skip(!inventoryPath, "Read-only DB inventory is required.");
+    const inventory: Array<{ id: string; actualPath: string }> = JSON.parse(
+        readFileSync(inventoryPath!, "utf8")
+    );
+    const productRow = inventory.find((row) => row.id === "DS-PAGE-019");
+    expect(productRow, "inventory row DS-PAGE-019 is missing").toBeDefined();
+    const context = await browser.newContext({
+        permissions: ["clipboard-read", "clipboard-write"],
+    });
+    const page = await context.newPage();
+    try {
+        await page.addInitScript(`
+            window.__opened = [];
+            window.open = (url) => {
+                window.__opened.push(String(url));
+                return { closed: true, focus() {}, close() {} };
+            };
+        `);
+        await page.goto(productRow!.actualPath);
+        const productUrl = new URL(productRow!.actualPath, page.url()).toString();
+        const hosts = {
+            Facebook: "facebook.com",
+            X: "twitter.com",
+            WhatsApp: "whatsapp.com",
+            Pinterest: "pinterest.com",
+        } as const;
+        for (const [name, host] of Object.entries(hosts)) {
+            await page.getByRole("button", { name: `Share on ${name}` }).click();
+            const opened = await page.evaluate("window.__opened.at(-1)");
+            expect(String(opened)).toContain(host);
+            expect(decodeURIComponent(String(opened))).toContain(productUrl);
+        }
+        expect(new URL(page.url()).pathname).toBe(productRow!.actualPath);
+        await page.getByRole("button", { name: "Copy product link" }).click();
+        await expect(page.getByText("Product link copied to clipboard")).toBeAttached();
+        expect(await page.evaluate("navigator.clipboard.readText()")).toBe(productUrl);
+    } finally {
+        await context.close();
+    }
+});

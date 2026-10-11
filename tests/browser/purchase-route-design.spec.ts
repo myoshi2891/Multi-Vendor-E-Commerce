@@ -13,7 +13,8 @@ import { expectReadableFocus } from "./purchase-assertions";
  *
  * 実行前に scripts/design/prepare-purchase-route.ts で専用DBと Clerk テスト顧客を用意し、
  * その出力 JSON を DESIGN_PURCHASE_ROUTE に渡す。クーポン適用がカートを変えるため、実行ごとに準備し直す。
- * 決済は描画まで（PayPal ボタン・Stripe Elements）。Place order・支払い送信は押さない。
+ * 決済の送信は sandbox のみ（Stripe テストカード／PayPal sandbox 購入者）。対象は専用DBの注文に限る。
+ * Stripe 系は DESIGN_STRIPE_READY=1、PayPal 決済は PAYPAL_SANDBOX_BUYER_EMAIL / _PASSWORD がある時だけ実行する。
  */
 
 type Prepared = {
@@ -21,6 +22,8 @@ type Prepared = {
     couponCode: string;
     paidOrderId: string;
     pendingOrderId: string;
+    stripeOrderId: string;
+    paypalOrderId: string;
     wishlistCount: number;
 };
 
@@ -167,6 +170,35 @@ test("checkout: coupon rejects an unknown code, then applies a store coupon", as
     });
 });
 
+// クーポン適用後のカートで注文を確定する（専用DBに未払い注文が 1 件増え、カートは空になる）
+test("checkout: place order opens the new pending order and empties the bag", async ({
+    browser,
+}, info) => {
+    test.setTimeout(180_000);
+    await withCustomer(browser, async (page) => {
+        await gotoRoute(page, "/checkout");
+        await page.getByRole("button", { name: "Place order" }).click();
+        await expect(page).toHaveURL(
+            (url) =>
+                /^\/order\/[0-9a-f-]{36}$/.test(url.pathname) &&
+                !url.pathname.endsWith(prepared.pendingOrderId),
+            { timeout: 60_000 }
+        );
+        await expect(
+            page.getByRole("heading", { name: "Order Details", level: 1 })
+        ).toBeVisible();
+        await expect(page.getByTestId("order-payment")).toBeVisible();
+        await accessible(page);
+        await page.screenshot({
+            path: info.outputPath("route-order-placed.png"),
+            fullPage: true,
+        });
+        // カートが無くなると checkout は /cart へ戻す（page.tsx の redirect）
+        await page.goto("/checkout", { waitUntil: "load" });
+        await expect(page).toHaveURL((url) => url.pathname === "/cart");
+    });
+});
+
 test("order paid: details, breadcrumb targets and invoice export", async ({
     browser,
 }, info) => {
@@ -207,6 +239,35 @@ test("order paid: details, breadcrumb targets and invoice export", async ({
     });
 });
 
+// 印刷は PDF を読み込んだ隠し iframe の print() を呼ぶ。init script は子 frame にも入るので、
+// 全 frame の print を記録に差し替えて OS の印刷ダイアログを開かずに呼び出しを確認する
+test("order paid: print prepares the invoice and calls print once", async ({
+    browser,
+}) => {
+    test.setTimeout(180_000);
+    await withCustomer(browser, async (page) => {
+        await page.addInitScript(`
+            window.print = () => {
+                const top = window.top;
+                top.__printCalls = (top.__printCalls || 0) + 1;
+            };
+        `);
+        await gotoRoute(page, `/order/${prepared.paidOrderId}`);
+        await page.getByRole("button", { name: "Print", exact: true }).click();
+        await expect
+            .poll(() => page.evaluate("window.__printCalls || 0"), {
+                timeout: 30_000,
+            })
+            .toBe(1);
+        await expect(
+            page.getByText(/couldn’t prepare your invoice/)
+        ).toHaveCount(0);
+        await expect(
+            page.getByRole("button", { name: "Print", exact: true })
+        ).toBeEnabled();
+    });
+});
+
 const openPendingPayment = async (page: Page, width: number) => {
     await page.setViewportSize({ width, height: 1000 });
     await gotoRoute(page, `/order/${prepared.pendingOrderId}`);
@@ -243,7 +304,7 @@ test("order pending: PayPal buttons render without submission", async ({
 });
 
 // 描画時に Stripe テストモードの PaymentIntent が作られる（課金・カード送信なし）。
-// テストキーが有効なことを確認してから DESIGN_STRIPE_READY=1 で実行する（2026-10-11 時点は期限切れで保留）
+// テストキーが有効なことを確認してから DESIGN_STRIPE_READY=1 で実行する
 test("order pending: Stripe Elements render without submission", async ({
     browser,
 }) => {
@@ -261,6 +322,111 @@ test("order pending: Stripe Elements render without submission", async ({
             await expect(payment.getByRole("alert")).toHaveCount(0);
             await accessible(page);
         }
+    });
+});
+
+const expectSettled = async (page: Page, orderId: string) => {
+    await expect(page.getByTestId("order-payment")).toHaveCount(0, {
+        timeout: 60_000,
+    });
+    // refresh 後の表示だけでなく、再読込（サーバーの注文状態）でも支払い欄が出ないこと
+    await gotoRoute(page, `/order/${orderId}`);
+    await expect(page.getByTestId("order-payment")).toHaveCount(0);
+};
+
+// Stripe テストカードで送信する（sandbox の決済記録が残る。課金なし）
+test("order pending: Stripe test card payment settles the order", async ({
+    browser,
+}, info) => {
+    test.skip(
+        process.env.DESIGN_STRIPE_READY !== "1",
+        "Valid Stripe test keys are required (set DESIGN_STRIPE_READY=1)."
+    );
+    test.setTimeout(240_000);
+    await withCustomer(browser, async (page) => {
+        await gotoRoute(page, `/order/${prepared.stripeOrderId}`);
+        const form = page.getByRole("form", { name: "Card payment" });
+        await expect(form).toBeVisible({ timeout: 60_000 });
+        const card = form
+            .frameLocator("iframe[name^='__privateStripeFrame']")
+            .first();
+        await card.locator("[name='number']").fill("4242424242424242");
+        await card.locator("[name='expiry']").fill("1234");
+        await card.locator("[name='cvc']").fill("123");
+        const postal = card.locator("[name='postalCode']");
+        if (await postal.isVisible()) await postal.fill("94103");
+        // カード欄（別オリジンの Stripe iframe）にフォーカスがある状態で locator.click() すると、
+        // 自動スクロール直後に同じ瞬間でマウスを押すため、Chrome がクリックを古い位置の iframe
+        // （カード番号欄）へ配送し送信されない。人のホイール操作＋クリックや、スクロール後に
+        // 間を置いたクリックでは送信できることを確認済み（アプリの不具合ではない）。
+        // 固定待機に頼らないよう、キーボード利用者と同じくフォーカスして Enter で送信する
+        const pay = form.getByRole("button", { name: "Pay Now" });
+        await pay.focus();
+        await expect(pay).toBeFocused();
+        await page.keyboard.press("Enter");
+        // 失敗時はフォームの alert 文言を失敗理由として出す（決済が止まった理由を残す）
+        const alert = form.getByRole("alert");
+        await expect
+            .poll(
+                async () =>
+                    (await alert.count()) > 0
+                        ? `alert: ${await alert.first().innerText()}`
+                        : (await page.getByTestId("order-payment").count()) ===
+                            0
+                          ? "settled"
+                          : "pending",
+                { timeout: 90_000 }
+            )
+            .toBe("settled");
+        await expectSettled(page, prepared.stripeOrderId);
+        await page.screenshot({
+            path: info.outputPath("route-order-stripe-paid.png"),
+            fullPage: true,
+        });
+    });
+});
+
+// PayPal sandbox 購入者で承認する。認証情報は .env.local にのみ置く（コミットしない）
+test("order pending: PayPal sandbox approval settles the order", async ({
+    browser,
+}, info) => {
+    const buyerEmail = process.env.PAYPAL_SANDBOX_BUYER_EMAIL?.trim();
+    const buyerPassword = process.env.PAYPAL_SANDBOX_BUYER_PASSWORD;
+    test.skip(
+        !buyerEmail || !buyerPassword,
+        "PayPal sandbox buyer credentials are required."
+    );
+    test.setTimeout(300_000);
+    await withCustomer(browser, async (page) => {
+        await gotoRoute(page, `/order/${prepared.paypalOrderId}`);
+        const button = page
+            .getByTestId("order-payment")
+            .frameLocator("iframe[title*='PayPal' i]")
+            .first()
+            .getByRole("link", { name: /PayPal/i })
+            .first();
+        await expect(button).toBeVisible({ timeout: 30_000 });
+        const popupPromise = page.waitForEvent("popup");
+        await button.click();
+        const popup = await popupPromise;
+        await popup.waitForLoadState("domcontentloaded");
+        await popup.locator("#email").fill(buyerEmail!);
+        const next = popup.locator("#btnNext");
+        if (await next.isVisible()) await next.click();
+        await popup.locator("#password").fill(buyerPassword!);
+        await popup.locator("#btnLogin").click();
+        await popup
+            .getByRole("button", {
+                name: /Complete Purchase|Pay Now|Continue/i,
+            })
+            .first()
+            .click({ timeout: 60_000 });
+        await popup.waitForEvent("close", { timeout: 60_000 });
+        await expectSettled(page, prepared.paypalOrderId);
+        await page.screenshot({
+            path: info.outputPath("route-order-paypal-paid.png"),
+            fullPage: true,
+        });
     });
 });
 

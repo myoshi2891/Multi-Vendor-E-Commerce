@@ -10,7 +10,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
  *
  * 1. DATABASE_URL / DIRECT_URL / E2E_DATABASE_URL が同値で、ローカルの専用DBを指すことを検査する。
  * 2. Clerk dev に `+clerk_test` の顧客を作成または再利用し、同じ ID の User を DB に用意する。
- * 3. 住所2件・カート1件（クーポン未適用へ戻す）・店舗クーポン・支払い済み/未払いの注文・wishlist 12件
+ * 3. 住所2件・カート1件（クーポン未適用へ戻す）・店舗クーポン・支払い済み1件/未払い3件の注文・wishlist 12件
  *    （2ページ）を冪等に投入する。クーポン適用テストがカートを変えるため、suite 実行前に毎回実行する。
  *
  * 使い方: bun scripts/design/prepare-purchase-route.ts <output.json>
@@ -189,15 +189,9 @@ try {
         });
     });
 
-    // 注文は支払い状態ごとに 1 件。既存があれば再利用する
-    const ensureOrder = async (
+    const createOrder = async (
         paymentStatus: "Paid" | "Pending"
     ): Promise<string> => {
-        const existing = await prisma.order.findFirst({
-            where: { userId: customer.id, paymentStatus },
-            select: { id: true },
-        });
-        if (existing) return existing.id;
         const total = subTotal.add(shippingFee);
         const order = await prisma.order.create({
             data: {
@@ -239,8 +233,26 @@ try {
         });
         return order.id;
     };
-    const paidOrderId = await ensureOrder("Paid");
-    const pendingOrderId = await ensureOrder("Pending");
+    // 支払い済みは 1 件を再利用。未払いは描画・Stripe 決済・PayPal 決済の 3 件を用意し、
+    // 決済で Paid になった分だけ次回に補充する（Place order で増えた未払い注文も再利用する）
+    const paidOrderId =
+        (
+            await prisma.order.findFirst({
+                where: { userId: customer.id, paymentStatus: "Paid" },
+                orderBy: { createdAt: "asc" },
+                select: { id: true },
+            })
+        )?.id ?? (await createOrder("Paid"));
+    const pendingIds = (
+        await prisma.order.findMany({
+            where: { userId: customer.id, paymentStatus: "Pending" },
+            orderBy: { createdAt: "asc" },
+            take: 3,
+            select: { id: true },
+        })
+    ).map((order) => order.id);
+    while (pendingIds.length < 3) pendingIds.push(await createOrder("Pending"));
+    const [pendingOrderId, stripeOrderId, paypalOrderId] = pendingIds;
 
     // wishlist はページング確認のため 12 件（1 ページ 10 件）へ揃える
     const variants = await prisma.productVariant.findMany({
@@ -273,6 +285,8 @@ try {
                 couponCode: COUPON_CODE,
                 paidOrderId,
                 pendingOrderId,
+                stripeOrderId,
+                paypalOrderId,
                 wishlistCount: WISHLIST_COUNT,
             },
             null,

@@ -22,7 +22,12 @@ async function contrastAgainstSurface(control: Locator, property: string) {
                 const s = value / 255;
                 return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
             }).reduce((sum, value, i) => sum + value * [0.2126, 0.7152, 0.0722][i], 0);
-        let parent = element.parentElement;
+        // 境界の隣接面から探す。border は要素自身の背景の上に描かれる（background-clip の既定は
+        // border-box）。outline は offset が 0 以上なら要素の外側、負なら内側に描かれる
+        const style = getComputedStyle(element);
+        const paintedOutside =
+            colorProperty === "outline-color" && parseFloat(style.outlineOffset) >= 0;
+        let parent: Element | null = paintedOutside ? element.parentElement : element;
         let background = [255, 255, 255];
         while (parent) {
             const color = rgb(getComputedStyle(parent).backgroundColor);
@@ -32,7 +37,7 @@ async function contrastAgainstSurface(control: Locator, property: string) {
             }
             parent = parent.parentElement;
         }
-        const foreground = luminance(rgb(getComputedStyle(element).getPropertyValue(colorProperty)));
+        const foreground = luminance(rgb(style.getPropertyValue(colorProperty)));
         const surface = luminance(background);
         return (Math.max(foreground, surface) + 0.05) / (Math.min(foreground, surface) + 0.05);
     }, property);
