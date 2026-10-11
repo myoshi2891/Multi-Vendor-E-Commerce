@@ -419,6 +419,15 @@ for (const width of [1440, 768, 390]) {
             await page.setViewportSize({width, height:1000});
             await page.goto(`/?scenario=${scenario}`);
             await expect(page.getByRole("heading", {level:1})).toHaveCSS("font-family", /Georgia/);
+            if (scenario === "support-returns-retry") {
+                for (const number of await page.locator("section[aria-labelledby='returns-policy-title'] li > span").all()) {
+                    expect(await number.evaluate(element => {
+                        const range = document.createRange();
+                        range.selectNodeContents(element);
+                        return range.getClientRects().length;
+                    })).toBe(1);
+                }
+            }
             await expectSupportTokens(page, surface);
             await supportTargets(page);
             const home = page.getByRole("navigation", {name:"Breadcrumb"}).getByRole("link", {name:"Home"});

@@ -104,6 +104,8 @@
     line-height: 2;
 }
 .points li span {
+    flex-shrink: 0;
+    white-space: nowrap;
     color: var(--accent);
     font:
         400 18px/1.5 Georgia,

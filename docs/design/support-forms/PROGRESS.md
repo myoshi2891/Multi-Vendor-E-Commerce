@@ -84,3 +84,7 @@ DS-PAGE-035。PROBLEM_REPORT、報告ラベル、既存フィールド（注文�
 先行390px browserでtoken非継承をRed確認。DesignPage appearance="purchase"へopt-in。PROBLEM_REPORT分類と注文番号不要・Action Propsを保持。Green/Refactor: 関連Jest11/11、priority browser3/3（3幅、44px、validation/pending/error/入力保持/retry/receipt、axe AA）。型0、lint0 errors/既存8 warnings。外部申請送信はmock。
 
 [保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。
+
+### 2026-10-11 返品ポリシー番号のモバイル回帰
+
+390px画像で02/04の改行を確認。テキストRangeの行数で先行browser Red（expected 1 / received 2）を確認し、番号のflex縮小と改行を禁止。1440/768/390pxで単一行を検証。業務フォームと申請契約は変更なし。
