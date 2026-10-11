@@ -12,7 +12,7 @@
 .profileCopy { min-width: 0; }
 .profileLabel { font-size: 9px; margin: 4px 0 10px; }
 .description { color: var(--purchase-muted-on-dark); font-size: 13px; line-height: 1.9; overflow-wrap: anywhere; white-space: pre-line; }
-.rating { display: flex; flex-wrap: wrap; align-items: center; align-items: center; gap: 12px; color: var(--purchase-muted-on-dark); font-size: 11px; margin-top: 24px; }
+.rating { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: var(--purchase-muted-on-dark); font-size: 11px; margin-top: 24px; }
 .rating svg { color: var(--purchase-gold); }
 .ratingValue { color: var(--purchase-on-dark); }
 .collectionLink { min-height: 44px; display: inline-flex; align-items: center; justify-content: space-between; gap: 40px; border-bottom: 1px solid var(--purchase-control-line); padding: 12px 0; margin-top: 25px; font-size: 11px; letter-spacing: .05em; color: var(--purchase-gold); }

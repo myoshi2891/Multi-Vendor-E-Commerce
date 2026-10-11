@@ -19,6 +19,8 @@
 }
 .breadcrumb {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 14px;
     font-size: 11px;
     color: var(--purchase-muted-on-dark);
@@ -401,5 +403,4 @@
 .itemSelection { display: grid; place-items: center; width: var(--purchase-touch); height: var(--purchase-touch); cursor: pointer; }
 .hero a:focus-visible { outline-color: var(--purchase-gold); }
 
-.breadcrumb { flex-wrap: wrap; align-items: center; }
 .breadcrumb a { display: inline-flex; align-items: center; min-width: var(--purchase-touch); min-height: var(--purchase-touch); }
