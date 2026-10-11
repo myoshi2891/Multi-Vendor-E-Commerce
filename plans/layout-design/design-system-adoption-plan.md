@@ -857,7 +857,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] Step 3 DS-PAGE-036 返品交換。
 
-- [ ] Step 4 DS-PAGE-012 紛争申請。
+- [x] Step 4 DS-PAGE-012 紛争申請。
 
 - [ ] Step 5 DS-PAGE-035 問題報告。
 
