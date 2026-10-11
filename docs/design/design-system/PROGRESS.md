@@ -2,7 +2,7 @@
 
 ## 2026-10-11 P2サポート・通知等8画面（現在地）
 
-公開6画面の残存表示統一、通知の実route空状態、実Clerk設定と24px操作修正を実施。[今回の証跡](#p2サポート通知等8画面移行記録)。通知あり/実既読化とSDK独立Portalの受け入れは[QA](../../testing/QA_HANDOFF.md#2026-10-11-p2サポート通知等8画面最新)で保留。過去の実装・検証履歴は保持。
+公開6画面の残存表示統一、通知の実route空状態、実Clerk設定と24px操作修正を実施。[今回の証跡](#p2サポート通知等8画面移行記録)。通知の実既読化とSDK独立Portalの保留は[解消済み](#p2保留2件の解消2026-10-11)（通知3件の冪等投入による実既読・再読込保持、埋め込みUserProfileにmodal経路が無いことの実SDK調査）。過去の実装・検証履歴は保持。
 
 ## 2026-10-11 購入優先8画面 残り保留の解消（現在地）
 
@@ -104,7 +104,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-029 | `/profile` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/page.tsx](<../../../src/app/(store)/profile/page.tsx>)、[account-view.tsx](../../../src/components/store/profile/account-view.tsx) | [profile実施記録](#profile移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-030 | `/profile/payment` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/payment/page.tsx](<../../../src/app/(store)/profile/payment/page.tsx>) | [payment実施記録](#profile-payment移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-031 | `/profile/reviews` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/reviews/page.tsx](<../../../src/app/(store)/profile/reviews/page.tsx>) | [reviews実施記録](#profile-reviews移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
-| DS-PAGE-032 | `/profile/settings` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) （未確認範囲あり） |
+| DS-PAGE-032 | `/profile/settings` | 本体適用（2026-10-11実ルート受け入れ） | P2 | 検証済み | [src/app/(store)/profile/settings/page.tsx](<../../../src/app/(store)/profile/settings/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)／[保留2件の解消](#p2保留2件の解消2026-10-11) |
 | DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
@@ -139,7 +139,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
-| DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-07新規・plan 086） | P2 | 保留 | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)。部品は fixture で検証済み、Clerk 認証後の実ルートは未確認。P2表示追加は[残存6画面](#p2残存6画面移行記録)、認証後実ルート保留／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) （未確認範囲あり） | | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)／[残存6画面](#p2残存6画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)。実Clerk認証後の空状態3幅を確認、通知あり・実既読化は既存通知0件のため保留 |
+| DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-11実ルート受け入れ） | P2 | 検証済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)／[残存6画面](#p2残存6画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)／[保留2件の解消](#p2保留2件の解消2026-10-11)。実Clerk・実Action・専用DBで未読3件の3幅表示、単件/リンク遷移/一括の既読と再読込保持を確認 |
 
 ## 部品台帳
 
@@ -1467,4 +1467,13 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 - Chrome: priority54/54、priority-public P2 19/19（公開6route×3幅と既存注文照会3幅）、purchase-route P2 2/2（通知・Clerk各3幅）、seven settings adapter7/7。axe AAはcontrastを除外せず確認。公開画面・通知・設定の画像を確認。
 - 型チェック・Playwright harness・diffチェック成功。lint0 errors／既存8 warnings。IntegrationとフルE2Eは今回未実行。
 - 最終画像確認で返品番号の改行を発見し、Range行数のbrowser Red（2行）→縮小禁止・nowrapでGreen（1行）を追加。入力/申請契約は保持。
-- 未確認: 通知0件のため実通知あり・既読永続化、実Clerkの独立modalContent Portal生成経路。fixtureで代替完了扱いせず保留。設定保存・外部申請送信・データ追加は実施しない。[解除条件](../../testing/QA_HANDOFF.md)。
+- 未確認: 通知0件のため実通知あり・既読永続化、実Clerkの独立modalContent Portal生成経路。fixtureで代替完了扱いせず保留。設定保存・外部申請送信・データ追加は実施しない。[解除条件](../../testing/QA_HANDOFF.md)。→ 2026-10-11に[解消](#p2保留2件の解消2026-10-11)。
+
+### P2保留2件の解消（2026-10-11）
+
+[保存計画](../../../plans/layout-design/p2-support-pending-resolution-plan.md)。ユーザー承認により、元計画の「データ追加なし」を専用DB `multivendor_e2e` の design 顧客への検証用通知3件に限り例外とした。作業ツリーのみ（コミットなし）。
+
+- 通知（DS-PAGE-067）: `prepare-purchase-route.ts` が支払い済み注文の店舗グループを発生源に、order-events.ts と同じ形の通知3件（shipped＝リンク付き、delivered×2＝リンク無し）を固定 dedupeKey `design-p2:*` で upsert し、毎回未読へ戻す。配信行は作らない（メール送信経路なし）。準備を2回実行しても3件のまま・配信行0件を psql で確認。
+- Red: 実route通知テストから空状態分岐を除き必須化し、準備変更前に `items toHaveCount(3)` が0件で失敗することを確認。Green: 準備後 purchase-route P2通知 1/1（2回、各回再準備）、P2 2テスト 2/2。3幅で未読3件・配色・overflow・axe、リンク無しをキーボードで既読→status→再読込後も既読、リンク付きを開く→`/order/<id>`→再読込後も既読、残り1件を一括既読→再読込後に全件Read・ボタン無効。テスト後の DB は3件とも `isRead=true` かつ `readAt` 有り。画像（3幅・既読後）で未読ラベルと既読表示、ヘッダー未読バッジの消去を確認。
+- Clerk Portal（DS-PAGE-032）: 実SDKの `/profile/settings` を1440/390pxで、表示される全buttonを1つずつ押して調査（Profile/Security/Update profile/Update username/Add email address/Connect account/Set password、Delete account は確認フォームを開くだけで入力・送信なし）。いずれもinline formで、`.cl-modalContent`・`[role=dialog]`・`.cl-userVerification-root` は0件、root外の `cl-` 要素も無し。`@clerk/testing` のpage objectも modalContent を UserButton の Manage account（UserProfileのmodal表示）と UserVerification にのみ使う。受け入れ条件を「埋め込みUserProfileには独立modal経路が無い」と改め、`modalContent` 用 adapter 7/7 は将来の modal 化への保険として維持。UserVerification（重要操作の送信時）は実保存を伴うため対象外、UserButton の Manage account は別 appearance のため対象外。調査用specは一時追加し、実行後に除去。
+- 型0、lint0 errors／既存8 warnings、check:playwright成功。Jest件数は不変（browser spec と準備スクリプトのみ）。route実行で自動追加された tsconfig include は元へ戻した。

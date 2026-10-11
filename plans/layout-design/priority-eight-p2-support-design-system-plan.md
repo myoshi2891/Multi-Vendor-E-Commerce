@@ -52,7 +52,7 @@ API/DB schema/認可/分類/照合/通知永続化/Clerk公式UIは変更しな�
 
 ## 最終結果・段階コミット
 
-全体Jest3146/3149（3 skipped）・127 snapshots、priority54/54、公開実route19/19、認証後実route2/2、settings adapter7/7。型・lint（既存8 warnings）・harness・diff・文書リンクを検証。最終画像の返品番号改行はbrowser Red→Greenで修正。詳細と解除条件は[QA](../../docs/testing/QA_HANDOFF.md)、[TDD記録](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。通知の実既読化とClerk独立Portalは保留を維持。
+全体Jest3146/3149（3 skipped）・127 snapshots、priority54/54、公開実route19/19、認証後実route2/2、settings adapter7/7。型・lint（既存8 warnings）・harness・diff・文書リンクを検証。最終画像の返品番号改行はbrowser Red→Greenで修正。詳細と解除条件は[QA](../../docs/testing/QA_HANDOFF.md)、[TDD記録](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。通知の実既読化とClerk独立Portalは保留を維持。→ 2026-10-11 [保留解消計画](p2-support-pending-resolution-plan.md)で解消（通知3件の冪等投入による実既読・再読込保持、埋め込みにmodal経路が無いことの実SDK調査）。
 
 | 段階 | 実装・検証コミット | 仕様・証跡コミット |
 |---|---|---|
