@@ -565,15 +565,18 @@ export const getUserWishlist = async (
                         numReviews: true,
                         slug: true,
                         sales: true,
-                        variants: {
-                            select: {
-                                id: true,
-                                variantName: true,
-                                slug: true,
-                                images: true,
-                                sizes: true,
-                            },
-                        },
+                        // 件数（totalCount）と同じ「バリアントを持つ商品」判定にだけ使う
+                        variants: { select: { id: true } },
+                    },
+                },
+                // 表示は商品の先頭ではなく保存したバリアント（同一商品の別バリアントを区別する）
+                variant: {
+                    select: {
+                        id: true,
+                        variantName: true,
+                        slug: true,
+                        images: true,
+                        sizes: true,
                     },
                 },
             },
@@ -596,11 +599,11 @@ export const getUserWishlist = async (
                 numReviews: item.product.numReviews,
                 variants: [
                     {
-                        variantId: item.product.variants[0].id,
-                        variantSlug: item.product.variants[0].slug,
-                        variantName: item.product.variants[0].variantName,
-                        images: item.product.variants[0].images,
-                        sizes: item.product.variants[0].sizes.map((s) => ({
+                        variantId: item.variant.id,
+                        variantSlug: item.variant.slug,
+                        variantName: item.variant.variantName,
+                        images: item.variant.images,
+                        sizes: item.variant.sizes.map((s) => ({
                             ...s,
                             price: toNumberSafe(s.price),
                         })),
