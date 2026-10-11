@@ -7,7 +7,7 @@
 - 通知: 専用DBへ検証用通知3件を冪等投入（ユーザー承認の範囲内）。purchase-route P2 2/2。実route通知テストは空状態分岐を除いて必須化（準備前の0件でRed確認）し、単件・リンク遷移・一括の既読がそれぞれ再読込後も保持されることを確認。
 - Clerk: 実SDKの設定画面で全表示buttonを調査し、modalContent/dialog/本人確認modalの生成は0件。受け入れ条件を「埋め込みには独立modal経路なし」に改め、adapter 7/7 を保険として維持。
 - Jest件数は不変（3146/3149）。型・lint（既存8 warnings）・check:playwright成功。
-- 再現: 下節の手順で `prepare-purchase-route.ts` を毎回実行してから（通知を未読へ戻す）、`DESIGN_SUITE=purchase-route bun run test:design -- -g "P2 "`。
+- 再現: 下節の手順で `prepare-purchase-route.ts` を毎回実行してから（専用顧客の固定キー以外の通知を除き、`design-p2:*` 3件を未読へ戻す）、`DESIGN_SUITE=purchase-route bun run test:design -- -g "P2 "`。
 - 残り: 設定の実保存・MFA・アカウント削除・本人確認modal（送信を伴う）は未実行のまま。全Integration/フルE2Eも今回未実行。
 
 ## 2026-10-11 P2サポート・通知等8画面（最新）
