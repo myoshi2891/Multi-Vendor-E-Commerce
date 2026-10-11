@@ -1,6 +1,18 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-11 購入優先8画面 保留分の実ルート受け入れ（最新）
+## 2026-10-11 購入優先8画面 残り保留の解消（最新）
+
+前節の残り保留を承認範囲（Stripe テスト決済・Place order・外部共有/印刷・PayPal sandbox、すべて専用DBと各 sandbox のみ）で解消。作業ツリーのみ（コミットなし）。[記録](../design/design-system/PROGRESS.md#残り保留の解消2026-10-11)。
+
+- Jest: **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage --silent` 実測。coverage Statements88.21%（10953/12416）／Branches78.44%（6728/8577）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。
+- 修正（TDD）: `createStripePaymentIntent` は意図した拒否3種だけ透過し、それ以外（Stripe/Prisma の生エラー）は `Payment could not be initialized.` を投げる（詳細はログのみ）。stripe.test の再送出テストを書き換え＋非 Error 1件追加（Red 2件確認）。04-interfaces に契約を追記。
+- ブラウザー: purchase-route **9 passed / 1 skipped**（2回実行・各回再準備）、purchase-public **21/21**。追加: Place order→新規未払い注文へ遷移・カート空、印刷（全 frame の print を記録、呼び出し1回）、Stripe Elements 描画、Stripe テストカード 4242 で決済→支払い欄が消え再読込でも未表示（Stripe 側 `succeeded`）、外部共有4種の共有 URL に実商品 URL・Copy link の値。
+- 残る保留: **PayPal sandbox 承認** — `.env.local` に `PAYPAL_SANDBOX_BUYER_EMAIL` / `PAYPAL_SANDBOX_BUYER_PASSWORD` が未設定のため skip（テストは実装済み。設定後に purchase-route を再実行）。PayPal 側の captcha 等で自動化できない場合は理由を記録して保留。
+- 精査済み（アプリの不具合ではない）: 当初「Link 欄の展開で Pay Now が約1100pxずれる」と報告したが誤り。計測ではページ高さ・Stripe iframe 高さは blur の前後で不変で、差は計測時のスクロールだった。実際の原因は自動操作の条件の重なり: カード欄（別オリジン iframe）にフォーカスがある状態で `locator.click()` が瞬時スクロール直後にマウスを押すため、Chrome がクリックを古い位置の iframe（カード番号欄）へ配送する。人と同じホイール操作＋クリック、スクロール後に間を置いたクリックではいずれも送信・決済完了を確認。spec はキーボード送信のまま理由を訂正。
+- PayPal sandbox 承認は保留として [08-open-questions](../../specs/multi-vendor-ecommerce/08-open-questions.md#paypal-sandbox-決済の実ルート受け入れ保留) と 07-testing に記録。
+- 再現: 前節の手順に加え、`DESIGN_STRIPE_READY=1` で Stripe 2件を実行。未払い注文は準備スクリプトが3件（描画・Stripe・PayPal）まで補充する。
+
+## 2026-10-11 購入優先8画面 保留分の実ルート受け入れ（履歴）
 
 [DS-PURCHASE-EIGHT-BROWSER](#ds-purchase-eight-browser) の保留を承認範囲（専用DB `multivendor_e2e` への冪等投入・Clerk `+clerk_test` 顧客作成・決済は描画まで）で解除。作業ツリーのみ（コミットなし）。[記録](../design/design-system/PROGRESS.md#保留分の実ルート受け入れ2026-10-11)。
 
@@ -21,11 +33,10 @@
 
 ### DS-PURCHASE-EIGHT-BROWSER
 
-- **2026-10-11 更新**: 下記の実データ・認証後保留は解除（browse/store/product/compare/checkout/wishlist を実ルートで受け入れ、注文詳細は支払済表示・PDF生成・PayPal描画まで）。残る保留は次の3点: (1) Stripe Elements 描画 — `STRIPE_SECRET_KEY` が期限切れ（`api_key_expired`）。キー更新後に `DESIGN_STRIPE_READY=1` で purchase-route を実行。(2) 決済送信・Place order・実購入・外部共有の遷移・印刷ダイアログ — 承認範囲外。(3) 発見事項: `createStripePaymentIntent` が Stripe 例外を再送出し、`StripePayment` が `error.message` をそのまま表示するため、開発環境で Stripe の生エラー文（マスク済みキー末尾）が顧客に見える（本番は Next が伏せるが汎用文言になる）。汎用メッセージ化は決済エラー契約の変更のため要承認。
-- 実装・補助検証・仕様同期は完了。今回の認証後/実データ/外部SDK受け入れは一部保留。既存環境だけを使い、DB初期化・顧客作成・実購入/決済送信・新ブラウザー導入は実行していない。
-- `E2E_DATABASE_URL`と`DESIGN_AUDIT_INVENTORY`が未設定のため、browseのdedicated DB受け入れ3件とbrowse/product実inventory監査3件はskip。既存Dockerは開発app/DBのみ。過去のinventoryを現行の検証用データとして再利用しない。
-- 保存済み顧客storageStateがなく、checkout/order/wishlistの認証後データ表示と注文・住所・クーポン操作は未確認。Stripe/PayPal/外部共有/PDFの実動作もfixtureでは受け入れない。既存の顧客作成helperは使用していない。
-- 解除条件: 既存のschema-current専用DBと最新の読取inventory、既存顧客の検証用storageState・対象注文/保存商品を用意し、browse/store/productと認証後3実ルートを3幅で再検証する。比較の通常データも実APIで確認する。外部SDKは検証用設定と送信不要の表示/失敗手順を揃え、必要な送信は別途明示承認する。
+- **現状（2026-10-11）**: 専用DB `multivendor_e2e`・Clerk テスト顧客・更新済み Stripe テストキーで、browse/store/product/compare/checkout（注文確定含む）/注文詳細（PDF・印刷・Stripe 描画とテストカード決済・PayPal 描画）/wishlist と外部共有を実ルートで受け入れ済み。手順と結果は [最新節](#2026-10-11-購入優先8画面-残り保留の解消最新) と [前節](#2026-10-11-購入優先8画面-保留分の実ルート受け入れ履歴)。
+- **残る保留**: PayPal sandbox 承認（購入者ログイン→承認→Paid）。`.env.local` に `PAYPAL_SANDBOX_BUYER_EMAIL` / `PAYPAL_SANDBOX_BUYER_PASSWORD` を設定して `DESIGN_SUITE=purchase-route` を再実行する（[08-open-questions](../../specs/multi-vendor-ecommerce/08-open-questions.md#paypal-sandbox-決済の実ルート受け入れ保留)）。
+- **範囲外**: 本番決済・実購入。共有先サイトへの実遷移と OS の印刷ダイアログは、共有 URL の組み立てと `print()` 呼び出しの確認で代替する。
+- 履歴（解消済み）: 当初は「既存環境のみ」の承認範囲で、専用DB/inventory 未設定と顧客 storageState 不在により browse/product の実データ 6 件を skip し、認証後3画面と外部SDKを保留していた。Stripe はキー期限切れと生エラー文の表示も保留していたが、いずれも上記の作業で解消した。
 - 本体59/仮実装1/転送7＝67画面・部品245のIDと既存判定は維持。DS-BASE-001や共有部品の全callerを完了扱いにしない。API/DB/認可/金額/決済遷移の契約変更なし。
 
 ## 2026-10-11 レビュー対応（履歴）
@@ -146,8 +157,8 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3140 passed / 3143 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 保留分の実ルート受け入れ後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-11実測） | Statements88.2%（10949/12413）／Branches78.42%（6723/8573）／Functions84.49%（2142/2535）／Lines88.74%（9970/11235）。 |
+| Jest テスト総数 (unit/component) | **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 残り保留の解消後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-11実測） | Statements88.21%（10953/12416）／Branches78.44%（6728/8577）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 plan 087 実施時の実測: 238/238 pass**・`bun run test:integration`。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |

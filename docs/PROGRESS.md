@@ -33,7 +33,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3140 passed / 3143 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 保留分の実ルート受け入れ後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 残り保留の解消後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5720,5 +5720,29 @@ design config の seller-eight-route に本番ビルド起動の切替を追加�
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | テスト総数 | 3139 passed / 3142 total | **3140 passed / 3143 total** |
+| スイート数 | 324（323 passed／1 skipped） | **324（323 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 購入優先8画面 残り保留の解消 (2026-10-11)
+
+#### 概要
+
+Stripe テスト決済・Place order・外部共有/印刷を実ルートで受け入れ、Stripe intent 作成の生エラー文が顧客に出る問題を汎用文言化。PayPal sandbox 承認は購入者の認証情報待ち。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/stripe.ts`、`stripe.test.ts` | intent 作成失敗を汎用文言へ（+1） | 未コミット |
+| `tests/browser/purchase-route-design.spec.ts`、`scripts/design/prepare-purchase-route.ts` | 決済送信・注文確定・印刷、未払い注文3件の補充 | 未コミット |
+| `tests/browser/purchase-public-design.spec.ts` | 外部共有・Copy link | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3140 passed / 3143 total | **3141 passed / 3144 total** |
 | スイート数 | 324（323 passed／1 skipped） | **324（323 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |

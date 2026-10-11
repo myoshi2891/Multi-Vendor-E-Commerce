@@ -1,6 +1,10 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-11 購入優先8画面の実ルート受け入れ（現在地）
+## 2026-10-11 購入優先8画面 残り保留の解消（現在地）
+
+DS-PAGE-003 注文詳細を検証済みへ更新（Stripe Elements 描画・テストカード決済・PayPal ボタン描画・PDF 生成・印刷）。checkout の注文確定と商品詳細の外部共有も実ルートで確認。Stripe intent 作成の生エラー文を汎用文言化。PayPal sandbox 承認は購入者の認証情報待ちで保留（仕様書に記録）。Pay Now のクリック空振りは自動操作固有と精査済み。[記録](#残り保留の解消2026-10-11)。
+
+## 2026-10-11 購入優先8画面の実ルート受け入れ（履歴）
 
 保留していた実データ・認証後・外部SDKの受け入れを専用DB `multivendor_e2e` と Clerk テスト顧客で実施。DS-PAGE-006/008/009/019/037 を検証済みへ更新（033 は既に検証済み）。DS-PAGE-003 は Stripe テストキー期限切れで Elements 描画が未確認のため保留を維持。実データで wishlist が保存バリアントでなく商品の先頭バリアントを表示する不具合を見つけ TDD で修正。[記録](#保留分の実ルート受け入れ2026-10-11)・[QA](../../testing/QA_HANDOFF.md#ds-purchase-eight-browser)。
 
@@ -67,7 +71,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 |---|---|---|---|---|---|---|
 | DS-PAGE-001 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-002 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
-| DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 保留 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
+| DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 検証済み | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11)、[決済/印刷](#残り保留の解消2026-10-11) |
 | DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、補助/RTL済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
@@ -1378,3 +1382,14 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 - 不具合修正（TDD）: `getUserWishlist` が `product.variants[0]` を表示し、同一商品の別バリアントを保存すると同じカードが重複（React key 重複警告）していた。Red: 保存 variant-b に対し variant-a を返す 1件失敗。Green: 保存した `variant` を include して表示（`product.variants` は件数と同じ除外判定のみ）。profile.test 68/68、wishlist の key 警告解消を実ルートで確認。
 - 保留: Stripe Elements 描画は `STRIPE_SECRET_KEY` が `api_key_expired`（401）のため未確認。テストは `DESIGN_STRIPE_READY=1` でのみ実行。開発環境では Stripe の生エラー文（マスク済みキー末尾を含む）が顧客画面に表示される点を発見（[QA](../../testing/QA_HANDOFF.md#ds-purchase-eight-browser)、未修正）。
 - 全体Jest 3140/3143（3 skipped）、324 suites、127 snapshots。coverage 不変。dashboard 405 lcov／18 of 80。lint 0 errors/8既存warnings、tsc exit0、check:playwright成功。Next が追加した tsconfig include は元へ戻した。
+
+### 残り保留の解消（2026-10-11）
+
+- 承認: Stripe テスト決済送信・Place order・外部共有/印刷・PayPal sandbox 決済（専用DBの注文と各 sandbox のみ）。Stripe テストキーはユーザーが更新済み（`/v1/balance` 200 を確認）。
+- 修正（TDD）: `createStripePaymentIntent` の catch で、意図した拒否（`Order not found.`・`Order payment is already settled.`・`Stripe payment intent could not be recreated.`）だけ透過し、それ以外は `Payment could not be initialized.`。Red: 生エラー文の透過・非 Error で throw せず、の2件失敗。Green: stripe.test 42/42。`createStripePayment` は UI が固定文言を出すため変更なし。04-interfaces 追記。
+- purchase-route **9 passed / 1 skipped**（2回、各回再準備）: Place order→新規未払い注文・`/checkout` は `/cart` へ、印刷（print 1回・失敗表示なし・ボタン再有効）、Stripe Elements 描画 3幅（alert 0・axe）、Stripe テストカード 4242 決済→支払い欄消失・再読込でも未表示・Stripe 側 `succeeded`。PayPal sandbox 承認は購入者の認証情報（`PAYPAL_SANDBOX_BUYER_*`）未設定で skip。
+- purchase-public **21/21**: 商品詳細の Facebook/X/WhatsApp/Pinterest が実商品 URL を含む共有 URL を開こうとすること（`window.open` を記録、外部遷移なし）と Copy product link の値。
+- 精査（訂正）: 当初の「Stripe Link 欄の展開で Pay Now がずれる」は誤り。レイアウトは不変で、カード欄 iframe にフォーカスがある状態での自動クリック（瞬時スクロール直後）が古い位置の iframe へ配送される自動操作固有の事象。人と同じホイール＋マウス操作で送信・決済完了を確認し、アプリ変更は不要。[QA](../../testing/QA_HANDOFF.md#2026-10-11-購入優先8画面-残り保留の解消最新)。
+- PayPal sandbox 承認は保留（[08-open-questions](../../../specs/multi-vendor-ecommerce/08-open-questions.md#paypal-sandbox-決済の実ルート受け入れ保留)）。
+- 全体Jest 3141/3144（3 skipped）、324 suites、127 snapshots。Statements88.21%／Branches78.44%／Functions84.49%／Lines88.75%。dashboard 405 lcov／18 of 80。lint 0 errors/8既存warnings、tsc exit0、check:playwright成功、tsconfig の自動追記は戻した。
+- レビュー対応: SonarCloud（PR #201 New Code）の CSS 2件を修正。`store-page.module.css` の `.rating` の重複 `align-items`、`cart.module.css` の `.breadcrumb` 重複セレクター（末尾の `flex-wrap`/`align-items` を先頭のルールへ統合。間に上書きルールなし）。補助検証 `expectReadableBorder` は要素自身の背景から、outline は offset が 0 以上なら親から探すよう修正（現行 CSS の offset はすべて正で判定は不変）。fixture purchase66/commerce30/priority35＝131/131、lint 0 errors、tsc exit0、check:playwright 成功。

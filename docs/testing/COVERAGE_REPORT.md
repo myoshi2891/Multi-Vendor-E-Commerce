@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-11） | **3140 passed / 3143 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 保留分の実ルート受け入れ後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-11実測） | Statements88.2%（10949/12413）／Branches78.42%（6723/8573）／Functions84.49%（2142/2535）／Lines88.74%（9970/11235）。 |
+| Jestテスト総数（2026-10-11） | **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 残り保留の解消後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| 全体coverage（2026-10-11実測） | Statements88.21%（10953/12416）／Branches78.44%（6728/8577）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 |
 | テストファイル総数（dashboard） | **402ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 |
 | Jest スイート総数（unit/component） | **324スイート**（323 passed／1 skipped、2026-10-11実測）。 |
-| テスト総数 | **3140 unit/component passed**（3143 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| テスト総数 | **3141 unit/component passed**（3144 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-11 dashboard実測、セル状態変化なし）。 |
@@ -529,6 +529,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 | 2026-10-10 | **販売者実ルートの本番ビルド再検証・Cloudinary preset の env 化 — Jest +7（3125 → 3132 passed / 3128 → 3135 total・322 → 323 スイート）**。新規 `src/lib/cloudinary.test.ts`（既定値・指定値・空白 +3）、`image-upload.test.tsx`（3種のウィジェットへ preset +3）、`upload-images.test.tsx`（+1）。coverage Statements88.18%（据え置き）／Branches78.37→78.39%／Functions84.48→84.49%／Lines88.71%（据え置き）。dashboard 400→401 files／404→405 lcov／18 of 80（セル不変）。ブラウザー: seller-eight-route を本番ビルド（`next build && next start`、git worktree）で 58/58（重複理由の表示 +1 を含む）、Decimal 警告0。コミット未作成（作業ツリー）。 |
 | 2026-10-11 | **レビュー対応 — Jest +4（3132 → 3136 passed / 3135 → 3139 total・323 → 324 スイート）**。新規 `status-editor-refresh.test.tsx`（販売者注文・管理者注文・管理者店舗で、自分の保存後の refresh で成功表示が残り、他者の変更は取り込む +3）。`store.test.ts` は email の重複 +1、email/phone の理由を共通の連絡先文言へ。`image-upload`／`upload-images` の env 後始末を try/finally に（件数不変）。coverage Statements88.18→88.19%／Branches78.39→78.42%／Functions84.49%（据え置き）／Lines88.71→88.73%。dashboard 401→402 files／405 lcov／18 of 80（セル不変）。この表上部の「テストファイル総数」「Jest スイート総数」の古い値（399 files／321 スイート）も実測へ更新。 |
 | 2026-10-11 | **購入優先8画面 保留分の実ルート受け入れ — Jest +1（3139 → 3140 passed / 3142 → 3143 total・324 スイート不変）**。`profile.test.ts` に「保存したバリアントを返す」+1（`getUserWishlist` が商品の先頭バリアントを返していた不具合の修正）。ブラウザー: purchase-public 20/20、purchase-route 5/1 skip（Stripe キー期限切れ）。coverage 不変、dashboard 405 lcov／18 of 80。 |
+| 2026-10-11 | **購入優先8画面 残り保留の解消 — Jest +1（3140 → 3141 passed / 3143 → 3144 total・324 スイート不変）**。`stripe.test.ts` の intent 作成失敗を汎用文言へ畳む契約に書き換え＋非 Error +1。ブラウザー: purchase-route 9/1 skip（PayPal sandbox 認証情報なし）、purchase-public 21/21。coverage Statements88.21%／Branches78.44%、dashboard 405 lcov／18 of 80。 |
 
 ### 2026-09-30 compareデザイン移行
 
