@@ -26,10 +26,18 @@
 .breadcrumb {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 16px;
     font-size: 12px;
     color: var(--purchase-muted-on-dark);
 }
+.breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    min-width: var(--purchase-touch);
+    min-height: var(--purchase-touch);
+}
+.hero p.error { color: var(--purchase-danger-on-dark); }
 .hero h1 {
     font:
         400 clamp(38px, 5vw, 68px) / 1.1 Georgia,

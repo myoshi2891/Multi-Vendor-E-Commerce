@@ -9,3 +9,9 @@
 未コミット。ページ全体の状態は保留（実装あり）。
 
 - [x] 2026-10-08: store variant状態タグ、34状態の互換/明暗祖先/3幅/AAと注文回帰。[証跡](../design-system/PROGRESS.md#購入導線残存部品6画面移行記録)。実認証後route/SDKは保留。
+
+
+## 優先8画面受け入れ（2026-10-11）
+
+- [x] breadcrumb・invoice失敗/retryを3幅でTDD検証。関連Chrome15/15、Jest11/11、lint 0 errors/8既存warnings、tsc exit0、390px画像目視。
+- [ ] 実認証後ルート/決済SDK受け入れは最終QAの既存環境条件待ち。

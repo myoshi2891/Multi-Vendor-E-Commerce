@@ -1338,3 +1338,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 
 - Red: coupon input境界contrast 2.50:1（期待3:1以上）で3/3失敗。Green/Refactor: control-lineを#877957へ、couponと住所Portalへ明示適用しinvalidの意味色は保持。残存固定色を役割別tokensへ接続。
 - 最終Chrome18/18（3幅・住所選択/Portal・pending lock・入力保持/失敗/retry/success・focus復帰・account caller互換・axe AA）、Jest18/18、tsc exit0、lint 0 errors/8既存warnings。390px画像目視。実認証後受け入れは保留。
+
+
+### Step 6 注文詳細 — DS-PAGE-003
+
+- Red: breadcrumb高さ18px（期待44px）で3/3失敗。Green/Refactor: 導線44pxと暗いheroのinvoice error tokenを明示適用。生成失敗→再操作とpending lockをfixtureで確認、PDF/支払契約は保持。
+- 最終Chrome15/15（checkout回帰含む、3幅・全状態・単一合計・invoice error/retry・axe AA）、Jest11/11、tsc exit0、lint 0 errors/8既存warnings。390px画像目視。実認証/SDK受け入れは保留。

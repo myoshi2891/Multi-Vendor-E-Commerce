@@ -48,7 +48,7 @@
 - [x] Step 3 商品詳細。
 - [x] Step 4 カート。
 - [x] Step 5 Checkout。
-- [ ] Step 6 注文詳細。
+- [x] Step 6 注文詳細。
 - [ ] Step 7 比較。
 - [ ] Step 8 Wishlist。
 - [ ] 最終統合検証・文書同期。

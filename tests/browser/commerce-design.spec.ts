@@ -3,6 +3,32 @@ import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 
 for (const width of [1440, 768, 390]) {
+    test(`acceptance order ${width}: breadcrumb and invoice failure feedback`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=order-paid");
+        for (const link of await page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link").all()) {
+            const box = await link.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await expectReadableFocus(link);
+        }
+        await page.getByRole("button", { name: "Export", exact: true }).click();
+        await expect(page.getByRole("button", { name: "Print", exact: true })).toBeDisabled();
+        const failure = page.getByRole("alert").filter({ hasText: "couldn’t prepare your invoice" });
+        await expect(failure).toBeVisible();
+        await expect(failure).toHaveCSS("color", "rgb(244, 182, 174)");
+        await expect(page.getByRole("button", { name: "Export", exact: true })).toBeEnabled();
+        await page.getByRole("button", { name: "Print", exact: true }).click();
+        await expect(page.getByRole("status")).toHaveText("Preparing your invoice…");
+        await expect(failure).toBeVisible();
+        await expect(page.getByTestId("order-total")).toHaveCount(1);
+        await expect(page.getByTestId("order-payment")).toHaveCount(0);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`acceptance-order-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
     test(`acceptance checkout ${width}: input boundaries and portal focus`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?scenario=checkout");
