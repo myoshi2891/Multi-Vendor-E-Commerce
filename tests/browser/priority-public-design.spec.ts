@@ -190,15 +190,34 @@ for (const width of [1440, 768, 390]) {
 
 // Actual lookup uses a previously prepared order; no test data is inserted.
 import { readFileSync } from "node:fs";
-const trackingDataPath = process.env.DESIGN_PURCHASE_ROUTE;
-const trackingData: {customerEmail: string; trackingOrderId?: string} | null = trackingDataPath ? JSON.parse(readFileSync(trackingDataPath, "utf8")) : null;
+type TrackingData = {customerEmail: string; trackingOrderId: string};
+const isTrackingData = (value: unknown): value is TrackingData =>
+    typeof value === "object" && value !== null &&
+    typeof (value as Record<string, unknown>).customerEmail === "string" &&
+    typeof (value as Record<string, unknown>).trackingOrderId === "string";
+// 読めない・壊れた JSON でも spec 全体の読み込みは止めず、追跡テストだけをデータ無しで skip させる
+function loadTrackingData(): TrackingData | null {
+    const path = process.env.DESIGN_PURCHASE_ROUTE;
+    if (!path) return null;
+    try {
+        const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+        return isTrackingData(parsed) ? parsed : null;
+    } catch (error: unknown) {
+        console.warn("[priority-public-design] DESIGN_PURCHASE_ROUTE を読めません", {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return null;
+    }
+}
+const trackingData = loadTrackingData();
 test("P2 tracking existing order read-only lookup at three widths", async ({page}, info) => {
-    test.skip(!trackingData?.trackingOrderId, "Existing dedicated test order required; do not create data for verification.");
+    test.skip(!trackingData, "Existing dedicated test order required; do not create data for verification.");
+    if (!trackingData) return;
     for (const width of [1440, 768, 390]) {
         await page.setViewportSize({width,height:1000});
         await page.goto("/track-order");
-        await page.getByLabel("注文番号", {exact:true}).fill(trackingData!.trackingOrderId!);
-        await page.getByLabel("メールアドレス").fill(trackingData!.customerEmail);
+        await page.getByLabel("注文番号", {exact:true}).fill(trackingData.trackingOrderId);
+        await page.getByLabel("メールアドレス").fill(trackingData.customerEmail);
         await page.getByRole("button", {name:"追跡する"}).click();
         const result=page.getByRole("region", {name:"注文追跡の結果"});
         await expect(result).toBeVisible();
