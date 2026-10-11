@@ -3,11 +3,33 @@ import Link from "next/link";
 import { ArrowUpRight, Package } from "lucide-react";
 import TrackOrderForm from "@/components/store/track-order/track-order-form";
 import { trackOrder } from "@/queries/order";
+import type { TrackOrderInput } from "@/lib/schemas";
+import type { TrackingDisplayData } from "@/components/store/track-order/tracking-data";
 import styles from "@/components/store/track-order/track-order.module.css";
 
 export const metadata: Metadata = {
     title: "Track your order | Luxuries for Happiness",
 };
+
+/** Keep the query facade contract; narrow only the data crossing this page's client boundary. */
+async function lookupTrackingOrder(input: TrackOrderInput): Promise<TrackingDisplayData | null> {
+    "use server";
+    const order = await trackOrder(input);
+    if (!order) return null;
+    return {
+        id: order.id,
+        orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus,
+        groups: order.groups.map(group => ({
+            id: group.id,
+            shippingService: group.shippingService,
+            shippingDeliveryMin: group.shippingDeliveryMin,
+            shippingDeliveryMax: group.shippingDeliveryMax,
+            store: group.store,
+            items: group.items,
+        })),
+    };
+}
 
 export default function TrackOrderPage() {
     return (
@@ -58,7 +80,7 @@ export default function TrackOrderPage() {
                 >
                     <p className={styles.eyebrow}>ORDER LOOKUP</p>
                     <h2 id="tracking-form-title">配送状況を確認する</h2>
-                    <TrackOrderForm lookupAction={trackOrder} />
+                    <TrackOrderForm lookupAction={lookupTrackingOrder} />
                 </section>
             </div>
         </main>

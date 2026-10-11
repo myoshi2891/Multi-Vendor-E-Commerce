@@ -2,12 +2,11 @@ import OrderStatusTag from "@/components/shared/order-status";
 import PaymentStatusTag from "@/components/shared/payment-status";
 import ProductStatusTag from "@/components/shared/product-status";
 import { OrderStatus, PaymentStatus, ProductStatus } from "@/lib/types";
-import type { trackOrder } from "@/queries/order";
+import type { TrackingDisplayData } from "./tracking-data";
 import Image from "next/image";
 import styles from "./track-order.module.css";
 
-// trackOrder の非 null 戻り値（user＝email は除去済み）を型として再利用し、any を避ける。
-type TrackOrderResultData = NonNullable<Awaited<ReturnType<typeof trackOrder>>>;
+// The server boundary sends only the serializable fields displayed below.
 
 /**
  * Renders the order tracking result, including order and payment status, shipping details for each store group, and per-item product status.
@@ -17,7 +16,7 @@ type TrackOrderResultData = NonNullable<Awaited<ReturnType<typeof trackOrder>>>;
 export default function TrackOrderResult({
     order,
 }: {
-    order: TrackOrderResultData;
+    order: TrackingDisplayData;
 }) {
     return (
         <section className={styles.result} aria-label="注文追跡の結果">
