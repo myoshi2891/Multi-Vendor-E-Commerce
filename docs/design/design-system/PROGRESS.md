@@ -1317,3 +1317,8 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 
 - Red: acceptance browse 3/3がfocus contrast 1.65:1（期待3:1以上）で失敗。Green: 主商品リンクのfocusを濃金へ変更し、空状態を専用theme付きCSSへ整理、導線44pxを確保。
 - Refactor後: Chrome関連15/15（3幅・focus・filter/sort Portal・variant preview・ページャ/URL）、Jest19/19、tsc exit0、lint 0 errors/8既存warnings。390px画像を目視。既存画面判定は維持、実データ受け入れは最終チェックへ。
+
+### Step 2 店舗詳細 — DS-PAGE-037
+
+- Red: 3幅のbreadcrumb高さ16.5px（期待44px）で3/3失敗。Green/Refactor: breadcrumbの操作領域拡張、heroの補助文字/goldを共通tokensへ接続。
+- 最終Chrome12/12（3幅・長文/空/商品あり・keyboard/axe・カード・store導線）、関連Jest17/17、tsc exit0、lint 0 errors/8既存warnings。390px画像目視。実データの受け入れ状態は維持。

@@ -3,6 +3,22 @@ import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus } from "./purchase-assertions";
 
 for (const width of [1440, 768, 390]) {
+    test(`acceptance store ${width}: breadcrumb touch targets and brand roles`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=store&pieces=1");
+        const hero = page.getByRole("heading", { level: 1 }).locator("xpath=ancestor::header");
+        for (const link of await hero.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link").all()) {
+            const box = await link.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await expectReadableFocus(link);
+        }
+        await expect(hero.getByRole("link", { name: "Explore the collection" })).toHaveCSS("color", "rgb(212, 186, 131)");
+        await page.screenshot({ path: info.outputPath(`acceptance-store-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
     test(`acceptance browse ${width}: product focus and empty collection action`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?screen=browse&pieces=1");

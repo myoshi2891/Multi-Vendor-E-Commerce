@@ -834,7 +834,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-eight-purchase-acceptance-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)。既存の適用実績・全画面判定と今回の変更受け入れを区別する。
 
 - [x] 共通基盤・Step 1 DS-PAGE-006 商品一覧。
-- [ ] Step 2 DS-PAGE-037 店舗詳細。
+- [x] Step 2 DS-PAGE-037 店舗詳細。
 - [ ] Step 3 DS-PAGE-019 商品詳細。
 - [ ] Step 4 DS-PAGE-007 カート。
 - [ ] Step 5 DS-PAGE-008 Checkout。

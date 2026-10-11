@@ -26,3 +26,7 @@ Product（DS-PAGE-019）のカテゴリ、評価フィルター、boutique操作
 ### Step 1 商品一覧
 
 商品カードの主商品リンクは明るい面で濃いfocusを使い、暗い操作パネルはgoldのfocusを保持する。editorial商品一覧の空状態は同じpurchase themeの面・文字・罫線を使用し、Explore all piecesは44px以上・可視focus・既存/browseリンクを持つ。旧variantの見た目は維持する。
+
+### Step 2 店舗詳細
+
+店舗heroのbreadcrumbリンクは44×44px以上、暗い面で可読focusを持つ。heroのgold/補助文字とcollection導線はpurchaseの意味別tokensへ接続し、既存rating・長文・storeのfilter/sortを保持する。
