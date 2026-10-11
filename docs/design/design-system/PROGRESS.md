@@ -1298,3 +1298,10 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 `DESIGN_SUITE=seven/six/p3/p4/postpurchase bun run test:design`はそれぞれ82/56/37/56/25、合計256成功。最終レビューでoverviewのempty再navigation後のthemeを明示し、大金額/空の画像を別名保存。ナビの重複min-height宣言を除去後にseven foundation/overview10/10再確認。画像目視は各画面390px dark、overview768px light/darkと大きな金額を含む。fixtureの再navigation時のtheme欠落はテスト修正で、productionの不具合や先行Red実績へ加算しない。
 
 `bun run lint` 0 errors/既存8 warnings、最終変更specの限定ESLint無警告、`bunx tsc --noEmit` 0、`bun run check:playwright`成功、`git diff --check`成功。dashboard396files/403lcov/18 of 80cellsを再生成し、全セル状態が変更前と同一と確認。tsx IPC listen EPERMは許可付き再実行で解消し、テストRedとして扱わない。全体統計をQAからdocs/PROGRESSとCOVERAGE_REPORTへ同期。8画面の保留判定と本体59/仮1/転送7＝67、部品245のIDを維持。最終検証commitはこの記録を含む。
+
+
+## 購入優先8画面受け入れ移行記録
+
+- 2026-10-11。状態: 対応中。対象DS-PAGE-006/037/019/007/008/003/009/033。既存全画面状態・過去の検証履歴は保持し、今回の変更受け入れを別記録する。
+- [保存計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。既存環境のみ利用。実購入・DB初期化・顧客作成なし。
+- 計画保存の文書検証: 対象ID・順序・受け入れ条件・検証・文書同期・段階的コミットを確認。
