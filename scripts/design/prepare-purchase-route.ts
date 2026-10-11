@@ -245,7 +245,12 @@ try {
         )?.id ?? (await createOrder("Paid"));
     const pendingIds = (
         await prisma.order.findMany({
-            where: { userId: customer.id, paymentStatus: "Pending" },
+            // キャンセル済み注文は決済できないため再利用しない
+            where: {
+                userId: customer.id,
+                paymentStatus: "Pending",
+                orderStatus: "Pending",
+            },
             orderBy: { createdAt: "asc" },
             take: 3,
             select: { id: true },
