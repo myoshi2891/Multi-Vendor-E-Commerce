@@ -1393,3 +1393,14 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 - PayPal sandbox 承認は保留（[08-open-questions](../../../specs/multi-vendor-ecommerce/08-open-questions.md#paypal-sandbox-決済の実ルート受け入れ保留)）。
 - 全体Jest 3141/3144（3 skipped）、324 suites、127 snapshots。Statements88.21%／Branches78.44%／Functions84.49%／Lines88.75%。dashboard 405 lcov／18 of 80。lint 0 errors/8既存warnings、tsc exit0、check:playwright成功、tsconfig の自動追記は戻した。
 - レビュー対応: SonarCloud（PR #201 New Code）の CSS 2件を修正。`store-page.module.css` の `.rating` の重複 `align-items`、`cart.module.css` の `.breadcrumb` 重複セレクター（末尾の `flex-wrap`/`align-items` を先頭のルールへ統合。間に上書きルールなし）。補助検証 `expectReadableBorder` は要素自身の背景から、outline は offset が 0 以上なら親から探すよう修正（現行 CSS の offset はすべて正で判定は不変）。fixture purchase66/commerce30/priority35＝131/131、lint 0 errors、tsc exit0、check:playwright 成功。
+
+
+## P2サポート・通知等8画面移行記録
+
+2026-10-11。[保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)。既存本体適用と今回の変更受け入れを区別する。API/DB/認可/分類の変更なし。専用DB・既存顧客のみ、通知既読以外の外部送信/データ変更なし。
+
+### Step 0 共通表示（DS-COMP-205）
+
+先行RTLでappearance未反映をRed確認、ブラウザーで共通token変更が固定色へ反映されないRedを確認。任意appearance="purchase"、CSS fallbackと44px操作/reduced-motionを実装。Green/Refactor: RTL5/5（Legal回帰含む）、priorityのfoundation1/1。型0、lint0 errors/既存8 warnings。公開6画面の390px先行テストは全6件token不継承でRed。localhost listen EPERMは環境エラーとして除外し、許可後再実行。共有基盤コードコミット19b8c365。
+
+仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。

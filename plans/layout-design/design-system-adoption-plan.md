@@ -843,3 +843,26 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 8 DS-PAGE-033 Wishlist。
 - [x] 最終統合検証・文書同期。
 - [ ] 既存環境の認証後実ルート/SDK受け入れ。
+
+
+### P2サポート・通知等8画面移行記録（2026-10-11）
+
+[保存計画](priority-eight-p2-support-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。既存検証履歴を維持し今回の受け入れを別記録する。
+
+- [x] Step 0 DS-COMP-205 共通表示。
+
+- [ ] Step 1 DS-PAGE-038 配送追跡。
+
+- [ ] Step 2 DS-PAGE-011 サポート窓口。
+
+- [ ] Step 3 DS-PAGE-036 返品交換。
+
+- [ ] Step 4 DS-PAGE-012 紛争申請。
+
+- [ ] Step 5 DS-PAGE-035 問題報告。
+
+- [ ] Step 6 DS-PAGE-016 オファー。
+
+- [ ] Step 7 DS-PAGE-067 通知。
+
+- [ ] Step 8 DS-PAGE-032 設定。
