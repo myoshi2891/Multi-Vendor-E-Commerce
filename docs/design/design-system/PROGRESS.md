@@ -1440,3 +1440,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 先行390px browserでtoken非継承をRed確認。成功/取得失敗/空とloadingのDesignPageすべてappearance="purchase"へ接続。Green/Refactor: 関連Jest9/9（Legal既定回帰含む）、priority browser3/3（3幅、長文/件数/URL、empty/error/loading、44px/focus・axe AA）。型0、lint0 errors/既存8 warnings。タグ順序・getAllOfferTags・リンク契約を保持。
 
 仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
+
+### Step 7 通知（DS-PAGE-067）
+
+既存本体の回帰/受け入れ追加でありRedは創作しない。通知関連RTL11/11、priority通知6/6（3幅、pending/error/retry/read/unread/リンクなし/cursor/長文・axe AA）。既存専用DBのClerk顧客で実route1/1内3幅（空状態・見出し/配色/overflow/focus/axe）を確認。通知0件のため実通知あり/既読永続化は未確認・保留。解除条件は既存テスト顧客に通知が存在する環境。今回データ追加なし。単独再実行で認証後2テスト2/2、初回一度のSyntaxErrorは再現せず、フィルターで抑制していない。型0、lint0 errors/既存8 warnings。
+
+仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
