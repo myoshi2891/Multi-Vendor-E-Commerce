@@ -1234,13 +1234,13 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - Step 5 Checkout ✅ Completed (2026-10-11)。
 
 
-- ✅ Completed: 優先8画面 Step 6注文詳細。3幅breadcrumb/invoice failure/retry、Chrome15/15、関連Jest11/11。実認証後受け入れは最終QAで別記録。
+- ✅ Completed (2026-10-11): 優先8画面 Step 6注文詳細。3幅breadcrumb/invoice failure/retry、Chrome15/15、関連Jest11/11。実認証後受け入れは最終QAで別記録。
 
 
-- ✅ Completed: 優先8画面 Step 7比較。削除/全消去後のfocus TDD、Chrome7/7、関連Jest28/28。
+- ✅ Completed (2026-10-11): 優先8画面 Step 7比較。削除/全消去後のfocus TDD、Chrome7/7、関連Jest28/28。
 
 
-- ✅ Completed: 優先8画面 Step 8Wishlist。既存実装の回帰（Red追加なし）、Chrome7/7、関連Jest18/18。最終ページkeyboardとbrowser historyを追加。
+- ✅ Completed (2026-10-11): 優先8画面 Step 8Wishlist。既存実装の回帰（Red追加なし）、Chrome7/7、関連Jest18/18。最終ページkeyboardとbrowser historyを追加。
 
 
 - ✅ Completed: 優先8画面最終統合。全体Jest3139/3142（3skip）、324suites、127snapshots、補助Chrome131/131、公開Next11成功/6skip、coverage/dashboard同期。認証後/実データ/SDKは[QA](QA_HANDOFF.md#ds-purchase-eight-browser)の条件待ち。
