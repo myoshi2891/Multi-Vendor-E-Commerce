@@ -235,6 +235,17 @@ TOCTOU 修正は `couponId` の once-only 保証に焦点を当てており、`c
 プロダクトとしての判断が必要なため、plan 076 では既存の意味を変えずに起票のみ行った。
 決定後に別プランで実装する（根拠: [`docs/design/faceted-search/design.md`](../../docs/design/faceted-search/design.md) §0-9）。
 
+### PayPal sandbox 決済の実ルート受け入れ（保留）
+
+**影響範囲**: 注文詳細 `/order/[orderId]`（DS-PAGE-003）の PayPal 決済。`createPayPalPayment` / `capturePayPalPayment`（`src/queries/paypal.ts`）を実 SDK・実 sandbox で通す経路。
+
+**現状**（2026-10-11）: PayPal sandbox 承認（購入者ログイン→承認→注文 Paid）の実ルート受け入れは**保留**。テスト `order pending: PayPal sandbox approval settles the order`（`tests/browser/purchase-route-design.spec.ts`）は実装済みで、`.env.local` に `PAYPAL_SANDBOX_BUYER_EMAIL` / `PAYPAL_SANDBOX_BUYER_PASSWORD` が無いと skip する。PayPal ボタンの描画（iframe 内のボタンまで）は受け入れ済み。サーバー側の作成・capture・突合は `paypal.test.ts` が単体で担保している。Stripe はテストカード決済まで実ルートで受け入れ済み。
+
+**解除条件**: PayPal sandbox の購入者アカウントを用意し、上記 2 変数を `.env.local`（コミットしない）へ設定して `DESIGN_SUITE=purchase-route` を再実行する（準備手順は [QA_HANDOFF](../../docs/testing/QA_HANDOFF.md#ds-purchase-eight-browser)）。PayPal 側の captcha・追加認証で自動化できない場合は、手動で sandbox 承認→注文が Paid になることを確認し、その結果を記録する。
+
+**記録日**: 2026-10-11
+**ステータス**: 保留（認証情報待ち）
+
 ## Resolved Issues
 
 - `getUserWishlist` (`src/queries/profile.ts`): `variants[0]` への直接アクセスが
