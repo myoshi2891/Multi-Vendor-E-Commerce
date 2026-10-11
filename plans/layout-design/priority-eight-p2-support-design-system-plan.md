@@ -44,7 +44,7 @@ API/DB schema/認可/分類/照合/通知永続化/Clerk公式UIは変更しな�
 - [x] Step 2 サポート窓口。
 - [x] Step 3 返品交換。
 - [x] Step 4 紛争申請。
-- [ ] Step 5 問題報告。
+- [x] Step 5 問題報告。
 - [ ] Step 6 オファー。
 - [ ] Step 7 通知。
 - [ ] Step 8 設定。

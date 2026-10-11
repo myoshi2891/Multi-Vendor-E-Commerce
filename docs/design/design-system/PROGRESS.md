@@ -1428,3 +1428,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 先行390px browserでtoken非継承をRed確認。DesignPage appearance="purchase"へopt-in。DISPUTE・UUID必須とAction Propsは保持。Green/Refactor: 関連Jest11/11、priority browser3/3（3幅、44px、validation/pending/error/入力保持/retry/receipt・axe AA）。型0、lint0 errors/既存8 warnings。外部申請送信はmock。
 
 仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
+
+### Step 5 問題報告（DS-PAGE-035）
+
+先行390px browserでtoken非継承をRed確認。DesignPage appearance="purchase"へopt-in。PROBLEM_REPORT分類と注文番号不要・Action Propsを保持。Green/Refactor: 関連Jest11/11、priority browser3/3（3幅、44px、validation/pending/error/入力保持/retry/receipt、axe AA）。型0、lint0 errors/既存8 warnings。外部申請送信はmock。
+
+仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)／[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)／[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)は表示のみのため変更不要。既存業務契約を保持。
