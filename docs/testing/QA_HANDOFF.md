@@ -6,7 +6,7 @@
 
 - フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請に共通トークン/hover/focus/44px操作を適用。各画面の先行Red、Green/Refactor、仕様同期を画面別コミット。
 - 最終補助Chrome: priority75/75、purchase69/69、seven apply6/6＝150/150。公開実route15/15（5画面×3幅）、guest申請3/3、認証後read-only1/1（following/history/applyの3画面×3幅）。axe AA contrast・キーボード・横溢れ・画像目視。
-- **3147 passed / 3150 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 ストアフロント残存8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 Statements88.21%（10954/12417）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 dashboard405 files/405 lcov/18 of 80 cells、セル状態は不変。型0、lint0 errors/既存8 warnings、check:playwright成功。Integration/3-browser E2Eの既存実測は維持。
+- **3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage最新実測（`bun run test -- --runInBand --coverage --silent`、[統計表](#現在の実装状態サマリ)と同値）。ストアフロント残存8画面完了時点の前回実測は3147/3150・Statements10954/12417。Integration238／18 suitesも同日再実測。 Statements88.21%（10953/12416）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 dashboard405 files/405 lcov/18 of 80 cells、セル状態は不変。型0、lint0 errors/既存8 warnings、check:playwright成功。Integration/3-browser E2Eの既存実測は維持。
 - 実routeは専用DB `multivendor_e2e` と既存Clerk顧客/manifestを再利用。DB準備/seed/更新・follow操作・問い合わせ/申請送信・画像uploadは実施せず、履歴だけ既存variant IDsをブラウザーlocalStorageへ設定。following実routeは空、historyは商品あり、applyはguestと認証後の第1段階。fixtureが証明するpending/error/retry/successやSDK adapterを、実更新/実uploadの成功へ読み替えない。
 - 既存67画面の判定を保持し、今回の表示受け入れを別記。新DS-COMP-246は公開4画面だけ検証済み（部品246＝検証済み27/実装済み12/保留99/TODO108）。グローバル基盤の全scope完了を意味しない。
 
