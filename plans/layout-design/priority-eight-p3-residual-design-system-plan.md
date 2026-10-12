@@ -54,3 +54,19 @@
 ## 最終結果
 
 **3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。補助Chrome: p3 73/73、six 74/74、p4 56/56、seven products/inventory/orders 36/36、計239/239。chart要素画像の追加6/6も成功。1440/768/390px × light/dark、axe AA（contrast抑制なし）、focus/44px/入力境界3:1/Portal/空/失敗/pending/retry/successを確認。 型/lint/harness成功、実routeの限定保留は[QA](../../docs/testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。段階コミットは計画＋画面別8＋最終統合。hashはGit履歴を参照。
+
+## 追補: 認証後実route受け入れ（2026-10-13）
+
+QA保留 DS-P3-RESIDUAL-EIGHT-ROUTES の解除。ユーザーが保留内容を確認し、対応の継続を依頼した。
+
+- 環境: 既存の専用DB `multivendor_e2e`（Docker、migration 27/27 適用済み）。`DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を同値で渡す。Neon と `multivendor_dev` には書き込まない。
+- 準備: `scripts/design/prepare-seller-route.ts` を拡張し、Clerk dev に `+clerk_test` の管理者を作成または再利用（privateMetadata.role=ADMIN、DB User.id と一致）、検証店舗へ検証用クーポン1件を冪等投入、商品ID・バリアントIDを出力する。既存出力は維持して `seller-eight-route` と互換を保つ。
+- harness: `DESIGN_SUITES` に `p3-residual-route` を1行追加し、spec を `tests/browser/` に置く。config・fixture server は新設しない。
+- 受け入れ: 8 route × 1440/768/390 × light/dark で 200・URL 維持・Application error なし・横 overflow なし・axe WCAG A/AA・page error なし・全画面画像。ADMIN 以外（未認証/SELLER）が管理者 route に入れないこと。非保存操作: 詳細/削除/編集 Dialog の表示と Cancel/Escape で閉じ focus が戻ること、クーポン・店舗作成の空送信 validation、バリアント編集の初期値。
+- 対象外: 状態更新・保存・削除・画像upload・Cloudinary送信。これらは別途データと操作範囲を定める。
+
+### 追補の結果
+
+- [x] 準備スクリプト拡張・suite追加（`check:playwright` / 型 成功）
+- [x] `p3-residual-route` 54/54。7画面を検証済みへ更新
+- [ ] DS-PAGE-059: 実データの行ID表示不具合（`a3a84de1` からの既存挙動）を別計画で修正後に再受け入れ
