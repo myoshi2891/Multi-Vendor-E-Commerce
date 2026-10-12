@@ -37,6 +37,7 @@ await startFixtureServer({
     title: "Priority design browser fixture",
     mocks: {
         ...suiteMocks,
+        "@/queries/category": `export async function getAllCategories(){return []}`,
         "@/queries/product": `import {products} from "./tests/fixtures/priority/purchase-data"; let compareCalls=0;
         export async function getProductsByIds(ids){
             const scenario=new URLSearchParams(location.search).get("scenario") ?? "";
@@ -44,7 +45,7 @@ await startFixtureServer({
             if(scenario.includes("error") && ++compareCalls===1) throw new Error("fixture failure");
             return {products:scenario.includes("unavailable")?[]:ids.map(id=>({...products[0],id,slug:"piece-"+id,variants:[{...products[0].variants[0],variantId:id,variantSlug:id}]})),totalPages:1};
         }
-        export async function getProducts(){return {products:new URLSearchParams(location.search).has("pieces") ? products : []}}`,
+        export async function getProducts(){const params = new URLSearchParams(location.search); if(params.has("home-error")) throw new Error("fixture product failure"); return {products:params.has("pieces") ? products : []}}`,
         "@/queries/support": `let calls=0; export async function createSupportTicket(){await new Promise(resolve=>setTimeout(resolve,500)); if(new URLSearchParams(location.search).get("scenario").includes("retry") && ++calls===1) throw new Error("Request failed"); return {id:"fixture-ticket"}}`,
         "@/queries/offer-tag": `export async function getAllOfferTags(){const scenario=new URLSearchParams(location.search).get("scenario"); if(scenario.includes("error")) throw new Error("fixture"); return scenario.includes("empty")?[]:[{id:"offer-1",name:"A beautiful offer with a long name ".repeat(5),url:"spring",products:[{id:"p1"},{id:"p2"}]}]}`,
         "@/queries/order": `let calls=0; export async function trackOrder(){await new Promise(resolve=>setTimeout(resolve,500)); const scenario=new URLSearchParams(location.search).get("scenario"); if(scenario.includes("retry") && ++calls===1) throw new Error("fixture"); if(scenario.includes("missing")) return null; return {id:"tracking-"+"1234567890".repeat(12),orderStatus:"Processing",paymentStatus:"Paid",groups:[{id:"g1",store:{name:"A boutique with a long name ".repeat(6)},shippingService:"Standard",shippingDeliveryMin:3,shippingDeliveryMax:5,items:[{id:"i1",name:"LongProductName".repeat(15),image:"/assets/brand/star.svg",quantity:2,status:"Shipped"}]}]}}`,

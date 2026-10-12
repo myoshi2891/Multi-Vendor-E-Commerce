@@ -19,3 +19,10 @@
 | DS-PAGE-008 checkout | address/dialog/coupon/pending/retry | RTL20/20、既存commerce回帰＋header統合Chromium14/14・3幅/axe。実認証route/決済SDKは環境待ち |
 
 第三者UIとDB dependent実routeはfixture結果から完了にしない。
+
+
+## ストアフロント残存8画面 Step 3（2026-10-12）
+
+Homeはpurchase tokensの暗い面・文字・操作色を使用。collection導線・retryを44pxにし、reduce/Pause/Resumeと既存商品選択を保持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。

@@ -1498,3 +1498,9 @@ Red: hover色が通常inkのままのため3/3失敗。Green/Refactor: following
 履歴の再試行・空状態導線はhover時もブランド配色と可読性を保つ。loading/error/保存順/URLページング契約を維持。
 
 Red: retry hover背景が通常inkのままで3/3失敗。Green/Refactor: history＋共有following/Wishlist回帰ブラウザー16/16、RTL10/10、tsc0、lint0 errors（既存8 warnings）。3幅・keyboard retry・focus/44px・axe AA・画像確認用証跡を取得。実route受け入れは最終確認。
+
+#### Step 3 DS-PAGE-017 ホーム
+
+Homeはpurchase tokensの暗い面・文字・操作色を使用。collection導線・retryを44pxにし、reduce/Pause/Resumeと既存商品選択を保持。
+
+Red: 背景token未接続の3件失敗。Green/Refactor: home browser9/9（3幅・商品あり/空/失敗・motion）、RTL20/20、tsc0、lint0 errors/既存8 warnings。fixtureの商品件数と不要なStoreProducts lookupの誤りは修正しRedに算入しない。390px画像目視。全ケース通過後のworker終了待ちを解消してrunner exit0。実route/実WebGLは最終確認。

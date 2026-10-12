@@ -1,17 +1,19 @@
 .home {
-    --gold: #d4ba83;
-    --ivory: #f1eee4;
+    composes: theme from "../../shared/purchase-theme.module.css";
+    --purchase-color-scheme: dark;
+    --gold: var(--purchase-gold);
+    --ivory: var(--purchase-on-dark);
     /* 操作要素 (CTA / モーション切替) の配色。装飾色とは分けて命名する */
     --control-accent: var(--gold);
-    --control-accent-hover: #ecdbb5;
-    --control-on-accent: #141c16;
-    --control-text: #d4c5a6;
+    --control-accent-hover: var(--purchase-gold-hover);
+    --control-on-accent: var(--purchase-ink);
+    --control-text: var(--purchase-muted-on-dark);
     --control-surface: #0b100ecc;
     --control-border: #bba57445;
-    background: #0b100e;
+    background: var(--purchase-dark);
     color: var(--ivory);
     overflow: clip;
-    color-scheme: dark;
+
 }
 .home a:focus-visible,
 .home button:focus-visible {
@@ -256,8 +258,8 @@
 .collections {
     position: relative;
     padding: 90px 7% 100px;
-    background: #efede5;
-    color: #222c25;
+    background: var(--purchase-page);
+    color: var(--purchase-ink);
     scroll-margin-top: 20px;
 }
 .collectionHeading {
@@ -268,7 +270,7 @@
     margin-bottom: 40px;
 }
 .collections .eyebrow {
-    color: #70603e;
+    color: var(--purchase-link);
     margin-bottom: 16px;
 }
 .collectionHeading h2 {
@@ -284,14 +286,14 @@
     font-size: 12px;
     letter-spacing: 0.12em;
     margin-top: 14px;
-    color: #60685e;
+    color: var(--purchase-muted);
 }
 .collectionHeading > a {
     display: flex;
     align-items: center;
     gap: 18px;
     font-size: 11px;
-    border-bottom: 1px solid #827653;
+    border-bottom: 1px solid var(--purchase-control-line);
     padding-bottom: 10px;
     white-space: nowrap;
 }
@@ -341,12 +343,12 @@
 }
 .productInfo p {
     font-size: 11px;
-    color: #586151;
+    color: var(--purchase-muted);
     margin-top: 8px;
 }
 .empty {
     display: block;
-    border-block: 1px solid #cdc7b6;
+    border-block: 1px solid var(--purchase-line);
     padding: 45px 0;
     line-height: 2;
 }
@@ -363,7 +365,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #d4ba8333;
+    border-bottom: 1px solid var(--purchase-gold)33;
 }
 .closing span {
     font-size: 35px;
@@ -505,3 +507,21 @@
         animation: none !important;
     }
 }
+
+.home :is(a, button) {
+    min-height: var(--purchase-touch);
+    min-width: var(--purchase-touch);
+}
+.empty a {
+    display: inline-flex;
+    align-items: center;
+}
+.collections a:focus-visible {
+    outline-color: var(--purchase-focus);
+}
+.collectionHeading > a:hover,
+.empty a:hover {
+    color: var(--purchase-link);
+}
+
+.collections { color-scheme: light; }

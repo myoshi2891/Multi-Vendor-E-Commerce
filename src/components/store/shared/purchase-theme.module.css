@@ -31,5 +31,5 @@
     --purchase-warning-surface: #eee5d2;
     --purchase-neutral-surface: #e8e5dc;
     --purchase-touch: 44px;
-    color-scheme: light;
+    color-scheme: var(--purchase-color-scheme, light);
 }
