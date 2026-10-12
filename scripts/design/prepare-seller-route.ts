@@ -13,6 +13,8 @@ import { Prisma, PrismaClient } from "@prisma/client";
  * 2. Clerk dev に `+clerk_test` の販売者を作成または再利用し、privateMetadata.role を SELLER にする
  *    （seller layout は DB ではなく Clerk の metadata で判定する）。
  * 3. Clerk ID の User へ seed 店舗を付け替え、注文・会話・国別配送料率を冪等に投入する。
+ * 4. P3残存8画面（plans/layout-design/priority-eight-p3-residual-design-system-plan.md 追補）用に、
+ *    `+clerk_test` の管理者（privateMetadata.role=ADMIN）と検証店舗のクーポン1件を冪等に用意する。
  *
  * 使い方: bun scripts/design/prepare-seller-route.ts <output.json>
  */
@@ -21,6 +23,8 @@ const SELLER_EMAIL = "design-seller+clerk_test@example.com";
 const BUYER_EMAIL = "design-buyer@example.com";
 const STORE_URL = "e2e-store-chromium-w0";
 const OTHER_STORE_URL = "e2e-store-b-chromium-w0";
+const ADMIN_EMAIL = "design-admin+clerk_test@example.com";
+const COUPON_CODE = "DESIGNP3";
 
 const output = process.argv[2];
 if (!output) {
@@ -55,27 +59,34 @@ const databaseUrl = assertDedicatedDatabase();
 const clerk = createClerkClient({ secretKey });
 const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
 
-const ensureClerkSeller = async (): Promise<string> => {
-    const { data } = await clerk.users.getUserList({ emailAddress: [SELLER_EMAIL] });
+/** Clerk dev のテストユーザーを作成または再利用し、layout が判定する privateMetadata.role を設定する */
+const ensureClerkUser = async (
+    email: string,
+    username: string,
+    lastName: string,
+    role: "SELLER" | "ADMIN"
+): Promise<string> => {
+    const { data } = await clerk.users.getUserList({ emailAddress: [email] });
     const existing = data[0];
     const user =
         existing ??
         (await clerk.users.createUser({
-            emailAddress: [SELLER_EMAIL],
+            emailAddress: [email],
             // このインスタンスは username 必須（tests/e2e/helpers/auth.ts と同じ）
-            username: "designseller",
+            username,
             firstName: "Design",
-            lastName: "Seller",
+            lastName,
             skipPasswordRequirement: true,
         }));
     await clerk.users.updateUserMetadata(user.id, {
-        privateMetadata: { role: "SELLER" },
+        privateMetadata: { role },
     });
     return user.id;
 };
 
 try {
-    const sellerId = await ensureClerkSeller();
+    const sellerId = await ensureClerkUser(SELLER_EMAIL, "designseller", "Seller", "SELLER");
+    const adminId = await ensureClerkUser(ADMIN_EMAIL, "designadmin", "Admin", "ADMIN");
 
     const seller = await prisma.user.upsert({
         where: { email: SELLER_EMAIL },
@@ -90,6 +101,21 @@ try {
     });
     if (seller.id !== sellerId) {
         throw new Error("DB の販売者 User.id が Clerk ID と一致しません。");
+    }
+
+    const admin = await prisma.user.upsert({
+        where: { email: ADMIN_EMAIL },
+        create: {
+            id: adminId,
+            email: ADMIN_EMAIL,
+            name: "Design Admin",
+            picture: "/assets/images/default-user.jpg",
+            role: "ADMIN",
+        },
+        update: { name: "Design Admin", role: "ADMIN" },
+    });
+    if (admin.id !== adminId) {
+        throw new Error("DB の管理者 User.id が Clerk ID と一致しません。");
     }
 
     const buyer = await prisma.user.upsert({
@@ -216,6 +242,20 @@ try {
         orderId = order.id;
     }
 
+    // 編集 Dialog の初期値を確認するため、操作前と同じ値へ毎回戻す
+    const couponValues = {
+        storeId: store.id,
+        startDate: "2026-01-01T00:00:00Z",
+        endDate: "2027-12-31T23:59:59Z",
+        discount: 15,
+        isActive: true,
+    };
+    await prisma.coupon.upsert({
+        where: { code: COUPON_CODE },
+        create: { code: COUPON_CODE, ...couponValues },
+        update: couponValues,
+    });
+
     const conversation = await prisma.conversation.upsert({
         where: { userId_storeId: { userId: buyer.id, storeId: store.id } },
         create: { userId: buyer.id, storeId: store.id, orderId },
@@ -237,7 +277,18 @@ try {
     writeFileSync(
         output,
         JSON.stringify(
-            { sellerEmail: SELLER_EMAIL, storeUrl: STORE_URL, otherStoreUrl: OTHER_STORE_URL, orderId },
+            {
+                sellerEmail: SELLER_EMAIL,
+                storeUrl: STORE_URL,
+                otherStoreUrl: OTHER_STORE_URL,
+                orderId,
+                adminEmail: ADMIN_EMAIL,
+                storeName: store.name,
+                productId: variant.productId,
+                variantId: variant.id,
+                variantName: variant.variantName,
+                couponCode: COUPON_CODE,
+            },
             null,
             2
         )
