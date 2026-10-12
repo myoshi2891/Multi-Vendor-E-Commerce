@@ -1574,4 +1574,10 @@ Red: 審査中がwarning tokenに追従せず6/6失敗（p3 residual overview st
 
 詳細buttonを44pxへ拡張し、支払状態へ既存paymentState意味色を接続。検索/金額/Action/詳細Portal/pending/error/retry/Escape復帰を保持。
 
-Red: View order高さ36pxで6/6失敗。Paid期待へのfixture訂正はRedに算入しない。Green/Refactor: p3 orders12/12、関連RTL71/71、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。
+Red: View order高さ40pxで6/6失敗。Paid期待へのfixture訂正はRedに算入しない。Green/Refactor: p3 orders12/12、関連RTL71/71、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。
+
+#### Step 3 DS-PAGE-050 管理者店舗
+
+店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。
+
+Red: View store高さ40pxで6/6失敗（削除操作は追加回帰）。Green/Refactor: p3店舗/クーポン/作成/操作24/24、関連RTL80/80、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。

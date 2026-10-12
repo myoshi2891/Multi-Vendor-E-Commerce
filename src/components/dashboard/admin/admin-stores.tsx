@@ -51,7 +51,7 @@ function Details({
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline">View store {store.name}</Button>
+                <Button className={styles.control} variant="outline">View store {store.name}</Button>
             </DialogTrigger>
             <DialogContent className={`${styles.theme} ${styles.dialog}`}>
                 <DialogHeader>

@@ -490,3 +490,24 @@ for (const width of [1440, 768, 390])
             await page.keyboard.press("Escape");
             await expect(details).toBeFocused();
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual stores controls ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=stores");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const details = page.getByRole("button", { name: "View store Example store" });
+            await expectTouch(details);
+            await details.click();
+            await expectTouch(page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }));
+            await page.keyboard.press("Escape");
+            await expect(details).toBeFocused();
+            const remove = page.getByRole("button", { name: "Delete store Example store", exact: true });
+            await expectTouch(remove);
+            await remove.click();
+            await expectTouch(page.getByRole("button", { name: "Cancel", exact: true }));
+            await expectTouch(page.getByRole("button", { name: "Confirm delete", exact: true }));
+            await page.keyboard.press("Escape");
+            await expect(remove).toBeFocused();
+        });

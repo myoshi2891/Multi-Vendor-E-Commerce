@@ -1077,3 +1077,7 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 ### P3残存8 Step 2 DS-PAGE-048（2026-10-13）
 
 詳細buttonを44pxへ拡張し、支払状態へ既存paymentState意味色を接続。検索/金額/Action/詳細Portal/pending/error/retry/Escape復帰を保持。 p3 orders12/12、関連RTL71/71、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 3 DS-PAGE-050（2026-10-13）
+
+店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。 p3店舗/クーポン/作成/操作24/24、関連RTL80/80、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
