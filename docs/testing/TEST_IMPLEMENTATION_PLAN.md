@@ -1268,4 +1268,4 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 - Step 8 設定: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
 
-実route/SDKの未確認範囲は[QA](QA_HANDOFF.md#2026-10-11-p2サポート通知等8画面最新)を参照し、実装完了と受け入れ保留を区別する。
+実route/SDKの未確認範囲は[QA](QA_HANDOFF.md#2026-10-11-p2サポート-保留2件の解消最新)を参照し、実装完了と受け入れ保留を区別する。

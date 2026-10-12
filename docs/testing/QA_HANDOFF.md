@@ -14,7 +14,7 @@
 
 [計画](../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[TDD・受け入れ証跡](../design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。公開6画面の残存表示統一、通知の実route空状態受け入れ、実Clerkの24pxアイコン操作修正を実施。追跡のDecimal警告はページ注入Actionの表示DTOで解消し、query facade/API/DB/照合契約は保持。
 
-**Open issues / 次着手**（→2026-10-11 上節で2件とも解消）: DS-P2-SUPPORT-NOTIFICATIONSは既存テスト顧客の通知0件のため、実通知あり・既読永続化が未確認。既存通知のある専用環境で解除する（今回データ追加なし）。DS-P2-SUPPORT-CLERK-PORTALは独立modalContentのSDK生成経路が未確認でadapterのみ。埋め込み・inline編集キャンセル・Security hash・mobile menuは実SDKで確認済み。設定の保存/MFA/アカウント削除は今回未実行。これらの解除条件の正本は本節。全Integration/フルE2Eも今回未実行。
+**Open issues / 次着手（履歴・保留時点）**: 以下の DS-P2-SUPPORT-NOTIFICATIONS と DS-P2-SUPPORT-CLERK-PORTAL は[上節](#2026-10-11-p2サポート-保留2件の解消最新)で2件とも解消済み。現在の残作業の正本は上節。DS-P2-SUPPORT-NOTIFICATIONSは既存テスト顧客の通知0件のため、実通知あり・既読永続化が未確認。既存通知のある専用環境で解除する（今回データ追加なし）。DS-P2-SUPPORT-CLERK-PORTALは独立modalContentのSDK生成経路が未確認でadapterのみ。埋め込み・inline編集キャンセル・Security hash・mobile menuは実SDKで確認済み。設定の保存/MFA/アカウント削除は今回未実行。全Integration/フルE2Eも今回未実行。
 
 
 - 最終全体Jest: **3146 passed / 3149 total、3 skipped、325 passed / 326 suites、127 snapshots passed**。Statements88.23%／Branches78.47%／Functions84.53%／Lines88.76%。dashboard405 test files／405 lcov／18 of 80 cells。

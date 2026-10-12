@@ -4,7 +4,7 @@
 
 公開6画面のpurchase tokens・44px・状態表示、通知の実route空状態、設定の実Clerk受け入れと24px操作修正、追跡の表示DTOをTDD/回帰で検証。**3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。
 
-Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.53%（2143/2535）／Lines88.76%（9975/11238）。 **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 [計画](../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。未確認範囲は[QA](testing/QA_HANDOFF.md#2026-10-11-p2サポート通知等8画面最新)。
+Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.53%（2143/2535）／Lines88.76%（9975/11238）。 **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 [計画](../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。未確認範囲は[QA](testing/QA_HANDOFF.md#2026-10-11-p2サポート-保留2件の解消最新)。
 
 ## 2026-10-11 購入優先8画面の表示受け入れ
 

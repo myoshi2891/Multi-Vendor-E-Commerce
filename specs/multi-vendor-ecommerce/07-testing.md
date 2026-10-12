@@ -1360,4 +1360,4 @@ RTLはカテゴリEscapeと比較の個別/全削除focusを追加（計+3）。
 
 ## P2 support eight verification
 
-RTL adds opt-in DesignPage and tracking display-boundary regression tests; CSS token behavior is verified through browser computed styles, not source-string tests. Reuse priority/priority-public/seven/purchase-route. [Saved plan](../../plans/layout-design/priority-eight-p2-support-design-system-plan.md), [evidence](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録), [remaining acceptance](../../docs/testing/QA_HANDOFF.md#2026-10-11-p2サポート通知等8画面最新).
+RTL adds opt-in DesignPage and tracking display-boundary regression tests; CSS token behavior is verified through browser computed styles, not source-string tests. Reuse priority/priority-public/seven/purchase-route. [Saved plan](../../plans/layout-design/priority-eight-p2-support-design-system-plan.md), [evidence](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録), [remaining acceptance](../../docs/testing/QA_HANDOFF.md#2026-10-11-p2サポート-保留2件の解消最新).
