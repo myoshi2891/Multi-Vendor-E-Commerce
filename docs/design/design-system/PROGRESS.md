@@ -1569,3 +1569,9 @@ Red: page背景token未接続3/3失敗。Green/Refactor: application browser6/6�
 新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。
 
 Red: 審査中がwarning tokenに追従せず6/6失敗（p3 residual overview state）。Green/Refactor: p3 overview/navigation/state 14/14、admin RTL65/65、型0、lint0 errors/既存8 warnings、harness成功。390px dark画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。
+
+#### Step 2 DS-PAGE-048 管理者注文
+
+詳細buttonを44pxへ拡張し、支払状態へ既存paymentState意味色を接続。検索/金額/Action/詳細Portal/pending/error/retry/Escape復帰を保持。
+
+Red: View order高さ36pxで6/6失敗。Paid期待へのfixture訂正はRedに算入しない。Green/Refactor: p3 orders12/12、関連RTL71/71、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。

@@ -900,3 +900,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。既存判定を維持し今回の変更受け入れを別記する。
 
 - [x] Step 1 DS-PAGE-049 管理者概要: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] Step 2 DS-PAGE-048 管理者注文: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。

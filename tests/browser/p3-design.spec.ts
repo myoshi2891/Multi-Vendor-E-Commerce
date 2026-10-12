@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { expectTokenColor } from "./seller-residual-assertions";
+import { expectTokenColor, expectTouch } from "./seller-residual-assertions";
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"]) {
         test(`overview ${width} ${theme}`, async ({ page }, info) => {
@@ -474,4 +474,19 @@ for (const width of [1440, 768, 390])
             await page.goto("/?screen=overview");
             await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
             await expectTokenColor(page.getByText("審査中", { exact: true }), "color", "hsl(var(--warning))");
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual orders controls ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=orders");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const details = page.getByRole("button", { name: "View order order-1" });
+            await expectTouch(details);
+            await expectTokenColor(page.getByRole("cell", { name: "Paid", exact: true }).locator("span"), "color", "var(--brand-success)");
+            await details.click();
+            await expectTouch(page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }));
+            await page.keyboard.press("Escape");
+            await expect(details).toBeFocused();
         });

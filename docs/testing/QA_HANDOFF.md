@@ -1073,3 +1073,7 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 ### P3残存8 Step 1 DS-PAGE-049（2026-10-13）
 
 新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。 p3 overview/navigation/state 14/14、admin RTL65/65、型0、lint0 errors/既存8 warnings、harness成功。390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 2 DS-PAGE-048（2026-10-13）
+
+詳細buttonを44pxへ拡張し、支払状態へ既存paymentState意味色を接続。検索/金額/Action/詳細Portal/pending/error/retry/Escape復帰を保持。 p3 orders12/12、関連RTL71/71、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。

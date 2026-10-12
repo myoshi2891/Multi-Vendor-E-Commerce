@@ -222,3 +222,10 @@ DS-PAGE-041/040/039は既存管理者themeの個別UI/Portalを適用する。�
 DS-PAGE-049 管理者概要: 新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
 
 [計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3残存8画面 Step 2（2026-10-13）
+
+DS-PAGE-048 管理者注文: 詳細buttonを44pxへ拡張し、支払状態へ既存paymentState意味色を接続。検索/金額/Action/詳細Portal/pending/error/retry/Escape復帰を保持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
