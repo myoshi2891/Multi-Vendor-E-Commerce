@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: "Report a Problem | Marketplace" };
 export default function ReportProblemPage() {
     return (
         <DesignPage
+            appearance="purchase"
             title="Report a problem"
             eyebrow="HERE TO HELP"
             description="Tell us about a problem with your experience."

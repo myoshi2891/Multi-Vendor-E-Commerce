@@ -138,3 +138,12 @@ Orders, payment history, addresses, reviews, buyer messages and account overview
 browse/store/product/cart/checkout/order/compare/wishlistの残存表示はscoped purchase themeで面・罫線・意味色・focusを統一する。明るい面のfocusと入力境界は3:1以上、対象breadcrumb/gallery/page操作は44×44px以上。カテゴリEscapeはtriggerへ、比較削除/全消去は残る選択見出しへfocusを戻す。請求書生成失敗は暗い面のdanger色で通知し再操作可能とする。既存検索条件・URL/current・最大比較4件・価格/在庫/送料/認可・注文/決済契約を保持。
 
 [保存計画](../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)／[実装証跡](../../docs/design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)。
+
+
+## P2 support and account presentation (2026-10-11)
+
+Public tracking, customer service, returns, disputes, problem reports and offers share opt-in storefront purchase tokens for surfaces, text, input boundaries, focus and semantic states. Independent controls and breadcrumb links provide at least 44×44px targets. Preserve existing content, destinations, ticket categories, order/email matching and pending/error/retry/receipt behavior. Tracking statuses use the existing store variant; only the serializable fields displayed by the tracking page cross its client boundary.
+
+Notifications retain their account tokens and cursor/read behavior. Real routes accept the empty state and, with three idempotently prepared notifications, single, link-opened and mark-all read updates that persist across reload. Clerk settings retain hash routing and official security features, with icon actions at least 44px wide. Real embedded editing/cancel and mobile navigation are accepted without saving; the embedded UserProfile opens no standalone modal on the real SDK, so modalContent stays an adapter-only safeguard.
+
+[Plan](../../plans/layout-design/priority-eight-p2-support-design-system-plan.md) / [Evidence](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録).

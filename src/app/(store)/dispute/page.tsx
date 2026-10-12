@@ -11,6 +11,7 @@ export const metadata: Metadata = { title: "Order Dispute | Marketplace" };
 export default function DisputePage() {
     return (
         <DesignPage
+            appearance="purchase"
             title="Order dispute resolution"
             eyebrow="HERE TO HELP"
             description="Tell us about an issue with your order."

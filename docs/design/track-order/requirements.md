@@ -55,3 +55,10 @@
 ## デザイン移行受け入れ条件（2026-10-01）
 
 クリーム背景・深緑ヒーロー・セリフ見出し・ゴールド装飾を適用。1440/390/768pxで横溢れなく表示し、長い注文IDと商品名を折り返す。送信中表示と入力ロック、未入力・成功・未検出・失敗・再照会を維持。focusを可視化し、各状態でWCAG AAを満たす。
+
+
+## P2残存表示・Step 1 配送追跡（2026-10-11）
+
+先行RTL1件でstore状態タグ未接続のRed、390px browserでtoken非継承のRed。rootにpurchase theme、入力control-line/input色、dark heroのgold focusと44pxリンク、3状態タグvariant="store"を適用。Green/Refactor: track-order-form Jest6/6、priority browser3/3（1440/768/390px、pending lock/error/retry/missing/success/長文、axe contrast含む）。型0、lint0 errors/既存8 warnings。実照会は既存専用DBの公開routeで別確認、ここはmock Actionによる補助検証。
+
+[保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。

@@ -2,20 +2,20 @@
     --destructive: 6 48% 39%;
     display: grid;
     gap: 24px;
-    color: #17251d;
+    color: var(--purchase-ink, #17251d);
 }
 .form :is(input, textarea, button):focus-visible {
-    outline: 2px solid #75613b;
+    outline: 2px solid var(--purchase-focus, #786035);
     outline-offset: 4px;
     box-shadow: none;
 }
 .input,
 .textarea {
     border-radius: 0;
-    /* WCAG 1.4.11: #faf8f2 背景に対し 3.39:1（非テキスト 3:1 以上） */
-    border-color: #8a877a;
-    background: #faf8f2;
-    color: #17251d;
+    /* WCAG 1.4.11: var(--purchase-input, #fffdf7) 背景に対し 3.39:1（非テキスト 3:1 以上） */
+    border-color: var(--purchase-control-line, #877957);
+    background: var(--purchase-input, #fffdf7);
+    color: var(--purchase-ink, #17251d);
     font-size: 16px;
 }
 .input {
@@ -33,17 +33,17 @@
     white-space: normal;
     padding: 12px 20px;
     border-radius: 0;
-    background: #17251d;
-    color: #faf8f2;
+    background: var(--purchase-ink, #17251d);
+    color: var(--purchase-on-dark, #f1eee4);
     line-height: 1.8;
 }
 .submit:hover {
-    background: #304a39;
+    background: var(--purchase-dark-hover, #21382a);
 }
 .error {
     padding: 16px;
-    border: 1px solid #b85d50;
-    color: #963e34;
+    border: 1px solid var(--purchase-danger, #8a3028);
+    color: var(--purchase-danger, #8a3028);
     font-size: 13px;
     line-height: 1.9;
     overflow-wrap: anywhere;
@@ -54,10 +54,18 @@
     align-items: flex-start;
     gap: 18px;
     padding: 24px;
-    background: #e8eee5;
-    border: 1px solid #abbba6;
-    color: #243f2b;
+    background: var(--purchase-success-surface, #e4eee5);
+    border: 1px solid var(--purchase-success, #286142);
+    color: var(--purchase-success, #286142);
     font-size: 14px;
     line-height: 2;
     overflow-wrap: anywhere;
+}
+
+.form [id$="-form-item-message"] {
+    color: var(--purchase-danger, #8a3028);
+}
+.input::placeholder,
+.textarea::placeholder {
+    color: var(--purchase-muted, #536054);
 }

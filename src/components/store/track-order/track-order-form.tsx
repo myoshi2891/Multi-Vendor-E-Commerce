@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TrackOrderSchema, type TrackOrderInput } from "@/lib/schemas";
-import type { trackOrder } from "@/queries/order";
+import type { TrackingDisplayData } from "./tracking-data";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -25,11 +25,11 @@ import styles from "./track-order.module.css";
 export default function TrackOrderForm({
     lookupAction,
 }: Readonly<{
-    lookupAction: typeof trackOrder;
+    lookupAction: (input: TrackOrderInput) => Promise<TrackingDisplayData | null>;
 }>) {
     const isSubmittingRef = useRef(false);
     const [result, setResult] =
-        useState<Awaited<ReturnType<typeof trackOrder>>>(null);
+        useState<TrackingDisplayData | null>(null);
     const [notFound, setNotFound] = useState(false);
     const [failed, setFailed] = useState(false);
 

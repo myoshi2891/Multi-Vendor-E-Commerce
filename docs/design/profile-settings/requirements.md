@@ -68,3 +68,10 @@ settings rootはstore限定purchase themeを合成し、Clerk appearanceのprima
 [計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
 
 2026-10-09追記: reduced-motionでは埋め込みrootと独立Portal両方のアニメーション/transitionを抑制する。補助settings7/7で検証、実SDK受け入れは保留。
+
+
+## P2残存表示・Step 8 設定（2026-10-11）
+
+実SDKの24pxアイコンbuttonで44px基準のRedを確認。root/Portal buttonへ最小幅44pxを追加。関連settings RTL2/2、seven settings7/7（1440/768/767/390px、独立Portal adapter/reduced-motion/axe）、実Clerk route1/1内3幅（配色/全表示button44px/inline編集キャンセル/Security hash/モバイルmenu/axe）。初回テストのdialog期待とmobile非展開はSDK実動作に合わせ訂正しRedに含めない。実設定保存/削除なし。UserProfileの編集はinline、modalContentの独立Portalはadapterのみで実SDK生成経路は未確認・保留。2026-10-11追記: [保留解消](../../../plans/layout-design/p2-support-pending-resolution-plan.md)。実SDKで全表示buttonを調査し、埋め込みUserProfileにmodal経路が無いことを確認して受け入れ条件を改めた（adapterは保険として維持）。型0、lint0 errors/既存8 warnings。
+
+[保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。

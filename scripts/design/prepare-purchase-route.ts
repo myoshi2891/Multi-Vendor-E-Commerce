@@ -11,7 +11,7 @@ import { Prisma, PrismaClient } from "@prisma/client";
  * 1. DATABASE_URL / DIRECT_URL / E2E_DATABASE_URL が同値で、ローカルの専用DBを指すことを検査する。
  * 2. Clerk dev に `+clerk_test` の顧客を作成または再利用し、同じ ID の User を DB に用意する。
  * 3. 住所2件・カート1件（クーポン未適用へ戻す）・店舗クーポン・支払い済み1件/未払い3件の注文・wishlist 12件
- *    （2ページ）を冪等に投入する。クーポン適用テストがカートを変えるため、suite 実行前に毎回実行する。
+ *    （2ページ）・P2 通知3件（未読へ戻す）を冪等に投入する。クーポン適用テストがカートを変えるため、suite 実行前に毎回実行する。
  *
  * 使い方: bun scripts/design/prepare-purchase-route.ts <output.json>
  */
@@ -258,6 +258,54 @@ try {
     ).map((order) => order.id);
     while (pendingIds.length < 3) pendingIds.push(await createOrder("Pending"));
     const [pendingOrderId, stripeOrderId, paypalOrderId] = pendingIds;
+
+    // P2 通知の既読受け入れ用。支払い済み注文の店舗グループを発生源にし、order-events.ts と同じ形
+    // （type / params / linkUrl / sourceType）で 3 件を固定 dedupeKey で upsert する。テストが既読にするため
+    // 毎回未読へ戻し、作成日時も揃えて並び（新しい順: shipped → nolink → nolink-2）を固定する。
+    // 配信行（NotificationDelivery）は作らない（メール送信経路を起こさない）
+    const paidGroup = await prisma.orderGroup.findFirstOrThrow({
+        where: { orderId: paidOrderId },
+        select: { id: true, store: { select: { name: true } } },
+    });
+    const notifiedAt = Date.now();
+    const notifications = [
+        {
+            key: "shipped",
+            type: "order.group.shipped",
+            linkUrl: `/order/${paidOrderId}`,
+        },
+        { key: "nolink", type: "order.group.delivered", linkUrl: null },
+        { key: "nolink-2", type: "order.group.delivered", linkUrl: null },
+    ] as const;
+    // テストは件数（3 件・Unread/Read 数）と一括既読を検証するため、専用顧客の固定キー以外の通知を
+    // 先に除いて 3 件だけにする（wishlist と同じく専用テスト顧客に限った再準備。配信行は Cascade）
+    await prisma.notification.deleteMany({
+        where: {
+            userId: customer.id,
+            NOT: { dedupeKey: { startsWith: "design-p2:" } },
+        },
+    });
+    for (const [index, notification] of notifications.entries()) {
+        const fields = {
+            type: notification.type,
+            params: { storeName: paidGroup.store.name, orderId: paidOrderId },
+            linkUrl: notification.linkUrl,
+            sourceType: "OrderGroup",
+            sourceId: paidGroup.id,
+            isRead: false,
+            readAt: null,
+            createdAt: new Date(notifiedAt - index * 60_000),
+        };
+        await prisma.notification.upsert({
+            where: { dedupeKey: `design-p2:${notification.key}` },
+            create: {
+                ...fields,
+                userId: customer.id,
+                dedupeKey: `design-p2:${notification.key}`,
+            },
+            update: fields,
+        });
+    }
 
     // wishlist はページング確認のため 12 件（1 ページ 10 件）へ揃える
     const variants = await prisma.productVariant.findMany({

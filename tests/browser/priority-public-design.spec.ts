@@ -13,6 +13,16 @@ async function accessible(page: Page) {
         .analyze();
     expect(result.violations).toEqual([]);
 }
+// クライアント側バリデーションのハンドラーが付くまで待つ（未 hydrate だとネイティブ送信になる）
+async function waitForFormHydration(page: Page) {
+    await page.waitForFunction(() => {
+        const form = document.querySelector("main form");
+        return (
+            form &&
+            Object.keys(form).some((key) => key.startsWith("__reactProps$"))
+        );
+    });
+}
 for (const width of [1440, 768, 390]) {
     test(`offers actual route at ${width}px`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
@@ -62,15 +72,7 @@ for (const width of [1440, 768, 390]) {
                 "background-color",
                 "rgb(243, 240, 232)"
             );
-            await page.waitForFunction(() => {
-                const form = document.querySelector("main form");
-                return (
-                    form &&
-                    Object.keys(form).some((key) =>
-                        key.startsWith("__reactProps$")
-                    )
-                );
-            });
+            await waitForFormHydration(page);
             const submit = main.getByRole("button", { name: submitLabel });
             await accessible(page);
             await page.screenshot({
@@ -159,3 +161,69 @@ for (const path of ["/profile/following/1", "/profile/history/1"]) {
         );
     });
 }
+
+import { expectSupportTokens, supportAccessible, supportTargets } from "./support-eight-assertions";
+for (const width of [1440, 768, 390]) {
+    for (const path of ["/track-order", "/customer-service", "/returns-exchange", "/dispute", "/report-problem", "/offers"]) {
+        test(`P2 support actual route ${path} ${width}`, async ({page}, info) => {
+            await page.setViewportSize({width,height:1000});
+            await page.goto(path);
+            await expect(page.getByRole("main").getByRole("heading", {level:1})).toBeVisible();
+            if (path === "/offers") await expect(page.getByText("Loading offers…")).toHaveCount(0);
+            await expectSupportTokens(page, "");
+            await supportTargets(page);
+            const home=page.getByRole("main").getByRole("navigation", {name:"Breadcrumb"}).getByRole("link", {name:"Home"});
+            await home.focus();
+            await expect(home).toHaveCSS("outline-style","solid");
+            await supportAccessible(page);
+            const submit=page.getByRole("main").locator('form button[type="submit"]');
+            if (await submit.count()) {
+                await waitForFormHydration(page);
+                await submit.click();
+                await expect(page.getByText(path === "/track-order" ? "注文番号を入力してください。" : "お名前を入力してください。")).toBeVisible();
+                await supportAccessible(page);
+            }
+            await page.screenshot({path:info.outputPath(`p2-support-route-${path.slice(1)}-${width}.png`),fullPage:true});
+        });
+    }
+}
+
+// Actual lookup uses a previously prepared order; no test data is inserted.
+import { readFileSync } from "node:fs";
+type TrackingData = {customerEmail: string; trackingOrderId: string};
+const isTrackingData = (value: unknown): value is TrackingData =>
+    typeof value === "object" && value !== null &&
+    typeof (value as Record<string, unknown>).customerEmail === "string" &&
+    typeof (value as Record<string, unknown>).trackingOrderId === "string";
+// 読めない・壊れた JSON でも spec 全体の読み込みは止めず、追跡テストだけをデータ無しで skip させる
+function loadTrackingData(): TrackingData | null {
+    const path = process.env.DESIGN_PURCHASE_ROUTE;
+    if (!path) return null;
+    try {
+        const parsed: unknown = JSON.parse(readFileSync(path, "utf8"));
+        return isTrackingData(parsed) ? parsed : null;
+    } catch (error: unknown) {
+        console.warn("[priority-public-design] DESIGN_PURCHASE_ROUTE を読めません", {
+            error: error instanceof Error ? error.message : String(error),
+        });
+        return null;
+    }
+}
+const trackingData = loadTrackingData();
+test("P2 tracking existing order read-only lookup at three widths", async ({page}, info) => {
+    test.skip(!trackingData, "Existing dedicated test order required; do not create data for verification.");
+    if (!trackingData) return;
+    for (const width of [1440, 768, 390]) {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/track-order");
+        await waitForFormHydration(page);
+        await page.getByLabel("注文番号", {exact:true}).fill(trackingData.trackingOrderId);
+        await page.getByLabel("メールアドレス").fill(trackingData.customerEmail);
+        await page.getByRole("button", {name:"追跡する"}).click();
+        const result=page.getByRole("region", {name:"注文追跡の結果"});
+        await expect(result).toBeVisible();
+        expect(await result.locator('[data-appearance="store"]').count()).toBeGreaterThanOrEqual(2);
+        await supportAccessible(page);
+        await page.screenshot({path:info.outputPath(`p2-tracking-existing-${width}.png`),fullPage:true});
+    }
+});

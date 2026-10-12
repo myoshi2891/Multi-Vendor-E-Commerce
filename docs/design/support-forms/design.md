@@ -382,3 +382,24 @@ DS-PAGE-035。PROBLEM_REPORT、報告ラベル、既存フィールド（注文�
 ### 最終受け入れ確認（2026-10-05）
 
 今回のdispute/report-problem本体は検証済み（contact/他サポート画面の移行状態は拡張しない）。公開3画面と2つの未認証転送を実ルートChromium11/11で確認。1440/768/390px、focus/keyboard・横溢れ・axe AA contrast・画像目視。送信はmock応答、実ticket作成なし。Offers空/失敗はRTL、フォームカテゴリーpayload回帰2/2。全体Jest2766/2769（3 skipped）、tsc0、lint0 errors/12既存warnings。[最終証跡](../design-system/PROGRESS.md#p2優先5画面移行記録)。
+
+
+## P2残存表示・Step 3 返品交換（2026-10-11）
+
+先行390px browserでtoken非継承をRed確認。returns rootにpurchase theme、フォームはbrand opt-inのtoken fallbackを使用し、既定フォーム保持。入力境界・placeholder・field error/root error・receiptを共通意味色へ統一。Refactor後関連Jest10/10、priority browser3/3（3幅、validation/UUID、pending lock、入力保持/error/retry/receipt、focus・axe AA）。型0、lint0 errors/既存8 warnings。ポリシー本文・RETURN_REQUEST契約を保持。外部送信はmock。
+
+[保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。
+
+
+## P2残存表示・Step 4 紛争申請（2026-10-11）
+
+先行390px browserでtoken非継承をRed確認。DesignPage appearance="purchase"へopt-in。DISPUTE・UUID必須とAction Propsは保持。Green/Refactor: 関連Jest11/11、priority browser3/3（3幅、44px、validation/pending/error/入力保持/retry/receipt・axe AA）。型0、lint0 errors/既存8 warnings。外部申請送信はmock。
+
+[保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。
+
+
+## P2残存表示・Step 5 問題報告（2026-10-11）
+
+先行390px browserでtoken非継承をRed確認。DesignPage appearance="purchase"へopt-in。PROBLEM_REPORT分類と注文番号不要・Action Propsを保持。Green/Refactor: 関連Jest11/11、priority browser3/3（3幅、44px、validation/pending/error/入力保持/retry/receipt、axe AA）。型0、lint0 errors/既存8 warnings。外部申請送信はmock。
+
+[保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。

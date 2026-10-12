@@ -520,3 +520,17 @@ Playwright配布Chromiumが未導入の場合、既存のGoogle Chromeを`DESIGN
 purchaseはbrowse/store/product/cartのfocus・breadcrumb・galleryと空/在庫切れ、commerceはcheckout入力境界/住所Portalとinvoice失敗・再試行、priorityは比較削除後focusとWishlist最終ページのkeyboard/historyを担当する。purchase-publicは公開Nextルートとguest checkout/wishlistのredirect_urlを確認。既存config/fixtureだけを拡張する。PDF失敗adapterはcommerce内だけに閉じ、実PDF/決済送信は実行しない。
 
 expectReadableFocusは先にTabでkeyboard modalityへ切り替える。contrast helperは周囲の最初の不透明面を探し、outlineとborder-topを測定する。outline-styleのsolidを確認し、不透明な指示色だけを数値判定する。画像/gradient/半透明色の合成はこのhelperの対象外として目視/axeも行う。CSS文字列をなぞるだけのJestは追加せず、カテゴリEscapeと比較削除後focusをRTLで検証する。[QA](QA_HANDOFF.md#ds-purchase-eight-browser)。
+
+
+### P2 support eight — existing-data route acceptance
+
+Reuse priority/priority-public/seven and purchase-route in `playwright.design.config.ts`; no extra config or fixture server. priority-public uses an isolated webpack distDir. Production page bodies in the shared priority fixture use mock query/action adapters for pending/error/retry/receipt and long text.
+
+Point DATABASE_URL/DIRECT_URL/E2E_DATABASE_URL at the same existing local dedicated test DB for every real-route check.
+
+- **Read-only checks** (priority-public `--grep '^P2 '`, and the purchase-route `P2 settings` test): `DESIGN_PURCHASE_ROUTE` can reference existing prepared metadata; they need only customerEmail, with optional trackingOrderId for the public tracking check. They write nothing, so do not seed/reset/create customers for them.
+- **Stateful notification read acceptance** (purchase-route `P2 notifications`, included by `--grep '^P2 '`): needs `DESIGN_PURCHASE_ROUTE` JSON with customerEmail **and paidOrderId** plus existing notifications. Run `prepare-purchase-route.ts` before each run (as in [QA_HANDOFF](QA_HANDOFF.md)): it removes the dedicated customer's other notifications and resets the three `design-p2:*` ones to unread, so counts and bulk read cover exactly those three. Without preparation the test is not a valid acceptance; a missing notification set is a data gap, not fixture proof.
+
+The P2 subset does not run the purchase/SDK payment tests.
+
+Clerk's embedded UserProfile editor is inline. At narrower widths, open its mobile navigation before Security; retain hash routing and cancel edits without saving. A real SDK probe of every visible settings button found no `.cl-modalContent` or dialog; modalContent stays covered by the adapter suite. Restore only Next-generated tsconfig include additions after route servers stop.

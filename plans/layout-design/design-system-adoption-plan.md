@@ -636,7 +636,7 @@ DS-COMP-020／031〜049（036はcheckoutのopt-inのみ）、購入導線共通C
 [保存計画](priority-seven-design-system-plan.md)／[実施記録](../../docs/design/design-system/PROGRESS.md#優先7画面移行記録)。認証後実ルートと第三者UI確認は実装と別に記録する。
 
 - [x] DS-PAGE-032 アカウント設定: TDD・実装・関連検証・仕様同期。
-- [ ] DS-PAGE-032: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
+- [x] DS-PAGE-032: 認証後実ルートの埋め込み・inline編集キャンセル・Security hash・mobile menuは確認済み。独立modalContent Portalは実SDK調査で埋め込みに生成経路が無いことを確認し、受け入れ条件を改めた（[保留解消計画](p2-support-pending-resolution-plan.md)）。
 
 - [x] DS-PAGE-004 出店申請: TDD・実装・関連検証・仕様同期。
 - [ ] DS-PAGE-004: 認証後実ルート・必要なSDK実描画の受け入れ検証（実装あり・保留）。
@@ -843,3 +843,28 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 8 DS-PAGE-033 Wishlist。
 - [x] 最終統合検証・文書同期。
 - [ ] 既存環境の認証後実ルート/SDK受け入れ。
+
+
+### P2サポート・通知等8画面移行記録（2026-10-11）
+
+[保存計画](priority-eight-p2-support-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。既存検証履歴を維持し今回の受け入れを別記録する。
+
+- [x] Step 0 DS-COMP-205 共通表示。
+
+- [x] Step 1 DS-PAGE-038 配送追跡。
+
+- [x] Step 2 DS-PAGE-011 サポート窓口。
+
+- [x] Step 3 DS-PAGE-036 返品交換。
+
+- [x] Step 4 DS-PAGE-012 紛争申請。
+
+- [x] Step 5 DS-PAGE-035 問題報告。
+
+- [x] Step 6 DS-PAGE-016 オファー。
+
+- [x] Step 7 DS-PAGE-067 通知。
+
+- [x] Step 8 DS-PAGE-032 設定。
+
+- [x] P2サポート8画面の最終統合・仕様同期。全体Jest3146/3149（3 skipped）、priority54/54、公開実route19/19、認証後実route2/2、settings adapter7/7。通知の実既読化とClerk独立Portalは[保存計画](priority-eight-p2-support-design-system-plan.md#最終結果段階コミット)に限定保留を記録。→ 2026-10-11 [保留解消計画](p2-support-pending-resolution-plan.md)で解消。

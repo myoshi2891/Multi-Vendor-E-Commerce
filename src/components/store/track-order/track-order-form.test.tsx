@@ -165,3 +165,12 @@ describe("TrackOrderForm", () => {
         expect(screen.getByRole("button", { name: /追跡する/ })).toBeEnabled();
     });
 });
+
+it("uses the storefront status presentation without changing tracking labels", async () => {
+    jest.mocked(trackOrder).mockResolvedValueOnce(matchedResult as unknown as NonNullable<Awaited<ReturnType<typeof trackOrder>>>);
+    render(<TrackOrderForm lookupAction={trackOrder} />);
+    fillAndSubmit();
+    for (const label of ["Processing", "Paid", "Shipped"]) {
+        expect(await screen.findByText(label)).toHaveAttribute("data-appearance", "store");
+    }
+});

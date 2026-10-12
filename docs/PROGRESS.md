@@ -1,5 +1,11 @@
 # PROGRESS.md
 
+## 2026-10-11 P2サポート・通知等8画面
+
+公開6画面のpurchase tokens・44px・状態表示、通知の実route空状態、設定の実Clerk受け入れと24px操作修正、追跡の表示DTOをTDD/回帰で検証。**3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。
+
+Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.53%（2143/2535）／Lines88.76%（9975/11238）。 **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 [計画](../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。未確認範囲は[QA](testing/QA_HANDOFF.md#2026-10-11-p2サポート-保留2件の解消最新)。
+
 ## 2026-10-11 購入優先8画面の表示受け入れ
 
 残存配色をpurchase rolesへ揃え、focusの可読性・breadcrumb/gallery操作領域・入力境界・カテゴリ/比較操作後のfocusを改善。8ステップのTDD/回帰・関連仕様更新と最終全体検証を完了。補助Chrome131/131、公開Next11成功/6skip。認証後・実データ/SDK受け入れは既存環境の条件待ちとして分けて記録。coverage/dashboardを再生成しセル状態は不変。[証跡](design/design-system/PROGRESS.md#購入優先8画面受け入れ移行記録)／[QA正本](testing/QA_HANDOFF.md#ds-purchase-eight-browser)。
@@ -33,7 +39,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3141 passed / 3144 total、3 skipped、127 snapshots passed、324 スイート（323 passed／1 skipped、failed 0）**。2026-10-11 購入優先8画面 残り保留の解消後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |

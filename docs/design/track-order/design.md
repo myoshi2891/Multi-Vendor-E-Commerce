@@ -232,3 +232,15 @@ export const trackOrder = async (input: TrackOrderInput) => {
 3. 同じ id + **誤った email** → "注文が見つかりませんでした。"（データが出ないこと）。
 4. **存在しない id** → 同一メッセージ（区別されないこと・列挙防止）。
 5. footer「Track your Order」から到達できること。
+
+
+## P2残存表示・Step 1 配送追跡（2026-10-11）
+
+先行RTL1件でstore状態タグ未接続のRed、390px browserでtoken非継承のRed。rootにpurchase theme、入力control-line/input色、dark heroのgold focusと44pxリンク、3状態タグvariant="store"を適用。Green/Refactor: track-order-form Jest6/6、priority browser3/3（1440/768/390px、pending lock/error/retry/missing/success/長文、axe contrast含む）。型0、lint0 errors/既存8 warnings。実照会は既存専用DBの公開routeで別確認、ここはmock Actionによる補助検証。
+
+[保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。
+
+
+### 実照会で確認したClient境界（2026-10-11）
+
+実Next routeの既存注文照会で、未表示の金額DecimalがClientへ渡る警告を確認。先行RTLで余分な金額/内部IDを含む応答をRed確認し、ページ注入ActionでTrackingDisplayDataへ投影する。query facadeの返却・照合・認可・例外契約は変更しない。関連Jest103/103、実照会3幅成功とDecimal警告なしを確認。型/lint成功。

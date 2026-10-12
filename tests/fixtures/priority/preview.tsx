@@ -1,5 +1,6 @@
 /* Supplemental component fixture: Next adapters and all actions are mocks; no auth/DB writes. */
 import React from "react";
+import { supportPreview } from "./support-preview";
 import { createRoot } from "react-dom/client";
 import FollowingContainer from "@/components/store/profile/following/container";
 import HistoryContainer from "@/components/store/profile/history/container";
@@ -143,7 +144,9 @@ const notificationAction = async () => {
 };
 
 const root = createRoot(document.getElementById("root")!);
-if (scenario.startsWith("compare")) {
+if (scenario.startsWith("support-")) {
+    void supportPreview(scenario).then(node => root.render(node));
+} else if (scenario.startsWith("compare")) {
     useCompareStore.setState({items: scenario.includes("empty") ? [] : ["v0", "v1", "v2", "v3"]});
     root.render(<ComparePage />);
 } else if (scenario.startsWith("wishlist")) {

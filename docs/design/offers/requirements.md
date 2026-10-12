@@ -56,3 +56,10 @@ DS-PAGE-016。共有opt-in DesignPageでパンくずとserif見出し、タグ�
 ### 最終受け入れ確認（2026-10-05）
 
 対象公開画面は検証済み。公開3画面と2つの未認証転送を実ルートChromium11/11で確認。1440/768/390px、focus/keyboard・横溢れ・axe AA contrast・画像目視。送信はmock応答、実ticket作成なし。Offers空/失敗はRTL、フォームカテゴリーpayload回帰2/2。全体Jest2766/2769（3 skipped）、tsc0、lint0 errors/12既存warnings。[最終証跡](../design-system/PROGRESS.md#p2優先5画面移行記録)。
+
+
+## P2残存表示・Step 6 オファー（2026-10-11）
+
+先行390px browserでtoken非継承をRed確認。成功/取得失敗/空とloadingのDesignPageすべてappearance="purchase"へ接続。Green/Refactor: 関連Jest9/9（Legal既定回帰含む）、priority browser3/3（3幅、長文/件数/URL、empty/error/loading、44px/focus・axe AA）。型0、lint0 errors/既存8 warnings。タグ順序・getAllOfferTags・リンク契約を保持。
+
+[保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。
