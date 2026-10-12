@@ -1524,3 +1524,9 @@ Red: page背景tokenに追従せず3/3失敗。Green/Refactor: FAQ3＋Contact6�
 製品サポートはpurchase tokensと明暗面focus、パンくず/目次/窓口44px。3本文と4窓口URLを保持。
 
 Red: 背景token未接続3/3失敗。Green/Refactor: product-support＋FAQ browser6/6（3幅・目次Enter/fragment/位置・44px/focus/axe AA・画像）、静的RTL5/5、tsc0、lint0 errors/既存8 warnings、check:playwright成功。既存本文と窓口URLは変更なし。実公開routeは最終確認。
+
+#### Step 7 DS-PAGE-005 About
+
+Aboutはpurchase tokensと明暗面focus、パンくず/アンカー/CTA44px。既存本文・装飾・メタデータを保持。
+
+Red: 背景token未接続3/3失敗。Green/Refactor: About＋product-support browser6/6（3幅・アンカーEnter/fragment/位置・44px/focus/axe AA・画像）、静的RTL5/5、tsc0、lint0 errors/既存8 warnings。本文・メタデータ・画像は保持。公開実routeは最終確認。

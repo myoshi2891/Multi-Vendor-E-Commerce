@@ -1,16 +1,16 @@
 .about {
-    --gold: #d4ba83;
-    --ivory: #f1eee4;
-    --ink: #17251d;
-    background: #f3f0e8;
+    composes: theme from "../../../components/store/shared/purchase-theme.module.css";
+    composes: controls from "../../../components/store/shared/storefront-controls.module.css";
+    --gold: var(--purchase-gold);
+    --ivory: var(--purchase-on-dark);
+    --ink: var(--purchase-ink);
+    background: var(--purchase-page);
     color: var(--ink);
 }
-.about a:focus-visible {
-    outline: 2px solid #a68a56;
-    outline-offset: 6px;
-}
+
 .hero {
-    background: radial-gradient(ellipse at 78% 45%, #26443355, transparent 50%), #0b100e;
+    --storefront-focus: var(--purchase-gold);
+    background: radial-gradient(ellipse at 78% 45%, #26443355, transparent 50%), var(--purchase-dark);
     color: var(--ivory);
     color-scheme: dark;
 }
@@ -22,7 +22,7 @@
 .breadcrumb {
     display: flex;
     gap: 15px;
-    color: #a5b0a6;
+    color: var(--purchase-muted-on-dark);
     font-size: 10px;
 }
 .breadcrumb a:hover { color: var(--gold); }
@@ -57,7 +57,7 @@
 .heroDescription {
     font-size: 12px;
     line-height: 2.1;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
     margin-top: 18px;
 }
 .artwork {
@@ -74,7 +74,7 @@
     text-align: center;
     font-size: 9px;
     letter-spacing: .25em;
-    color: #a5b0a6;
+    color: var(--purchase-muted-on-dark);
 }
 .heroFoot {
     border-top: 1px solid #d4ba8333;
@@ -84,7 +84,7 @@
     gap: 20px;
     font-size: 9px;
     letter-spacing: .14em;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
 }
 .heroFoot a { display: inline-flex; align-items: center; gap: 18px; }
 .heroFoot a:hover { color: var(--gold); }
@@ -98,13 +98,13 @@
     display: grid;
     grid-template-columns: 1fr 1.3fr;
     gap: 50px;
-    border-bottom: 1px solid #c9c7b8;
+    border-bottom: 1px solid var(--purchase-line);
     padding: 60px 0;
 }
 .section:last-child { border-bottom: 0; }
 .sectionNumber {
     display: block;
-    color: #75613b;
+    color: var(--purchase-link);
     font-size: 10px;
     letter-spacing: .15em;
     margin-bottom: 20px;
@@ -116,7 +116,7 @@
 .sectionBody p {
     font-size: 13px;
     line-height: 2.2;
-    color: #536356;
+    color: var(--purchase-muted);
     margin-top: 16px;
 }
 .sectionBody .sectionLead {
@@ -134,11 +134,11 @@
     font-size: 12px;
     margin-top: 24px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #8b7346;
+    border-bottom: 1px solid var(--purchase-focus);
 }
-.textLink:hover { color: #75613b; }
+.textLink:hover { color: var(--purchase-link); }
 .invitation {
-    background: #0b100e;
+    background: var(--purchase-dark);
     color: var(--ivory);
     text-align: center;
     padding: 65px 7% 80px;
@@ -151,14 +151,14 @@
     margin-top: 20px;
 }
 .invitation h2 em { color: var(--gold); }
-.invitation p[lang] { color: #b6bfb3; font-size: 12px; letter-spacing: .12em; margin-top: 20px; }
+.invitation p[lang] { color: var(--purchase-muted-on-dark); font-size: 12px; letter-spacing: .12em; margin-top: 20px; }
 .cta {
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
     gap: 35px;
     background: var(--gold);
-    color: #141c16;
+    color: var(--purchase-ink);
     margin-top: 30px;
     padding: 18px 25px;
     font-size: 11px;
