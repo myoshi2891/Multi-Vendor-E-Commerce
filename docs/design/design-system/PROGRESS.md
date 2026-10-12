@@ -1518,3 +1518,9 @@ Contact Refactor後再検証: PTYでPlaywrightを実行し6/6、20.7秒で正常
 FAQはpurchase tokensと明暗面focus、パンくず/目次/窓口44px。質問回答の常時表示・一意なアンカーと308 aliasを維持。
 
 Red: page背景tokenに追従せず3/3失敗。Green/Refactor: FAQ3＋Contact6＝browser9/9（1440/768/390px、全目次Enter/fragment/表示位置、44px/focus/axe AA、画像）。静的ページRTL5/5、tsc0、lint0 errors/既存8 warnings。共有themeのcolor-scheme重複宣言を整理。公開実routeは最終確認。
+
+#### Step 6 DS-PAGE-018 製品サポート
+
+製品サポートはpurchase tokensと明暗面focus、パンくず/目次/窓口44px。3本文と4窓口URLを保持。
+
+Red: 背景token未接続3/3失敗。Green/Refactor: product-support＋FAQ browser6/6（3幅・目次Enter/fragment/位置・44px/focus/axe AA・画像）、静的RTL5/5、tsc0、lint0 errors/既存8 warnings、check:playwright成功。既存本文と窓口URLは変更なし。実公開routeは最終確認。
