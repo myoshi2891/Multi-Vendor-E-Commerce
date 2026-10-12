@@ -238,7 +238,7 @@ for (const width of [1440,768,390]) {
             expect(response?.status()).toBe(200);
             const main = page.getByRole("main");
             await expect(main.getByRole("heading",{level:1})).toBeVisible();
-            await storefrontToken(main,path === "/" ? "--purchase-dark" : "--purchase-page","background-color",path === "/" ? "rgb(17, 29, 22)" : "rgb(241, 238, 228)");
+            await storefrontToken(main,path === "/" ? "--purchase-dark" : "--purchase-page","background-color",path === "/" ? "rgb(11, 16, 14)" : "rgb(243, 240, 232)",path === "/" ? "rgb(17, 29, 22)" : "rgb(241, 238, 228)");
             await storefrontControls(main.locator("a,button,input,textarea"));
             await supportAccessible(page);
             await page.screenshot({path:info.outputPath(`storefront-real-${path === "/" ? "home" : path.slice(1)}-${width}.png`),fullPage:true});

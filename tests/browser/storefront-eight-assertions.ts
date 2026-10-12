@@ -13,7 +13,9 @@ export async function storefrontControls(controls: Locator) {
     }
 }
 
-export async function storefrontToken(surface: Locator, token: string, property: string, value: string) {
+/** Assert the default palette first, then prove the surface follows a token override. */
+export async function storefrontToken(surface: Locator, token: string, property: string, defaultValue: string, value: string) {
+    await expect(surface).toHaveCSS(property, defaultValue);
     const original = await surface.evaluate((node, name) => (node as HTMLElement).style.getPropertyValue(name), token);
     try {
         await surface.evaluate((node, data) => (node as HTMLElement).style.setProperty(data.token, data.value), {token, value});

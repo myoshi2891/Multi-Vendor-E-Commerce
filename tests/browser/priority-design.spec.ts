@@ -545,7 +545,7 @@ for (const width of [1440, 768, 390]) {
         await page.setViewportSize({width,height:1000});
         await page.goto("/?scenario=storefront-contact");
         const main = page.getByRole("main");
-        await storefrontToken(main,"--purchase-page","background-color","rgb(241, 238, 228)");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
         await storefrontControls(main.locator("a, button, input, textarea"));
         for (const link of await main.locator('a[href^="#"]').all()) {
             await link.focus();
@@ -587,7 +587,7 @@ for (const width of [1440, 768, 390]) {
         await page.setViewportSize({width,height:1000});
         await page.goto("/?scenario=storefront-faqs");
         const main = page.getByRole("main");
-        await storefrontToken(main,"--purchase-page","background-color","rgb(241, 238, 228)");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
         await storefrontControls(main.locator("a, button, input, textarea"));
         for (const link of await main.locator('a[href^="#"]').all()) {
             await link.focus();
@@ -606,7 +606,7 @@ for (const width of [1440, 768, 390]) {
         await page.setViewportSize({width,height:1000});
         await page.goto("/?scenario=storefront-product-support");
         const main = page.getByRole("main");
-        await storefrontToken(main,"--purchase-page","background-color","rgb(241, 238, 228)");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
         await storefrontControls(main.locator("a, button, input, textarea"));
         for (const link of await main.locator('a[href^="#"]').all()) {
             await link.focus();
@@ -625,7 +625,7 @@ for (const width of [1440, 768, 390]) {
         await page.setViewportSize({width,height:1000});
         await page.goto("/?scenario=storefront-about");
         const main = page.getByRole("main");
-        await storefrontToken(main,"--purchase-page","background-color","rgb(241, 238, 228)");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
         await storefrontControls(main.locator("a, button, input, textarea"));
         for (const link of await main.locator('a[href^="#"]').all()) {
             await link.focus();

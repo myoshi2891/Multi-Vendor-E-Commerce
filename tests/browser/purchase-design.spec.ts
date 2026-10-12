@@ -758,7 +758,7 @@ for (const width of [1440, 768, 390]) {
         await page.setViewportSize({width,height:1000});
         await page.goto("/?screen=home");
         const main = page.getByRole("main");
-        await storefrontToken(main,"--purchase-dark","background-color","rgb(17, 29, 22)");
+        await storefrontToken(main,"--purchase-dark","background-color","rgb(11, 16, 14)","rgb(17, 29, 22)");
         await storefrontControls(page.locator("main a, main button"));
         await expectReadableFocus(page.getByRole("link", {name:"Discover all pieces"}));
         await expect(page.getByText("Something extraordinary is on its way.")).toBeVisible();

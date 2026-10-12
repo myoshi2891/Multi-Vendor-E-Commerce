@@ -951,7 +951,7 @@ for (const width of [1440,768,390]) {
         await page.goto("/?screen=apply");
         const main = page.getByRole("main");
         const surface = main.locator("..");
-        await storefrontToken(surface,"--purchase-page","background-color","rgb(241, 238, 228)");
+        await storefrontToken(surface,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
         await storefrontControls(main.locator("a,button,summary"));
         const summary = main.locator("summary");
         const initiallyOpen = await main.locator("details").getAttribute("open");
