@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-12） | **3147 passed / 3150 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 ストアフロント残存8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-12実測） | Statements88.21%（10954/12417）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 |
+| Jestテスト総数（2026-10-12） | **3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesも同日再実測。 |
+| 全体coverage（2026-10-12実測） | Statements88.21%（10953/12416）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 |
 | テストファイル総数（dashboard） | **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-12再生成実測。 |
 | Jest スイート総数（unit/component） | **326スイート**（325 passed／1 skipped、2026-10-12実測）。 |
-| テスト総数 | **3147 unit/component passed**（3150 total／3 skipped）。Integration238／18 suitesは以前の実測を維持。 |
+| テスト総数 | **3148 unit/component passed**（3151 total／3 skipped）。Integration238／18 suites（2026-10-12再実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-12 dashboard実測、セル状態変化なし）。 |
