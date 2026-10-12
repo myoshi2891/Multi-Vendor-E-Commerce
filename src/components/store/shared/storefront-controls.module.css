@@ -1,0 +1,21 @@
+/* Opt-in controls for editorial storefront pages; native links retain their URLs. */
+.controls {
+    --storefront-focus: var(--purchase-focus);
+}
+.controls :where(a, button, summary) {
+    min-width: var(--purchase-touch);
+    min-height: var(--purchase-touch);
+}
+.controls :where(a) {
+    display: inline-flex;
+    align-items: center;
+}
+.controls :where(a, button, summary):focus-visible {
+    outline: 2px solid var(--storefront-focus);
+    outline-offset: 4px;
+}
+
+.controls :where(nav[aria-label="Breadcrumb"]) {
+    align-items: center;
+    flex-wrap: wrap;
+}

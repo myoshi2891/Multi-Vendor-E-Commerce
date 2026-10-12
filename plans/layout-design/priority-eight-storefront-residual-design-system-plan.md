@@ -38,7 +38,7 @@ priority/purchase/seven fixtureと既存route suiteを拡張。config/serverは�
 - [x] Step 1 フォロー店舗
 - [x] Step 2 閲覧履歴
 - [x] Step 3 ホーム
-- [ ] Step 4 Contact
+- [x] Step 4 Contact
 - [ ] Step 5 FAQ
 - [ ] Step 6 製品サポート
 - [ ] Step 7 About

@@ -56,7 +56,7 @@ export default function ContactPage() {
                         <h2 id="contact-form-title">Send us a note.</h2>
                         <p lang="ja">すべての項目をご入力ください。</p>
                     </div>
-                    <SupportForm submitAction={createSupportTicket} category="CONTACT" submitLabel="Send message ↗" />
+                    <SupportForm appearance="brand" submitAction={createSupportTicket} category="CONTACT" submitLabel="Send message ↗" />
                     <p className={styles.formNote} lang="ja">ご返信のため、受信可能なメールアドレスをご入力ください。</p>
                 </section>
             </div>

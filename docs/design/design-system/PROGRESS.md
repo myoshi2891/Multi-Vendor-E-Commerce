@@ -1504,3 +1504,11 @@ Red: retry hover背景が通常inkのままで3/3失敗。Green/Refactor: histor
 Homeはpurchase tokensの暗い面・文字・操作色を使用。collection導線・retryを44pxにし、reduce/Pause/Resumeと既存商品選択を保持。
 
 Red: 背景token未接続の3件失敗。Green/Refactor: home browser9/9（3幅・商品あり/空/失敗・motion）、RTL20/20、tsc0、lint0 errors/既存8 warnings。fixtureの商品件数と不要なStoreProducts lookupの誤りは修正しRedに算入しない。390px画像目視。全ケース通過後のworker終了待ちを解消してrunner exit0。実route/実WebGLは最終確認。
+
+#### Step 4 DS-PAGE-010 Contact
+
+Contactはpurchase themeとSupportForm appearance=brandを使用。パンくず・アンカー44px、明暗面focus、入力境界3:1、validation/pending/error/retry/receiptを維持。
+
+Red: 背景token未接続の3件失敗。Green/Refactor: Contact browser6/6（3幅・token/44px/focus/入力境界3:1・validation/pending/input lock/error保持/retry/receipt・axe AA）、CONTACTを含むsupport RTL3/3、tsc0、lint0 errors/既存8 warnings。390px画像目視でbreadcrumb整列を追加。worker終了待ち解消後runner exit0、最終回帰で再確認。実送信なし。
+
+Contact Refactor後再検証: PTYでPlaywrightを実行し6/6、20.7秒で正常終了。パンくず整列も再確認。RTL3/3・tsc/lintエラー0。終了待ちはPTY実行で解消し以降もこの方法を使用する。

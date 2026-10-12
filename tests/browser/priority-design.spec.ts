@@ -1,7 +1,7 @@
-import { storefrontControls } from "./storefront-eight-assertions";
+import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { expectReadableFocus } from "./purchase-assertions";
+import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 async function accessible(page: Page) {
     expect(
         await page.evaluate(
@@ -535,5 +535,47 @@ for (const width of [1440, 768, 390]) {
         await storefrontControls(page.getByRole("navigation", {name:"View history pagination"}).getByRole("link"));
         await accessible(page);
         await page.screenshot({path:info.outputPath(`storefront-history-${width}.png`), fullPage:true});
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight contact ${width}: tokens targets and anchors`, async ({page}, info) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?scenario=storefront-contact");
+        const main = page.getByRole("main");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(241, 238, 228)");
+        await storefrontControls(main.locator("a, button, input, textarea"));
+        for (const link of await main.locator('a[href^="#"]').all()) {
+            await link.focus();
+            const href = await link.getAttribute("href");
+            await page.keyboard.press("Enter");
+            await expect(page).toHaveURL(url => url.hash === href);
+            await expect(page.locator(href!)).toBeInViewport();
+        }
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-contact-${width}.png`),fullPage:true});
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight contact ${width}: validation pending retry receipt`, async ({page}) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?scenario=storefront-contact-retry");
+        const submit = page.getByRole("button", {name:"Send message ↗"});
+        await submit.click();
+        await expect(page.getByText("お名前を入力してください。")).toBeVisible();
+        for (const [label,value] of [["お名前","Test"],["メールアドレス","test@example.com"],["件名","Test request"],["内容","Test details"]]) {
+            await page.getByLabel(label,{exact:true}).fill(value);
+        }
+        for (const input of await page.getByRole("textbox").all()) await expectReadableBorder(input);
+        await submit.click();
+        await expect(page.getByRole("button", {name:"送信中…"})).toBeDisabled();
+        for (const input of await page.getByRole("textbox").all()) await expect(input).toBeDisabled();
+        await expect(page.getByRole("alert")).toContainText("Request failed");
+        await expect(page.getByLabel("内容",{exact:true})).toHaveValue("Test details");
+        await accessible(page);
+        await page.getByRole("button", {name:"Send message ↗"}).click();
+        await expect(page.getByRole("status")).toContainText("受け付けました。");
+        await accessible(page);
     });
 }

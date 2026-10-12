@@ -879,3 +879,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 2 DS-PAGE-024 閲覧履歴: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
 
 - [x] Step 3 DS-PAGE-017 ホーム: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 4 DS-PAGE-010 Contact: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。

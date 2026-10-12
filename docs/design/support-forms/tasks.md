@@ -173,3 +173,10 @@ DS-PAGE-035。PROBLEM_REPORT、報告ラベル、既存フィールド（注文�
 先行390px browserでtoken非継承をRed確認。DesignPage appearance="purchase"へopt-in。PROBLEM_REPORT分類と注文番号不要・Action Propsを保持。Green/Refactor: 関連Jest11/11、priority browser3/3（3幅、44px、validation/pending/error/入力保持/retry/receipt、axe AA）。型0、lint0 errors/既存8 warnings。外部申請送信はmock。
 
 [保存計画](../../../plans/layout-design/priority-eight-p2-support-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2サポート通知等8画面移行記録)。API・DB・認可・入力/URL/業務契約は保持。
+
+
+## ストアフロント残存8画面 Step 4（2026-10-12）
+
+Contactはpurchase themeとSupportForm appearance=brandを使用。パンくず・アンカー44px、明暗面focus、入力境界3:1、validation/pending/error/retry/receiptを維持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。
