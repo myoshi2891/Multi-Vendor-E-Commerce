@@ -2,7 +2,7 @@
 
 ## 2026-10-12 ストアフロント残存8画面
 
-フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請のtokens/hover/focus/44px操作を移行し、TDD・仕様更新・今回の表示受け入れを完了。**3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage最新実測（`bun run test -- --runInBand --coverage --silent`、[統計表](#テスト統計jest-2026-10-12実測--lcov-2026-10-12実測--integration-2026-10-12実測--e2eフルラン-2026-10-03実測--design-seller-2026-10-10実測)と同値）。ストアフロント残存8画面完了時点の前回実測は3147/3150・Statements10954/12417。Integration238／18 suitesも同日再実測。
+フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請のtokens/hover/focus/44px操作を移行し、TDD・仕様更新・今回の表示受け入れを完了。**3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage最新実測（`bun run test -- --runInBand --coverage --silent`、[統計表](testing/QA_HANDOFF.md#現在の実装状態サマリ)と同値）。ストアフロント残存8画面完了時点の前回実測は3147/3150・Statements10954/12417。Integration238／18 suitesも同日再実測。
 
 Statements88.21%（10953/12416）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 dashboard405 test files/405 lcov/18 of 80 cells（不変）。補助ブラウザー150/150、公開実route15/15、guest申請3/3、認証後read-only1/1（3画面×3幅）。型/lintエラー0、既存lint警告8。既存の全業務フロー/SDK保留は保持。[計画](../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。
 
