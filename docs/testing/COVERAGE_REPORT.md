@@ -354,7 +354,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 
 ## 7. 履歴
 
-2026-10-12: ストアフロント残存8画面、段階commit `07a92086`〜`a91fc511`。全体Jest3147/3150、326 suites、3 skip、127 snapshots。Statements88.21%（10954/12417）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 前回2026-10-11は3146/3149、Statements88.23/Branches78.47/Functions84.53/Lines88.76。今回dashboard405/405、18/80セル不変。補助150、公開15、guest3、認証後read-only1成功。[証跡](../design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。
+2026-10-12: ストアフロント残存8画面、段階commit `07a92086`〜`a91fc511`。以下は同画面完了時点の実測（同日 plan 089 後の最新値3148/3151・Statements10953/12416は[QA_HANDOFF 統計表](./QA_HANDOFF.md#現在の実装状態サマリ)が正本）。全体Jest3147/3150、326 suites、3 skip、127 snapshots。Statements88.21%（10954/12417）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 前回2026-10-11は3146/3149、Statements88.23/Branches78.47/Functions84.53/Lines88.76。今回dashboard405/405、18/80セル不変。補助150、公開15、guest3、認証後read-only1成功。[証跡](../design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。
 
 
 | 日付 | 出来事 |
