@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { expectTokenColor, expectTouch } from "./seller-residual-assertions";
+import { expectTokenColor, expectTouch, expectBoundaryContrast } from "./seller-residual-assertions";
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"]) {
         test(`overview ${width} ${theme}`, async ({ page }, info) => {
@@ -256,6 +256,7 @@ for (const width of [1440, 768, 390])
                 .getByRole("button", { name: "Save coupon", exact: true })
                 .click();
             await expect(page.getByText("Coupon saved.")).toBeVisible();
+            await expectTokenColor(page.getByText("Coupon saved."), "color", "var(--brand-success)");
             expect(
                 (
                     await new AxeBuilder({ page })
@@ -352,6 +353,7 @@ for (const width of [1440, 768, 390])
                 .getByRole("button", { name: "Create coupon", exact: true })
                 .click();
             await expect(page.getByText("Coupon saved.")).toBeVisible();
+            await expectTokenColor(page.getByText("Coupon saved."), "color", "var(--brand-success)");
             expect(
                 await page.evaluate(
                     () =>
@@ -528,4 +530,24 @@ for (const width of [1440, 768, 390])
             await expectTouch(dialog.getByRole("button", {name: "Save coupon", exact:true}));
             await page.keyboard.press("Escape");
             await expect(edit).toBeFocused();
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual newcoupon boundaries ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=newcoupon");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const code = page.getByRole("textbox", {name:"Coupon code"});
+            await expectBoundaryContrast(code, "borderTopColor");
+            for (const input of [code, page.getByRole("spinbutton", {name:"Coupon discount"}), page.getByLabel("Start date", {exact:true}), page.getByLabel("End date", {exact:true})]) {
+                await expectTouch(input);
+                await expectBoundaryContrast(input, "borderTopColor");
+            }
+            await expectTouch(page.getByRole("button", {name:"Create coupon",exact:true}));
+            await code.focus();
+            await expect(code).toHaveCSS("outline-style", "solid");
+            await expectBoundaryContrast(code, "outlineColor");
+            await page.screenshot({path:info.outputPath(`residual-newcoupon-${width}-${theme}.png`),fullPage:true});
         });

@@ -45,7 +45,7 @@
 - [x] Step 2 DS-PAGE-048: 補助検証・仕様同期完了（認証後実routeは別判定）
 - [x] Step 3 DS-PAGE-050: 補助検証・仕様同期完了（認証後実routeは別判定）
 - [x] Step 4 DS-PAGE-054: 補助検証・仕様同期完了（認証後実routeは別判定）
-- [ ] Step 5 DS-PAGE-053
+- [x] Step 5 DS-PAGE-053: 補助検証・仕様同期完了（認証後実routeは別判定）
 - [ ] Step 6 DS-PAGE-060
 - [ ] Step 7 DS-PAGE-059
 - [ ] Step 8 DS-PAGE-065
