@@ -516,6 +516,8 @@ for (const width of [1440, 768, 390]) {
         const name = page.locator("article h2 a");
         await name.hover();
         await expect(name).toHaveCSS("color", "rgb(117, 97, 59)");
+        await page.goto("/?scenario=following-short&page=2");
+        await storefrontControls(page.locator("article h2 a"));
         await accessible(page);
         await page.screenshot({path:info.outputPath(`storefront-following-${width}.png`), fullPage:true});
     });

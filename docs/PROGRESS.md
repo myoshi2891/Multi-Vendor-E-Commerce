@@ -1,5 +1,11 @@
 # PROGRESS.md
 
+## 2026-10-12 ストアフロント残存8画面
+
+フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請のtokens/hover/focus/44px操作を移行し、TDD・仕様更新・今回の表示受け入れを完了。**3147 passed / 3150 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 ストアフロント残存8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。
+
+Statements88.21%（10954/12417）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 dashboard405 test files/405 lcov/18 of 80 cells（不変）。補助ブラウザー150/150、公開実route15/15、guest申請3/3、認証後read-only1/1（3画面×3幅）。型/lintエラー0、既存lint警告8。既存の全業務フロー/SDK保留は保持。[計画](../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。
+
 ## 2026-10-11 P2サポート・通知等8画面
 
 公開6画面のpurchase tokens・44px・状態表示、通知の実route空状態、設定の実Clerk受け入れと24px操作修正、追跡の表示DTOをTDD/回帰で検証。**3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。
@@ -39,7 +45,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
+| Jestユニットテスト | **3147 passed / 3150 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 ストアフロント残存8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
 | Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |

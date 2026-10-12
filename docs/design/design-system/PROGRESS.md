@@ -1,10 +1,14 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-11 P2サポート・通知等8画面（現在地）
+## 2026-10-12 ストアフロント残存8画面（現在地）
+
+フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請の残存操作/トークンを適用。8画面の先行RedとGreen/Refactorを画面別コミットし、仕様同期を完了。[証跡](#ストアフロント残存8画面移行記録2026-10-12)。既存67画面の全体判定は保持し、今回確認した状態を別記する。部品台帳に公開4画面限定のDS-COMP-246を追加（246項目）。DS-BASE-001や共有部品の全caller完了へ拡張しない。
+
+## 2026-10-11 P2サポート・通知等8画面（履歴）
 
 公開6画面の残存表示統一、通知の実route空状態、実Clerk設定と24px操作修正を実施。[今回の証跡](#p2サポート通知等8画面移行記録)。通知の実既読化とSDK独立Portalの保留は[解消済み](#p2保留2件の解消2026-10-11)（通知3件の冪等投入による実既読・再読込保持、埋め込みUserProfileにmodal経路が無いことの実SDK調査）。過去の実装・検証履歴は保持。
 
-## 2026-10-11 購入優先8画面 残り保留の解消（現在地）
+## 2026-10-11 購入優先8画面 残り保留の解消（履歴）
 
 DS-PAGE-003 注文詳細を検証済みへ更新（Stripe Elements 描画・テストカード決済・PayPal ボタン描画・PDF 生成・印刷）。checkout の注文確定と商品詳細の外部共有も実ルートで確認。Stripe intent 作成の生エラー文を汎用文言化。PayPal sandbox 承認は購入者の認証情報待ちで保留（仕様書に記録）。Pay Now のクリック空振りは自動操作固有と精査済み。[記録](#残り保留の解消2026-10-11)。
 
@@ -31,7 +35,7 @@ DS-PAGE-003 注文詳細を検証済みへ更新（Stripe Elements 描画・テ�
 公開20画面のPC/モバイル初期表示を目視確認。browseは旧ページング色/27px操作、homeはmotion切替32〜38px、商品詳細はカテゴリ/評価/share/follow等の操作寸法不足。属性3画面は親theme適用済み・個別UI/Portal部分移行。seller/storesは仮実装。修正対象既知6画面＋仮実装1だが、認証後機能39は本体未確認（属性3を含む）で確定総残数ではない。台帳を全状態検証済みへ昇格しない。
 
 
-- 更新日: 2026-10-10
+- 更新日: 2026-10-12
 - 状態: 運用文書・ルール整備済み／個別移行は継続
 - 対象・優先度・受け入れ条件: [移行計画](../../../plans/layout-design/design-system-adoption-plan.md)。
 - 実施手順: [design-system-workflow](../../../.agent/skills/design-system-workflow/SKILL.md)。
@@ -395,6 +399,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-243 | P4 | 属性一覧Client境界 | [AdminAttributes](../../../src/components/dashboard/admin/admin-attributes.tsx) | 保留 | 補助検証済み・認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
 | DS-COMP-244 | P4 | 属性操作scope | [attribute CSS](../../../src/components/dashboard/admin/attribute.module.css) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
 | DS-COMP-245 | P4 | 属性選択肢Client境界 | [AdminAttributeOptions](../../../src/components/dashboard/admin/admin-attribute-options.tsx) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
+
+| DS-COMP-246 | P2 | 公開editorial操作 | [storefront controls CSS](../../../src/components/store/shared/storefront-controls.module.css) | 検証済み | Contact/FAQ/Product support/Aboutのopt-inのみ。3幅のfixture/実route・44px/focus/axeと仕様同期。[証跡](#ストアフロント残存8画面移行記録2026-10-12) |
 
 ## 前セッションの確認結果
 
@@ -1481,7 +1487,7 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 
 ### ストアフロント残存8画面移行記録（2026-10-12）
 
-[保存計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)。対象DS-PAGE-022/024/017/010/014/018/005/004。対応中。既存判定・履歴を保持し今回の受け入れを別記する。
+[保存計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)。対象DS-PAGE-022/024/017/010/014/018/005/004。実装と今回の表示受け入れ完了。既存判定・履歴を保持し今回の受け入れを別記する。
 
 共通基盤: production About/Contact/FAQs/Product supportを既存priority fixtureへ追加。共有server/configの新設なし。寸法・painted surfaceに対するfocus・computed token追従の検証helperを追加。productionの表示変更は各StepでTDDする。
 
@@ -1536,3 +1542,19 @@ Red: 背景token未接続3/3失敗。Green/Refactor: About＋product-support bro
 出店申請はpurchase tokens、説明summary/前後/完了導線44px、フォーム境界3:1。四段階、validation/入力保持/pending/error/retry/successとpayloadを維持。
 
 Red: page背景token未接続3/3失敗。Green/Refactor: application browser6/6（3幅・tokens・summary Enter/44px/focus・入力境界3:1・四段階validation/入力保持/pending/error/retry/success・axe AA）、RTL4/4、tsc0、lint0 errors/既存8 warnings。Clerk/Cloudinaryはfixture adapter。実routeは認証済み顧客で読取検証中。実申請/アップロードなし。
+
+#### 最終統合・今回の受け入れ範囲
+
+- Red: 8画面×3幅＝24件。following/historyはhoverが通常と同じ、home/contact/FAQ/product-support/About/applyはtoken未接続。起動EPERM、fixtureの件数/不要クエリ、終了待ちはRedに含めない。
+- 最終Green/Refactor: `DESIGN_SUITE=priority` 75/75、`purchase` 69/69、`seven --grep apply` 6/6、計150補助Chrome。トークン・hover・44px・painted focus/入力境界3:1、axe AA contrast、長文/overflow、keyboard/fragment、各状態とshared callerを確認。priority/purchase全suiteは正常終了（3.8m/6.2m）。
+- `priority-public --grep 'storefront eight public'` はNext実route5画面×1440/768/390pxで15/15。`seven-public --grep 'seller application actual guest'` はguest申請3/3。`purchase-route --grep 'storefront eight account discovery'` は認証後following/history/applyの3画面×3幅を1ケースで確認、1/1（56.8秒）。
+- 全routeの接続先は既存専用DB `multivendor_e2e`。既存Clerk顧客/manifestと既存variant IDsの読取のみを利用。followのDB更新、問い合わせ/申請送信、画像upload、prepare/seed/migrateは実施しない。実followingは空、historyは商品2件、申請は認証後第1段階とguest。更新/送信/全段階は既存RTL/fixtureで回帰。実データありfollowingや実SDK送信の成功へ拡張しない。
+- 画像目視: 実routeの8画面、PC/モバイルの長文・配置・focus・操作領域。商品画像placeholderと顧客avatarは既存テストデータ条件。Contactパンくずの縦整列を修正して再確認。8画面の今回表示変更を受け入れ、既存全画面判定と全業務/SDK保留は保持。
+- 全体Jest: `bun run test -- --runInBand --coverage --silent`、3147 passed/3150 total、3 skipped、326 suites（325 pass/1 skip）、127 snapshots、110.612秒。Statements88.21%（10954/12417）/Branches78.46%（6740/8590）/Functions84.49%（2142/2535）/Lines88.75%（9974/11238）。CONTACT回帰+1。coverage dashboard405 files/405 lcov/18 of 80 cells（23%、セル不変）。Integration/3-browser E2Eは未再実行。
+- 最終 `bunx tsc --noEmit` 0、`bun run lint` 0 errors/既存8 warnings、`bun run check:playwright` 成功。Next実route実行が追記したtsconfig includeは復元。
+- SDDのrequirements/quality/testingを同期。overview/architecture/data-model/interfaces/workflowsはUI opt-inと既存操作の表示改善のみで契約変更がないため変更不要。QA_HANDOFF→COVERAGE_REPORT/SDD testing/docs PROGRESS→dashboardを実測同期。部品246＝検証済み27/実装済み12/保留99/TODO108。67画面のID・既存履歴を保持。
+- コミット: 計画07a92086、基盤839ba347、画面別623dadd8/041cb008/9afdc851/47200090/37ed7e2b/fac268c7/77ee10d4/a91fc511。最終文書同期コミットはこの記録を含む。
+
+[overview](../../../specs/multi-vendor-ecommerce/00-overview.md) / [architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md) / [data model](../../../specs/multi-vendor-ecommerce/03-data-model.md) / [interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md) / [workflows](../../../specs/multi-vendor-ecommerce/05-workflows.md)。
+
+文書最終検証: 新規/変更行のローカルリンク110件（索引追加前）に欠落0、DS-PAGE67/DS-COMP246の重複0、git diff --check成功。歴史的coverage報告のサンプルリンク「…」は今回追加でなく変更対象外。

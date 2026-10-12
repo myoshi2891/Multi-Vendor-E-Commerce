@@ -88,3 +88,8 @@ DS-PAGE-035。PROBLEM_REPORT、報告ラベル、既存フィールド（注文�
 ### 2026-10-11 返品ポリシー番号のモバイル回帰
 
 390px画像で02/04の改行を確認。テキストRangeの行数で先行browser Red（expected 1 / received 2）を確認し、番号のflex縮小と改行を禁止。1440/768/390pxで単一行を検証。業務フォームと申請契約は変更なし。
+
+
+### ストアフロント残存8画面・最終受け入れ（2026-10-12）
+
+今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。

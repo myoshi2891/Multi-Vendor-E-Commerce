@@ -18,6 +18,7 @@
 | [product-support-design-system-plan.md](product-support-design-system-plan.md) | Product support の移行計画 |
 
 | [priority-five-design-system-plan.md](priority-five-design-system-plan.md) | P2優先5画面の適用・TDD・段階コミット・最終検証（2026-10-05） |
+| [priority-eight-storefront-residual-design-system-plan.md](priority-eight-storefront-residual-design-system-plan.md) | ストアフロント残存8画面の適用・TDD・画面別コミット・実route受け入れ（2026-10-12） |
 
 ## 関連文書
 

@@ -147,3 +147,8 @@ Public tracking, customer service, returns, disputes, problem reports and offers
 Notifications retain their account tokens and cursor/read behavior. Real routes accept the empty state and, with three idempotently prepared notifications, single, link-opened and mark-all read updates that persist across reload. Clerk settings retain hash routing and official security features, with icon actions at least 44px wide. Real embedded editing/cancel and mobile navigation are accepted without saving; the embedded UserProfile opens no standalone modal on the real SDK, so modalContent stays an adapter-only safeguard.
 
 [Plan](../../plans/layout-design/priority-eight-p2-support-design-system-plan.md) / [Evidence](../../docs/design/design-system/PROGRESS.md#p2サポート通知等8画面移行記録).
+
+
+## ストアフロント残存8画面の表示受け入れ（2026-10-12）
+
+DS-PAGE-022/024/017/010/014/018/005/004は既存tokensを使用し、独立操作44px、明暗面でfocus可視/3:1、必要な入力境界3:1、文字AA、1440/768/390pxで折返しとoverflowを確認する。ContactはSupportFormのbrand opt-inでpending入力ロック・失敗保持/retry・受付通知を表示。公開静的本文/metadata/URLと出店申請の四段階・payload/認可を保持。API/DB/業務契約は変更しない。[計画](../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。

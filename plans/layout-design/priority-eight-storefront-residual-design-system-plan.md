@@ -43,6 +43,10 @@ priority/purchase/seven fixtureと既存route suiteを拡張。config/serverは�
 - [x] Step 6 製品サポート
 - [x] Step 7 About
 - [x] Step 8 出店申請
-- [ ] 最終回帰・仕様・QA・統計同期
+- [x] 最終回帰・仕様・QA・統計同期
 
 [移行計画](design-system-adoption-plan.md) / [進捗](../../docs/design/design-system/PROGRESS.md)
+
+## 最終結果
+
+全8Stepを画面別にGreenコミット。補助150/150、public15/15、guest3/3、認証後read-only1/1（3画面×3幅）。全体Jest3147/3150、3 skip、326 suites、127 snapshots、coverage/lint/tsc/check:playwrightと文書同期。実followingのデータあり/実更新、Cloudinary実upload・申請保存は今回範囲外で既存保留を維持。Nextのtsconfig副作用を復元。API/DB/認可/本文/業務フロー変更なし。証跡は進捗ノート・QA正本を参照。

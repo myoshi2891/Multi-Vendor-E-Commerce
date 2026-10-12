@@ -1,5 +1,9 @@
 # 包括的テスト実装計画書 (Comprehensive Test Implementation Plan)
 
+## ストアフロント残存8画面（2026-10-12）
+
+✅ Completed (2026-10-12): 8画面の先行browser Red/Green/Refactor、CONTACT RTL回帰、補助150/150・公開15/15・guest3/3・認証後read-only1/1、全体Jest/coverage/tsc/lint/check:playwrightと仕様同期。全業務フローの既存保留と今回の表示受け入れを区別。[証跡](../design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)、即時TODOはQA_HANDOFF。
+
 ## 2026-10-09 実ルート全数再監査
 
 ✅ Completed (2026-10-09): ソース67定義と台帳の突合、実ルート134到達記録、公開20画面PC/モバイル初期表示とClerk/共通開閉/操作寸法の補足測定。認証後39機能画面＋仮実装1の本体・全状態受け入れは未完了。詳細は[監査報告](../design/design-system/full-route-reaudit-2026-10-09.md)、次着手はQA_HANDOFF。収集spec成功を移行完了としない。

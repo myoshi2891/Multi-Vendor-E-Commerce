@@ -889,3 +889,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 7 DS-PAGE-005 About: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
 
 - [x] Step 8 DS-PAGE-004 出店申請: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] DS-COMP-246: 公開4画面のeditorial操作CSS。fixture/実routeで検証。全体tokenや他callerの判定は保持。
+
+- [x] 最終統合: fixture150/150、公開15/15、guest3/3、認証後read-only1/1、全体Jest/coverage・型/lint・仕様/QA/進捗同期。実更新/SDK/全業務フローの既存保留は維持。
