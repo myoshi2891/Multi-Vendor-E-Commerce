@@ -19,3 +19,17 @@
 | DS-PAGE-008 checkout | address/dialog/coupon/pending/retry | RTL20/20、既存commerce回帰＋header統合Chromium14/14・3幅/axe。実認証route/決済SDKは環境待ち |
 
 第三者UIとDB dependent実routeはfixture結果から完了にしない。
+
+
+## ストアフロント残存8画面 Step 3（2026-10-12）
+
+Homeはpurchase tokensの暗い面・文字・操作色を使用。collection導線・retryを44pxにし、reduce/Pause/Resumeと既存商品選択を保持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。
+
+
+### ストアフロント残存8画面・最終受け入れ（2026-10-12）
+
+今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。
+
+Homeのdark配色は既存purchase themeの`--purchase-color-scheme`をdarkへopt-inする。既定値lightは他のstore callerで保持し、CSS Module合成の順序に依存してcolor-schemeを重複宣言しない。

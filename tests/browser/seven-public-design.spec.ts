@@ -1,3 +1,4 @@
+import { storefrontControls } from "./storefront-eight-assertions";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 test.beforeEach(async ({ context }) => {
@@ -40,6 +41,7 @@ for (const width of [1440, 768, 390])
                 .getByRole("main")
                 .getByRole("link", { name: "Sign up", exact: true })
         ).toBeVisible();
+        await storefrontControls(page.getByRole("main").locator("a,summary"));
         expect(hydrationErrors).toEqual([]);
         expect(
             await page

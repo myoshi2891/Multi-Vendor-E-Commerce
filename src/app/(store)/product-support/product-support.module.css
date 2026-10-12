@@ -1,18 +1,18 @@
 .page {
-    --ink: #17251d;
-    --muted: #536356;
-    --accent: #75613b;
-    --line: #c9c7b8;
-    background: #f3f0e8;
+    composes: theme from "../../../components/store/shared/purchase-theme.module.css";
+    composes: controls from "../../../components/store/shared/storefront-controls.module.css";
+    --ink: var(--purchase-ink);
+    --muted: var(--purchase-muted);
+    --accent: var(--purchase-link);
+    --line: var(--purchase-line);
+    background: var(--purchase-page);
     color: var(--ink);
 }
-.page a:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 4px;
-}
+
 .hero {
-    background: #0b100e;
-    color: #f3f0e8;
+    --storefront-focus: var(--purchase-gold);
+    background: var(--purchase-dark);
+    color: var(--purchase-page);
 }
 .heroInner {
     max-width: 1400px;
@@ -25,7 +25,7 @@
     flex-wrap: wrap;
     gap: 12px;
     font-size: 11px;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
     margin-bottom: 60px;
 }
 .eyebrow {
@@ -34,7 +34,7 @@
     line-height: 1.8;
 }
 .hero .eyebrow {
-    color: #d4ba83;
+    color: var(--purchase-gold);
 }
 .hero h1 {
     position: relative;
@@ -46,11 +46,11 @@
     max-width: 85%;
 }
 .hero h1 em {
-    color: #d4ba83;
+    color: var(--purchase-gold);
 }
 .subtitle {
     margin-top: 24px;
-    color: #b6bfb3;
+    color: var(--purchase-muted-on-dark);
     font-size: 13px;
 }
 .star {
@@ -58,7 +58,7 @@
     right: 8%;
     top: 95px;
     font-size: 110px;
-    color: #d4ba83;
+    color: var(--purchase-gold);
     opacity: 0.5;
 }
 .content,

@@ -14,3 +14,15 @@ Server routeがparamsを正規化し、getProductsByIdsをfetchHistoryAction Pro
 shared discoveryの空/失敗パネル・retry・読み込み文字をaccount aliasesへ統一。共有ページャーは番号44×44px以上、URL/current/disabledを保持。保存ID順・storage不正/アクセス失敗・古い応答の抑制・範囲補正・editorial商品操作は変更しない。フォロー店舗の空/失敗にも共通表示が適用されるため回帰確認する。
 
 [計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+
+## ストアフロント残存8画面 Step 2（2026-10-12）
+
+履歴の再試行・空状態導線はhover時もブランド配色と可読性を保つ。loading/error/保存順/URLページング契約を維持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。
+
+
+### ストアフロント残存8画面・最終受け入れ（2026-10-12）
+
+今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。

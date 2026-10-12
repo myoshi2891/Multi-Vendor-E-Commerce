@@ -49,3 +49,15 @@
 - [x] Step 7 配送 — DS-PAGE-064: TDD・実装・関連検証・文書同期。認証後実ルート受け入れは別途保留。
 
 - [x] Step 8 店舗設定 — 操作と保存状態: TDD・実装・関連検証・文書同期。認証後実ルート受け入れは別途保留。
+
+
+## ストアフロント残存8画面 Step 8（2026-10-12）
+
+出店申請はpurchase tokens、説明summary/前後/完了導線44px、フォーム境界3:1。四段階、validation/入力保持/pending/error/retry/successとpayloadを維持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。
+
+
+### ストアフロント残存8画面・最終受け入れ（2026-10-12）
+
+今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。

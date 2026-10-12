@@ -1,3 +1,5 @@
+import { supportAccessible as accessible } from "./support-eight-assertions";
+import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus } from "./purchase-assertions";
@@ -748,5 +750,28 @@ for (const width of [1440, 768, 390]) {
         expect((await new AxeBuilder({page}).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations).toEqual([]);
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
         await page.screenshot({path: info.outputPath(`audit-product-${width}.png`), fullPage: true});
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight home ${width}: collection surfaces and controls`, async ({page}, info) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?screen=home");
+        const main = page.getByRole("main");
+        await storefrontToken(main,"--purchase-dark","background-color","rgb(11, 16, 14)","rgb(17, 29, 22)");
+        await storefrontControls(page.locator("main a, main button"));
+        await expectReadableFocus(page.getByRole("link", {name:"Discover all pieces"}));
+        await expect(page.getByText("Something extraordinary is on its way.")).toBeVisible();
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-home-${width}.png`),fullPage:true});
+        await page.goto("/?screen=home&pieces=1");
+        await expect(page.getByTestId("product-grid").getByRole("link")).toHaveCount(1);
+        await storefrontControls(page.getByTestId("product-grid").getByRole("link"));
+        await accessible(page);
+        await page.goto("/?screen=home&home-error=1");
+        const retry = page.getByRole("link", {name:"Try again / 再読み込み"});
+        await expect(retry).toHaveAttribute("href", "/#collections");
+        await storefrontControls(retry);
+        await accessible(page);
     });
 }

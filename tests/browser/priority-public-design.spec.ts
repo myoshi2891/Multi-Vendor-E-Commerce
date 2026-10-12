@@ -1,3 +1,4 @@
+import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -227,3 +228,20 @@ test("P2 tracking existing order read-only lookup at three widths", async ({page
         await page.screenshot({path:info.outputPath(`p2-tracking-existing-${width}.png`),fullPage:true});
     }
 });
+
+for (const width of [1440,768,390]) {
+    for (const path of ["/", "/contact", "/faqs", "/product-support", "/about"]) {
+        test(`storefront eight public ${path} ${width}`, async ({page},info) => {
+            test.setTimeout(90000);
+            await page.setViewportSize({width,height:1000});
+            const response = await page.goto(path);
+            expect(response?.status()).toBe(200);
+            const main = page.getByRole("main");
+            await expect(main.getByRole("heading",{level:1})).toBeVisible();
+            await storefrontToken(main,path === "/" ? "--purchase-dark" : "--purchase-page","background-color",path === "/" ? "rgb(11, 16, 14)" : "rgb(243, 240, 232)",path === "/" ? "rgb(17, 29, 22)" : "rgb(241, 238, 228)");
+            await storefrontControls(main.locator("a,button,input,textarea"));
+            await supportAccessible(page);
+            await page.screenshot({path:info.outputPath(`storefront-real-${path === "/" ? "home" : path.slice(1)}-${width}.png`),fullPage:true});
+        });
+    }
+}

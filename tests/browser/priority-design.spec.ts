@@ -1,6 +1,7 @@
+import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { expectReadableFocus } from "./purchase-assertions";
+import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 async function accessible(page: Page) {
     expect(
         await page.evaluate(
@@ -503,4 +504,137 @@ for (const width of [1440, 768, 390]) {
             await page.screenshot({path:info.outputPath(`support-eight-${scenario}-${width}.png`),fullPage:true});
         });
     }
+}
+
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight following ${width}: store link and focus`, async ({page}, info) => {
+        await page.setViewportSize({width, height:1000});
+        await page.goto("/?scenario=following-error&page=2");
+        await storefrontControls(page.locator("main article a, main article button"));
+        await storefrontControls(page.getByRole("navigation", {name:"Followed stores pagination"}).getByRole("link"));
+        const name = page.locator("article h2 a");
+        await name.hover();
+        await expect(name).toHaveCSS("color", "rgb(117, 97, 59)");
+        await page.goto("/?scenario=following-short&page=2");
+        await storefrontControls(page.locator("article h2 a"));
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-following-${width}.png`), fullPage:true});
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight history ${width}: retry hover and keyboard`, async ({page}, info) => {
+        await page.setViewportSize({width, height:1000});
+        await page.goto("/?scenario=history-error&page=2");
+        const retry = page.getByRole("button", {name:"Try again"});
+        await storefrontControls(retry);
+        await retry.hover();
+        await expect(retry).toHaveCSS("background-color", "rgb(33, 56, 42)");
+        await retry.focus();
+        await page.keyboard.press("Enter");
+        await expect(page.getByRole("navigation", {name:"View history pagination"})).toBeVisible();
+        await storefrontControls(page.getByRole("navigation", {name:"View history pagination"}).getByRole("link"));
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-history-${width}.png`), fullPage:true});
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight contact ${width}: tokens targets and anchors`, async ({page}, info) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?scenario=storefront-contact");
+        const main = page.getByRole("main");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
+        await storefrontControls(main.locator("a, button, input, textarea"));
+        for (const link of await main.locator('a[href^="#"]').all()) {
+            await link.focus();
+            const href = await link.getAttribute("href");
+            await page.keyboard.press("Enter");
+            await expect(page).toHaveURL(url => url.hash === href);
+            await expect(page.locator(href!)).toBeInViewport();
+        }
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-contact-${width}.png`),fullPage:true});
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight contact ${width}: validation pending retry receipt`, async ({page}) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?scenario=storefront-contact-retry");
+        const submit = page.getByRole("button", {name:"Send message ↗"});
+        await submit.click();
+        await expect(page.getByText("お名前を入力してください。")).toBeVisible();
+        for (const [label,value] of [["お名前","Test"],["メールアドレス","test@example.com"],["件名","Test request"],["内容","Test details"]]) {
+            await page.getByLabel(label,{exact:true}).fill(value);
+        }
+        for (const input of await page.getByRole("textbox").all()) await expectReadableBorder(input);
+        await submit.click();
+        await expect(page.getByRole("button", {name:"送信中…"})).toBeDisabled();
+        for (const input of await page.getByRole("textbox").all()) await expect(input).toBeDisabled();
+        await expect(page.getByRole("alert")).toContainText("Request failed");
+        await expect(page.getByLabel("内容",{exact:true})).toHaveValue("Test details");
+        await accessible(page);
+        await page.getByRole("button", {name:"Send message ↗"}).click();
+        await expect(page.getByRole("status")).toContainText("受け付けました。");
+        await accessible(page);
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight faqs ${width}: tokens targets and anchors`, async ({page}, info) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?scenario=storefront-faqs");
+        const main = page.getByRole("main");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
+        await storefrontControls(main.locator("a, button, input, textarea"));
+        for (const link of await main.locator('a[href^="#"]').all()) {
+            await link.focus();
+            const href = await link.getAttribute("href");
+            await page.keyboard.press("Enter");
+            await expect(page).toHaveURL(url => url.hash === href);
+            await expect(page.locator(href!)).toBeInViewport();
+        }
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-faqs-${width}.png`),fullPage:true});
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight product-support ${width}: tokens targets and anchors`, async ({page}, info) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?scenario=storefront-product-support");
+        const main = page.getByRole("main");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
+        await storefrontControls(main.locator("a, button, input, textarea"));
+        for (const link of await main.locator('a[href^="#"]').all()) {
+            await link.focus();
+            const href = await link.getAttribute("href");
+            await page.keyboard.press("Enter");
+            await expect(page).toHaveURL(url => url.hash === href);
+            await expect(page.locator(href!)).toBeInViewport();
+        }
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-product-support-${width}.png`),fullPage:true});
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight about ${width}: tokens targets and anchors`, async ({page}, info) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?scenario=storefront-about");
+        const main = page.getByRole("main");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(243, 240, 232)","rgb(241, 238, 228)");
+        await storefrontControls(main.locator("a, button, input, textarea"));
+        for (const link of await main.locator('a[href^="#"]').all()) {
+            await link.focus();
+            const href = await link.getAttribute("href");
+            await page.keyboard.press("Enter");
+            await expect(page).toHaveURL(url => url.hash === href);
+            await expect(page.locator(href!)).toBeInViewport();
+        }
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-about-${width}.png`),fullPage:true});
+    });
 }

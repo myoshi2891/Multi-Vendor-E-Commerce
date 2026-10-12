@@ -1,6 +1,37 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-11 P2サポート 保留2件の解消（最新）
+## 2026-10-12 ストアフロント残存8画面（最新）
+
+[承認済み計画](../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。
+
+- フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請に共通トークン/hover/focus/44px操作を適用。各画面の先行Red、Green/Refactor、仕様同期を画面別コミット。
+- 最終補助Chrome: priority75/75、purchase69/69、seven apply6/6＝150/150。公開実route15/15（5画面×3幅）、guest申請3/3、認証後read-only1/1（following/history/applyの3画面×3幅）。axe AA contrast・キーボード・横溢れ・画像目視。
+- **3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage最新実測（`bun run test -- --runInBand --coverage --silent`、[統計表](#現在の実装状態サマリ)と同値）。ストアフロント残存8画面完了時点の前回実測は3147/3150・Statements10954/12417。Integration238／18 suitesも同日再実測。 Statements88.21%（10953/12416）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 dashboard405 files/405 lcov/18 of 80 cells、セル状態は不変。型0、lint0 errors/既存8 warnings、check:playwright成功。Integration/3-browser E2Eの既存実測は維持。
+- 実routeは専用DB `multivendor_e2e` と既存Clerk顧客/manifestを再利用。DB準備/seed/更新・follow操作・問い合わせ/申請送信・画像uploadは実施せず、履歴だけ既存variant IDsをブラウザーlocalStorageへ設定。following実routeは空、historyは商品あり、applyはguestと認証後の第1段階。fixtureが証明するpending/error/retry/successやSDK adapterを、実更新/実uploadの成功へ読み替えない。
+- 既存67画面の判定を保持し、今回の表示受け入れを別記。新DS-COMP-246は公開4画面だけ検証済み（部品246＝検証済み27/実装済み12/保留99/TODO108）。グローバル基盤の全scope完了を意味しない。
+
+### DS-STOREFRONT-EIGHT-ACCEPTANCE
+
+今回の変更受け入れは完了。既存の全画面受け入れ保留は維持。次着手は、許可されたテストデータ/操作の範囲でfollowingの実データあり・実更新、applicationの実Cloudinary/申請保存までを確認すること。現在の空状態/第1段階と補助成功を全業務フロー完了へ読み替えない。Playwright終了待ちは発生したが、最終全suiteは正常終了（priority3.8m/purchase6.2m）。Nextが追記したtsconfig includeは復元しコミットしない。
+
+### 今回の段階コミット
+
+| commit | 内容 |
+|---|---|
+| `07a92086` | docs(design): plan eight storefront residual migrations |
+| `839ba347` | test(design): reuse fixtures for storefront residual acceptance |
+| `623dadd8` | feat(design): refine followed store controls and hover states |
+| `041cb008` | feat(design): unify history retry and empty-state hover |
+| `9afdc851` | feat(design): connect home surfaces and collection controls to tokens |
+| `47200090` | feat(design): adopt branded contact form and editorial controls |
+| `37ed7e2b` | feat(design): adopt shared tokens and touch targets on FAQs |
+| `fac268c7` | feat(design): unify product support tokens and editorial navigation |
+| `77ee10d4` | feat(design): connect About theme and accessible editorial links |
+| `a91fc511` | feat(design): refine application controls and branded form boundaries |
+
+上記は最終文書同期コミット直前のHEAD `a91fc511`。最終同期コミット自身のhashはGit履歴を参照。
+
+## 2026-10-11 P2サポート 保留2件の解消（履歴）
 
 [計画](../../plans/layout-design/p2-support-pending-resolution-plan.md)／[証跡](../design/design-system/PROGRESS.md#p2保留2件の解消2026-10-11)。下節の DS-P2-SUPPORT-NOTIFICATIONS と DS-P2-SUPPORT-CLERK-PORTAL を解消。作業ツリーのみ（コミットなし）。
 
@@ -170,7 +201,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-11実測 / lcov: 2026-10-11実測 / Integration: 2026-10-08実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-10実測）
+### テスト統計（Jest: 2026-10-12実測 / lcov: 2026-10-12実測 / Integration: 2026-10-12実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-10実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -178,17 +209,17 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
-| 全体coverage（2026-10-11実測） | Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.53%（2143/2535）／Lines88.76%（9975/11238）。 |
-| Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-08 plan 087 実施時の実測: 238/238 pass**・`bun run test:integration`。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest テスト総数 (unit/component) | **3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesも同日再実測。 |
+| 全体coverage（2026-10-12実測） | Statements88.21%（10953/12416）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 |
+| Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-12 実測: 238/238 pass**・`bun run test:integration`。直前の実測は2026-10-08 plan 087 実施時。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**Chromium 7/7 passed**。2026-10-07 実測（plan 084・Docker DB 接続）。OI-10 解消に伴い 6 spec の `disabledRules:["color-contrast"]` 抑制を解除済み（抑制なしで違反 0）。home（`/`）は spec 未作成（OI-9 は 2026-06-06 に解消済みで阻害要因ではない。追加は本書の「A11y-home」タスクで扱う）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-11 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-12 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-11再生成実測。 |
+| テストファイル総数（dashboard） | **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-12再生成実測。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 

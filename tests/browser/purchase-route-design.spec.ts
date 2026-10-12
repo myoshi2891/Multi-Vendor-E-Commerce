@@ -1,3 +1,4 @@
+import { storefrontControls } from "./storefront-eight-assertions";
 import { test, expect, type Browser, type Page } from "@playwright/test";
 import {
     clerk,
@@ -562,6 +563,34 @@ test("P2 settings real Clerk appearance hash and inline editor without saving", 
             await security.click({timeout:10000});
             await expect(page).toHaveURL(/#.*security/);
             await expect(region.getByText("Password", {exact:true})).toBeVisible();
+        }
+    });
+});
+
+// Read-only acceptance: reuse the existing customer and data; no prepare/seed/follow writes.
+test("storefront eight account discovery: authenticated read-only routes", async ({browser},info) => {
+    test.setTimeout(240000);
+    await withCustomer(browser, async page => {
+        for (const width of WIDTHS) {
+            await page.setViewportSize({width,height:1000});
+            for (const path of ["/profile/following/1", "/profile/history/1", "/seller/apply"]) {
+                if (path.includes("history") && process.env.DESIGN_HISTORY_IDS) {
+                    const ids: unknown = JSON.parse(readFileSync(process.env.DESIGN_HISTORY_IDS,"utf8"));
+                    if (!Array.isArray(ids) || !ids.length || !ids.every(id => typeof id === "string")) throw new Error("DESIGN_HISTORY_IDS must contain existing variant IDs");
+                    await page.evaluate(value => localStorage.setItem("productHistory",JSON.stringify(value)),ids);
+                }
+                await gotoRoute(page,path);
+                const main=page.getByRole("main");
+                await expect(main.getByRole("heading",{level:1})).toBeVisible();
+                await expect(main.getByRole("alert")).toHaveCount(0);
+                if (path.includes("history")) {
+                    if (process.env.DESIGN_HISTORY_IDS) await expect(main.locator('[data-variant="editorial"]')).toBeVisible();
+                    else await expect(main.getByRole("heading",{name:"No recently viewed pieces."})).toBeVisible();
+                }
+                await storefrontControls(main.locator("a,button,summary"));
+                await accessible(page);
+                await page.screenshot({path:info.outputPath(`storefront-account-${path.split("/")[2]}-${width}.png`),fullPage:true});
+            }
         }
     });
 });

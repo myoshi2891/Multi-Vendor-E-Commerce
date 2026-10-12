@@ -14,3 +14,15 @@ force-dynamic Server routeからgetUserFollowedStoresを呼び、取得try/catch
 店舗カード・文字・選択・feedback意味色・focusをaccount aliasesへ接続。DiscoveryPaginationの番号操作は44×44px以上とし、URL/current/disabledを維持。共通利用元の閲覧履歴も回帰検証する。follow/unfollowの件数・重複防止・失敗保持・成功通知の契約は不変。
 
 [計画](../../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)／[証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+
+## ストアフロント残存8画面 Step 1（2026-10-12）
+
+店舗名リンクは短い名称でも44px領域を確保。店舗リンク・フォロー操作にhover表示を追加。既存の更新/失敗保持/成功通知は維持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。
+
+
+### ストアフロント残存8画面・最終受け入れ（2026-10-12）
+
+今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。

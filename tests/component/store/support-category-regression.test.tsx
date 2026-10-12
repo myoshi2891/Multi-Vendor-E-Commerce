@@ -12,7 +12,7 @@ import { createSupportTicket } from "@/queries/support";
 jest.mock("@/queries/support", () => ({ createSupportTicket: jest.fn() }));
 const action = jest.mocked(createSupportTicket);
 beforeEach(() => jest.clearAllMocks());
-it.each(["DISPUTE", "PROBLEM_REPORT"] as const)(
+it.each(["DISPUTE", "PROBLEM_REPORT", "CONTACT"] as const)(
     "brand %s preserves category fields and payload, locks pending and permits retry",
     async (category) => {
         let reject!: (error: Error) => void;

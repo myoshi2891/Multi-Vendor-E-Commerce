@@ -52,3 +52,8 @@ DS-PAGE-014を新ブランドへ移行。既存4回答を保ち、質問目次�
 ## 2026-10-01 Product support デザイン移行
 
 DS-PAGE-018を検証済み。3本文・プレースホルダを保持し、ブランド表示・目次・サポート4導線を整備。TDD、関連Jest11/11・Chromium3/3、lint/tsc・3幅・axe・画像確認と仕様同期完了。[証跡](../design-system/PROGRESS.md#product-support移行記録)。未コミット。共有StaticPageLayoutは変更なし。
+
+
+### ストアフロント残存8画面・最終受け入れ（2026-10-12）
+
+今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。

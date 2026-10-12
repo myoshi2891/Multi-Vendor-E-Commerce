@@ -868,3 +868,28 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 8 DS-PAGE-032 設定。
 
 - [x] P2サポート8画面の最終統合・仕様同期。全体Jest3146/3149（3 skipped）、priority54/54、公開実route19/19、認証後実route2/2、settings adapter7/7。通知の実既読化とClerk独立Portalは[保存計画](priority-eight-p2-support-design-system-plan.md#最終結果段階コミット)に限定保留を記録。→ 2026-10-11 [保留解消計画](p2-support-pending-resolution-plan.md)で解消。
+
+
+### ストアフロント残存8画面（2026-10-12）
+
+[保存計画](priority-eight-storefront-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。既存本体適用・検証履歴と今回受け入れを区別する。
+
+- [x] Step 1 DS-PAGE-022 フォロー店舗: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 2 DS-PAGE-024 閲覧履歴: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 3 DS-PAGE-017 ホーム: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 4 DS-PAGE-010 Contact: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 5 DS-PAGE-014 FAQ: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 6 DS-PAGE-018 製品サポート: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 7 DS-PAGE-005 About: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 8 DS-PAGE-004 出店申請: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] DS-COMP-246: 公開4画面のeditorial操作CSS。fixture/実routeで検証。全体tokenや他callerの判定は保持。
+
+- [x] 最終統合: fixture150/150、公開15/15、guest3/3、認証後read-only1/1、全体Jest/coverage・型/lint・仕様/QA/進捗同期。実更新/SDK/全業務フローの既存保留は維持。

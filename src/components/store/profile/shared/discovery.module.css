@@ -200,3 +200,27 @@
         justify-content: center;
     }
 }
+
+/* Store names remain keyboard/touch targets even when the name is short. */
+.identity h2 a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--account-touch);
+    min-width: var(--account-touch);
+}
+.identity h2 a:hover,
+.actions a:hover {
+    color: var(--account-accent);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+.actions button:not(:disabled):hover {
+    background: var(--account-selected);
+    color: var(--account-ink);
+}
+
+.empty a:hover,
+.error a:hover,
+.error button:hover {
+    background: var(--purchase-dark-hover);
+}

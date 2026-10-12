@@ -519,6 +519,8 @@ export const applySeller = async (store: StoreType) => {
                 returnPolicy: store.returnPolicy || "Return in 30 days.",
                 userId: user.id,
             },
+            // Client Component へ返すため id のみ。Decimal 列はシリアライズできない（plans/089）
+            select: { id: true },
         });
 
         return storeDetails;

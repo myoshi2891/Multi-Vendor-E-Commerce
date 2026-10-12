@@ -43,7 +43,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 ## 完了済みのプラン
 
 <details>
-<summary>DONE（72 件）— 実行記録はアーカイブと各プラン本文</summary>
+<summary>DONE（73 件）— 実行記録はアーカイブと各プラン本文</summary>
 
 | Plan | Title | Category | Priority | Depends on | Status |
 |------|-------|----------|----------|------------|--------|
@@ -119,4 +119,5 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [012](012-spike-item-level-inventory-restock.md) | **Spike**: extend inventory restock to item-level transitions | direction | P3 | — | DONE（2026-10-07・1ef13d1d） |
 | [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | — | DONE（2026-10-07・37423cb9） |
 | [087](087-implement-item-level-restock.md) | 在庫復元を item status の遷移に一本化し、経路をまたぐ二重復元を解消（012 の後続実装） | direction | P3 | 012 | DONE（2026-10-08・c8d92913〜335d8031） |
+| [089](089-fix-apply-seller-decimal-return.md) | applySeller の戻り値を `{ id }` に縮小（Decimal 列のクライアント直列化エラー） | bugfix | P2 | — | DONE（2026-10-12・985b2285〜9d3d4531） |
 </details>

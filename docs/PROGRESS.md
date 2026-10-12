@@ -1,5 +1,11 @@
 # PROGRESS.md
 
+## 2026-10-12 ストアフロント残存8画面
+
+フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請のtokens/hover/focus/44px操作を移行し、TDD・仕様更新・今回の表示受け入れを完了。**3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage最新実測（`bun run test -- --runInBand --coverage --silent`、[統計表](testing/QA_HANDOFF.md#現在の実装状態サマリ)と同値）。ストアフロント残存8画面完了時点の前回実測は3147/3150・Statements10954/12417。Integration238／18 suitesも同日再実測。
+
+Statements88.21%（10953/12416）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 dashboard405 test files/405 lcov/18 of 80 cells（不変）。補助ブラウザー150/150、公開実route15/15、guest申請3/3、認証後read-only1/1（3画面×3幅）。型/lintエラー0、既存lint警告8。既存の全業務フロー/SDK保留は保持。[計画](../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。
+
 ## 2026-10-11 P2サポート・通知等8画面
 
 公開6画面のpurchase tokens・44px・状態表示、通知の実route空状態、設定の実Clerk受け入れと24px操作修正、追跡の表示DTOをTDD/回帰で検証。**3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。
@@ -34,13 +40,13 @@ Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-11実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-12実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3146 passed / 3149 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-11 P2サポート8画面の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesは以前の実測を維持。 |
-| Jest Integration テスト | **238テスト / 18スイート** — 2026-10-08実測（plan 087 後・238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
+| Jestユニットテスト | **3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesも同日再実測。 |
+| Jest Integration テスト | **238テスト / 18スイート** — 2026-10-12実測（238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |

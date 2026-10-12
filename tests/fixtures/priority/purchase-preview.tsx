@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import PurchaseHeader from "./purchase-header";
 import homeStyles from "@/components/store/home/luxury/luxury.module.css";
+import Selection from "@/components/store/home/luxury/selection";
 import Experience from "@/components/store/home/luxury/experience";
 import FilterPanel from "@/components/store/browse-page/filter-panel";
 import ProductSort from "@/components/store/browse-page/sort";
@@ -54,7 +55,7 @@ if (screen === "cart")
                       }),
                   ]
         );
-function App({ storeCollection }: { storeCollection: React.ReactNode }) {
+function App({ storeCollection, homeSelection }: { storeCollection: React.ReactNode; homeSelection: React.ReactNode }) {
     const [page, setPage] = useState(1);
     const [quantity, setQuantity] = useState(1);
     const galleryImages = [products[0].variants[0].images[0], { ...products[0].variants[0].images[0], id: "image-2" }];
@@ -98,6 +99,13 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
             ) : screen === "home" ? (
                 <main className={homeStyles.home}>
                     <Experience categories={[]} />
+                    <section className={homeStyles.collections} id="collections" aria-labelledby="selection-title">
+                        <div className={homeStyles.collectionHeading}>
+                            <h2 id="selection-title">Objects of desire.</h2>
+                            <Link href="/browse">Discover all pieces</Link>
+                        </div>
+                        {homeSelection}
+                    </section>
                 </main>
             ) : screen === "store" ? (
                 <main className={browseStyles.browse}>
@@ -192,11 +200,12 @@ function App({ storeCollection }: { storeCollection: React.ReactNode }) {
         </>
     );
 }
-StoreProducts({
+(screen === "home" ? Promise.resolve(null) : StoreProducts({
     searchParams: {} as Parameters<typeof StoreProducts>[0]["searchParams"],
     store: "fixture",
-}).then((storeCollection) => {
+})).then(async (storeCollection) => {
+    const homeSelection = screen === "home" ? await Selection() : null;
     createRoot(document.getElementById("root")!).render(
-        <App storeCollection={storeCollection} />
+        <App storeCollection={storeCollection} homeSelection={homeSelection} />
     );
 });
