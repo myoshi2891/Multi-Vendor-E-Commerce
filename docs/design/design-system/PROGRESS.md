@@ -1599,3 +1599,9 @@ Red: light境界contrast2.322で3件、dark入力高さ40pxで3件失敗。Green
 seller限定Select/属性Portalへpopover opt-inを追加し、3px角丸・影なし・popover面/文字tokenを適用。カテゴリ/継承項目/属性scope/payloadとEscape復帰を維持。
 
 Red: Portal角丸6pxで6件、その修正後main面によるpopover背景上書きで6件失敗。Green/Refactor: six追加/共有商品属性19/19、関連RTL43/43、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。
+
+#### Step 7 DS-PAGE-059 バリアント編集
+
+seller限定の動的行削除は残る行の先頭入力へfocusを戻す。最低1行の削除buttonをdisabledにし、既定caller/価格/画像/属性/値保持/保存payloadを維持。useLayoutEffectでDOM更新後にfocusし入力編集では移動しない。
+
+Red: 新RTL2件がlast-row disabledと削除後focusで失敗、既定caller回帰1件成功。Green/Refactor: six編集/画像/keyword14/14、関連RTL46/46、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。

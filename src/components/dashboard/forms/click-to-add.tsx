@@ -1,5 +1,5 @@
 // React, Next.js
-import React, { FC, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 // UI components
 import { Input } from "@/components/ui/input";
 // Icons
@@ -42,6 +42,16 @@ const ClickToAddInputs = <T extends Detail>({
         null
     );
 
+    const container = useRef<HTMLDivElement>(null);
+    const pendingFocusRow = useRef<number | null>(null);
+    useLayoutEffect(() => {
+        if (pendingFocusRow.current === null) return;
+        container.current?.querySelector<HTMLInputElement>(
+            `[data-detail-row="${pendingFocusRow.current}"] input`
+        )?.focus();
+        pendingFocusRow.current = null;
+    }, [details]);
+
     // Function to handle changes in detail properties
     const handleDetailsChange = (
         index: number,
@@ -75,6 +85,9 @@ const ClickToAddInputs = <T extends Detail>({
             // Remove the detail object at the specified index
             // setDetails(details.filter((_, i) => i !== index));
             const updatedDetails = details.filter((_, i) => i !== index);
+            if (design === "seller") {
+                pendingFocusRow.current = Math.min(index, updatedDetails.length - 1);
+            }
             setDetails(updatedDetails); // Update the state with the filtered details
         }
     };
@@ -114,10 +127,11 @@ const ClickToAddInputs = <T extends Detail>({
     };
 
     // MinusButton component for removing details
-    const MinusButton = ({ onClick }: { onClick: () => void }) => {
+    const MinusButton = ({ onClick, disabled }: { onClick: () => void; disabled: boolean }) => {
         return (
             <button
                 type="button"
+                disabled={disabled}
                 title="Remove detail"
                 aria-label="Remove detail"
                 className={
@@ -147,7 +161,7 @@ const ClickToAddInputs = <T extends Detail>({
     };
 
     return (
-        <div className="flex flex-col gap-y-4">
+        <div ref={container} className="flex flex-col gap-y-4">
             {/* Header */}
             {header && <div>{header}</div>}
             {/* Display PlusButton if no details exist */}
@@ -156,6 +170,7 @@ const ClickToAddInputs = <T extends Detail>({
             {details?.map((detail, index) => (
                 <div
                     key={index}
+                    data-detail-row={index}
                     className={
                         design === "seller"
                             ? sellerStyles.detailRow
@@ -263,7 +278,7 @@ const ClickToAddInputs = <T extends Detail>({
                         </div>
                     ))}
                     {/* Show buttons for each row of inputs */}
-                    <MinusButton onClick={() => handleRemove(index)} />
+                    <MinusButton disabled={design === "seller" && details.length === 1} onClick={() => handleRemove(index)} />
                     <PlusButton onClick={handleAddDetail} />
                 </div>
             ))}

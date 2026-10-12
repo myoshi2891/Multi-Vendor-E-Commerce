@@ -636,5 +636,31 @@ for (const width of [1440, 768, 390])
             await page.keyboard.press("Escape");
             await expect(category).toBeFocused();
             await expectBoundaryContrast(category, "outlineColor");
+            await page.evaluate(() => window.scrollTo(0, 0));
             await page.screenshot({path: info.outputPath(`residual-newvariant-${width}-${theme}.png`),fullPage: true});
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual editvariant keyboard rows ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=editvariant");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const specs = page.getByRole("tabpanel", { name: "Product Specifications", exact: true });
+            await expect(specs.getByRole("button", { name: "Remove detail", exact: true })).toBeDisabled();
+            await specs.getByRole("button", { name: "Add new detail", exact: true }).click();
+            await specs.getByRole("textbox", { name: "name 2", exact: true }).fill("Kept specification");
+            await specs.getByRole("textbox", { name: "value 2", exact: true }).fill("Kept value");
+            const remove = specs.getByRole("button", { name: "Remove detail", exact: true }).first();
+            await expectTouch(remove);
+            await remove.focus();
+            await page.keyboard.press("Enter");
+            const retained = specs.getByRole("textbox", { name: "name 1", exact: true });
+            await expect(retained).toBeFocused();
+            await expect(retained).toHaveValue("Kept specification");
+            await expect(specs.getByRole("textbox", { name: "value 1", exact: true })).toHaveValue("Kept value");
+            await expectBoundaryContrast(retained, "outlineColor");
+            await expect(page.getByRole("spinbutton", { name: "price 1", exact: true })).toHaveValue("12.5");
+            await sellerEvidence(page, info, `residual-editvariant-${width}-${theme}.png`);
         });

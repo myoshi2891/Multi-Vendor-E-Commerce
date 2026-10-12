@@ -150,3 +150,10 @@ DS-PAGE-053 販売者クーポン作成: standalone CouponFormへcontrols・成�
 DS-PAGE-060 バリアント追加: seller限定Select/属性Portalへpopover opt-inを追加し、3px角丸・影なし・popover面/文字tokenを適用。カテゴリ/継承項目/属性scope/payloadとEscape復帰を維持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
 
 [計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3残存8画面 Step 7（2026-10-13）
+
+DS-PAGE-059 バリアント編集: seller限定の動的行削除は残る行の先頭入力へfocusを戻す。最低1行の削除buttonをdisabledにし、既定caller/価格/画像/属性/値保持/保存payloadを維持。useLayoutEffectでDOM更新後にfocusし入力編集では移動しない。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。

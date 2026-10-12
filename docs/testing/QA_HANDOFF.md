@@ -1093,3 +1093,7 @@ standalone CouponFormへcontrols・成功意味色を接続。seller light input
 ### P3残存8 Step 6 DS-PAGE-060（2026-10-13）
 
 seller限定Select/属性Portalへpopover opt-inを追加し、3px角丸・影なし・popover面/文字tokenを適用。カテゴリ/継承項目/属性scope/payloadとEscape復帰を維持。 six追加/共有商品属性19/19、関連RTL43/43、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 7 DS-PAGE-059（2026-10-13）
+
+seller限定の動的行削除は残る行の先頭入力へfocusを戻す。最低1行の削除buttonをdisabledにし、既定caller/価格/画像/属性/値保持/保存payloadを維持。useLayoutEffectでDOM更新後にfocusし入力編集では移動しない。 six編集/画像/keyword14/14、関連RTL46/46、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
