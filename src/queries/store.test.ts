@@ -1516,11 +1516,11 @@ describe("applySeller", () => {
                 id: "new-store-id",
                 userId: TEST_CONFIG.DEFAULT_USER_ID,
             };
-            mockPrisma.store.create.mockResolvedValue(createdStore);
+            mockPrisma.store.create.mockResolvedValue({ id: createdStore.id });
 
             const result = await applySeller(storeData as never);
 
-            expect(result).toEqual(createdStore);
+            expect(result).toEqual({ id: createdStore.id });
             expect(mockPrisma.store.create).toHaveBeenCalledWith({
                 data: expect.objectContaining({
                     ...storeData,
