@@ -216,6 +216,7 @@ test("P2 tracking existing order read-only lookup at three widths", async ({page
     for (const width of [1440, 768, 390]) {
         await page.setViewportSize({width,height:1000});
         await page.goto("/track-order");
+        await waitForFormHydration(page);
         await page.getByLabel("注文番号", {exact:true}).fill(trackingData.trackingOrderId);
         await page.getByLabel("メールアドレス").fill(trackingData.customerEmail);
         await page.getByRole("button", {name:"追跡する"}).click();
