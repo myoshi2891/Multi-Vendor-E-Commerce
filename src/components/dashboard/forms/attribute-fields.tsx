@@ -104,7 +104,7 @@ const OptionSelect: FC<ControlProps> = ({
         <SelectContent
             className={
                 design === "seller"
-                    ? `${styles.theme} ${styles.controls}`
+                    ? `${styles.theme} ${styles.controls} ${styles.popover}`
                     : undefined
             }
         >
@@ -139,7 +139,7 @@ const BooleanSelect: FC<ValueControlProps> = ({
         <SelectContent
             className={
                 design === "seller"
-                    ? `${styles.theme} ${styles.controls}`
+                    ? `${styles.theme} ${styles.controls} ${styles.popover}`
                     : undefined
             }
         >

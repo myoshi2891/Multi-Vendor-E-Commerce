@@ -544,3 +544,11 @@
 .storeState[data-store-state="ACTIVE"] { color: var(--brand-success); }
 .storeState[data-store-state="PENDING"] { color: hsl(var(--warning)); }
 .storeState[data-store-state="BANNED"] { color: hsl(var(--destructive)); }
+
+/* Independent select menus opt in without changing default primitive callers. */
+.theme.popover {
+    background: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+    border-radius: var(--seller-radius);
+    box-shadow: none;
+}

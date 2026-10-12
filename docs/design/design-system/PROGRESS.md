@@ -1593,3 +1593,9 @@ Red: Create New Coupon高さ40pxで6/6失敗。Green/Refactor: p3 coupons12/12�
 standalone CouponFormへcontrols・成功意味色を接続。seller light input tokenを50%へ調整し実境界contrast3:1以上を確保。入力/payload/日付/割引/保存/入力保持/retry/navigationを維持。共通callerを最終回帰する。
 
 Red: light境界contrast2.322で3件、dark入力高さ40pxで3件失敗。Green/Refactor: p3 coupon24/24、関連RTL62/62、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。
+
+#### Step 6 DS-PAGE-060 バリアント追加
+
+seller限定Select/属性Portalへpopover opt-inを追加し、3px角丸・影なし・popover面/文字tokenを適用。カテゴリ/継承項目/属性scope/payloadとEscape復帰を維持。
+
+Red: Portal角丸6pxで6件、その修正後main面によるpopover背景上書きで6件失敗。Green/Refactor: six追加/共有商品属性19/19、関連RTL43/43、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。

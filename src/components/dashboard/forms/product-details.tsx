@@ -841,7 +841,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                     <SelectContent
                                                         className={
                                                             design === "seller"
-                                                                ? `${sellerStyles.theme} ${sellerStyles.controls}`
+                                                                ? `${sellerStyles.theme} ${sellerStyles.controls} ${sellerStyles.popover}`
                                                                 : undefined
                                                         }
                                                     >
@@ -907,7 +907,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                     <SelectContent
                                                         className={
                                                             design === "seller"
-                                                                ? `${sellerStyles.theme} ${sellerStyles.controls}`
+                                                                ? `${sellerStyles.theme} ${sellerStyles.controls} ${sellerStyles.popover}`
                                                                 : undefined
                                                         }
                                                     >
@@ -1441,7 +1441,7 @@ const ProductDetails: FC<ProductDetailsProps> = ({
                                                     <SelectContent
                                                         className={
                                                             design === "seller"
-                                                                ? `${sellerStyles.theme} ${sellerStyles.controls}`
+                                                                ? `${sellerStyles.theme} ${sellerStyles.controls} ${sellerStyles.popover}`
                                                                 : undefined
                                                         }
                                                     >

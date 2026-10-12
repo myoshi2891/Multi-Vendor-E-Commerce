@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectTouch, expectTokenColor, expectBoundaryContrast } from "./seller-residual-assertions";
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {
@@ -616,4 +617,24 @@ for (const width of [1440, 768, 390])
             await expect(form.getByRole("status")).toHaveCSS("color", theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)");
             for (const button of await form.getByRole("button").all()) if (await button.isVisible()) await touchControl(button);
             await sellerEvidence(page, info);
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual newvariant portal ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=newvariant&attributes");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const category = page.getByRole("combobox", { name: "Category", exact: true });
+            await expectTouch(category);
+            await category.click();
+            const portal = page.getByRole("listbox");
+            await expect(portal).toHaveCSS("border-radius", "3px");
+            await expectTokenColor(portal, "background-color", "hsl(var(--popover))");
+            await expectTouch(page.getByRole("option", { name: /Watches/ }));
+            await page.keyboard.press("Escape");
+            await expect(category).toBeFocused();
+            await expectBoundaryContrast(category, "outlineColor");
+            await page.screenshot({path: info.outputPath(`residual-newvariant-${width}-${theme}.png`),fullPage: true});
         });

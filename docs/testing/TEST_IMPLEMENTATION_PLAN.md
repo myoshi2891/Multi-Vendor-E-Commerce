@@ -1283,3 +1283,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-13): P3残存8 Step 4 DS-PAGE-054 販売者クーポン一覧 — p3 coupons12/12、関連RTL23/23、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。実routeは別判定。
 
 - ✅ Completed (2026-10-13): P3残存8 Step 5 DS-PAGE-053 販売者クーポン作成 — p3 coupon24/24、関連RTL62/62、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 6 DS-PAGE-060 バリアント追加 — six追加/共有商品属性19/19、関連RTL43/43、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。実routeは別判定。
