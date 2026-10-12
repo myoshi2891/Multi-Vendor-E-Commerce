@@ -4,7 +4,7 @@
 
 [承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
 
-管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示とkeyboard操作を適用。画面別TDD・補助検証・仕様同期を完了。
+管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示とkeyboard操作を適用。画面別TDD・補助検証・仕様同期を完了。認証後実routeは7画面を受け入れ、059は既存不具合で保留（下記）。
 
 - 全体Jest: **3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage`実測。
 - Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。dashboard406 test files/405 lcov/18 of 80 cells（セル状態不変）。
@@ -14,9 +14,14 @@
 
 ### DS-P3-RESIDUAL-EIGHT-ROUTES
 
-DS-P3-RESIDUAL-EIGHT-ROUTES: 今回の8画面の認証後実route/実Clerk・Cloudinary・実保存/削除/uploadは未実行。E2E_DATABASE_URLと準備済みのADMIN/SELLER認証・route manifestが設定されておらず、既定DBは外部DBを指すため使用しない。解除条件はschema-current専用テストDB、所有権を満たす既存データ、ADMIN/SELLERテスト認証を用意し、許可された非保存操作で8実routeを受け入れること。実更新/uploadまで検証する場合は操作範囲を別途明示する。既存67画面判定と以前の受け入れ履歴を保持し、fixtureから全業務フロー完了へ読み替えない。Integration/フル3-browser E2Eは今回未実行。
+DS-P3-RESIDUAL-EIGHT-ROUTES（2026-10-13 一部解除）: 既存専用DB `multivendor_e2e`（migration 27/27）と Clerk テスト管理者/販売者で、suite `p3-residual-route` **54/54**（8 route × 3幅 × light/dark の表示48・非保存操作6、axe違反0・page error 0）。7画面（049/048/050/054/053/060/065）を検証済みへ更新。[証跡](../design/design-system/PROGRESS.md#認証後実route受け入れ2026-10-13)。
 
-次着手: 上記専用環境で8実routeの読取・非保存操作を確認する。
+- 準備: `scripts/design/prepare-seller-route.ts`（DB変数3つを同値で `multivendor_e2e` へ、`CLERK_SECRET_KEY` は sk_test_）。今回 ADMIN `design-admin+clerk_test@example.com` とクーポン `DESIGNP3` を冪等投入する処理を追加。実行は `DESIGN_SUITE=p3-residual-route DESIGN_BROWSER_CHANNEL=chrome DESIGN_SELLER_ROUTE=<出力json> bun run test:design`。dev 起動後は `tsconfig.json` の include 追記を戻す。
+- **残る保留 DS-PAGE-059**: 実データで色・サイズ・仕様の各行先頭に行UUIDが入力欄として表示される既存不具合（`src/queries/product.ts` の `getProductVariantForEdit` が `id` を返し、`click-to-add.tsx` が `Object.keys` の全キーを描画。`a3a84de1` から）。保存payloadに関わるため計画を保存してTDDで修正し、修正後に同suiteで再受け入れする。
+- 観察: dev ログの ``Invalid prop `id` supplied to `React.Fragment` `` 警告（発生部品未特定、page error ではない）。
+- 未実行: 状態更新・保存・削除・画像upload・Cloudinary送信（操作範囲とデータを別途定める）、Integration/フル3-browser E2E。
+
+次着手: DS-PAGE-059 の行ID表示不具合の修正計画（TDD）→ `p3-residual-route` 再実行で059を受け入れ。
 
 ### P3残存8の段階コミット
 

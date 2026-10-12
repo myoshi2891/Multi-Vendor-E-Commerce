@@ -1,6 +1,10 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-12 ストアフロント残存8画面（現在地）
+## 2026-10-13 P3残存8画面の実ルート受け入れ（現在地）
+
+既存の専用DB `multivendor_e2e` と Clerk テスト管理者/販売者で、管理者概要/注文/店舗・クーポン一覧/作成・バリアント追加・店舗作成の7画面（DS-PAGE-049/048/050/054/053/060/065）を検証済みへ更新。suite `p3-residual-route` 54/54（表示48・非保存操作6）。DS-PAGE-059 バリアント編集は、実データの色・サイズ・仕様の行IDが入力欄として表示される既存不具合を画像で発見したため保留を維持。保存・削除・状態更新・uploadは未実行。[証跡](#認証後実route受け入れ2026-10-13)・[QA](../../testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。
+
+## 2026-10-12 ストアフロント残存8画面（履歴）
 
 フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請の残存操作/トークンを適用。8画面の先行RedとGreen/Refactorを画面別コミットし、仕様同期を完了。[証跡](#ストアフロント残存8画面移行記録2026-10-12)。既存67画面の全体判定は保持し、今回確認した状態を別記する。部品台帳に公開4画面限定のDS-COMP-246を追加（246項目）。DS-BASE-001や共有部品の全caller完了へ拡張しない。
 
@@ -124,24 +128,24 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-045 | `/dashboard/admin/coupons` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
 | DS-PAGE-047 | `/dashboard/admin/offer-tags` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-048 | `/dashboard/admin/orders` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
-| DS-PAGE-049 | `/dashboard/admin` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
-| DS-PAGE-050 | `/dashboard/admin/stores` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/admin/stores/page.tsx](<../../../src/app/dashboard/admin/stores/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
+| DS-PAGE-048 | `/dashboard/admin/orders` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
+| DS-PAGE-049 | `/dashboard/admin` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
+| DS-PAGE-050 | `/dashboard/admin/stores` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/stores/page.tsx](<../../../src/app/dashboard/admin/stores/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-051 | `/dashboard` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/page.tsx](<../../../src/app/dashboard/page.tsx>) | 未実施 |
 | DS-PAGE-052 | `/dashboard/seller` | 転送専用 | 回帰検証 | TODO | [src/app/dashboard/seller/page.tsx](<../../../src/app/dashboard/seller/page.tsx>) | 未実施 |
-| DS-PAGE-053 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
-| DS-PAGE-054 | `/dashboard/seller/stores/[storeUrl]/coupons` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
+| DS-PAGE-053 | `/dashboard/seller/stores/[storeUrl]/coupons/new` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/new/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
+| DS-PAGE-054 | `/dashboard/seller/stores/[storeUrl]/coupons` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/coupons/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-055 | `/dashboard/seller/stores/[storeUrl]/inventory` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/inventory/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
-| DS-PAGE-059 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
-| DS-PAGE-060 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
+| DS-PAGE-059 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 本体適用・検証保留（実データで行ID表示の既存不具合） | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
+| DS-PAGE-060 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-061 | `/dashboard/seller/stores/[storeUrl]/products/new` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-062 | `/dashboard/seller/stores/[storeUrl]/products` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-063 | `/dashboard/seller/stores/[storeUrl]/settings` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/settings/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-064 | `/dashboard/seller/stores/[storeUrl]/shipping` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/shipping/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
-| DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用・検証保留 | P3 | 保留 | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録) |
+| DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
 | DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-11実ルート受け入れ） | P2 | 検証済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)／[残存6画面](#p2残存6画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)／[保留2件の解消](#p2保留2件の解消2026-10-11)。実Clerk・実Action・専用DBで未読3件の3幅表示、単件/リンク遷移/一括の既読と再読込保持を確認 |
 
@@ -1627,3 +1631,14 @@ Red: workspaceリンク高さ24pxで6/6失敗。古いstore adapterによる保�
 - 実行: `bun run test -- --runInBand --coverage`、`DESIGN_SUITE=p3|six|p4 DESIGN_BROWSER_CHANNEL=chrome bun run test:design`（suite別）、sevenは `-- --grep 'products|inventory|orders'`。`bunx tsc --noEmit`、`bun run lint`（既存8 warnings）、`bun run check:playwright`、`bun run coverage:dashboard`、diff/Markdownリンク/67ページ・246部品ID一意性を確認。
 - chart要素画像、390px light/darkのPortal・各画面を目視。fixture作用は実DB/SDK受け入れと区別する。[解除条件と次着手](../../testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。
 - [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)/architecture/data-model/interfaces/workflowsは業務契約変更なしのため変更不要。SDD要件/品質/テスト、管理者/販売者要件/設計/tasks、計画/QA/テスト実装計画/進捗/coverage同期完了。既存全画面判定・部品の他scope保留を維持。
+
+#### 認証後実route受け入れ（2026-10-13）
+
+[計画追補](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md#追補-認証後実route受け入れ2026-10-13)。
+
+- 環境: Docker の既存専用DB `multivendor_e2e`（migration 27/27 適用済み）。`DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を同値で渡した。`scripts/design/prepare-seller-route.ts` を拡張し、Clerk dev に `design-admin+clerk_test@example.com`（privateMetadata.role=ADMIN、DB User.id 一致）を作成、検証店舗へクーポン `DESIGNP3` を冪等投入。Neon・`multivendor_dev` へは書き込まない。
+- 実行: `DESIGN_SUITE=p3-residual-route DESIGN_BROWSER_CHANNEL=chrome DESIGN_SELLER_ROUTE=<prepare出力> bun run test:design` → **54/54**（7.1分）。8 route × 1440/768/390 × light/dark で 200・URL維持・Application errorなし・横overflowなし・axe WCAG A/AA違反0・page error 0・全画面画像。
+- 非保存操作: 未認証/SELLER の管理者route拒否、管理者注文詳細のEscape閉じ/focus復帰、店舗詳細・削除DialogのEscape/Cancelと再読込後も店舗が残ること、クーポン編集Dialogの保存済み初期値（コード/15%）と削除Cancel、クーポン作成・店舗作成の空送信validation（遷移なし）、バリアント追加の商品継承とバリアント編集の初期名。
+- 判定: 049/048/050/054/053/060/065 を検証済み。**059 は保留**: 画像確認で、色・サイズ・仕様の各行先頭に行UUIDが入力欄として表示される（`getProductVariantForEdit` が `id` を含めて返し、`ClickToAdd` が `Object.keys` の全キーを描画）。`a3a84de1` からの既存挙動でデザイン変更起因ではない。保存payloadに関わるため別計画でTDD修正する。
+- 観察: dev サーバーのブラウザーログに ``Invalid prop `id` supplied to `React.Fragment` `` 警告が出る（page error ではない。発生部品は未特定）。768px以下の全画面画像で固定sidebar/headerが撮影位置に写るのは fullPage 撮影の仕様で、レイアウト不具合ではない。
+- 対象外（未実行）: 状態更新・保存・削除・画像upload・Cloudinary送信。Integration/フル3-browser E2E。
