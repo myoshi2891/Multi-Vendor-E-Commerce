@@ -1081,3 +1081,7 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 ### P3残存8 Step 3 DS-PAGE-050（2026-10-13）
 
 店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。 p3店舗/クーポン/作成/操作24/24、関連RTL80/80、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 4 DS-PAGE-054（2026-10-13）
+
+作成/編集triggerと編集Portalの入力・保存操作を44pxへ拡張。コード検索/日付/STORE scope/削除/取得失敗/入力保持/retry/閉じるlock/focus復帰を維持。 p3 coupons12/12、関連RTLはstep4ログ参照、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。

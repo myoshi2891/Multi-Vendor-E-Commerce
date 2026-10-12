@@ -1581,3 +1581,9 @@ Red: View order高さ40pxで6/6失敗。Paid期待へのfixture訂正はRedに�
 店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。
 
 Red: View store高さ40pxで6/6失敗（削除操作は追加回帰）。Green/Refactor: p3店舗/クーポン/作成/操作24/24、関連RTL80/80、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。
+
+#### Step 4 DS-PAGE-054 販売者クーポン一覧
+
+作成/編集triggerと編集Portalの入力・保存操作を44pxへ拡張。コード検索/日付/STORE scope/削除/取得失敗/入力保持/retry/閉じるlock/focus復帰を維持。
+
+Red: Create New Coupon高さ40pxで6/6失敗。Green/Refactor: p3 coupons12/12、関連RTLはstep4ログ参照、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。

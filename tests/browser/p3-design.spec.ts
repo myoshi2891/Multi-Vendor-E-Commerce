@@ -511,3 +511,21 @@ for (const width of [1440, 768, 390])
             await page.keyboard.press("Escape");
             await expect(remove).toBeFocused();
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual coupons controls ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=coupons");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const create = page.getByRole("button", { name: "Create New Coupon", exact: true });
+            const edit = page.getByRole("button", { name: "Edit coupon WELCOME", exact: true });
+            await expectTouch(create);
+            await expectTouch(edit);
+            await edit.click();
+            const dialog = page.getByRole("dialog");
+            await expectTouch(dialog.getByRole("textbox", {name: "Coupon code"}));
+            await expectTouch(dialog.getByRole("button", {name: "Save coupon", exact:true}));
+            await page.keyboard.press("Escape");
+            await expect(edit).toBeFocused();
+        });
