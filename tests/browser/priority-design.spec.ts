@@ -579,3 +579,22 @@ for (const width of [1440, 768, 390]) {
         await accessible(page);
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight faqs ${width}: tokens targets and anchors`, async ({page}, info) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?scenario=storefront-faqs");
+        const main = page.getByRole("main");
+        await storefrontToken(main,"--purchase-page","background-color","rgb(241, 238, 228)");
+        await storefrontControls(main.locator("a, button, input, textarea"));
+        for (const link of await main.locator('a[href^="#"]').all()) {
+            await link.focus();
+            const href = await link.getAttribute("href");
+            await page.keyboard.press("Enter");
+            await expect(page).toHaveURL(url => url.hash === href);
+            await expect(page.locator(href!)).toBeInViewport();
+        }
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-faqs-${width}.png`),fullPage:true});
+    });
+}

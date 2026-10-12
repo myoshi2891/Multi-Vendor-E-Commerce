@@ -126,3 +126,10 @@
 - [x] 公開実ルートの受け入れ確認。
 
 証跡: [P3移行記録](../design-system/PROGRESS.md#p3優先6画面移行記録)。
+
+
+## ストアフロント残存8画面 Step 5（2026-10-12）
+
+FAQはpurchase tokensと明暗面focus、パンくず/目次/窓口44px。質問回答の常時表示・一意なアンカーと308 aliasを維持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。

@@ -1512,3 +1512,9 @@ Contactはpurchase themeとSupportForm appearance=brandを使用。パンくず�
 Red: 背景token未接続の3件失敗。Green/Refactor: Contact browser6/6（3幅・token/44px/focus/入力境界3:1・validation/pending/input lock/error保持/retry/receipt・axe AA）、CONTACTを含むsupport RTL3/3、tsc0、lint0 errors/既存8 warnings。390px画像目視でbreadcrumb整列を追加。worker終了待ち解消後runner exit0、最終回帰で再確認。実送信なし。
 
 Contact Refactor後再検証: PTYでPlaywrightを実行し6/6、20.7秒で正常終了。パンくず整列も再確認。RTL3/3・tsc/lintエラー0。終了待ちはPTY実行で解消し以降もこの方法を使用する。
+
+#### Step 5 DS-PAGE-014 FAQ
+
+FAQはpurchase tokensと明暗面focus、パンくず/目次/窓口44px。質問回答の常時表示・一意なアンカーと308 aliasを維持。
+
+Red: page背景tokenに追従せず3/3失敗。Green/Refactor: FAQ3＋Contact6＝browser9/9（1440/768/390px、全目次Enter/fragment/表示位置、44px/focus/axe AA、画像）。静的ページRTL5/5、tsc0、lint0 errors/既存8 warnings。共有themeのcolor-scheme重複宣言を整理。公開実routeは最終確認。
