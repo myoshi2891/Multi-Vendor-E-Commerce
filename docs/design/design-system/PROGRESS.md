@@ -1486,3 +1486,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 共通基盤: production About/Contact/FAQs/Product supportを既存priority fixtureへ追加。共有server/configの新設なし。寸法・painted surfaceに対するfocus・computed token追従の検証helperを追加。productionの表示変更は各StepでTDDする。
 
 基盤確認: following/history RTL10/10、既存following390px browser1/1、tsc0、lint0 errors（既存8 warnings）。
+
+#### Step 1 DS-PAGE-022 フォロー店舗
+
+店舗名リンクは短い名称でも44px領域を確保。店舗リンク・フォロー操作にhover表示を追加。既存の更新/失敗保持/成功通知は維持。
+
+Red: hover色が通常inkのままのため3/3失敗。Green/Refactor: followingブラウザー10/10（3幅＋480px回帰）、RTL10/10、tsc0、lint0 errors/既存8 warnings。axe AA・focus/44px・画像を取得。認証後実routeは最終確認で別記。

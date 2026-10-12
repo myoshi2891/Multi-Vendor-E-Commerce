@@ -1,3 +1,4 @@
+import { storefrontControls } from "./storefront-eight-assertions";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus } from "./purchase-assertions";
@@ -503,4 +504,19 @@ for (const width of [1440, 768, 390]) {
             await page.screenshot({path:info.outputPath(`support-eight-${scenario}-${width}.png`),fullPage:true});
         });
     }
+}
+
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight following ${width}: store link and focus`, async ({page}, info) => {
+        await page.setViewportSize({width, height:1000});
+        await page.goto("/?scenario=following-error&page=2");
+        await storefrontControls(page.locator("main article a, main article button"));
+        await storefrontControls(page.getByRole("navigation", {name:"Followed stores pagination"}).getByRole("link"));
+        const name = page.locator("article h2 a");
+        await name.hover();
+        await expect(name).toHaveCSS("color", "rgb(117, 97, 59)");
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-following-${width}.png`), fullPage:true});
+    });
 }

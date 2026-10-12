@@ -215,9 +215,7 @@ if (scenario.startsWith("storefront-")) {
                             : [
                                   {
                                       id: "s1",
-                                      name: "A boutique with a very long name ".repeat(
-                                          5
-                                      ),
+                                      name: scenario.includes("short") ? "Art" : "A boutique with a very long name ".repeat(5),
                                       url: "boutique",
                                       logo: "/assets/brand/star.svg",
                                       followersCount: 12,
