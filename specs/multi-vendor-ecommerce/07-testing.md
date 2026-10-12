@@ -1370,3 +1370,10 @@ RTL adds opt-in DesignPage and tracking display-boundary regression tests; CSS t
 CONTACTを既存SupportFormのpayload/pending/input lock/失敗保持/retry/receipt RTLへ追加（既存実装の回帰）。8画面の先行browser Redはhover未変化またはpurchase token未接続で各3件。表示のGreen/Refactorは実computed style、44px/focus contrast、3幅、axe AA、fragment keyboard移動で確認。CSS文字列をなぞる単体テストは追加しない。
 
 既存priority/purchase/sevenのfixtureとpriority-public/seven-public/purchase-routeのNext実routeを使用。fixture150/150、public15/15、guest3/3、authenticated read-only1/1（3画面×3幅）。実routeで未実行のfollow保存・問い合わせ/申請送信・uploadは補助検証と区別する。config/server新設なし。全体統計・制約・再実行方法は[QA](../../docs/testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)、[証跡](../../docs/design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。
+
+
+## P3残存8画面（2026-10-13）
+
+先行browser Redは店舗状態色、詳細/クーポン/独立header寸法、入力境界contrast、Select Portal角丸/面、chart tick/tooltip。動的行のlast-row disabledとfocus復帰はRTL Red。既存機能は回帰確認として別記。p3/six/p4/sevenの既存config/共有fixtureを使用し新設しない。six store adapterは現行ok/id/url結果へ合わせる。環境・adapter失敗はRedに算入しない。全体Jest/coverage統計はQA_HANDOFFの最終実測を正本とする。
+
+[承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。

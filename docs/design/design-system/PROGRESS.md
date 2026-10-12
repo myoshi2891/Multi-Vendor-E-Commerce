@@ -1611,3 +1611,19 @@ Red: 新RTL2件がlast-row disabledと削除後focusで失敗、既定caller回�
 独立headerのworkspaceリンクを44pxとhoverへ接続し、ThemeToggle Portalへ既存popover opt-inを適用。フォーム/payload/no-id/返却URL/画像adapter/Featured/validation/pending/error/retryを保持。sixのupsertStore adapterを現行のok/id/url結果へ修正（業務コード変更なし）。
 
 Red: workspaceリンク高さ24pxで6/6失敗。古いstore adapterによる保存回帰失敗はRedに算入しない。Green/Refactor: six作成/設定24/24、関連RTL15/15、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。
+
+#### 最終統合・概要chartの追加修正
+
+画像で通貨tickの左端欠けを発見。p3 residual overview chartの6件を先行Red確認し、seller opt-inのyAxisWidth=80で解消。その後tooltip frameの背景が透明でpopover面に追従しない6件のRedを確認し、typed専用tooltipと共有USD formatterへ接続。概要18/18 Green（3幅/light-dark、通常/空/取得失敗、tick viewport、hover tooltipの面/文字/axe AA）。既定callerのtooltip/軸幅/計算は保持。環境・古いstore adapterの失敗はTDD Redに数えない。
+
+仕様確認: [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)、[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)、[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)、[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)、[workflows](../../../specs/multi-vendor-ecommerce/05-workflows.md)は表示・keyboard focusのみでAPI/DB/認可/業務契約が変わらないため変更不要。要件/品質/テスト、管理者/販売者UI仕様を同期する。
+
+最終回帰でseven inventoryの300ms pendingを観測し損ねた1件を確認（35/36）。fixture限定の応答gateへ切替え、disabledを確認してからfailure/retryを解放する。production保存は変更しない。Select open時の全ページaxeはaria-hidden背景の指摘が出るため、実Tab/Shift+Tab trap・Portal axeと、Escape/focus復帰後の全ページaxeを分けて検証する（ルール抑制なし）。手順をTESTING_DESIGNへ同期。全体Jest/coverageはproduction変更後に実測済み、以降はfixture/browser検証の変更のみ。
+
+#### 最終統合検証（2026-10-13）
+
+- 全体Jest: **3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。dashboard406 files/405 lcov/18 of 80 cells（不変）。
+- 補助Chrome: p3 73/73、six 74/74、p4 56/56、seven products/inventory/orders 36/36、計239/239。chart要素画像の追加6/6も成功。1440/768/390px × light/dark、axe AA（contrast抑制なし）、focus/44px/入力境界3:1/Portal/空/失敗/pending/retry/successを確認。
+- 実行: `bun run test -- --runInBand --coverage`、`DESIGN_SUITE=p3|six|p4 DESIGN_BROWSER_CHANNEL=chrome bun run test:design`（suite別）、sevenは `-- --grep 'products|inventory|orders'`。`bunx tsc --noEmit`、`bun run lint`（既存8 warnings）、`bun run check:playwright`、`bun run coverage:dashboard`、diff/Markdownリンク/67ページ・246部品ID一意性を確認。
+- chart要素画像、390px light/darkのPortal・各画面を目視。fixture作用は実DB/SDK受け入れと区別する。[解除条件と次着手](../../testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。
+- [overview](../../../specs/multi-vendor-ecommerce/00-overview.md)/architecture/data-model/interfaces/workflowsは業務契約変更なしのため変更不要。SDD要件/品質/テスト、管理者/販売者要件/設計/tasks、計画/QA/テスト実装計画/進捗/coverage同期完了。既存全画面判定・部品の他scope保留を維持。

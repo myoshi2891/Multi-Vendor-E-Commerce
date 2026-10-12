@@ -534,3 +534,10 @@ Point DATABASE_URL/DIRECT_URL/E2E_DATABASE_URL at the same existing local dedica
 The P2 subset does not run the purchase/SDK payment tests.
 
 Clerk's embedded UserProfile editor is inline. At narrower widths, open its mobile navigation before Security; retain hash routing and cancel edits without saving. A real SDK probe of every visible settings button found no `.cl-modalContent` or dialog; modalContent stays covered by the adapter suite. Restore only Next-generated tsconfig include additions after route servers stop.
+
+
+## P3残存8の補助ブラウザー安定化（2026-10-13）
+
+seven inventoryは`hold-inventory=1`の場合だけ保存adapterをPromise gateで保持し、処理中/disabledを確認してから`releaseInventorySave`で応答を解放する。失敗/retry成功の両方を解放し、短い300msに依存しない。productionの通信/保存処理は変更しない。
+
+開いたRadix Selectは背景をaria-hiddenにし、Tab/Shift+TabをPortal内に留める。その状態はlistboxを対象にaxe AAを実行し、Escapeで閉じてtrigger focus復帰を確認してから全ページaxe AAを実行する。ルール抑制はしない。背景を含めたopen snapshotのaria-hidden-focus指摘と実Tab trapを区別する。Portalとchartは要素画像、通常ページは先頭へscroll後の画像を保存する。

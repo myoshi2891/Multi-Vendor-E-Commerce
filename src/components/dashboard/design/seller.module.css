@@ -552,3 +552,14 @@
     border-radius: var(--seller-radius);
     box-shadow: none;
 }
+
+.standaloneHeader a:hover { color: var(--brand-gold); }
+
+.chartTooltip {
+    background: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--seller-radius);
+    padding: 0.75rem 1rem;
+}
+.chartTooltip > p + p { margin-top: 0.5rem; }

@@ -152,3 +152,10 @@ Notifications retain their account tokens and cursor/read behavior. Real routes 
 ## ストアフロント残存8画面の表示受け入れ（2026-10-12）
 
 DS-PAGE-022/024/017/010/014/018/005/004は既存tokensを使用し、独立操作44px、明暗面でfocus可視/3:1、必要な入力境界3:1、文字AA、1440/768/390pxで折返しとoverflowを確認する。ContactはSupportFormのbrand opt-inでpending入力ロック・失敗保持/retry・受付通知を表示。公開静的本文/metadata/URLと出店申請の四段階・payload/認可を保持。API/DB/業務契約は変更しない。[計画](../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。
+
+
+## P3残存8画面（2026-10-13）
+
+管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示を既存seller light/dark themeへ接続する。操作は44px、入力境界/focusは3:1、通常/空/失敗/pending/retry/successを確認。店舗/支払状態と保存成功は名称を保ち意味色を併用。独立Select/theme menuはpopover面・3px角丸・影なし。seller動的行は最後の行の削除を無効化し削除後は残る行の入力へfocusを戻す。金額/集計/初期値/Action/payload/認可/URLを維持。
+
+[承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。

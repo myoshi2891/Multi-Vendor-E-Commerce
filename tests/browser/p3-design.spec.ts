@@ -551,3 +551,27 @@ for (const width of [1440, 768, 390])
             await expectBoundaryContrast(code, "outlineColor");
             await page.screenshot({path:info.outputPath(`residual-newcoupon-${width}-${theme}.png`),fullPage:true});
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual overview chart ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=overview");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const chart = page.locator(".recharts-wrapper");
+            await expect(chart).toBeVisible();
+            const clipped = await page.locator(".recharts-yAxis text").evaluateAll(elements => elements.some(element => {
+                const svg = element.closest("svg")!;
+                return element.getBoundingClientRect().left < svg.getBoundingClientRect().left;
+            }));
+            expect(clipped, "currency tick labels remain inside the SVG viewport").toBe(false);
+            const box = (await chart.boundingBox())!;
+            await chart.hover({position:{x:Math.floor(box.width/2),y:100}});
+            const tooltip = page.getByRole("tooltip");
+            await expect(tooltip).toBeVisible();
+            await expectTokenColor(tooltip, "background-color", "hsl(var(--popover))");
+            await expectTokenColor(tooltip, "color", "hsl(var(--popover-foreground))");
+            expect((await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+            await chart.screenshot({path:info.outputPath(`overview-chart-${width}-${theme}.png`)});
+        });

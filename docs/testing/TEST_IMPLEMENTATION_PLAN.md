@@ -1289,3 +1289,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-13): P3残存8 Step 7 DS-PAGE-059 バリアント編集 — six編集/画像/keyword14/14、関連RTL46/46、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。実routeは別判定。
 
 - ✅ Completed (2026-10-13): P3残存8 Step 8 DS-PAGE-065 店舗作成 — six作成/設定24/24、関連RTL15/15、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8最終統合 — 全体Jest3151/3154（3 skipped）、補助239/239、coverage/dashboard・仕様/QA同期。認証後実routeはQA別IDで保持。

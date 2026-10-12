@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "../design/seller.module.css";
-import { AreaChart } from "@tremor/react";
+import { AreaChart, type CustomTooltipProps } from "@tremor/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SalesPoint } from "@/queries/dashboard";
 
@@ -9,6 +9,27 @@ interface Props {
     data: SalesPoint[];
     design?: "seller";
     period?: "daily" | "monthly";
+}
+
+const formatRevenue = (value: number) =>
+    `$${value.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
+
+function SalesTooltip({ active, payload, label }: CustomTooltipProps) {
+    if (!active || !payload?.length) return null;
+    return (
+        <div role="tooltip" className={styles.chartTooltip}>
+            <p>{label}</p>
+            {payload.filter((entry) => entry.type !== "none").map((entry, index) => (
+                <p key={index}>
+                    <span>{entry.name}</span>{" "}
+                    <strong>{typeof entry.value === "number" ? formatRevenue(entry.value) : String(entry.value ?? "")}</strong>
+                </p>
+            ))}
+        </div>
+    );
 }
 
 /**
@@ -41,12 +62,9 @@ export function SalesChart({ data, period = "monthly", design }: Props) {
                         index="label"
                         categories={["revenue"]}
                         colors={[design === "seller" ? "amber" : "slate"]}
-                        valueFormatter={(v: number) =>
-                            `$${v.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            })}`
-                        }
+                        valueFormatter={formatRevenue}
+                        customTooltip={design === "seller" ? SalesTooltip : undefined}
+                        yAxisWidth={design === "seller" ? 80 : undefined}
                         showLegend={false}
                     />
                 )}

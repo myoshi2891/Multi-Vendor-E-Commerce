@@ -49,4 +49,8 @@
 - [x] Step 6 DS-PAGE-060: 補助検証・仕様同期完了（認証後実routeは別判定）
 - [x] Step 7 DS-PAGE-059: 補助検証・仕様同期完了（認証後実routeは別判定）
 - [x] Step 8 DS-PAGE-065: 補助検証・仕様同期完了（認証後実routeは別判定）
-- [ ] 最終統合・文書同期
+- [x] 最終統合・文書同期
+
+## 最終結果
+
+**3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。補助Chrome: p3 73/73、six 74/74、p4 56/56、seven products/inventory/orders 36/36、計239/239。chart要素画像の追加6/6も成功。1440/768/390px × light/dark、axe AA（contrast抑制なし）、focus/44px/入力境界3:1/Portal/空/失敗/pending/retry/successを確認。 型/lint/harness成功、実routeの限定保留は[QA](../../docs/testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。段階コミットは計画＋画面別8＋最終統合。hashはGit履歴を参照。

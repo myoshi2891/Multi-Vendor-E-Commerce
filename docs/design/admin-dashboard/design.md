@@ -881,3 +881,8 @@ DS-PAGE-048 管理者注文: 詳細buttonを44pxへ拡張し、支払状態へ�
 DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
 
 [計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3最終統合・売上chart（2026-10-13）
+
+seller opt-inの売上chartはyAxisWidth=80で通貨tickをSVG内へ収め、typed CustomTooltipPropsの専用tooltipへpopover面/文字/境界/3px角丸を接続する。数値formatter/USD/期間/集計は保持し、既定callerのtooltip/軸幅は変更しない。先行browserでtick欠け6件、tooltip面未接続6件を確認してからGreen。8画面の最終証跡は[進捗](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)を参照。

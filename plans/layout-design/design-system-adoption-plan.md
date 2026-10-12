@@ -914,3 +914,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 7 DS-PAGE-059 バリアント編集: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
 
 - [x] Step 8 DS-PAGE-065 店舗作成: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] P3残存8最終統合: 全体Jest/coverage・補助239/239・型/lint/harness・仕様/QA/進捗同期。認証後実route/SDKは別判定、67画面/246部品の既存履歴を保持。

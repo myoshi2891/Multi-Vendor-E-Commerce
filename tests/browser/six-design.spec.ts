@@ -633,9 +633,18 @@ for (const width of [1440, 768, 390])
             await expect(portal).toHaveCSS("border-radius", "3px");
             await expectTokenColor(portal, "background-color", "hsl(var(--popover))");
             await expectTouch(page.getByRole("option", { name: /Watches/ }));
+            const option = page.getByRole("option", { name: /Watches/ });
+            await option.focus();
+            await page.keyboard.press("Tab");
+            await expect(option).toBeFocused();
+            await page.keyboard.press("Shift+Tab");
+            await expect(option).toBeFocused();
+            expect((await new AxeBuilder({page}).include('[role="listbox"]').withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+            await portal.screenshot({path:info.outputPath(`residual-newvariant-portal-${width}-${theme}.png`)});
             await page.keyboard.press("Escape");
             await expect(category).toBeFocused();
             await expectBoundaryContrast(category, "outlineColor");
+            expect((await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
             await page.evaluate(() => window.scrollTo(0, 0));
             await page.screenshot({path: info.outputPath(`residual-newvariant-${width}-${theme}.png`),fullPage: true});
         });
