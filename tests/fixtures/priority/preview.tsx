@@ -1,5 +1,6 @@
 /* Supplemental component fixture: Next adapters and all actions are mocks; no auth/DB writes. */
 import React from "react";
+import { storefrontPreview } from "./storefront-preview";
 import { supportPreview } from "./support-preview";
 import { createRoot } from "react-dom/client";
 import FollowingContainer from "@/components/store/profile/following/container";
@@ -144,7 +145,9 @@ const notificationAction = async () => {
 };
 
 const root = createRoot(document.getElementById("root")!);
-if (scenario.startsWith("support-")) {
+if (scenario.startsWith("storefront-")) {
+    root.render(storefrontPreview(scenario));
+} else if (scenario.startsWith("support-")) {
     void supportPreview(scenario).then(node => root.render(node));
 } else if (scenario.startsWith("compare")) {
     useCompareStore.setState({items: scenario.includes("empty") ? [] : ["v0", "v1", "v2", "v3"]});

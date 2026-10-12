@@ -1477,3 +1477,12 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 - Red: 実route通知テストから空状態分岐を除き必須化し、準備変更前に `items toHaveCount(3)` が0件で失敗することを確認。Green: 準備後 purchase-route P2通知 1/1（2回、各回再準備）、P2 2テスト 2/2。3幅で未読3件・配色・overflow・axe、リンク無しをキーボードで既読→status→再読込後も既読、リンク付きを開く→`/order/<id>`→再読込後も既読、残り1件を一括既読→再読込後に全件Read・ボタン無効。テスト後の DB は3件とも `isRead=true` かつ `readAt` 有り。画像（3幅・既読後）で未読ラベルと既読表示、ヘッダー未読バッジの消去を確認。
 - Clerk Portal（DS-PAGE-032）: 実SDKの `/profile/settings` を1440/390pxで、表示される全buttonを1つずつ押して調査（Profile/Security/Update profile/Update username/Add email address/Connect account/Set password、Delete account は確認フォームを開くだけで入力・送信なし）。いずれもinline formで、`.cl-modalContent`・`[role=dialog]`・`.cl-userVerification-root` は0件、root外の `cl-` 要素も無し。`@clerk/testing` のpage objectも modalContent を UserButton の Manage account（UserProfileのmodal表示）と UserVerification にのみ使う。受け入れ条件を「埋め込みUserProfileには独立modal経路が無い」と改め、`modalContent` 用 adapter 7/7 は将来の modal 化への保険として維持。UserVerification（重要操作の送信時）は実保存を伴うため対象外、UserButton の Manage account は別 appearance のため対象外。調査用specは一時追加し、実行後に除去。
 - 型0、lint0 errors／既存8 warnings、check:playwright成功。Jest件数は不変（browser spec と準備スクリプトのみ）。route実行で自動追加された tsconfig include は元へ戻した。
+
+
+### ストアフロント残存8画面移行記録（2026-10-12）
+
+[保存計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)。対象DS-PAGE-022/024/017/010/014/018/005/004。対応中。既存判定・履歴を保持し今回の受け入れを別記する。
+
+共通基盤: production About/Contact/FAQs/Product supportを既存priority fixtureへ追加。共有server/configの新設なし。寸法・painted surfaceに対するfocus・computed token追従の検証helperを追加。productionの表示変更は各StepでTDDする。
+
+基盤確認: following/history RTL10/10、既存following390px browser1/1、tsc0、lint0 errors（既存8 warnings）。

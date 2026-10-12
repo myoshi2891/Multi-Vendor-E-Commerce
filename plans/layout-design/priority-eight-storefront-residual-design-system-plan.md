@@ -34,7 +34,7 @@ priority/purchase/seven fixtureと既存route suiteを拡張。config/serverは�
 ## チェック
 
 - [x] 計画保存
-- [ ] 共通基盤
+- [x] 共通基盤
 - [ ] Step 1 フォロー店舗
 - [ ] Step 2 閲覧履歴
 - [ ] Step 3 ホーム
