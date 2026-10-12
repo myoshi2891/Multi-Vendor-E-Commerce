@@ -664,3 +664,27 @@ for (const width of [1440, 768, 390])
             await expect(page.getByRole("spinbutton", { name: "price 1", exact: true })).toHaveValue("12.5");
             await sellerEvidence(page, info, `residual-editvariant-${width}-${theme}.png`);
         });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual newstore navigation ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=newstore");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const workspace = page.getByRole("link", {name:"Seller workspace",exact:true});
+            await expectTouch(workspace);
+            await workspace.focus();
+            await expect(workspace).toHaveCSS("outline-style", "solid");
+            await expectBoundaryContrast(workspace, "outlineColor");
+            await expect(workspace).toHaveAttribute("href", "/dashboard/seller");
+            await page.getByRole("button", {name:"Toggle theme"}).click();
+            const menu = page.getByRole("menu");
+            await expect(menu).toHaveCSS("border-radius", "3px");
+            await expectTokenColor(menu, "background-color", "hsl(var(--popover))");
+            for (const name of ["Light","Dark","System"]) await expectTouch(page.getByRole("menuitem", {name,exact:true}));
+            await page.keyboard.press("Escape");
+            await expect(page.getByRole("button", {name:"Toggle theme"})).toBeFocused();
+            await expectBoundaryContrast(page.getByRole("textbox", {name:"Store name",exact:true}), "borderTopColor");
+            await sellerEvidence(page, info, `residual-newstore-${width}-${theme}.png`);
+        });

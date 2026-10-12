@@ -1287,3 +1287,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-13): P3残存8 Step 6 DS-PAGE-060 バリアント追加 — six追加/共有商品属性19/19、関連RTL43/43、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。実routeは別判定。
 
 - ✅ Completed (2026-10-13): P3残存8 Step 7 DS-PAGE-059 バリアント編集 — six編集/画像/keyword14/14、関連RTL46/46、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 8 DS-PAGE-065 店舗作成 — six作成/設定24/24、関連RTL15/15、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。実routeは別判定。

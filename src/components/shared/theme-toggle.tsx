@@ -29,7 +29,7 @@ export default function ThemeToggle({ design }: { design?: "seller" } = {}) {
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
-                className={design === "seller" ? `${styles.theme} ${styles.controls}` : undefined}
+                className={design === "seller" ? `${styles.theme} ${styles.controls} ${styles.popover}` : undefined}
             >
                 <DropdownMenuItem onClick={() => setTheme("light")}>
                     Light
