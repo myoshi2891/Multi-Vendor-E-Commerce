@@ -18,6 +18,11 @@
     color: var(--purchase-ink, #17251d);
     font-size: 16px;
 }
+/* FormControl が付与する aria-invalid に追従し、エラーを文字以外でも示す */
+.input[aria-invalid="true"],
+.textarea[aria-invalid="true"] {
+    border-color: var(--purchase-danger, #8a3028);
+}
 .input {
     height: 48px;
 }
