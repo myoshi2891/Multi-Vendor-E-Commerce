@@ -1528,7 +1528,25 @@ describe("applySeller", () => {
                     returnPolicy: "Return in 30 days.",
                     userId: TEST_CONFIG.DEFAULT_USER_ID,
                 }),
+                select: { id: true },
             });
+        });
+
+        it("作成した店舗の id だけを返す（Decimal 列をクライアントへ渡さない）", async () => {
+            TestHelpers.mockCurrentUser({
+                id: TEST_CONFIG.DEFAULT_USER_ID,
+            });
+            mockPrisma.store.findFirst.mockResolvedValue(null);
+            mockPrisma.store.create.mockResolvedValue({ id: "new-store-id" });
+
+            const result = await applySeller(
+                TestDataFactory.validStoreData() as never
+            );
+
+            expect(result).toEqual({ id: "new-store-id" });
+            expect(mockPrisma.store.create).toHaveBeenCalledWith(
+                expect.objectContaining({ select: { id: true } })
+            );
         });
 
         it("申請者が指定した特権フィールドをサーバー既定値で上書きする", async () => {
