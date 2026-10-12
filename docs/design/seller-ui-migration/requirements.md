@@ -117,3 +117,10 @@ KPIカードはサイドバーを除いた利用可能幅に応じて列数を�
 ### Step 8 店舗設定 — 操作と保存状態
 
 店舗設定の入力・保存・Featuredラベルは44px以上の操作領域を持ち、保存成功を意味色で表示する。失敗時の入力値を保持して再試行できる。
+
+
+## ストアフロント残存8画面 Step 8（2026-10-12）
+
+出店申請はpurchase tokens、説明summary/前後/完了導線44px、フォーム境界3:1。四段階、validation/入力保持/pending/error/retry/successとpayloadを維持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。

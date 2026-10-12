@@ -1,3 +1,5 @@
+import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
+import { expectReadableBorder } from "./purchase-assertions";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 for (const width of [1440, 768, 390])
@@ -942,3 +944,26 @@ for (const width of [1440, 1000, 768, 390])
             await expect(open).not.toHaveAccessibleDescription("Unread");
             await sellerEvidence(page, info);
         });
+
+for (const width of [1440,768,390]) {
+    test(`storefront eight apply ${width}: tokens instructions controls`, async ({page}, info) => {
+        await page.setViewportSize({width,height:1000});
+        await page.goto("/?screen=apply");
+        const main = page.getByRole("main");
+        const surface = main.locator("..");
+        await storefrontToken(surface,"--purchase-page","background-color","rgb(241, 238, 228)");
+        await storefrontControls(main.locator("a,button,summary"));
+        const summary = main.locator("summary");
+        const initiallyOpen = await main.locator("details").getAttribute("open");
+        await summary.focus();
+        await page.keyboard.press("Enter");
+        if (initiallyOpen === null) await expect(main.locator("details")).toHaveAttribute("open", "");
+        else await expect(main.locator("details")).not.toHaveAttribute("open", "");
+        await page.getByRole("button",{name:"Next",exact:true}).click();
+        for (const control of await main.locator("input,textarea").all()) await expectReadableBorder(control);
+        await storefrontControls(main.locator("a,button"));
+        expect((await new AxeBuilder({page}).include("main").withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+        await page.screenshot({path:info.outputPath(`storefront-apply-${width}.png`),fullPage:true});
+    });
+}

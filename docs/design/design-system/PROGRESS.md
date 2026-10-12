@@ -1530,3 +1530,9 @@ Red: 背景token未接続3/3失敗。Green/Refactor: product-support＋FAQ brows
 Aboutはpurchase tokensと明暗面focus、パンくず/アンカー/CTA44px。既存本文・装飾・メタデータを保持。
 
 Red: 背景token未接続3/3失敗。Green/Refactor: About＋product-support browser6/6（3幅・アンカーEnter/fragment/位置・44px/focus/axe AA・画像）、静的RTL5/5、tsc0、lint0 errors/既存8 warnings。本文・メタデータ・画像は保持。公開実routeは最終確認。
+
+#### Step 8 DS-PAGE-004 出店申請
+
+出店申請はpurchase tokens、説明summary/前後/完了導線44px、フォーム境界3:1。四段階、validation/入力保持/pending/error/retry/successとpayloadを維持。
+
+Red: page背景token未接続3/3失敗。Green/Refactor: application browser6/6（3幅・tokens・summary Enter/44px/focus・入力境界3:1・四段階validation/入力保持/pending/error/retry/success・axe AA）、RTL4/4、tsc0、lint0 errors/既存8 warnings。Clerk/Cloudinaryはfixture adapter。実routeは認証済み顧客で読取検証中。実申請/アップロードなし。

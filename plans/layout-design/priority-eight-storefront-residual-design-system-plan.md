@@ -42,7 +42,7 @@ priority/purchase/seven fixtureと既存route suiteを拡張。config/serverは�
 - [x] Step 5 FAQ
 - [x] Step 6 製品サポート
 - [x] Step 7 About
-- [ ] Step 8 出店申請
+- [x] Step 8 出店申請
 - [ ] 最終回帰・仕様・QA・統計同期
 
 [移行計画](design-system-adoption-plan.md) / [進捗](../../docs/design/design-system/PROGRESS.md)

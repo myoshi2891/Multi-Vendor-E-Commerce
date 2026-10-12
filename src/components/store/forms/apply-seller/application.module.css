@@ -1,8 +1,8 @@
 .page {
-    --brand-wordmark: #755b2f;
-    color-scheme: light;
-    background: #f3f0e8;
-    color: #17251d;
+    composes: theme from "../../shared/purchase-theme.module.css";
+    --brand-wordmark: var(--purchase-link);
+    background: var(--purchase-page);
+    color: var(--purchase-ink);
     min-height: 100vh;
     --destructive: 0 65% 35%;
 }
@@ -20,7 +20,7 @@
 }
 .header {
     padding-bottom: 1.5rem;
-    border-bottom: 1px solid #c9c2b2;
+    border-bottom: 1px solid var(--purchase-line);
     margin-bottom: 1.5rem;
 }
 .header h1 {
@@ -29,16 +29,16 @@
     font-weight: 400;
 }
 .eyebrow {
-    color: #755b2f;
+    color: var(--purchase-link);
     text-transform: uppercase;
     letter-spacing: 0.18em;
     font-size: 0.7rem;
     margin-bottom: 0.7rem;
 }
 .instructions {
-    background: #e9e4d8;
+    background: var(--purchase-selected);
     padding: 1.25rem;
-    border: 1px solid #c9c2b2;
+    border: 1px solid var(--purchase-line);
     align-self: start;
 }
 .instructions summary {
@@ -53,7 +53,7 @@
 }
 .progress {
     padding-bottom: 1.25rem;
-    border-bottom: 1px solid #c9c2b2;
+    border-bottom: 1px solid var(--purchase-line);
     display: grid;
     grid-template-columns: minmax(0, 1fr) 90px;
     gap: 1rem;
@@ -65,30 +65,30 @@
 }
 .track {
     height: 4px;
-    background: #c9c2b2;
+    background: var(--purchase-line);
     margin: 0.75rem 0;
 }
 .fill {
     height: 100%;
-    background: #755b2f;
+    background: var(--purchase-link);
 }
 .step {
     padding: 1.5rem 0;
 }
 .application :is(input, textarea, select) {
     width: 100%;
-    border: 1px solid #a69e8c;
+    border: 1px solid var(--purchase-control-line);
     border-radius: 3px;
-    background: #faf8f2;
-    color: #17251d;
+    background: var(--purchase-input);
+    color: var(--purchase-ink);
     padding: 0.8rem 1rem;
     box-shadow: none;
 }
 .application label {
-    color: #17251d;
+    color: var(--purchase-ink);
 }
 .application :is(button, a, input, textarea, select, summary):focus-visible {
-    outline: 2px solid #755b2f;
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 3px;
 }
 .application button {
@@ -96,18 +96,18 @@
 }
 .primary {
     padding: 0.7rem 1.5rem;
-    background: #17251d;
-    color: #f3f0e8;
-    border: 1px solid #17251d;
+    background: var(--purchase-ink);
+    color: var(--purchase-on-dark);
+    border: 1px solid var(--purchase-ink);
 }
 .secondary {
     padding: 0.7rem 1.5rem;
-    background: #faf8f2;
-    color: #17251d;
-    border: 1px solid #a69e8c;
+    background: var(--purchase-input);
+    color: var(--purchase-ink);
+    border: 1px solid var(--purchase-control-line);
 }
 .primary:hover {
-    background: #314537;
+    background: var(--purchase-dark-hover);
 }
 .application button:disabled {
     opacity: 0.65;
@@ -119,7 +119,7 @@
     gap: 1rem;
     justify-content: space-between;
     padding-top: 1.5rem;
-    border-top: 1px solid #c9c2b2;
+    border-top: 1px solid var(--purchase-line);
 }
 .images {
     display: grid;
@@ -131,23 +131,23 @@
     max-width: 100%;
 }
 .images :global(.bg-gray-200) {
-    background: #e9e4d8;
+    background: var(--purchase-selected);
 }
 .images button {
-    background: #17251d;
-    color: #f3f0e8;
+    background: var(--purchase-ink);
+    color: var(--purchase-on-dark);
 }
 .alert {
     margin: 1rem 0;
-    color: #a32929;
+    color: var(--purchase-danger);
     padding: 1rem;
-    border: 1px solid #a32929;
+    border: 1px solid var(--purchase-danger);
 }
 .success {
     padding: 2rem 1rem;
     text-align: center;
-    background: #faf8f2;
-    border: 1px solid #c9c2b2;
+    background: var(--purchase-input);
+    border: 1px solid var(--purchase-line);
 }
 .success h2 {
     font-family: Georgia, "Times New Roman", serif;
@@ -158,7 +158,8 @@
     margin: 1rem 0 2rem;
 }
 .success a {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
 }
 @media (max-width: 767px) {
     .application {
@@ -176,6 +177,20 @@
 }
 
 .page :is(a, button):focus-visible {
-    outline: 2px solid #755b2f;
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 3px;
+}
+
+.application :is(button, a, summary) {
+    min-height: var(--purchase-touch);
+    min-width: var(--purchase-touch);
+}
+.primary,
+.secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.secondary:not(:disabled):hover {
+    background: var(--purchase-selected);
 }
