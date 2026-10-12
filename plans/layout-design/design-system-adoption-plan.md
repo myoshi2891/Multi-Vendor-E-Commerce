@@ -893,3 +893,10 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] DS-COMP-246: 公開4画面のeditorial操作CSS。fixture/実routeで検証。全体tokenや他callerの判定は保持。
 
 - [x] 最終統合: fixture150/150、公開15/15、guest3/3、認証後read-only1/1、全体Jest/coverage・型/lint・仕様/QA/進捗同期。実更新/SDK/全業務フローの既存保留は維持。
+
+
+### P3残存8画面（2026-10-13）
+
+[保存計画](priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。既存判定を維持し今回の変更受け入れを別記する。
+
+- [x] Step 1 DS-PAGE-049 管理者概要: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。

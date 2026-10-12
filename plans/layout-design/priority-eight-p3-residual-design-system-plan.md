@@ -41,7 +41,7 @@
 
 ## 実施チェック
 
-- [ ] Step 1 DS-PAGE-049
+- [x] Step 1 DS-PAGE-049: 補助検証・仕様同期完了（認証後実routeは別判定）
 - [ ] Step 2 DS-PAGE-048
 - [ ] Step 3 DS-PAGE-050
 - [ ] Step 4 DS-PAGE-054

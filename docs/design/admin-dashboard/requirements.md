@@ -215,3 +215,10 @@ DS-PAGE-041/040/039は既存管理者themeの個別UI/Portalを適用する。�
 属性新規（DS-PAGE-040）はCreate attributeのh1と名前付きフォームを持ち、カテゴリ取得失敗は内部情報を表示せずRetryを提供する。送信成功時は既存属性一覧URLへ遷移する。
 
 属性選択肢（DS-PAGE-039）はENUM限定を維持し、archived定義で追加を隠して既存選択肢を表示する。valueは編集不可、追加成功時に入力を空へ戻してsortOrderを+1、編集ではID/値を保持する。保存・行操作・閉じる操作は属性scopeで44px以上、checkboxはlabel込みで確保する。
+
+
+### P3残存8画面 Step 1（2026-10-13）
+
+DS-PAGE-049 管理者概要: 新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。

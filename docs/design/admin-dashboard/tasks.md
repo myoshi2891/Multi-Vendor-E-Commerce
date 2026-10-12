@@ -274,3 +274,10 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 - [x] DS-PAGE-040 属性新規: TDD/補助検証/仕様同期。
 - [x] DS-PAGE-039 ENUM属性選択肢: TDD/補助検証/仕様同期。
 - [ ] 認証後ADMIN実ルート受け入れ（補助fixtureと別）。
+
+
+### P3残存8画面 Step 1（2026-10-13）
+
+DS-PAGE-049 管理者概要: 新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。

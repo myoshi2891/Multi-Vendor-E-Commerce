@@ -532,3 +532,15 @@
     display: flex;
     align-items: center;
 }
+
+/* Store status keeps its label while using scoped semantic colors. */
+.storeState {
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--card));
+    border: 1px solid currentColor;
+    border-radius: var(--seller-radius);
+}
+.storeState:hover { background: hsl(var(--card)); }
+.storeState[data-store-state="ACTIVE"] { color: var(--brand-success); }
+.storeState[data-store-state="PENDING"] { color: hsl(var(--warning)); }
+.storeState[data-store-state="BANNED"] { color: hsl(var(--destructive)); }

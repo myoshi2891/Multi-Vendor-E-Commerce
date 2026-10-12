@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectTokenColor } from "./seller-residual-assertions";
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"]) {
         test(`overview ${width} ${theme}`, async ({ page }, info) => {
@@ -465,3 +466,12 @@ for (const width of [1440, 390])
             fullPage: true,
         });
     });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual overview state ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=overview");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            await expectTokenColor(page.getByText("審査中", { exact: true }), "color", "hsl(var(--warning))");
+        });

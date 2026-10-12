@@ -1558,3 +1558,14 @@ Red: page背景token未接続3/3失敗。Green/Refactor: application browser6/6�
 [overview](../../../specs/multi-vendor-ecommerce/00-overview.md) / [architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md) / [data model](../../../specs/multi-vendor-ecommerce/03-data-model.md) / [interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md) / [workflows](../../../specs/multi-vendor-ecommerce/05-workflows.md)。
 
 文書最終検証: 新規/変更行のローカルリンク110件（索引追加前）に欠落0、DS-PAGE67/DS-COMP246の重複0、git diff --check成功。歴史的coverage報告のサンプルリンク「…」は今回追加でなく変更対象外。
+
+
+### P3残存8画面移行記録（2026-10-13）
+
+[保存計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md). 既存本体適用・履歴・全画面判定を保持し今回の受け入れを別記する。overview/architecture/data-modelは表示のみのため変更不要。API/DB/認可/金額/業務契約は維持。
+
+#### Step 1 DS-PAGE-049 管理者概要
+
+新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。
+
+Red: 審査中がwarning tokenに追従せず6/6失敗（p3 residual overview state）。Green/Refactor: p3 overview/navigation/state 14/14、admin RTL65/65、型0、lint0 errors/既存8 warnings、harness成功。390px dark画像確認。各commit前に型/lint/harness/diff検査。ブラウザーはproduction表示部品+Action/SDK adapterであり認証後実route・実保存の証明ではない。

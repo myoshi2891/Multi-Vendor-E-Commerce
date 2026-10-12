@@ -1069,3 +1069,7 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 専用 `E2E_DATABASE_URL` 未設定のため、認証後実ルート・実Clerk描画/Portal/hashの受け入れは保留。解除条件は現行schemaの専用テストDBとClerkテスト認証の用意。次回は6実ルートの3幅と正常/失敗/空/読み込みを確認し、SDK Portalとhash遷移を検証する。購入・アカウント削除・seed/DB初期化は実行しない。IntegrationとフルE2Eは今回未実行。
 
 [保存計画](../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)・[TDD証跡](../design/design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+### P3残存8 Step 1 DS-PAGE-049（2026-10-13）
+
+新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。 p3 overview/navigation/state 14/14、admin RTL65/65、型0、lint0 errors/既存8 warnings、harness成功。390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
