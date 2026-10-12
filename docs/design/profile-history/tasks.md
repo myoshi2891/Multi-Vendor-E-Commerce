@@ -19,3 +19,10 @@
 - [ ] 認証後実ルート受け入れ（専用test DB不在の保留を継続）。
 
 [証跡](../design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+
+## ストアフロント残存8画面 Step 2（2026-10-12）
+
+履歴の再試行・空状態導線はhover時もブランド配色と可読性を保つ。loading/error/保存順/URLページング契約を維持。
+
+[承認済み計画](../../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[検証証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。補助検証と実認証/SDK受け入れを区別する。

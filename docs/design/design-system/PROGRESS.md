@@ -1492,3 +1492,9 @@ Red: default入力高40pxでbrowser6件失敗。Green/Refactor: six shipping/gal
 店舗名リンクは短い名称でも44px領域を確保。店舗リンク・フォロー操作にhover表示を追加。既存の更新/失敗保持/成功通知は維持。
 
 Red: hover色が通常inkのままのため3/3失敗。Green/Refactor: followingブラウザー10/10（3幅＋480px回帰）、RTL10/10、tsc0、lint0 errors/既存8 warnings。axe AA・focus/44px・画像を取得。認証後実routeは最終確認で別記。
+
+#### Step 2 DS-PAGE-024 閲覧履歴
+
+履歴の再試行・空状態導線はhover時もブランド配色と可読性を保つ。loading/error/保存順/URLページング契約を維持。
+
+Red: retry hover背景が通常inkのままで3/3失敗。Green/Refactor: history＋共有following/Wishlist回帰ブラウザー16/16、RTL10/10、tsc0、lint0 errors（既存8 warnings）。3幅・keyboard retry・focus/44px・axe AA・画像確認用証跡を取得。実route受け入れは最終確認。

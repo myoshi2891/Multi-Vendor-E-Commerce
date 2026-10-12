@@ -520,3 +520,20 @@ for (const width of [1440, 768, 390]) {
         await page.screenshot({path:info.outputPath(`storefront-following-${width}.png`), fullPage:true});
     });
 }
+
+for (const width of [1440, 768, 390]) {
+    test(`storefront eight history ${width}: retry hover and keyboard`, async ({page}, info) => {
+        await page.setViewportSize({width, height:1000});
+        await page.goto("/?scenario=history-error&page=2");
+        const retry = page.getByRole("button", {name:"Try again"});
+        await storefrontControls(retry);
+        await retry.hover();
+        await expect(retry).toHaveCSS("background-color", "rgb(33, 56, 42)");
+        await retry.focus();
+        await page.keyboard.press("Enter");
+        await expect(page.getByRole("navigation", {name:"View history pagination"})).toBeVisible();
+        await storefrontControls(page.getByRole("navigation", {name:"View history pagination"}).getByRole("link"));
+        await accessible(page);
+        await page.screenshot({path:info.outputPath(`storefront-history-${width}.png`), fullPage:true});
+    });
+}

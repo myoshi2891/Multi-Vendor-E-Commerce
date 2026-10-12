@@ -875,3 +875,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-eight-storefront-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。既存本体適用・検証履歴と今回受け入れを区別する。
 
 - [x] Step 1 DS-PAGE-022 フォロー店舗: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。
+
+- [x] Step 2 DS-PAGE-024 閲覧履歴: 実装・補助検証・関連仕様同期。実route範囲は証跡参照。

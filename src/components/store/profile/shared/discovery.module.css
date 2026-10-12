@@ -218,3 +218,9 @@
     background: var(--account-selected);
     color: var(--account-ink);
 }
+
+.empty a:hover,
+.error a:hover,
+.error button:hover {
+    background: var(--purchase-dark-hover);
+}
