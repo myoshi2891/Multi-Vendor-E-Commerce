@@ -32,6 +32,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [085](085-implement-public-endpoint-rate-limit.md) | 公開エンドポイントのレート制限（cookie = アプリ内 / 検索 = Vercel WAF・ADR-009） | security | P3 | 025 | IN PROGRESS（2026-10-07・アプリ側完了 541d4b58〜265f8ee2 / WAF 待ち） |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
 | [086](086-implement-notification-foundation.md) | 通知基盤（Outbox + sweeper）と店舗単位の発送通知（021 の後続実装・Resend 導入はユーザー承認後） | direction | P3 | 021 | IN PROGRESS（2026-10-07・e83ead3d〜3aa15cf0 / Resend 承認待ち） |
+| [089](089-fix-apply-seller-decimal-return.md) | applySeller の戻り値を `{ id }` に縮小（Decimal 列のクライアント直列化エラー） | bugfix | P2 | — | DONE（2026-10-12） |
 | [088](088-implement-returns-rma.md) | 返品 RMA（店舗単位の申請・承認・受け取り・解決、在庫の差し引き・通知の配線）（018 の後続実装） | direction | P3 | 086, 087 | TODO |
 
 - **085**: アプリ側（cookie limiter）は実装・検証済み。**Vercel WAF ルール（Step 6）はオペレーター作業待ち**。
