@@ -854,24 +854,22 @@ export const getProductVariantForEdit = async (
             brand: product.brand,
             sku: variant.sku,
             weight: variant.weight,
+            // 行 id は返さない。ClickToAddInputs は全キーを入力欄として描画し、保存側は
+            // 削除→再作成で id を使わない（getProductMainInfo と同じ形）
             colors: variant.colors.map((color) => ({
-                id: color.id,
                 color: color.name,
             })),
             sizes: variant.sizes.map((size) => ({
-                id: size.id,
                 size: size.size,
                 quantity: size.quantity,
                 price: toNumberSafe(size.price),
                 discount: size.discount,
             })),
             product_specs: product.specs.map((spec) => ({
-                id: spec.id,
                 name: spec.name,
                 value: spec.value,
             })),
             variant_specs: variant.specs.map((spec) => ({
-                id: spec.id,
                 name: spec.name,
                 value: spec.value,
             })),
@@ -880,7 +878,6 @@ export const getProductVariantForEdit = async (
                 ? variant.keywords.split(",").filter((k) => k.length > 0)
                 : [],
             questions: product.questions.map((q) => ({
-                id: q.id,
                 question: q.question,
                 answer: q.answer,
             })),

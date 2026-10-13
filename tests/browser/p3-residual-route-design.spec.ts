@@ -380,5 +380,19 @@ test("variants: new inherits product and edit loads saved values", async ({
         await expect(
             page.getByPlaceholder("Variant Name", { exact: true })
         ).toHaveValue(prepared.variantName);
+        // 色・サイズ・仕様の行に DB の行 id（UUID）が入力欄として出ないこと（plans/layout-design/variant-edit-row-id-fix-plan.md）
+        const values = await page
+            .locator("[data-detail-row] input")
+            .evaluateAll((inputs) =>
+                inputs.map((input) => (input as HTMLInputElement).value)
+            );
+        expect(values.length).toBeGreaterThan(0);
+        expect(
+            values.filter((value) =>
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                    value
+                )
+            )
+        ).toEqual([]);
     });
 });
