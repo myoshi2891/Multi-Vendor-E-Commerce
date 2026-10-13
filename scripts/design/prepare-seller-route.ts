@@ -103,7 +103,15 @@ try {
         throw new Error("DB の販売者 User.id が Clerk ID と一致しません。");
     }
 
-    const admin = await prisma.user.upsert({
+    // 別 ID の既存ユーザーを ADMIN へ昇格させないよう、更新前に Clerk ID と照合する
+    const existingAdmin = await prisma.user.findUnique({
+        where: { email: ADMIN_EMAIL },
+        select: { id: true },
+    });
+    if (existingAdmin && existingAdmin.id !== adminId) {
+        throw new Error("DB の管理者 User.id が Clerk ID と一致しません。");
+    }
+    await prisma.user.upsert({
         where: { email: ADMIN_EMAIL },
         create: {
             id: adminId,
@@ -114,9 +122,6 @@ try {
         },
         update: { name: "Design Admin", role: "ADMIN" },
     });
-    if (admin.id !== adminId) {
-        throw new Error("DB の管理者 User.id が Clerk ID と一致しません。");
-    }
 
     const buyer = await prisma.user.upsert({
         where: { email: BUYER_EMAIL },
