@@ -31,3 +31,14 @@ it("preserves the default caller's existing removal control", () => {
     render(<Editor />);
     expect(screen.getByRole("button", {name:"Remove detail"})).toBeEnabled();
 });
+
+it("seller removal tolerates rows without input fields", async () => {
+    function EmptyRowsEditor() {
+        const [details, setDetails] = useState<Record<string, never>[]>([{}, {}]);
+        return <ClickToAddInputs design="seller" details={details} setDetails={setDetails} initialDetail={{}} />;
+    }
+    const user = userEvent.setup();
+    render(<EmptyRowsEditor />);
+    await user.click(screen.getAllByRole("button", {name:"Remove detail"})[0]);
+    expect(screen.getByRole("button", {name:"Remove detail"})).toBeDisabled();
+});

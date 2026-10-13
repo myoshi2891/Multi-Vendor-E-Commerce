@@ -1,6 +1,7 @@
 /** @jest-environment jsdom */
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import ThemeToggle from "@/components/shared/theme-toggle";
 
@@ -38,7 +39,37 @@ describe("ThemeToggle", () => {
         render(<ThemeToggle />);
 
         // Assert: useTheme は購読のみで、初期描画で setTheme は呼ばれない
-        // (オプション選択は Radix ポータルの open を要するため E2E/integration で担保)
+        // (オプション選択時の呼び出しは下の it.each で検証する)
         expect(setThemeMock).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ["Light", "light"],
+        ["Dark", "dark"],
+        ["System", "system"],
+    ])("selecting %s from the opened menu calls setTheme(%s)", async (label, theme) => {
+        // Arrange
+        const user = userEvent.setup();
+        render(<ThemeToggle />);
+
+        // Act
+        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("menuitem", { name: label }));
+
+        // Assert
+        expect(setThemeMock).toHaveBeenCalledWith(theme);
+    });
+
+    it("opens the seller-styled menu and applies the selected theme", async () => {
+        // Arrange
+        const user = userEvent.setup();
+        render(<ThemeToggle design="seller" />);
+
+        // Act: design === "seller" の DropdownMenuContent は開いた時点で描画される
+        await user.click(screen.getByRole("button"));
+        await user.click(screen.getByRole("menuitem", { name: "Dark" }));
+
+        // Assert
+        expect(setThemeMock).toHaveBeenCalledWith("dark");
     });
 });

@@ -101,4 +101,23 @@ describe("RecentStores", () => {
         // Assert
         expect(screen.getByText(date.toLocaleDateString("ja-JP"))).toBeInTheDocument();
     });
+
+    it("正常系: seller デザインではバッジに data-store-state でステータスを付与する", () => {
+        // Arrange
+        const store = makeStore({ status: StoreStatus.PENDING });
+
+        // Act
+        render(<RecentStores stores={[store]} design="seller" />);
+
+        // Assert — design === "seller" 側の分岐（セマンティック色は data 属性で切り替える）
+        expect(screen.getByText("審査中")).toHaveAttribute("data-store-state", "PENDING");
+    });
+
+    it("正常系: 既定デザインではバッジに data-store-state を付与しない", () => {
+        // Arrange & Act
+        render(<RecentStores stores={[makeStore()]} />);
+
+        // Assert
+        expect(screen.getByText("アクティブ")).not.toHaveAttribute("data-store-state");
+    });
 });
