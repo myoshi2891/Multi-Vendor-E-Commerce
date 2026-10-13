@@ -1,10 +1,19 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-13 P3残存8画面（最新）
+## 2026-10-13 PR#204 New Code カバレッジ回復（最新）
+
+[計画](../../plans/090-pr204-new-code-coverage.md)。SonarCloud PR#204 の Coverage on New Code 62.3% の主因（P3 で追加した `design === "seller"` 分岐の未検証）をテスト追加のみで解消（本番コード変更なし）。
+
+- `sales-chart.tsx`（Sonar 22.2%）: `AreaChart` モックが props を捨てていたため `valueFormatter`・`SalesTooltip` が未実行だった。props を捕捉して seller 配色/Y 軸幅/空状態・ツールチップ全分岐を検証（+8）。ローカル Lines/Branches 100%。
+- `recent-stores.tsx` +2（`data-store-state`）、`theme-toggle.tsx` +4（メニューを開いて setTheme）、`click-to-add.tsx` +1（入力欄の無い行の削除）。
+- 残る未カバー分岐は `click-to-add.tsx` の `container.current?.`（マウント中は常に非 null の防御的分岐）1 件のみ。
+- 全体Jest: **3166 passed / 3169 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage --silent`実測。Statements88.26%（10975/12434）／Branches78.64%（6784/8626）／Functions84.68%（2151/2540）／Lines88.8%（9992/11252）。dashboard407 test files/405 lcov/18 of 80 cells（セル状態不変）。型0、対象ファイルlint0。
+
+## 2026-10-13 P3残存8画面
 
 [承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
 
-管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示とkeyboard操作を適用。画面別TDD・補助検証・仕様同期を完了。認証後実routeは7画面を受け入れ、059は既存不具合で保留（下記）。
+管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示とkeyboard操作を適用。画面別TDD・補助検証・仕様同期を完了。認証後実routeは8画面すべて受け入れ（059は既存不具合を修正後に受け入れ、下記）。
 
 - 全体Jest: **3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage`実測。
 - Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。dashboard406 test files/405 lcov/18 of 80 cells（セル状態不変）。
@@ -14,14 +23,14 @@
 
 ### DS-P3-RESIDUAL-EIGHT-ROUTES
 
-DS-P3-RESIDUAL-EIGHT-ROUTES（2026-10-13 一部解除）: 既存専用DB `multivendor_e2e`（migration 27/27）と Clerk テスト管理者/販売者で、suite `p3-residual-route` **54/54**（8 route × 3幅 × light/dark の表示48・非保存操作6、axe違反0・page error 0）。7画面（049/048/050/054/053/060/065）を検証済みへ更新。[証跡](../design/design-system/PROGRESS.md#認証後実route受け入れ2026-10-13)。
+DS-P3-RESIDUAL-EIGHT-ROUTES（2026-10-13 解除）: 既存専用DB `multivendor_e2e`（migration 27/27）と Clerk テスト管理者/販売者で、suite `p3-residual-route` **54/54**（8 route × 3幅 × light/dark の表示48・非保存操作6、axe違反0・page error 0）。7画面（049/048/050/054/053/060/065）を検証済みへ更新し、059 も修正後に検証済み。[証跡](../design/design-system/PROGRESS.md#認証後実route受け入れ2026-10-13)。
 
 - 準備: `scripts/design/prepare-seller-route.ts`（DB変数3つを同値で `multivendor_e2e` へ、`CLERK_SECRET_KEY` は sk_test_）。今回 ADMIN `design-admin+clerk_test@example.com` とクーポン `DESIGNP3` を冪等投入する処理を追加。実行は `DESIGN_SUITE=p3-residual-route DESIGN_BROWSER_CHANNEL=chrome DESIGN_SELLER_ROUTE=<出力json> bun run test:design`。dev 起動後は `tsconfig.json` の include 追記を戻す。
-- **残る保留 DS-PAGE-059**: 実データで色・サイズ・仕様の各行先頭に行UUIDが入力欄として表示される既存不具合（`src/queries/product.ts` の `getProductVariantForEdit` が `id` を返し、`click-to-add.tsx` が `Object.keys` の全キーを描画。`a3a84de1` から）。保存payloadに関わるため計画を保存してTDDで修正し、修正後に同suiteで再受け入れする。
+- **DS-PAGE-059 解除済み**: 実データで行UUIDが入力欄に出る既存不具合（`a3a84de1` から）を、`getProductVariantForEdit` から行 `id` を除いて修正（[計画](../../plans/layout-design/variant-edit-row-id-fix-plan.md)）。Red 1件→関連Jest 110/110、Integration 編集往復 2/2、`p3-residual-route` 再実行 54/54（UUID非表示を assertion 化）。8画面すべて検証済み。
 - 観察: dev ログの ``Invalid prop `id` supplied to `React.Fragment` `` 警告（発生部品未特定、page error ではない）。
 - 未実行: 状態更新・保存・削除・画像upload・Cloudinary送信（操作範囲とデータを別途定める）、Integration/フル3-browser E2E。
 
-次着手: DS-PAGE-059 の行ID表示不具合の修正計画（TDD）→ `p3-residual-route` 再実行で059を受け入れ。
+次着手: 実保存・削除・状態更新・upload の受け入れを行う場合は、データと操作範囲を定めた計画を保存してから実施する。dev ログの React.Fragment `id` 警告の発生部品特定。
 
 ### P3残存8の段階コミット
 
@@ -248,8 +257,8 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。2026-10-13全体実測。 |
-| 全体coverage（2026-10-13実測） | Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。 |
+| Jest テスト総数 (unit/component) | **3166 passed / 3169 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。2026-10-13全体実測（PR#204 New Code カバレッジ回復後）。 |
+| 全体coverage（2026-10-13実測） | Statements88.26%（10975/12434）／Branches78.64%（6784/8626）／Functions84.68%（2151/2540）／Lines88.8%（9992/11252）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-12 実測: 238/238 pass**・`bun run test:integration`。直前の実測は2026-10-08 plan 087 実施時。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |

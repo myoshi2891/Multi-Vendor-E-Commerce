@@ -5764,3 +5764,28 @@ Stripe テスト決済・Place order・外部共有/印刷を実ルートで受�
 | テスト総数 | 3140 passed / 3143 total | **3141 passed / 3144 total** |
 | スイート数 | 324（323 passed／1 skipped） | **324（323 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#204 New Code カバレッジ回復 (2026-10-13)
+
+#### 概要
+
+SonarCloud PR#204 の Coverage on New Code 62.3% に対し、P3 で追加した seller 分岐をテスト追加のみで検証。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/dashboard/admin/sales-chart.test.tsx` | `AreaChart` の props を捕捉し seller 配色・`valueFormatter`・`SalesTooltip`・空状態を検証（+8） | 未コミット |
+| `tests/component/dashboard/admin/recent-stores.test.tsx` | seller の `data-store-state`（+2） | 未コミット |
+| `src/components/shared/theme-toggle.test.tsx` | メニュー選択で `setTheme`（+4） | 未コミット |
+| `tests/component/dashboard/click-to-add-design.test.tsx` | 入力欄の無い行の削除（+1） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3151 passed / 3154 total | **3166 passed / 3169 total** |
+| スイート数 | 327（326 passed／1 skipped） | **327（326 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |

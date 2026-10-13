@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-13） | **3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage（2026-10-13実測） | Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。 |
-| テストファイル総数（dashboard） | **406ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-13再生成実測。 |
+| Jestテスト総数（2026-10-13） | **3166 passed / 3169 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage（2026-10-13実測） | Statements88.26%（10975/12434）／Branches78.64%（6784/8626）／Functions84.68%（2151/2540）／Lines88.8%（9992/11252）。 |
+| テストファイル総数（dashboard） | **407ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-13再生成実測。 |
 | Jest スイート総数（unit/component） | **327スイート**（326 passed／1 skipped、2026-10-13実測）。 |
-| テスト総数 | **3151 unit/component passed**（3154 total／3 skipped）。Integration238／18 suites（2026-10-12再実測）。 |
+| テスト総数 | **3166 unit/component passed**（3169 total／3 skipped）。Integration238／18 suites（2026-10-12再実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-13 dashboard実測、セル状態変化なし）。 |
@@ -353,6 +353,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-13: PR#204 New Code カバレッジ回復（[計画090](../../plans/090-pr204-new-code-coverage.md)、未コミット）。sales-chart +8／recent-stores +2／theme-toggle +4／click-to-add-design +1。Jest3151/3154→3166/3169、327 suites・127 snapshots不変。Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）→Statements88.26%（10975/12434）／Branches78.64%（6784/8626）／Functions84.68%（2151/2540）／Lines88.8%（9992/11252）。
 
 2026-10-12: ストアフロント残存8画面、段階commit `07a92086`〜`a91fc511`。以下は同画面完了時点の実測（同日 plan 089 後の最新値3148/3151・Statements10953/12416は[QA_HANDOFF 統計表](./QA_HANDOFF.md#現在の実装状態サマリ)が正本）。全体Jest3147/3150、326 suites、3 skip、127 snapshots。Statements88.21%（10954/12417）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 前回2026-10-11は3146/3149、Statements88.23/Branches78.47/Functions84.53/Lines88.76。今回dashboard405/405、18/80セル不変。補助150、公開15、guest3、認証後read-only1成功。[証跡](../design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。
 

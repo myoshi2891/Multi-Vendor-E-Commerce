@@ -69,4 +69,4 @@ QA保留 DS-P3-RESIDUAL-EIGHT-ROUTES の解除。ユーザーが保留内容を�
 
 - [x] 準備スクリプト拡張・suite追加（`check:playwright` / 型 成功）
 - [x] `p3-residual-route` 54/54。7画面を検証済みへ更新
-- [ ] DS-PAGE-059: 実データの行ID表示不具合（`a3a84de1` からの既存挙動）を別計画で修正後に再受け入れ
+- [x] DS-PAGE-059: 行ID表示不具合を[別計画](variant-edit-row-id-fix-plan.md)で修正し再受け入れ（54/54）

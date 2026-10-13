@@ -2,7 +2,7 @@
 
 ## 2026-10-13 P3残存8画面の実ルート受け入れ（現在地）
 
-既存の専用DB `multivendor_e2e` と Clerk テスト管理者/販売者で、管理者概要/注文/店舗・クーポン一覧/作成・バリアント追加・店舗作成の7画面（DS-PAGE-049/048/050/054/053/060/065）を検証済みへ更新。suite `p3-residual-route` 54/54（表示48・非保存操作6）。DS-PAGE-059 バリアント編集は、実データの色・サイズ・仕様の行IDが入力欄として表示される既存不具合を画像で発見したため保留を維持。保存・削除・状態更新・uploadは未実行。[証跡](#認証後実route受け入れ2026-10-13)・[QA](../../testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。
+既存の専用DB `multivendor_e2e` と Clerk テスト管理者/販売者で、管理者概要/注文/店舗・クーポン一覧/作成・バリアント追加・店舗作成の7画面（DS-PAGE-049/048/050/054/053/060/065）を検証済みへ更新。suite `p3-residual-route` 54/54（表示48・非保存操作6）。DS-PAGE-059 バリアント編集は、実データの色・サイズ・仕様の行IDが入力欄として表示される既存不具合を画像で発見し、編集用クエリから行IDを除く修正（TDD）後に再受け入れして検証済みへ更新（8画面すべて完了）。保存・削除・状態更新・uploadは未実行。[証跡](#認証後実route受け入れ2026-10-13)・[QA](../../testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。
 
 ## 2026-10-12 ストアフロント残存8画面（履歴）
 
@@ -139,7 +139,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-056 | `/dashboard/seller/stores/[storeUrl]/messages` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/messages/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-057 | `/dashboard/seller/stores/[storeUrl]/orders` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/orders/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-058 | `/dashboard/seller/stores/[storeUrl]` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
-| DS-PAGE-059 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 本体適用・検証保留（実データで行ID表示の既存不具合） | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
+| DS-PAGE-059 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-060 | `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-061 | `/dashboard/seller/stores/[storeUrl]/products/new` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
 | DS-PAGE-062 | `/dashboard/seller/stores/[storeUrl]/products` | 本体適用（2026-10-10実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/products/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録)／[残存8画面証跡](#販売者優先8画面残存移行記録) |
@@ -1639,6 +1639,15 @@ Red: workspaceリンク高さ24pxで6/6失敗。古いstore adapterによる保�
 - 環境: Docker の既存専用DB `multivendor_e2e`（migration 27/27 適用済み）。`DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を同値で渡した。`scripts/design/prepare-seller-route.ts` を拡張し、Clerk dev に `design-admin+clerk_test@example.com`（privateMetadata.role=ADMIN、DB User.id 一致）を作成、検証店舗へクーポン `DESIGNP3` を冪等投入。Neon・`multivendor_dev` へは書き込まない。
 - 実行: `DESIGN_SUITE=p3-residual-route DESIGN_BROWSER_CHANNEL=chrome DESIGN_SELLER_ROUTE=<prepare出力> bun run test:design` → **54/54**（7.1分）。8 route × 1440/768/390 × light/dark で 200・URL維持・Application errorなし・横overflowなし・axe WCAG A/AA違反0・page error 0・全画面画像。
 - 非保存操作: 未認証/SELLER の管理者route拒否、管理者注文詳細のEscape閉じ/focus復帰、店舗詳細・削除DialogのEscape/Cancelと再読込後も店舗が残ること、クーポン編集Dialogの保存済み初期値（コード/15%）と削除Cancel、クーポン作成・店舗作成の空送信validation（遷移なし）、バリアント追加の商品継承とバリアント編集の初期名。
-- 判定: 049/048/050/054/053/060/065 を検証済み。**059 は保留**: 画像確認で、色・サイズ・仕様の各行先頭に行UUIDが入力欄として表示される（`getProductVariantForEdit` が `id` を含めて返し、`ClickToAdd` が `Object.keys` の全キーを描画）。`a3a84de1` からの既存挙動でデザイン変更起因ではない。保存payloadに関わるため別計画でTDD修正する。
+- 判定: 049/048/050/054/053/060/065 を検証済み。**059 は保留**: 画像確認で、色・サイズ・仕様の各行先頭に行UUIDが入力欄として表示される（`getProductVariantForEdit` が `id` を含めて返し、`ClickToAdd` が `Object.keys` の全キーを描画）。`a3a84de1` からの既存挙動でデザイン変更起因ではない。保存payloadに関わるため別計画でTDD修正する。→ 下記で解消。
 - 観察: dev サーバーのブラウザーログに ``Invalid prop `id` supplied to `React.Fragment` `` 警告が出る（page error ではない。発生部品は未特定）。768px以下の全画面画像で固定sidebar/headerが撮影位置に写るのは fullPage 撮影の仕様で、レイアウト不具合ではない。
 - 対象外（未実行）: 状態更新・保存・削除・画像upload・Cloudinary送信。Integration/フル3-browser E2E。
+
+#### DS-PAGE-059 行ID表示の修正と再受け入れ（2026-10-13）
+
+[修正計画](../../../plans/layout-design/variant-edit-row-id-fix-plan.md)。`getProductVariantForEdit` が返すフォーム初期値から colors / sizes / product_specs / variant_specs / questions の行 `id` を除いた（保存側は削除→再作成で `id` を使わず、追加画面用 `getProductMainInfo` と同じ形）。`ClickToAddInputs`・保存処理・images・公開API・DB schema は不変。
+
+- Red: 既存単体テストが `id` 付きの戻り値を期待値に固定していたため、期待値を訂正して1件失敗を確認（`src/queries/product-edit.test.ts`）。
+- Green: product-edit / product / click-to-add / 商品ページdesign 110/110。Integration の編集往復（実DBで読込→無変更保存、属性保持・他店舗null）2/2。型0、lint 0 errors/既存8 warnings、`check:playwright` 成功。
+- 実route: `p3-residual-route` に「動的行の入力欄にUUID形式の値が無いこと」を追加し、再準備後に suite 全体 **54/54**。390px dark 画像で色 Black・サイズ M/10/99/0・仕様 E2E material/Sterling silver を目視。DS-PAGE-059 を検証済みへ更新。
+- テスト件数は不変（既存テストの期待値訂正と既存 browser テストへの assertion 追加のみ）のため全体統計は再計測しない。
