@@ -17,6 +17,17 @@ const formatRevenue = (value: number) =>
         maximumFractionDigits: 2,
     })}`;
 
+// Y 軸目盛り用。8 桁の売上（$12,345,678.90）は yAxisWidth に収まらないため短縮表記にする。
+// 全額は SalesTooltip が formatRevenue で表示する。
+const compactRevenueFormat = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+});
+const formatCompactRevenue = (value: number) => compactRevenueFormat.format(value);
+
 function SalesTooltip({ active, payload, label }: CustomTooltipProps) {
     if (!active || !payload?.length) return null;
     return (
@@ -62,7 +73,7 @@ export function SalesChart({ data, period = "monthly", design }: Props) {
                         index="label"
                         categories={["revenue"]}
                         colors={[design === "seller" ? "amber" : "slate"]}
-                        valueFormatter={formatRevenue}
+                        valueFormatter={design === "seller" ? formatCompactRevenue : formatRevenue}
                         customTooltip={design === "seller" ? SalesTooltip : undefined}
                         yAxisWidth={design === "seller" ? 80 : undefined}
                         showLegend={false}
