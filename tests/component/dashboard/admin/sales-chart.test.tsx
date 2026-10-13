@@ -108,6 +108,17 @@ describe("SalesChart", () => {
         expect(format?.(0)).toBe("$0.00");
     });
 
+    it("正常系: seller デザインの Y 軸目盛りは 8 桁の売上でも Y 軸幅に収まる短縮 USD 表記にする", () => {
+        // Arrange
+        render(<SalesChart data={sampleData} design="seller" />);
+        const format = lastChartProps().valueFormatter;
+
+        // Act & Assert — 全額はツールチップ側（formatRevenue）で表示する
+        expect(format?.(12_345_678.9)).toBe("$12.3M");
+        expect(format?.(1_500)).toBe("$1.5K");
+        expect(format?.(0)).toBe("$0");
+    });
+
     it("正常系: seller デザインでデータが空のときはチャートの代わりに空状態を表示する", () => {
         // Arrange & Act
         render(<SalesChart data={[]} design="seller" />);
