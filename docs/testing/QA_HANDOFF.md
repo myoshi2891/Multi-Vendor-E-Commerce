@@ -1,6 +1,12 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-13 PR#204 New Code カバレッジ回復（最新）
+## 2026-10-13 PR#204 レビュー指摘対応（最新）
+
+- `sales-chart.tsx`: seller の Y 軸目盛りを短縮 USD（`$12.3M`）にし、8 桁売上でも `yAxisWidth` 80 に収める。全額は `SalesTooltip` が従来の `formatRevenue` で表示。回帰 +1。
+- `tests/browser/seller-residual-assertions.ts` の `expectBoundaryContrast`: outline は親から外側の面を探す（border は従来どおり要素自身から）。境界色の alpha を保持して面へ合成してから輝度を算出し、完全透明は失敗させる。`DESIGN_SUITE=p3` 73/73・`six` 74/74 成功。
+- 全体Jest: **3167 passed / 3170 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage --silent`実測。Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）。dashboard407 test files/405 lcov/18 of 80 cells（セル状態不変）。型0、対象ファイルlint0。
+
+## 2026-10-13 PR#204 New Code カバレッジ回復
 
 [計画](../../plans/090-pr204-new-code-coverage.md)。SonarCloud PR#204 の Coverage on New Code 62.3% の主因（P3 で追加した `design === "seller"` 分岐の未検証）をテスト追加のみで解消（本番コード変更なし）。
 
@@ -257,8 +263,8 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3166 passed / 3169 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。2026-10-13全体実測（PR#204 New Code カバレッジ回復後）。 |
-| 全体coverage（2026-10-13実測） | Statements88.26%（10975/12434）／Branches78.64%（6784/8626）／Functions84.68%（2151/2540）／Lines88.8%（9992/11252）。 |
+| Jest テスト総数 (unit/component) | **3167 passed / 3170 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。2026-10-13全体実測（PR#204 レビュー指摘対応後）。 |
+| 全体coverage（2026-10-13実測） | Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-12 実測: 238/238 pass**・`bun run test:integration`。直前の実測は2026-10-08 plan 087 実施時。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
