@@ -22,6 +22,15 @@ export async function expectTouch(target: Locator) {
 
 /** Compare the boundary/focus against the actual opaque surface behind it. */
 export async function expectBoundaryContrast(target: Locator, property: "borderTopColor" | "outlineColor") {
+    // 色だけでは描画有無を判定できない（style: none でも color は返る）ため、対応する style / width も検査する。
+    const stroke = await target.evaluate((element, key) => {
+        const style = getComputedStyle(element);
+        return key === "outlineColor"
+            ? { style: style.outlineStyle, width: style.outlineWidth }
+            : { style: style.borderTopStyle, width: style.borderTopWidth };
+    }, property);
+    expect(["none", "hidden"], `boundary is not drawn: ${JSON.stringify(stroke)}`).not.toContain(stroke.style);
+    expect(Number.parseFloat(stroke.width), `boundary width is zero: ${JSON.stringify(stroke)}`).toBeGreaterThan(0);
     const colors = await target.evaluate((element, key) => {
         // outline は要素の外側に描かれるため、隣接する外側の面（親以上）と比べる。border は従来どおり要素自身から探す。
         let surface: Element | null = key === "outlineColor" ? element.parentElement : element;
