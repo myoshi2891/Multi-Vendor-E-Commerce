@@ -910,3 +910,7 @@ CategoryForm rootに既存controls、FeaturedのFormLabelにcontrolを付与。�
 ### 管理マスタ8 Step 6（2026-10-14）
 
 ToggleCoupon buttonへ既存controlを接続。列factory/表示投影/Action引数の変更はない。MasterDialog/SaveFeedbackの共有変更も回帰。
+
+### 管理マスタ8 Step 7（2026-10-14）
+
+CouponForm rootへcontrolsとActive FormLabelへcontrolを追加し、controlの最小幅をseller-touchへ統一。native checkboxのaccentは既存primary token。既定primitive callerは変更しない。

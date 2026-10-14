@@ -5,6 +5,44 @@ import { masterAccessible, masterFocus } from "./master-eight-assertions";
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {
+        test(`master eight adminnewcoupon ${width} ${theme}: independent form and active label`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=adminnewcoupon");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const form = page.getByRole("form", { name: "Coupon information" });
+            for (const input of await form.locator('input:not([type="checkbox"]), select').all()) {
+                await expectTouch(input);
+                await expectBoundaryContrast(input, "borderTopColor");
+            }
+            const active = form.locator("label").filter({ hasText: /^Active$/ });
+            await expectTouch(active);
+            const check = form.getByRole("checkbox", { name: "Active", exact: true });
+            await expect(check).toBeChecked();
+            const primary = await check.evaluate(element => {
+                const probe = document.createElement("span");
+                probe.style.color = "hsl(var(--primary))";
+                element.parentElement!.append(probe);
+                const color = getComputedStyle(probe).color;
+                probe.remove();
+                return color;
+            });
+            await expect(check).toHaveCSS("accent-color", primary);
+            await active.click();
+            await expect(check).not.toBeChecked();
+            await form.getByLabel("Scope").selectOption("PLATFORM");
+            await expect(form.getByLabel("Store ID")).toHaveCount(0);
+            await form.getByLabel("Scope").selectOption("STORE");
+            await expect(form.getByLabel("Store ID")).toBeVisible();
+            await masterFocus(form.getByLabel("Coupon code", { exact: true }));
+            await masterAccessible(page);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({ path: info.outputPath(`master-eight-adminnewcoupon-${width}-${theme}.png`), fullPage: true });
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
         test(`master eight admincoupons ${width} ${theme}: activation target and failed retry`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 1000 });
             await page.goto("/?screen=admincoupons&failure");

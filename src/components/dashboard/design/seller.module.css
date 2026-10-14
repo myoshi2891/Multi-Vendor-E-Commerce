@@ -462,6 +462,7 @@
     display: inline-flex;
     align-items: center;
     min-height: var(--seller-touch);
+    min-width: var(--seller-touch);
 }
 .iconControl {
     min-width: var(--seller-touch);

@@ -1321,3 +1321,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-14): 管理マスタ8 Step 5 DS-PAGE-039 属性選択肢。Red: 行メニュー角丸6pxで6件失敗。Green/Refactor: 属性一覧と同じpopover/non-modalを選択肢行へ明示。p4新旧選択肢12/12、関連RTLは2ファイルをrunTestsByPathで確認、型成功、lint0 errors/既存8 warnings。3幅/light/dark・menu/編集Portal・Value disabled/Label境界/focus・追加/失敗保持/retry・archive/empty・axe、390px dark画像確認。definitionId/value/label/状態契約は不変。
 
 - ✅ Completed (2026-10-14): 管理マスタ8 Step 6 DS-PAGE-045 クーポン一覧。Red: Activate/Deactivate button高さ40pxで6件失敗。Green/Refactor: ToggleCouponへcontrolを明示。p4新旧一覧12/12、関連RTL38/38、型成功、lint0 errors/既存8 warnings。3幅/light/dark・pending lock・error/retry・同一couponId payload・success意味色・編集/削除/空/取得失敗・axe、390px dark画像確認。scope/期間/有効化/Decimal表示投影と既存Action契約を保持。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 7 DS-PAGE-044 クーポン作成。Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへcontrols、Active labelへcontrolと共有controlの最小幅44px、native checkbox accentをprimaryへ接続。p4新旧作成12/12、関連RTL23/23、型成功、lint0 errors/既存8 warnings。scope切替/Store ID・日時/割引/Active label操作・境界/focus・保存失敗/retry・axeを確認。3幅/light/dark、scope/storeId/isActive/payloadと既存refreshを保持。

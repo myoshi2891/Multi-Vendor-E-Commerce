@@ -69,7 +69,7 @@ export default function CouponForm({
         );
     }
     return (
-        <section className={styles.panel}>
+        <section className={`${styles.panel} ${styles.controls}`}>
             <h2 className="text-xl">Coupon information</h2>
             <Form {...form}>
                 <form
@@ -142,13 +142,14 @@ export default function CouponForm({
                                     <FormControl>
                                         <input
                                             type="checkbox"
+                                            style={{ accentColor: "hsl(var(--primary))" }}
                                             checked={field.value}
                                             onChange={(e) =>
                                                 field.onChange(e.target.checked)
                                             }
                                         />
                                     </FormControl>
-                                    <FormLabel>Active</FormLabel>
+                                    <FormLabel className={styles.control}>Active</FormLabel>
                                     <FormMessage />
                                 </FormItem>
                             )}
