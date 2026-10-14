@@ -1378,3 +1378,9 @@ CONTACTを既存SupportFormのpayload/pending/input lock/失敗保持/retry/rece
 先行browser Redは店舗状態色、詳細/クーポン/独立header寸法、入力境界contrast、Select Portal角丸/面、chart tick/tooltip。動的行のlast-row disabledとfocus復帰はRTL Red。既存機能は回帰確認として別記。p3/six/p4/sevenの既存config/共有fixtureを使用し新設しない。six store adapterは現行ok/id/url結果へ合わせる。環境・adapter失敗はRedに算入しない。全体Jest/coverage統計はQA_HANDOFFの最終実測を正本とする。
 
 [承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+## 購入再監査8（2026-10-14）
+
+DS-PAGE-006/037/019/007/008/003/009/033。先行Redはsort境界contrast、画像modal初期focus（RTL+browser）、短いcart商品link寸法、compare hero寸法、Wishlist current hover境界。店舗/Checkout/注文詳細は既存実装の回帰確認。環境エラーとsortラベル変更後の旧locatorは製品Redに含めない。
+
+既存purchase/commerce/priorityを拡張し、新config/serverなし。補助Chrome82/38/83の計203件が成功。1440/768/390pxと該当境界幅、focus・44px・入力境界・Portal・axe AA・状態遷移を検証。公開実ルート8件とcompare hero追加3幅も確認。商品あり/認証後/実SDKの今回受け入れは専用DB不在のため別保留とし、既存履歴を保持。[計画](../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入再監査8最終統合2026-10-14)／[QA](../../docs/testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)。全体統計はQAの実測を正本とする。

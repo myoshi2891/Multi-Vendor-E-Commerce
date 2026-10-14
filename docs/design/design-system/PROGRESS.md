@@ -1683,3 +1683,34 @@ Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Cont
 ### 購入再監査8 Step 8 — DS-PAGE-033 Wishlist（2026-10-14）
 
 Red: currentページhoverで境界contrast1.37:1となり4幅失敗。Green/Refactor: 非currentだけにhoverの罫線を適用。priority11/11（480px含むcurrent/focus/axe・URL/history・empty/error/pending）、RTL7/7、型成功、lint0 errors/既存8 warnings、390px画像目視。商品カード・保存variant・ページング契約は不変。
+
+
+## 購入再監査8最終統合（2026-10-14）
+
+[保存計画](../../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)。8画面の差分改修/既存実装回帰と画面別コミット、仕様同期を完了。既存の67画面/246部品のID・検証済み履歴を保持し、今回の受け入れを別記録する。
+
+- 最終補助Chrome: `DESIGN_SUITE=purchase` **82/82**、`commerce` **38/38**、`priority` **83/83**、計**203/203**。1440/768/390px、850/800/700/480px境界、通常/長文/空/loading/pending/error/retry/success、focus/操作領域/axe AA（contrast除外なし）・overflow・reduced-motion。8画面390px画像目視済み。
+- 実Next公開: `purchase-public --grep '(/cart|/compare) .*public route|guest'` **8/8**（cart/compare各3幅、checkout/wishlist未認証戻り先）。比較heroの44px/focusを追加後の3幅も成功。実データ/認証後/決済SDKは[QAの保留条件](../../testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)へ集約。専用DBの読み取り監査は権限付きでもP1001、Docker既存コンテナーなし。公開NextのDB接続エラーによる既存fallbackを商品あり表示の成功に数えない。
+- 全体Jest: **3168 passed / 3171 total、3 skipped、327 suites（326 passed/1 skipped）、127 snapshots**。Statements88.25%（10968/12427）／Branches78.64%（6782/8624）／Functions84.66%（2147/2536）／Lines88.79%（9987/11247）。dashboard407 files/405 lcov/18 of 80 cells。手書きEscape handlerをRadixへ置換し分母も変化。Integration/フルE2Eは今回未実行。
+- 型検査成功、lint0 errors/既存8 warnings、check:playwright成功。Nextによるtsconfigの一時include追加は除去。公開比較の国判定timeoutは既存fallbackで表示し、UIのRedに含めない。
+- 比較実route追加検証の初回は3assertion成功後に終了処理で待機し、停止したためexit130。ログ保存で再実行し**3/3・exit0**（30.7秒）を確認した。中断を成功コマンドとして数えない。
+
+### 仕様同期
+
+SDD [requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[quality](../../../specs/multi-vendor-ecommerce/06-quality.md)・[testing](../../../specs/multi-vendor-ecommerce/07-testing.md)を更新。overview/data-model/interfaces/workflowsは既存URL・Action・認可・DB・金額・状態遷移が不変のため変更不要。[購入残存要件](../purchase-residual/requirements.md)、[Cart要件/設計](../cart/requirements.md)、[Compare要件/設計/タスク](../compare/requirements.md)、[Wishlist要件/設計/タスク](../profile-wishlist/requirements.md)を同期。店舗固有・[Checkout](../checkout/requirements.md)・[Order](../order-detail/requirements.md)の業務要件/設計/タスクは既存実装回帰のみのため変更不要。QA・テスト実装計画・COVERAGE_REPORT・全体PROGRESS・coverage dashboardを実測同期。テストハーネスの使い方は不変のためTESTING_DESIGN変更不要。
+
+### 段階コミット
+
+| commit | 段階 |
+|---|---|
+| `75d1416d` | 計画保存 |
+| `60d0e273` | 商品一覧・共有sort境界 |
+| `5233d00a` | 店舗詳細回帰 |
+| `43704068` | 商品画像modal Portal/focus |
+| `71bd6265` | Cart短い商品link |
+| `dcb4c5b1` | Checkout編集Portal/状態回帰 |
+| `920e836f` | 注文詳細error/retry回帰 |
+| `cf826c46` | Compare hero導線 |
+| `89f3c58e` | Wishlist current hover |
+
+最終統合コミット自身のhashはGit履歴を参照。共通基盤はStep1の共有sortに含め、不要な基盤単独コミットは省略。

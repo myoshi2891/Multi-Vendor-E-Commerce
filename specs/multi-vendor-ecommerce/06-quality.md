@@ -177,6 +177,8 @@ P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440px
 
 1440/768/390pxでfocus・44px操作・長文/空/在庫切れ/pending/error/retry/success・独立住所Portal・局所scroll・axe AA（contrast除外なし）を検証する。computed focus/border contrastは実面に対して3:1以上とする。helperが扱わない画像/gradient/透明合成は画像目視とaxeで補完。暗い面のinvoice失敗はalertと意味色を併用し、削除後のfocusは消えない要素へ戻す。
 
+2026-10-14再監査: sortの通常/hover境界とWishlist currentのhover境界は隣接面に対し3:1以上。短いカート商品名link・比較hero導線も44×44px以上。商品画像の独立Portalは自身のpurchase theme、focus trap、Close初期focus、Escape/Closeでtrigger復帰、背景scroll lockを持つ。800/850/700/480pxの該当境界も検証する。[計画](../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)。
+
 補助fixtureの確認は既存Chromeを使う任意channelで行い、この証跡では新環境・DB初期化・顧客作成・購入/送信を行わない。実Next/認証後/外部SDKの受け入れはこれと分け、承認済みの専用DB・Clerkテスト顧客・sandboxサービスで行う。本番購入と実外部送信はいずれの証跡でも対象外。[QAの解除条件](../../docs/testing/QA_HANDOFF.md#ds-purchase-eight-browser)。
 
 

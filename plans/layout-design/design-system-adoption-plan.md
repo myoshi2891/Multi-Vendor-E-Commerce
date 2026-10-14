@@ -937,3 +937,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 7 DS-PAGE-009 比較: 改修または既存実装回帰・補助検証・仕様同期。今回の実routeは最終検証欄参照。
 
 - [x] Step 8 DS-PAGE-033 Wishlist: 改修または既存実装回帰・補助検証・仕様同期。今回の実routeは最終検証欄参照。
+
+- [x] 購入再監査8最終統合: 補助203/203、公開実8/8（比較3幅追加回帰）、全体Jest/coverage・型/lint/harness・仕様/QA同期。[証跡](../../docs/design/design-system/PROGRESS.md#購入再監査8最終統合2026-10-14)。今回の実データ/認証後/SDKは専用DB不在で保留、既存判定は保持。

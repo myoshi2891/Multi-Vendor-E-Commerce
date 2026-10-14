@@ -21,6 +21,15 @@ for (const width of [1440, 768, 390]) {
                 await expect(page.getByRole("heading", { name: "Compare products" })).toBeVisible();
                 await expect(page.getByTestId("compare-empty")).toBeVisible();
                 await expectReadableFocus(page.getByRole("link", { name: "Explore the collection" }));
+                for (const link of [
+                    page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Home", exact: true }),
+                    page.getByRole("link", { name: "Continue exploring" }),
+                ]) {
+                    const box = await link.boundingBox();
+                    expect(box!.height).toBeGreaterThanOrEqual(44);
+                    expect(box!.width).toBeGreaterThanOrEqual(44);
+                    await expectReadableFocus(link);
+                }
                 expect((await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
             }
             await page.getByLabel("Account menu", { exact: true }).click();

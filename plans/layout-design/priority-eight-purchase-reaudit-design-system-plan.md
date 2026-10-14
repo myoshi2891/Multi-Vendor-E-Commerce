@@ -47,11 +47,11 @@ API/DB schema/認可/金額/在庫/決済条件は変更しない。共有部品
 - [x] Step 6 注文詳細。
 - [x] Step 7 比較。
 - [x] Step 8 Wishlist。
-- [ ] 最終統合・文書同期。
+- [x] 最終統合・文書同期。
 
 ## 証跡
 
-今回の8画面は対応中。既存画面台帳の判定・過去の受け入れ記録を維持し、今回の結果を追加する。
+今回の8画面は差分改修/既存実装回帰・補助検証・文書同期を完了。既存画面台帳の判定・過去の受け入れ記録を維持し、今回の結果を追加する。今回の実データ/認証後/実SDKは専用DB不在のため[QA](../../docs/testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)の条件待ち。
 
 ### Step 1 DS-PAGE-006 商品一覧
 
@@ -84,3 +84,7 @@ Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Cont
 ### Step 8 DS-PAGE-033 Wishlist
 
 Red: currentページhoverで境界contrast1.37:1となり4幅失敗。Green/Refactor: 非currentだけにhoverの罫線を適用。priority11/11（480px含むcurrent/focus/axe・URL/history・empty/error/pending）、RTL7/7、型成功、lint0 errors/既存8 warnings、390px画像目視。商品カード・保存variant・ページング契約は不変。
+
+## 最終結果
+
+8画面の差分改修/回帰・画面別コミット・仕様同期完了。補助Chrome203/203（purchase82/commerce38/priority83）、公開実8/8と比較3幅追加回帰。全体Jest3168/3171（3 skipped）・327 suites・127 snapshots、型/lint/harness成功。今回の実データ/認証後/SDKは専用DB不在で保留。既存画面判定を保持する。[詳細証跡](../../docs/design/design-system/PROGRESS.md#購入再監査8最終統合2026-10-14)／[QA](../../docs/testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)。

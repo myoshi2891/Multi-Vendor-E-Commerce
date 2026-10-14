@@ -10,6 +10,7 @@
 - Compare up to four persisted product variants side by side, remove individual selections or clear them, and reach the collection from empty or unavailable states. Show accessible loading and failure feedback with retry while preserving the selection.
 - View product details, variants, sizes, colors, images, and specs.
 - On a product detail page, inspect gallery images and their enlarged view, see the selected size's price and stock, and review delivery, returns, seller, reviews, questions, and related products when available.
+- The enlarged product image is a modal with keyboard focus contained inside it; opening focuses its close control, and closing with Escape or the close control restores focus to the image trigger.
 - Prevent purchase actions when no valid in-stock size is selected; show a clear selection or sold-out message.
 - Add items to cart with quantity and size selection.
 - Manage cart contents (update quantity, remove items).
