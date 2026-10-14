@@ -252,3 +252,7 @@ DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共�
 ### 管理マスタ8 Step 4（2026-10-14）
 
 属性作成の保存成功はbrand-successとrole=statusを併用。既存booleanラベル44px、validation/pending/値保持/retryを維持。
+
+### 管理マスタ8 Step 5（2026-10-14）
+
+ENUM選択肢の独立行メニューも3px・影なし・popover面の非モーダルとする。編集Valueの不変/disabled、Label入力の境界/focusとEscape復帰を維持。

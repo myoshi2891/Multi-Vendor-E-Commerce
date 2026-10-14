@@ -902,3 +902,7 @@ CategoryForm rootに既存controls、FeaturedのFormLabelにcontrolを付与。�
 ### 管理マスタ8 Step 4（2026-10-14）
 
 管理者共通SaveFeedbackのsaved通知に既存success classを接続。失敗のalert/本文/Action契約は不変。共有カテゴリ/クーポン/オファーでも最終回帰する。
+
+### 管理マスタ8 Step 5（2026-10-14）
+
+選択肢DropdownMenuへmodal=false、Contentへtheme/popoverを追加。AttributeOptionDetailsと保存I/Oは維持。category-attributes設計へ表示条件を同期。

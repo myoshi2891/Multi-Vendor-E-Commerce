@@ -115,7 +115,7 @@ const CellActions: React.FC<{
 
     return (
         <div>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                     <Button
                         ref={trigger}
@@ -131,7 +131,7 @@ const CellActions: React.FC<{
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
-                    className={`${styles.theme} ${attributeStyles.surface}`}
+                    className={`${styles.theme} ${styles.popover} ${attributeStyles.surface}`}
                 >
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem

@@ -5,6 +5,37 @@ import { masterAccessible, masterFocus } from "./master-eight-assertions";
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {
+        test(`master eight attributeoptions ${width} ${theme}: option menu and immutable edit`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=attributeoptions");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const trigger = page.getByRole("button", { name: "Open menu for Linen", exact: true });
+            await trigger.focus();
+            await trigger.press("Enter");
+            const menu = page.getByRole("menu");
+            await expect(menu).toHaveCSS("border-radius", "3px");
+            await expect(menu).toHaveCSS("box-shadow", "none");
+            await expectTokenColor(menu, "background-color", "hsl(var(--popover))");
+            await masterAccessible(page);
+            const edit = menu.getByRole("menuitem", { name: "Edit label", exact: true });
+            await expectTouch(edit);
+            await edit.press("Enter");
+            const dialog = page.getByRole("dialog");
+            await expect(dialog.getByLabel("Value", { exact: true })).toBeDisabled();
+            const label = dialog.getByLabel("Label", { exact: true });
+            await expectTouch(label);
+            await expectBoundaryContrast(label, "borderTopColor");
+            await masterFocus(label);
+            await masterAccessible(page);
+            await page.screenshot({ path: info.outputPath(`master-eight-attributeoptions-${width}-${theme}.png`), fullPage: true });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
         test(`master eight newattribute ${width} ${theme}: semantic success and boolean labels`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 1000 });
             await page.goto("/?screen=newattribute");
