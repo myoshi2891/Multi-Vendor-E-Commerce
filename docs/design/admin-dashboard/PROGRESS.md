@@ -120,3 +120,7 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 2026-10-09 Step 6: 属性選択肢・編集Portal・注入Action・属性scope44pxを適用。属性+P4 RTL66/66、選択肢browser6/6、touch1/1。認証後実受け入れは保留。[証跡](../design-system/PROGRESS.md#監査指摘6画面移行記録)。
 
 Refactor後の最終p4全56/56、属性+既存P4 RTL66/66、touch/surface追加回帰1/1。3幅×light/darkの画像/AA/操作確認済み。認証後ADMIN実ルートは保存済みログイン状態未提供で保留。
+
+### 管理マスタ8 Step 1（2026-10-14）
+
+Red: MasterDialog作成trigger高さ40pxで6件失敗。Green/Refactor: triggerへcontrol、独立Portalへcontrolsを接続。新6件+親select/reduced-motion1件7/7、既存一覧6/6、関連RTL29/29、型成功、lint0 errors/既存8 warnings。画像aria-hidden proxy入力への検査失敗はテスト対象誤りでRedに含めず除外。390px dark画像確認。既存取得/保存/削除/URL/親候補を保持。

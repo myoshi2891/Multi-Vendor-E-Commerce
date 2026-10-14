@@ -1714,3 +1714,7 @@ SDD [requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[
 | `89f3c58e` | Wishlist current hover |
 
 最終統合コミット自身のhashはGit履歴を参照。共通基盤はStep1の共有sortに含め、不要な基盤単独コミットは省略。
+
+### 管理マスタ8 Step 1 — DS-PAGE-043 カテゴリ一覧（2026-10-14）
+
+Red: MasterDialog作成trigger高さ40pxで6件失敗。Green/Refactor: triggerへcontrol、独立Portalへcontrolsを接続。新6件+親select/reduced-motion1件7/7、既存一覧6/6、関連RTL29/29、型成功、lint0 errors/既存8 warnings。画像aria-hidden proxy入力への検査失敗はテスト対象誤りでRedに含めず除外。390px dark画像確認。既存取得/保存/削除/URL/親候補を保持。

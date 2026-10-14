@@ -236,3 +236,7 @@ DS-PAGE-048 管理者注文: 詳細buttonを44pxへ拡張し、支払状態へ�
 DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
 
 [計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+### 管理マスタ8 Step 1（2026-10-14）
+
+カテゴリの作成/編集triggerとPortal内入力・保存/retryは44px以上。light/darkで入力境界3:1以上、Escape復帰・値保持・pending lockを維持する。

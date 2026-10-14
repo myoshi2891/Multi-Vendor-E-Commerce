@@ -41,7 +41,7 @@ QA_HANDOFF/TEST_IMPLEMENTATION_PLAN/全体PROGRESSを更新。全体統計/cover
 ## 実施状況
 
 - [x] 計画保存・対象選定。
-- [ ] Step 1 カテゴリ一覧。
+- [x] Step 1 カテゴリ一覧。
 - [ ] Step 2 カテゴリ作成。
 - [ ] Step 3 属性一覧。
 - [ ] Step 4 属性作成。
@@ -52,3 +52,7 @@ QA_HANDOFF/TEST_IMPLEMENTATION_PLAN/全体PROGRESSを更新。全体統計/cover
 - [ ] 最終統合・文書同期。
 
 今回8画面は対応中。既存台帳の画面全体状態は保持し、今回の結果を別記録する。
+
+### Step 1 DS-PAGE-043 カテゴリ一覧
+
+Red: MasterDialog作成trigger高さ40pxで6件失敗。Green/Refactor: triggerへcontrol、独立Portalへcontrolsを接続。新6件+親select/reduced-motion1件7/7、既存一覧6/6、関連RTL29/29、型成功、lint0 errors/既存8 warnings。画像aria-hidden proxy入力への検査失敗はテスト対象誤りでRedに含めず除外。390px dark画像確認。既存取得/保存/削除/URL/親候補を保持。

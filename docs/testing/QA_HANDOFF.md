@@ -1201,3 +1201,7 @@ Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Cont
 ### 購入再監査8 Step 8（2026-10-14）
 
 Red: currentページhoverで境界contrast1.37:1となり4幅失敗。Green/Refactor: 非currentだけにhoverの罫線を適用。priority11/11（480px含むcurrent/focus/axe・URL/history・empty/error/pending）、RTL7/7、型成功、lint0 errors/既存8 warnings、390px画像目視。商品カード・保存variant・ページング契約は不変。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 1（2026-10-14）
+
+Red: MasterDialog作成trigger高さ40pxで6件失敗。Green/Refactor: triggerへcontrol、独立Portalへcontrolsを接続。新6件+親select/reduced-motion1件7/7、既存一覧6/6、関連RTL29/29、型成功、lint0 errors/既存8 warnings。画像aria-hidden proxy入力への検査失敗はテスト対象誤りでRedに含めず除外。390px dark画像確認。既存取得/保存/削除/URL/親候補を保持。 部分検証のため全体統計は変更しない。

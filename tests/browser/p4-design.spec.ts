@@ -1,5 +1,32 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectTouch, expectBoundaryContrast } from "./seller-residual-assertions";
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight categories ${width} ${theme}: dialog controls and recovery`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=categories&failure");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const trigger = page.getByRole("button", { name: "Create New Category", exact: true });
+            await expectTouch(trigger);
+            await trigger.focus();
+            await trigger.press("Enter");
+            const dialog = page.getByRole("dialog");
+            for (const input of await dialog.locator('input:not([type="checkbox"]):not([aria-hidden="true"]), select').all()) {
+                await expectTouch(input);
+                await expectBoundaryContrast(input, "borderTopColor");
+            }
+            await expectTouch(dialog.getByRole("button", { name: "Create category", exact: true }));
+            await expectTouch(dialog.getByRole("button", { name: "Close", exact: true }));
+            expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+            await page.screenshot({ path: info.outputPath(`master-eight-categories-${width}-${theme}.png`), fullPage: true });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+        });
+    }
+}
+
 const screens = [
     { screen: "newoffertag", title: "Create offer tag" },
     { screen: "offertags", title: "Offer tags" },
