@@ -1,5 +1,7 @@
 # Profile Wishlist — 設計
 
+2026-10-14: ページ番号のhover罫線はaria-currentを持たないlinkだけに適用する。currentのaccount-accent境界をhover/focusでも維持し、ページ番号・URL・カードの構成は変更しない。
+
 ## 構成
 
 - profile共通枠を維持。`[page]/page.tsx`はServer ComponentのままgetUserWishlistを呼び、動的レンダリングを保持。ブランドmetadataを追加する。

@@ -3,6 +3,23 @@ import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 
+for (const width of [1440, 768, 480, 390]) {
+    test(`reaudit wishlist ${width}: current page stays distinct on hover`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=wishlist&page=2");
+        const current = page.getByRole("navigation", { name: "Wishlist pagination" }).getByRole("link", { name: "Page 2", exact: true });
+        await expect(current).toHaveAttribute("aria-current", "page");
+        await expectReadableBorder(current);
+        const border = await current.evaluate(element => getComputedStyle(element).borderTopColor);
+        await current.hover();
+        await expectReadableBorder(current);
+        await expect(current).toHaveCSS("border-top-color", border);
+        await expectReadableFocus(current);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-wishlist-${width}.png`), fullPage: true });
+    });
+}
+
 for (const width of [1440, 768, 700, 390]) {
     test(`reaudit compare ${width}: hero navigation touch targets`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });

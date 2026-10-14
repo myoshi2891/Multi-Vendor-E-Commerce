@@ -46,7 +46,7 @@ API/DB schema/認可/金額/在庫/決済条件は変更しない。共有部品
 - [x] Step 5 Checkout。
 - [x] Step 6 注文詳細。
 - [x] Step 7 比較。
-- [ ] Step 8 Wishlist。
+- [x] Step 8 Wishlist。
 - [ ] 最終統合・文書同期。
 
 ## 証跡
@@ -80,3 +80,7 @@ Red: 短い商品名の独立linkが高さ28/25pxで3幅失敗。Green/Refactor:
 ### Step 7 DS-PAGE-009 比較
 
 Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Continue exploringをpurchase-touchへ接続し、折返し/縦揃えと重複media selectorを整理。priority11/11（700px含むfocus/axe/局所scroll/削除/empty/error/retry）、RTL28/28、型成功、lint0 errors/既存8 warnings、390px画像目視。URL・価格・4件制限・focus復帰を保持。
+
+### Step 8 DS-PAGE-033 Wishlist
+
+Red: currentページhoverで境界contrast1.37:1となり4幅失敗。Green/Refactor: 非currentだけにhoverの罫線を適用。priority11/11（480px含むcurrent/focus/axe・URL/history・empty/error/pending）、RTL7/7、型成功、lint0 errors/既存8 warnings、390px画像目視。商品カード・保存variant・ページング契約は不変。

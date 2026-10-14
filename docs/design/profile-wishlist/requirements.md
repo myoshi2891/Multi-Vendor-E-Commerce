@@ -1,5 +1,7 @@
 # Profile Wishlist — 要件
 
+2026-10-14再監査: 現在ページの境界はhover/focus中もaccount-accentを保ち、隣接面に対して3:1以上。480px境界でもURL/current/前後ページ導線を維持。[計画](../../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)。
+
 対象: `/profile/wishlist/[page]`（DS-PAGE-033）、WishlistContainer（DS-COMP-085）。[保存計画](../../../plans/layout-design/wishlist-design-system-plan.md)、[設計](design.md)、[タスク](tasks.md)、[進捗](PROGRESS.md)。
 
 | ID | 受け入れ条件 | 検証 |

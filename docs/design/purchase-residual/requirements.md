@@ -71,3 +71,7 @@ ProductSortの通常・hover境界は隣接面に対して3:1以上とし、Port
 ### 再監査 Step 7 DS-PAGE-009 比較（2026-10-14）
 
 heroのパンくずと継続探索linkは44×44px以上。700px境界でも折返しとgold focusを保ち、明るい選択面の濃いfocusと局所スクロールを維持する。
+
+### 再監査 Step 8 DS-PAGE-033 Wishlist（2026-10-14）
+
+現在ページのaccent境界はhover/focusでも3:1以上の可読性を保つ。非currentのhover・44px・URL/current・既定カードと保存variantの契約を維持する。

@@ -104,7 +104,7 @@
     border-color: var(--account-accent);
     color: var(--account-ink);
 }
-.pageNumbers a:hover {
+.pageNumbers a:not([aria-current="page"]):hover {
     border-color: var(--account-line);
 }
 .empty,
