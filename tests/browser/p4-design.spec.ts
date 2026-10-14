@@ -5,6 +5,30 @@ import { masterAccessible, masterFocus } from "./master-eight-assertions";
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {
+        test(`master eight admincoupons ${width} ${theme}: activation target and failed retry`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=admincoupons&failure");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const toggle = page.getByRole("button", { name: "Deactivate WELCOME", exact: true });
+            await expectTouch(toggle);
+            await masterFocus(toggle);
+            await toggle.press("Enter");
+            await expect(page.getByRole("button", { name: "Updating…" })).toBeDisabled();
+            await expect(page.getByRole("alert")).toContainText("input has been kept");
+            await toggle.click();
+            const success = page.getByRole("status").filter({ hasText: "Changes saved." });
+            await expect(success).toBeVisible();
+            await expectTokenColor(success, "color", "var(--brand-success)");
+            expect(await page.evaluate(() => (window as unknown as { calls: unknown[][] }).calls)).toEqual([["coupon-1"], ["coupon-1"]]);
+            await masterAccessible(page);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({ path: info.outputPath(`master-eight-admincoupons-${width}-${theme}.png`), fullPage: true });
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
         test(`master eight attributeoptions ${width} ${theme}: option menu and immutable edit`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 1000 });
             await page.goto("/?screen=attributeoptions");

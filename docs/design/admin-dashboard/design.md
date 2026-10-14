@@ -906,3 +906,7 @@ CategoryForm rootに既存controls、FeaturedのFormLabelにcontrolを付与。�
 ### 管理マスタ8 Step 5（2026-10-14）
 
 選択肢DropdownMenuへmodal=false、Contentへtheme/popoverを追加。AttributeOptionDetailsと保存I/Oは維持。category-attributes設計へ表示条件を同期。
+
+### 管理マスタ8 Step 6（2026-10-14）
+
+ToggleCoupon buttonへ既存controlを接続。列factory/表示投影/Action引数の変更はない。MasterDialog/SaveFeedbackの共有変更も回帰。
