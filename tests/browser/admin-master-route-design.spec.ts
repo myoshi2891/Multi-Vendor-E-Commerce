@@ -103,6 +103,7 @@ for (const route of routes) {
                         await expect(dialog.getByRole("form")).toBeVisible();
                         await masterAccessible(page);
                         await page.keyboard.press("Escape");
+                        await expect(dialog).toBeHidden();
                         await expect(trigger).toBeFocused();
                     } else {
                         const form = page.getByRole("form");
