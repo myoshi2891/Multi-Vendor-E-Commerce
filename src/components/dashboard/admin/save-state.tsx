@@ -41,7 +41,7 @@ export function SaveFeedback({
                     Could not save. Your input has been kept. Please try again.
                 </p>
             )}
-            {feedback === "saved" && <p role="status">Changes saved.</p>}
+            {feedback === "saved" && <p role="status" className={styles.success}>Changes saved.</p>}
         </>
     );
 }

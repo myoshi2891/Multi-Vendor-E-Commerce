@@ -898,3 +898,7 @@ CategoryForm rootに既存controls、FeaturedのFormLabelにcontrolを付与。�
 ### 管理マスタ8 Step 3（2026-10-14）
 
 既存DropdownMenuContentにtheme/popoverを併用し、行DropdownMenuだけmodal=falseへ指定。フォーム/Action Props/列データは不変。
+
+### 管理マスタ8 Step 4（2026-10-14）
+
+管理者共通SaveFeedbackのsaved通知に既存success classを接続。失敗のalert/本文/Action契約は不変。共有カテゴリ/クーポン/オファーでも最終回帰する。

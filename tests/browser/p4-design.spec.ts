@@ -5,6 +5,33 @@ import { masterAccessible, masterFocus } from "./master-eight-assertions";
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {
+        test(`master eight newattribute ${width} ${theme}: semantic success and boolean labels`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=newattribute");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const form = page.getByRole("form", { name: "Attribute information" });
+            await form.getByLabel("Category").selectOption("cat-1");
+            await form.getByLabel("Key", { exact: true }).fill("material");
+            await form.getByLabel("Display name", { exact: true }).fill("Material");
+            await form.getByLabel("Type", { exact: true }).selectOption("ENUM");
+            for (const name of ["Required", "Facetable", "Multi-valued"]) {
+                await expectTouch(form.locator("label").filter({ hasText: new RegExp(`^${name}$`) }));
+            }
+            const submit = form.getByRole("button", { name: "Create attribute", exact: true });
+            await masterFocus(submit);
+            await submit.press("Enter");
+            const success = page.getByRole("status").filter({ hasText: "Changes saved." });
+            await expect(success).toBeVisible();
+            await expectTokenColor(success, "color", "var(--brand-success)");
+            await masterAccessible(page);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({ path: info.outputPath(`master-eight-newattribute-${width}-${theme}.png`), fullPage: true });
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
         test(`master eight attributes ${width} ${theme}: independent menu surface`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 1000 });
             await page.goto("/?screen=attributes");
