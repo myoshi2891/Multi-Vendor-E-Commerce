@@ -187,7 +187,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
 
     return (
         <div>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                     <Button
                         ref={trigger}
@@ -203,7 +203,7 @@ const CellActions: React.FC<CellActionsProps> = ({ rowData }) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
-                    className={`${styles.theme} ${attributeStyles.surface}`}
+                    className={`${styles.theme} ${styles.popover} ${attributeStyles.surface}`}
                 >
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     {!archived && (

@@ -894,3 +894,7 @@ seller opt-inの売上chartはyAxisWidth=80で通貨tickをSVG内へ収め、typ
 ### 管理マスタ8 Step 2（2026-10-14）
 
 CategoryForm rootに既存controls、FeaturedのFormLabelにcontrolを付与。画像proxy入力は非表示で表示寸法検査から除外。category-treeの業務設計は変更不要。
+
+### 管理マスタ8 Step 3（2026-10-14）
+
+既存DropdownMenuContentにtheme/popoverを併用し、行DropdownMenuだけmodal=falseへ指定。フォーム/Action Props/列データは不変。

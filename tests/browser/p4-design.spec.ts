@@ -1,7 +1,32 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { expectTouch, expectBoundaryContrast } from "./seller-residual-assertions";
+import { expectTouch, expectBoundaryContrast, expectTokenColor } from "./seller-residual-assertions";
 import { masterAccessible, masterFocus } from "./master-eight-assertions";
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight attributes ${width} ${theme}: independent menu surface`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=attributes");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const trigger = page.getByRole("button", { name: "Open menu for Material", exact: true });
+            await masterFocus(trigger);
+            await trigger.press("Enter");
+            const menu = page.getByRole("menu");
+            await expect(menu).toHaveCSS("border-radius", "3px");
+            await expect(menu).toHaveCSS("box-shadow", "none");
+            await expectTokenColor(menu, "background-color", "hsl(var(--popover))");
+            const edit = menu.getByRole("menuitem", { name: "Edit details" });
+            await expectTouch(edit);
+            await edit.focus();
+            await expectBoundaryContrast(edit, "outlineColor");
+            await masterAccessible(page);
+            await page.screenshot({ path: info.outputPath(`master-eight-attributes-${width}-${theme}.png`), fullPage: true });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+        });
+    }
+}
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {

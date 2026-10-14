@@ -244,3 +244,7 @@ DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共�
 ### 管理マスタ8 Step 2（2026-10-14）
 
 独立カテゴリフォームの入力/select/画像/保存とFeatured labelは44px以上。既存親選択とlabel操作・pending/失敗値保持を維持。
+
+### 管理マスタ8 Step 3（2026-10-14）
+
+属性行メニューは3px・影なし・popover面を持つ非モーダル操作。メニュー内/外のkeyboardとaxeを満たし、編集Portalのmodal/focus復帰と既存状態操作を保持する。
