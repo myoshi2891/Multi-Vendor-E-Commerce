@@ -1179,3 +1179,7 @@ Red: 短い商品名の独立linkが高さ28/25pxで3幅失敗。Green/Refactor:
 ### 購入再監査8 Step 6（2026-10-14）
 
 既存実装回帰（新規Redなし）: 未払いerror色・retry境界/focus・pending通知・単一合計を3幅/800pxで確認。commerce16/16（Paid/Pending・invoice失敗・全状態light/dark含む）、注文route RTL6/6、型成功、lint0 errors/既存8 warnings、390px画像目視。注文固有の追加改修なし。実SDKと認証後routeの今回受け入れは専用DB不在で保留、過去履歴は維持。 部分検証のため全体統計は変更しない。
+
+### 購入再監査8 Step 7（2026-10-14）
+
+Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Continue exploringをpurchase-touchへ接続し、折返し/縦揃えと重複media selectorを整理。priority11/11（700px含むfocus/axe/局所scroll/削除/empty/error/retry）、RTL28/28、型成功、lint0 errors/既存8 warnings、390px画像目視。URL・価格・4件制限・focus復帰を保持。 部分検証のため全体統計は変更しない。

@@ -2,6 +2,27 @@ import { storefrontControls, storefrontToken } from "./storefront-eight-assertio
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
+
+for (const width of [1440, 768, 700, 390]) {
+    test(`reaudit compare ${width}: hero navigation touch targets`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=compare");
+        await expect(page.getByRole("region", { name: "Selected products" })).toBeVisible();
+        const home = page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Home" });
+        const explore = page.getByRole("link", { name: "Continue exploring" });
+        for (const link of [home, explore]) {
+            const box = await link.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await expectReadableFocus(link);
+        }
+        await expect(home).toHaveAttribute("href", "/");
+        await expect(explore).toHaveAttribute("href", "/browse");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-compare-${width}.png`), fullPage: true });
+    });
+}
+
 async function accessible(page: Page) {
     expect(
         await page.evaluate(

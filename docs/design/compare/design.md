@@ -1,5 +1,7 @@
 # Compare — 設計（design.md）
 
+2026-10-14: breadcrumbは折返し可能なflex、リンクはinline-flexとpurchase-touch最小幅/高さ。heroFootの導線にも同じ操作領域を適用し、goldのfocusを保持する。
+
 > 中核設計。実装者（Sonnet）が**該当行を特定して差分実装できる**粒度で記述する。
 > 要件 ID は [requirements.md](./requirements.md)、手順は [tasks.md](./tasks.md)。
 

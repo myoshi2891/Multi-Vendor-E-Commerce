@@ -1,5 +1,7 @@
 # Compare — 要件（requirements.md）
 
+2026-10-14再監査: heroのHome/Continue exploringは44×44px以上、暗い面で3:1以上のfocusを持つ。700px境界を含めて横溢れなし。既存URL・4件制限・選択・削除・価格表示を保持。[計画](../../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)。
+
 > 記法: EARS 風（`When/While/The system shall`）。受け入れ基準は `AC-CMP<n>`。
 > 設計は [design.md](./design.md)、実装手順は [tasks.md](./tasks.md)。
 

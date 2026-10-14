@@ -1303,3 +1303,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-14): 購入再監査8 Step 5 DS-PAGE-008 Checkout。既存実装回帰（新規Redなし）: 編集Portalの既存値・全入力境界・close44px・初期focus/復帰・radio保持を3幅と800pxで確認。commerce10/10（pending lock/coupon失敗保持/address保存失敗含む）、関連RTL18/18、型成功、lint0 errors/既存8 warnings、390px画像目視。Checkout固有の追加改修なし。
 
 - ✅ Completed (2026-10-14): 購入再監査8 Step 6 DS-PAGE-003 注文詳細。既存実装回帰（新規Redなし）: 未払いerror色・retry境界/focus・pending通知・単一合計を3幅/800pxで確認。commerce16/16（Paid/Pending・invoice失敗・全状態light/dark含む）、注文route RTL6/6、型成功、lint0 errors/既存8 warnings、390px画像目視。注文固有の追加改修なし。実SDKと認証後routeの今回受け入れは専用DB不在で保留、過去履歴は維持。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 7 DS-PAGE-009 比較。Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Continue exploringをpurchase-touchへ接続し、折返し/縦揃えと重複media selectorを整理。priority11/11（700px含むfocus/axe/局所scroll/削除/empty/error/retry）、RTL28/28、型成功、lint0 errors/既存8 warnings、390px画像目視。URL・価格・4件制限・focus復帰を保持。
