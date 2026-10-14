@@ -1229,3 +1229,7 @@ Red: Activate/Deactivate button高さ40pxで6件失敗。Green/Refactor: ToggleC
 ### 管理マスタ8 Step 7（2026-10-14）
 
 Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへcontrols、Active labelへcontrolと共有controlの最小幅44px、native checkbox accentをprimaryへ接続。p4新旧作成12/12、関連RTL23/23、型成功、lint0 errors/既存8 warnings。scope切替/Store ID・日時/割引/Active label操作・境界/focus・保存失敗/retry・axeを確認。3幅/light/dark、scope/storeId/isActive/payloadと既存refreshを保持。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 8（2026-10-14）
+
+既存実装回帰（新規Redなし）: 共有MasterDialog/SaveFeedbackの適用を確認。p4新旧一覧+対象外独立作成18/18、関連RTL15/15、型成功、lint0 errors/既存8 warnings。3幅/light/dark・取得失敗/retry44px・入力境界/focus・編集/削除/値保持/成功・axe、390px dark画像確認。追加の固有改修なし。name/url/作成と編集のID/遷移を保持。 部分検証のため全体統計は変更しない。

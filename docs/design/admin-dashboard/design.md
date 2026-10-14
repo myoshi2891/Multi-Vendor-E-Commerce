@@ -914,3 +914,7 @@ ToggleCoupon buttonへ既存controlを接続。列factory/表示投影/Action引
 ### 管理マスタ8 Step 7（2026-10-14）
 
 CouponForm rootへcontrolsとActive FormLabelへcontrolを追加し、controlの最小幅をseller-touchへ統一。native checkboxのaccentは既存primary token。既定primitive callerは変更しない。
+
+### 管理マスタ8 Step 8（2026-10-14）
+
+MasterDialog/SaveFeedbackの既存共有変更で一覧の残存操作を充足するため追加実装なし。OfferTagForm/列factory/既存Action Propsは維持。

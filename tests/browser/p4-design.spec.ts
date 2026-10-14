@@ -5,6 +5,37 @@ import { masterAccessible, masterFocus } from "./master-eight-assertions";
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {
+        test(`master eight offertags ${width} ${theme}: load retry and edit controls`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=offertags&loadfailure");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const trigger = page.getByRole("button", { name: "Edit offer tag Summer offers with a long seasonal title", exact: true });
+            await expectTouch(trigger);
+            await trigger.click();
+            const dialog = page.getByRole("dialog");
+            await expect(dialog.getByRole("alert")).toContainText("Could not load information");
+            const retry = dialog.getByRole("button", { name: "Retry load" });
+            await expectTouch(retry);
+            await masterFocus(retry);
+            await retry.press("Enter");
+            const name = dialog.getByLabel("Offer tag name", { exact: true });
+            await expect(name).toHaveValue("Summer offers with a long seasonal title");
+            for (const field of await dialog.getByRole("textbox").all()) {
+                await expectTouch(field);
+                await expectBoundaryContrast(field, "borderTopColor");
+            }
+            await masterFocus(name);
+            await expectTouch(dialog.getByRole("button", { name: "Save offer tag", exact: true }));
+            await masterAccessible(page);
+            await page.screenshot({ path: info.outputPath(`master-eight-offertags-${width}-${theme}.png`), fullPage: true });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
         test(`master eight adminnewcoupon ${width} ${theme}: independent form and active label`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 1000 });
             await page.goto("/?screen=adminnewcoupon");

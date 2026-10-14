@@ -48,7 +48,7 @@ QA_HANDOFF/TEST_IMPLEMENTATION_PLAN/全体PROGRESSを更新。全体統計/cover
 - [x] Step 5 属性選択肢。
 - [x] Step 6 クーポン一覧。
 - [x] Step 7 クーポン作成。
-- [ ] Step 8 オファータグ一覧。
+- [x] Step 8 オファータグ一覧。
 - [ ] 最終統合・文書同期。
 
 今回8画面は対応中。既存台帳の画面全体状態は保持し、今回の結果を別記録する。
@@ -80,3 +80,7 @@ Red: Activate/Deactivate button高さ40pxで6件失敗。Green/Refactor: ToggleC
 ### Step 7 DS-PAGE-044 クーポン作成
 
 Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへcontrols、Active labelへcontrolと共有controlの最小幅44px、native checkbox accentをprimaryへ接続。p4新旧作成12/12、関連RTL23/23、型成功、lint0 errors/既存8 warnings。scope切替/Store ID・日時/割引/Active label操作・境界/focus・保存失敗/retry・axeを確認。3幅/light/dark、scope/storeId/isActive/payloadと既存refreshを保持。
+
+### Step 8 DS-PAGE-047 オファータグ一覧
+
+既存実装回帰（新規Redなし）: 共有MasterDialog/SaveFeedbackの適用を確認。p4新旧一覧+対象外独立作成18/18、関連RTL15/15、型成功、lint0 errors/既存8 warnings。3幅/light/dark・取得失敗/retry44px・入力境界/focus・編集/削除/値保持/成功・axe、390px dark画像確認。追加の固有改修なし。name/url/作成と編集のID/遷移を保持。
