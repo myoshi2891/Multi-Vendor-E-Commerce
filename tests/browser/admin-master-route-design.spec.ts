@@ -13,9 +13,20 @@ type Prepared = {
     coupon: { code: string };
     offerTag: { name: string };
 };
+const hasStrings = (value: unknown, keys: readonly string[]): value is Record<string, string> =>
+    typeof value === "object" && value !== null &&
+    keys.every(key => typeof (value as Record<string, unknown>)[key] === "string" && (value as Record<string, string>)[key] !== "");
+const isPrepared = (value: unknown): value is Prepared =>
+    hasStrings(value, ["adminEmail"]) &&
+    hasStrings((value as Record<string, unknown>).category, ["id", "name", "url"]) &&
+    hasStrings((value as Record<string, unknown>).attribute, ["id", "name"]) &&
+    hasStrings((value as Record<string, unknown>).coupon, ["code"]) &&
+    hasStrings((value as Record<string, unknown>).offerTag, ["name"]);
 const manifest = process.env.DESIGN_ADMIN_MASTER_ROUTE;
 if (!manifest) throw new Error("Set DESIGN_ADMIN_MASTER_ROUTE to the read-only preparation manifest.");
-const prepared: Prepared = JSON.parse(readFileSync(manifest, "utf8"));
+const parsedManifest: unknown = JSON.parse(readFileSync(manifest, "utf8"));
+if (!isPrepared(parsedManifest)) throw new Error(`Invalid preparation manifest: ${manifest}`);
+const prepared = parsedManifest;
 const routes = [
     { id: "DS-PAGE-043", path: "/dashboard/admin/categories", dialogTrigger: `Edit category ${prepared.category.name}`, search: prepared.category.name },
     { id: "DS-PAGE-042", path: "/dashboard/admin/categories/new" },
