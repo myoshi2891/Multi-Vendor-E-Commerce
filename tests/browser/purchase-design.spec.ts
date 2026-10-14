@@ -2,7 +2,27 @@ import { supportAccessible as accessible } from "./support-eight-assertions";
 import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { expectReadableFocus } from "./purchase-assertions";
+import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
+
+for (const width of [1440, 768, 390]) {
+    test(`reaudit browse ${width}: sort boundary and keyboard selection`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/browse?screen=browse&size=M&size=L&search=piece");
+        const trigger = page.getByRole("button", { name: /^Sort by / });
+        await expectReadableBorder(trigger);
+        await expectReadableFocus(trigger);
+        await trigger.press("Enter");
+        const option = page.getByRole("menuitemradio", { name: "New Arrivals" });
+        await option.focus();
+        await expect(option).toHaveCSS("background-color", "rgb(236, 231, 218)");
+        await option.press("Enter");
+        await expect(page).toHaveURL(/sort=new-arrivals/);
+        expect(new URL(page.url()).searchParams.getAll("size")).toEqual(["M", "L"]);
+        expect(new URL(page.url()).searchParams.get("search")).toBe("piece");
+        await expect(trigger).toBeFocused();
+        await page.screenshot({ path: info.outputPath(`reaudit-browse-${width}.png`), fullPage: true });
+    });
+}
 
 for (const width of [1440, 768, 390]) {
     test(`acceptance cart ${width}: branded breadcrumb and unavailable item`, async ({ page }, info) => {

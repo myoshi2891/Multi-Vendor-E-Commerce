@@ -1651,3 +1651,7 @@ Red: workspaceリンク高さ24pxで6/6失敗。古いstore adapterによる保�
 - Green: product-edit / product / click-to-add / 商品ページdesign 110/110。Integration の編集往復（実DBで読込→無変更保存、属性保持・他店舗null）2/2。型0、lint 0 errors/既存8 warnings、`check:playwright` 成功。
 - 実route: `p3-residual-route` に「動的行の入力欄にUUID形式の値が無いこと」を追加し、再準備後に suite 全体 **54/54**。390px dark 画像で色 Black・サイズ M/10/99/0・仕様 E2E material/Sterling silver を目視。DS-PAGE-059 を検証済みへ更新。
 - テスト件数は不変（既存テストの期待値訂正と既存 browser テストへの assertion 追加のみ）のため全体統計は再計測しない。
+
+### 購入再監査8 Step 1 — DS-PAGE-006 商品一覧（2026-10-14）
+
+Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit browseとfilter/sort6/6、browse RTL22/22、型成功、lint0 errors/既存8 warnings。境界/hover/Portal選択面を既存purchase tokensへ統一し、複数size/search/URLとfocus復帰を保持。初回listen EPERMと変更後ラベルに対する旧テストlocatorの失敗は製品Redに含めない。

@@ -1155,3 +1155,7 @@ seller限定の動的行削除は残る行の先頭入力へfocusを戻す。最
 ### P3残存8 Step 8 DS-PAGE-065（2026-10-13）
 
 独立headerのworkspaceリンクを44pxとhoverへ接続し、ThemeToggle Portalへ既存popover opt-inを適用。フォーム/payload/no-id/返却URL/画像adapter/Featured/validation/pending/error/retryを保持。sixのupsertStore adapterを現行のok/id/url結果へ修正（業務コード変更なし）。 six作成/設定24/24、関連RTL15/15、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### 購入再監査8 Step 1（2026-10-14）
+
+Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit browseとfilter/sort6/6、browse RTL22/22、型成功、lint0 errors/既存8 warnings。境界/hover/Portal選択面を既存purchase tokensへ統一し、複数size/search/URLとfocus復帰を保持。初回listen EPERMと変更後ラベルに対する旧テストlocatorの失敗は製品Redに含めない。 部分検証のため全体統計は変更しない。

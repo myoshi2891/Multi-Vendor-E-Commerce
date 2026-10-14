@@ -39,7 +39,7 @@ API/DB schema/認可/金額/在庫/決済条件は変更しない。共有部品
 ## 実施状況
 
 - [x] 計画保存・対象選定。
-- [ ] Step 1 商品一覧。
+- [x] Step 1 商品一覧。
 - [ ] Step 2 店舗詳細。
 - [ ] Step 3 商品詳細。
 - [ ] Step 4 カート。
@@ -52,3 +52,7 @@ API/DB schema/認可/金額/在庫/決済条件は変更しない。共有部品
 ## 証跡
 
 今回の8画面は対応中。既存画面台帳の判定・過去の受け入れ記録を維持し、今回の結果を追加する。
+
+### Step 1 DS-PAGE-006 商品一覧
+
+Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit browseとfilter/sort6/6、browse RTL22/22、型成功、lint0 errors/既存8 warnings。境界/hover/Portal選択面を既存purchase tokensへ統一し、複数size/search/URLとfocus復帰を保持。初回listen EPERMと変更後ラベルに対する旧テストlocatorの失敗は製品Redに含めない。

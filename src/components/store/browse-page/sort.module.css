@@ -11,7 +11,7 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     column-gap: 10px;
-    border: 1px solid #aeb5a6;
+    border: 1px solid var(--purchase-control-line);
     background: transparent;
     padding: 0 13px;
     color: var(--purchase-ink);
@@ -24,8 +24,8 @@
 }
 .trigger:hover,
 .trigger[data-state="open"] {
-    border-color: #9e8552;
-    background: #eae5d8;
+    border-color: var(--purchase-link);
+    background: var(--purchase-selected);
 }
 .trigger:focus-visible {
     outline: 2px solid var(--purchase-focus);
@@ -35,7 +35,7 @@
     display: flex;
     align-items: center;
     align-self: stretch;
-    border-right: 1px solid #bbc2b5;
+    border-right: 1px solid var(--purchase-line);
     padding-right: 12px;
     color: var(--purchase-muted);
     font-size: 11px;
@@ -51,7 +51,7 @@
 }
 .chevron {
     flex-shrink: 0;
-    color: #8a7650;
+    color: var(--purchase-link);
     transition: transform 0.2s;
 }
 .chevronOpen {
@@ -62,7 +62,7 @@
     width: var(--radix-dropdown-menu-trigger-width);
     max-width: calc(100vw - 32px);
     border-radius: 0;
-    border-color: #c9c7b8;
+    border-color: var(--purchase-control-line);
     background: var(--purchase-page);
     color: var(--purchase-ink);
     padding: 6px;
@@ -74,7 +74,7 @@
     cursor: pointer;
 }
 .option[data-highlighted] {
-    background: #e4ddcb;
+    background: var(--purchase-selected);
     color: var(--purchase-ink);
 }
 @media (max-width: 540px) {

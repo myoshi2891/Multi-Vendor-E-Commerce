@@ -916,3 +916,10 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 8 DS-PAGE-065 店舗作成: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
 
 - [x] P3残存8最終統合: 全体Jest/coverage・補助239/239・型/lint/harness・仕様/QA/進捗同期。認証後実route/SDKは別判定、67画面/246部品の既存履歴を保持。
+
+
+### P1・P2購入再監査8画面（2026-10-14）
+
+[保存計画](priority-eight-purchase-reaudit-design-system-plan.md)。既存台帳と履歴を保持し、今回の差分・回帰・実route検証を別記録する。
+
+- [x] Step 1 DS-PAGE-006 商品一覧: 改修または既存実装回帰・補助検証・仕様同期。今回の実routeは最終検証欄参照。

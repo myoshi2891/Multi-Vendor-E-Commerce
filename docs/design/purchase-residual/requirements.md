@@ -41,3 +41,7 @@ Product（DS-PAGE-019）のカテゴリ、評価フィルター、boutique操作
 purchase-themeへcontrol-line（#877957）、line-on-dark、divider-on-dark、dark-hover、image、overlay、danger-on-darkを追加。roleごとに面との可読性を保ち、light入力境界とfocusは3:1以上。画像面・overlayは装飾役割で同じcontrast基準を直接適用しない。product-list空状態をCSS Moduleのthemeへ接続し、旧caller既定表示を保持。
 
 [計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。API/schema/認可/金額/注文決済/PDF内容は変更せず、[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は更新不要。
+
+### 再監査 Step 1 DS-PAGE-006 商品一覧（2026-10-14）
+
+ProductSortの通常・hover境界は隣接面に対して3:1以上とし、Portalの選択面はpurchase-selected。並び替え時に繰り返しsizeとsearchを保持する。API/DB/認可/金額契約は不変。
