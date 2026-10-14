@@ -59,3 +59,7 @@ ProductSortの通常・hover境界は隣接面に対して3:1以上とし、Port
 ### 再監査 Step 4 DS-PAGE-007 カート（2026-10-14）
 
 商品名の独立詳細linkは名称の長さにかかわらず44×44px以上。画像link・金額・variant/size付きURL・数量/送料契約を変更しない。
+
+### 再監査 Step 5 DS-PAGE-008 Checkout（2026-10-14）
+
+編集住所Portalを800px境界も含めて検証。既存値・入力境界3:1・close44px・focus復帰・選択住所保持を満たす。既存住所/coupon/注文ロックの要件・設計・タスクは変更不要。

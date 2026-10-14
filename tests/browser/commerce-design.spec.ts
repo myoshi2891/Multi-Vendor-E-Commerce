@@ -2,6 +2,35 @@ import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 
+for (const width of [1440, 800, 768, 390]) {
+    test(`reaudit checkout ${width}: edit portal retains address and focus`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=checkout");
+        await expect(page.getByRole("button", { name: "Place order", exact: true })).toBeEnabled();
+        const trigger = page.getByRole("button", { name: /^Edit address for/ }).first();
+        await expectReadableFocus(trigger);
+        await trigger.press("Enter");
+        const dialog = page.getByRole("dialog", { name: "Edit address", exact: true });
+        const firstName = dialog.getByLabel("First name", { exact: true });
+        await expect(firstName).toBeFocused();
+        expect(await firstName.inputValue()).not.toBe("");
+        for (const field of await dialog.locator('input:not([type="checkbox"]), select').all()) {
+            await expectReadableBorder(field);
+        }
+        const close = dialog.getByRole("button", { name: "Close address dialog" });
+        const box = await close.boundingBox();
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-checkout-${width}.png`), fullPage: true });
+        await close.focus();
+        await close.press("Enter");
+        await expect(dialog).toBeHidden();
+        await expect(trigger).toBeFocused();
+        await expect(page.getByRole("radio").first()).toBeChecked();
+    });
+}
+
 for (const width of [1440, 768, 390]) {
     test(`acceptance order ${width}: breadcrumb and invoice failure feedback`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
