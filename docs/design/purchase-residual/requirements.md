@@ -63,3 +63,7 @@ ProductSortの通常・hover境界は隣接面に対して3:1以上とし、Port
 ### 再監査 Step 5 DS-PAGE-008 Checkout（2026-10-14）
 
 編集住所Portalを800px境界も含めて検証。既存値・入力境界3:1・close44px・focus復帰・選択住所保持を満たす。既存住所/coupon/注文ロックの要件・設計・タスクは変更不要。
+
+### 再監査 Step 6 DS-PAGE-003 注文詳細（2026-10-14）
+
+未払い初期化失敗はlight面のdanger色、再試行はcontrol-lineと可読focusを持つ。800px境界・再試行中通知・支払欄条件・単一合計を回帰確認。既存注文/決済/PDFの要件・設計・タスクは変更不要。

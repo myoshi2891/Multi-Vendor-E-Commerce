@@ -931,3 +931,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 4 DS-PAGE-007 カート: 改修または既存実装回帰・補助検証・仕様同期。今回の実routeは最終検証欄参照。
 
 - [x] Step 5 DS-PAGE-008 Checkout: 改修または既存実装回帰・補助検証・仕様同期。今回の実routeは最終検証欄参照。
+
+- [x] Step 6 DS-PAGE-003 注文詳細: 改修または既存実装回帰・補助検証・仕様同期。今回の実routeは最終検証欄参照。

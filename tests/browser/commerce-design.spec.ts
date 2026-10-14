@@ -3,6 +3,27 @@ import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 
 for (const width of [1440, 800, 768, 390]) {
+    test(`reaudit order ${width}: unpaid error and retry remain readable`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?scenario=order-pending");
+        const error = page.getByRole("alert");
+        await expect(error).toHaveText("Payment could not be initialized.");
+        await expect(error).toHaveCSS("color", "rgb(138, 48, 40)");
+        const retry = page.getByRole("button", { name: "Retry card payment" });
+        await expectReadableBorder(retry);
+        await expectReadableFocus(retry);
+        await retry.press("Enter");
+        await expect(page.getByRole("status")).toHaveText("Loading card payment…");
+        await expect(error).toHaveText("Payment could not be initialized.");
+        await expectReadableFocus(page.getByRole("button", { name: "Retry card payment" }));
+        await expect(page.getByTestId("order-total")).toHaveCount(1);
+        await expect(page.getByTestId("order-payment")).toHaveCount(1);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-order-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 800, 768, 390]) {
     test(`reaudit checkout ${width}: edit portal retains address and focus`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?scenario=checkout");

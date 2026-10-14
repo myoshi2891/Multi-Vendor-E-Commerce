@@ -44,7 +44,7 @@ API/DB schema/認可/金額/在庫/決済条件は変更しない。共有部品
 - [x] Step 3 商品詳細。
 - [x] Step 4 カート。
 - [x] Step 5 Checkout。
-- [ ] Step 6 注文詳細。
+- [x] Step 6 注文詳細。
 - [ ] Step 7 比較。
 - [ ] Step 8 Wishlist。
 - [ ] 最終統合・文書同期。
@@ -72,3 +72,7 @@ Red: 短い商品名の独立linkが高さ28/25pxで3幅失敗。Green/Refactor:
 ### Step 5 DS-PAGE-008 Checkout
 
 既存実装回帰（新規Redなし）: 編集Portalの既存値・全入力境界・close44px・初期focus/復帰・radio保持を3幅と800pxで確認。commerce10/10（pending lock/coupon失敗保持/address保存失敗含む）、関連RTL18/18、型成功、lint0 errors/既存8 warnings、390px画像目視。Checkout固有の追加改修なし。
+
+### Step 6 DS-PAGE-003 注文詳細
+
+既存実装回帰（新規Redなし）: 未払いerror色・retry境界/focus・pending通知・単一合計を3幅/800pxで確認。commerce16/16（Paid/Pending・invoice失敗・全状態light/dark含む）、注文route RTL6/6、型成功、lint0 errors/既存8 warnings、390px画像目視。注文固有の追加改修なし。実SDKと認証後routeの今回受け入れは専用DB不在で保留、過去履歴は維持。
