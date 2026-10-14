@@ -5,6 +5,22 @@ import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 
 for (const width of [1440, 768, 390]) {
+    test(`reaudit cart ${width}: short product title remains a touch target`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=cart&short-name=1");
+        const title = page.getByTestId("cart-item-name");
+        await expect(title).toHaveText("Pearl ・ Ivory");
+        const box = await title.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+        await expect(title).toHaveAttribute("href", /\/product\/.+\/.+\?size=/);
+        await expectReadableFocus(title);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-cart-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
     test(`reaudit product ${width}: enlarged image contains keyboard focus`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/?screen=product&audit=1&gallery=1");

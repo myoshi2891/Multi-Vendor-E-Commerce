@@ -1297,3 +1297,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-14): 購入再監査8 Step 2 DS-PAGE-037 店舗詳細。既存実装回帰（新規Redなし）: 共通sort修正を店舗でも確認。purchase店舗10/10（1440/850/768/390px、長文/空/カード操作、境界contrast・Portal checked・Escape/focus・URL保持・axe・overflow）、RTL23/23。390px画像目視。型/lintは最終再実行へ継続。店舗固有の追加改修なし。
 
 - ✅ Completed (2026-10-14): 購入再監査8 Step 3 DS-PAGE-019 商品詳細。Red: 拡大画像を開いてもtriggerにfocusが残る（browser3幅、RTL1件）。Green/Refactor: Radix Dialogへ置換しPortalにtheme/overlayを明示、初期focus・trap・Escape/Close復帰を追加。商品browser12/12、overlay追加後3/3再確認、関連RTL64/64（最終swiper13/13）、型成功、lint0 errors/既存8 warnings。画像選択/alt/在庫/共有契約は保持。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 4 DS-PAGE-007 カート。Red: 短い商品名の独立linkが高さ28/25pxで3幅失敗。Green/Refactor: productNameへinline-flexと44px最小領域を適用、fixtureへ短い名称を追加。purchase11/11、cart関連RTL52/52、型成功、lint0 errors/既存8 warnings。商品URL・数量・送料・在庫制約・失敗後保持を維持。

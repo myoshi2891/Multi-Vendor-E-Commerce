@@ -1,5 +1,7 @@
 # Cart — requirements
 
+2026-10-14再監査: 商品名の独立詳細リンクは短い名称でも44×44px以上。既存variant/size付きURL、数量・送料・在庫・失敗後保持を維持する。[計画](../../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)。
+
 - 対象: `/cart`（DS-PAGE-007）。2026-10-01。
 - ホーム・商品詳細と揃えた深緑、アイボリー、ゴールド、セリフ見出しを使う。
 - 空／読み込み／商品入り／在庫切れ／同期失敗／保存中／保存失敗を読みやすく表示する。

@@ -1663,3 +1663,7 @@ Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit 
 ### 購入再監査8 Step 3 — DS-PAGE-019 商品詳細（2026-10-14）
 
 Red: 拡大画像を開いてもtriggerにfocusが残る（browser3幅、RTL1件）。Green/Refactor: Radix Dialogへ置換しPortalにtheme/overlayを明示、初期focus・trap・Escape/Close復帰を追加。商品browser12/12、overlay追加後3/3再確認、関連RTL64/64（最終swiper13/13）、型成功、lint0 errors/既存8 warnings。画像選択/alt/在庫/共有契約は保持。
+
+### 購入再監査8 Step 4 — DS-PAGE-007 カート（2026-10-14）
+
+Red: 短い商品名の独立linkが高さ28/25pxで3幅失敗。Green/Refactor: productNameへinline-flexと44px最小領域を適用、fixtureへ短い名称を追加。purchase11/11、cart関連RTL52/52、型成功、lint0 errors/既存8 warnings。商品URL・数量・送料・在庫制約・失敗後保持を維持。

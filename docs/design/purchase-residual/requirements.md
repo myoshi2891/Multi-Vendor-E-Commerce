@@ -55,3 +55,7 @@ ProductSortの通常・hover境界は隣接面に対して3:1以上とし、Port
 ### 再監査 Step 3 DS-PAGE-019 商品詳細（2026-10-14）
 
 拡大画像はモーダルPortalとしてfocus trapとtrigger復帰を備え、背景scrollをロックする。purchase themeをPortalでcomposeしgold close/focus・dark面・44px操作を使用。既存ギャラリーとplaceholder条件は維持。
+
+### 再監査 Step 4 DS-PAGE-007 カート（2026-10-14）
+
+商品名の独立詳細linkは名称の長さにかかわらず44×44px以上。画像link・金額・variant/size付きURL・数量/送料契約を変更しない。
