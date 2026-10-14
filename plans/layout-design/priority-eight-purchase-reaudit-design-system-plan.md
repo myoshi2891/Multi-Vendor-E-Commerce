@@ -41,7 +41,7 @@ API/DB schema/認可/金額/在庫/決済条件は変更しない。共有部品
 - [x] 計画保存・対象選定。
 - [x] Step 1 商品一覧。
 - [x] Step 2 店舗詳細。
-- [ ] Step 3 商品詳細。
+- [x] Step 3 商品詳細。
 - [ ] Step 4 カート。
 - [ ] Step 5 Checkout。
 - [ ] Step 6 注文詳細。
@@ -60,3 +60,7 @@ Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit 
 ### Step 2 DS-PAGE-037 店舗詳細
 
 既存実装回帰（新規Redなし）: 共通sort修正を店舗でも確認。purchase店舗10/10（1440/850/768/390px、長文/空/カード操作、境界contrast・Portal checked・Escape/focus・URL保持・axe・overflow）、RTL23/23。390px画像目視。型/lintは最終再実行へ継続。店舗固有の追加改修なし。
+
+### Step 3 DS-PAGE-019 商品詳細
+
+Red: 拡大画像を開いてもtriggerにfocusが残る（browser3幅、RTL1件）。Green/Refactor: Radix Dialogへ置換しPortalにtheme/overlayを明示、初期focus・trap・Escape/Close復帰を追加。商品browser12/12、overlay追加後3/3再確認、関連RTL64/64（最終swiper13/13）、型成功、lint0 errors/既存8 warnings。画像選択/alt/在庫/共有契約は保持。

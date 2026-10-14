@@ -2,6 +2,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { ProductVariantImage } from "@prisma/client";
 import ProductSwiper from "./product-swiper";
+import userEvent from "@testing-library/user-event";
 
 describe("ProductSwiper Component", () => {
     const mockImages: ProductVariantImage[] = [
@@ -77,6 +78,18 @@ describe("ProductSwiper Component", () => {
             { ...mockImages[1], id: 'img-3', url: '/uploads/side.jpg' },
         ]
 
+        it('moves focus into the enlarged image and restores the trigger on Escape', async () => {
+            const user = userEvent.setup()
+            render(<ProductSwiper images={photos} activeImage={photos[0]} setActiveImage={jest.fn()} />)
+            const trigger = screen.getByRole('button', { name: 'Enlarge product image' })
+            trigger.focus()
+            await user.keyboard('{Enter}')
+            expect(screen.getByRole('button', { name: 'Close image' })).toHaveFocus()
+            await user.keyboard('{Escape}')
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+            expect(trigger).toHaveFocus()
+        })
+
         it('opens an enlarged image and closes it with the close button', () => {
             // Arrange
             render(<ProductSwiper images={photos} activeImage={photos[0]} setActiveImage={jest.fn()} productName="Pearl Necklace" />)
@@ -98,9 +111,9 @@ describe("ProductSwiper Component", () => {
             fireEvent.click(screen.getByRole('button', { name: 'Enlarge product image' }))
 
             // Act & Assert
-            fireEvent.keyDown(window, { key: 'Enter' })
+            fireEvent.keyDown(screen.getByRole('button', { name: 'Close image' }), { key: 'Enter' })
             expect(screen.getByRole('dialog')).toBeInTheDocument()
-            fireEvent.keyDown(window, { key: 'Escape' })
+            fireEvent.keyDown(screen.getByRole('button', { name: 'Close image' }), { key: 'Escape' })
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
         })
 

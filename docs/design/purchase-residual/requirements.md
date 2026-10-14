@@ -35,6 +35,8 @@ Product（DS-PAGE-019）のカテゴリ、評価フィルター、boutique操作
 
 カテゴリdropdownと明るい商品情報面は濃いfocus、暗い購入面はgoldを使う。カテゴリリンクからEscapeで閉じるとtriggerへfocusを戻す。画像切替・拡大画像closeは44×44px以上。画像/variant/size/価格/在庫・レビュー・共有契約は保持する。
 
+拡大画像はRadix DialogのPortalを使用し、独立したpurchase themeを持つ。開くとClose imageへfocusし、Tab/Shift+Tabを内部に留める。EscapeまたはCloseで元の画像triggerへfocusを戻す。背景スクロールをロックし、画像URL・選択・altとplaceholderの表示条件を保持する。
+
 
 ## 8画面共通役割の受け入れ（2026-10-11）
 
@@ -49,3 +51,7 @@ ProductSortの通常・hover境界は隣接面に対して3:1以上とし、Port
 ### 再監査 Step 2 DS-PAGE-037 店舗詳細（2026-10-14）
 
 店舗のProductSortにも共通の境界contrast・選択面を適用し、850px境界と空状態の/store/fixture#collection導線を回帰確認。店舗のデータ取得・rating・URL・商品操作の設計変更は不要。
+
+### 再監査 Step 3 DS-PAGE-019 商品詳細（2026-10-14）
+
+拡大画像はモーダルPortalとしてfocus trapとtrigger復帰を備え、背景scrollをロックする。purchase themeをPortalでcomposeしgold close/focus・dark面・44px操作を使用。既存ギャラリーとplaceholder条件は維持。

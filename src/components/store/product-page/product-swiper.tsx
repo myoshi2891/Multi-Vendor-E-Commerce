@@ -1,7 +1,8 @@
 'use client'
 
 import Image from 'next/image'
-import { Dispatch, SetStateAction, useEffect, useState } from 'react'
+import { Dispatch, SetStateAction, useState } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
 import { ProductVariantImage } from '@prisma/client'
 import { ArrowLeft, ArrowRight, X, ZoomIn } from 'lucide-react'
 import styles from './product.module.css'
@@ -18,14 +19,6 @@ export default function ProductSwiper({
     productName?: string
 }>) {
     const [isZoomOpen, setIsZoomOpen] = useState(false)
-    useEffect(() => {
-        if (!isZoomOpen) return
-        const closeOnEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') setIsZoomOpen(false)
-        }
-        window.addEventListener('keydown', closeOnEscape)
-        return () => window.removeEventListener('keydown', closeOnEscape)
-    }, [isZoomOpen])
     if (!images?.length) return null
 
     const activeIndex = Math.max(0, images.findIndex((image) => image.id === activeImage?.id))
@@ -37,6 +30,7 @@ export default function ProductSwiper({
     }
 
     return (
+        <Dialog.Root open={isZoomOpen} onOpenChange={setIsZoomOpen}>
         <div className={styles.gallery}>
             <div className={`${styles.galleryMain} ${hasPlaceholder ? styles.galleryPlaceholder : ''}`}>
                 <span className={styles.galleryLabel}>✦ &nbsp; THE CURATED EDIT</span>
@@ -46,7 +40,8 @@ export default function ProductSwiper({
                         <div><span>THE ART OF FEELING EXTRAORDINARY</span><strong>{productName || 'A curated piece'}</strong><small>Product imagery coming soon</small></div>
                     </div>
                 ) : (
-                    <button type="button" className={styles.zoomTrigger} onClick={() => setIsZoomOpen(true)} aria-label="Enlarge product image">
+                    <Dialog.Trigger asChild>
+                    <button type="button" className={styles.zoomTrigger} aria-label="Enlarge product image">
                         <Image
                             src={selected.url}
                             alt={selected.alt || productName || 'Product image'}
@@ -57,6 +52,7 @@ export default function ProductSwiper({
                         />
                         <span><ZoomIn size={14} /> View detail</span>
                     </button>
+                    </Dialog.Trigger>
                 )}
                 {images.length > 1 && !allPlaceholders && (
                     <div className={styles.galleryControls}>
@@ -85,12 +81,18 @@ export default function ProductSwiper({
                 </div>
             )}
             {isZoomOpen && !hasPlaceholder && (
-                // fill 画像がダイアログ全面を覆うため背景クリックは到達しない。閉じる操作は Close ボタンと Escape キーに集約する
-                <dialog open className={styles.lightbox} aria-modal="true" aria-label="Enlarged product image">
-                    <button type="button" className={styles.lightboxClose} onClick={() => setIsZoomOpen(false)} aria-label="Close image"><X size={22} /></button>
+                <Dialog.Portal>
+                <Dialog.Overlay className={styles.lightboxOverlay} />
+                <Dialog.Content className={styles.lightbox} aria-describedby={undefined}>
+                    <Dialog.Title className="sr-only">Enlarged product image</Dialog.Title>
+                    <Dialog.Close asChild>
+                    <button type="button" className={styles.lightboxClose} aria-label="Close image"><X size={22} /></button>
+                    </Dialog.Close>
                     <Image src={selected.url} alt={selected.alt || productName || 'Product image'} fill sizes="100vw" />
-                </dialog>
+                </Dialog.Content>
+                </Dialog.Portal>
             )}
         </div>
+        </Dialog.Root>
     )
 }

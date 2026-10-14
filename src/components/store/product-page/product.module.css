@@ -42,9 +42,11 @@
 .galleryMain:hover .galleryImage { transform: scale(1.035); }
 .zoomTrigger { position: absolute; inset: 0; width: 100%; cursor: zoom-in; }
 .zoomTrigger > span { position: absolute; z-index: 2; right: 18px; top: 20px; display: flex; align-items: center; gap: 6px; padding: 8px 10px; background: #f4f2eacb; color: #1a2e22; font-size: 10px; }
-.lightbox { position: fixed; z-index: 100; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: #07100bea; display: grid; place-items: center; }
+.lightbox { composes: theme from "../shared/purchase-theme.module.css"; position: fixed; z-index: 100; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; background: var(--purchase-dark); display: grid; place-items: center; }
 .lightbox img { object-fit: contain; padding: clamp(20px, 5vw, 80px); }
-.lightboxClose { position: absolute; z-index: 2; top: 25px; right: 25px; width: var(--purchase-touch); height: var(--purchase-touch); display: grid; place-items: center; background: #d4ba83; color: #182a1c; cursor: pointer; }
+.lightboxClose { position: absolute; z-index: 2; top: 25px; right: 25px; width: var(--purchase-touch); height: var(--purchase-touch); display: grid; place-items: center; background: var(--purchase-gold); color: var(--purchase-ink); cursor: pointer; }
+.lightboxClose:focus-visible { outline: 2px solid var(--purchase-gold); outline-offset: 4px; }
+.lightboxOverlay { composes: theme from "../shared/purchase-theme.module.css"; position: fixed; z-index: 99; inset: 0; background: var(--purchase-overlay); }
 .galleryPlaceholder { background: radial-gradient(circle at 55% 46%, #2c4f3c, #0a1812 70%); }
 .placeholderArt { position: absolute; inset: 0; }
 .placeholderArt > img { object-fit: contain; object-position: center 36%; padding: 0 14% 16%; opacity: .88; }

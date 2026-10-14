@@ -1659,3 +1659,7 @@ Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit 
 ### 購入再監査8 Step 2 — DS-PAGE-037 店舗詳細（2026-10-14）
 
 既存実装回帰（新規Redなし）: 共通sort修正を店舗でも確認。purchase店舗10/10（1440/850/768/390px、長文/空/カード操作、境界contrast・Portal checked・Escape/focus・URL保持・axe・overflow）、RTL23/23。390px画像目視。型/lintは最終再実行へ継続。店舗固有の追加改修なし。
+
+### 購入再監査8 Step 3 — DS-PAGE-019 商品詳細（2026-10-14）
+
+Red: 拡大画像を開いてもtriggerにfocusが残る（browser3幅、RTL1件）。Green/Refactor: Radix Dialogへ置換しPortalにtheme/overlayを明示、初期focus・trap・Escape/Close復帰を追加。商品browser12/12、overlay追加後3/3再確認、関連RTL64/64（最終swiper13/13）、型成功、lint0 errors/既存8 warnings。画像選択/alt/在庫/共有契約は保持。

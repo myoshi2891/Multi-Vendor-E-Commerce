@@ -4,6 +4,32 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 
+for (const width of [1440, 768, 390]) {
+    test(`reaudit product ${width}: enlarged image contains keyboard focus`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=product&audit=1&gallery=1");
+        const trigger = page.getByRole("button", { name: "Enlarge product image" });
+        await trigger.focus();
+        await trigger.press("Enter");
+        const dialog = page.getByRole("dialog", { name: "Enlarged product image" });
+        const close = dialog.getByRole("button", { name: "Close image" });
+        await expect(close).toBeFocused();
+        await page.keyboard.press("Tab");
+        await expect(close).toBeFocused();
+        await page.keyboard.press("Shift+Tab");
+        await expect(close).toBeFocused();
+        await expectReadableFocus(close);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-product-${width}.png`), fullPage: true });
+        await page.keyboard.press("Escape");
+        await expect(dialog).toBeHidden();
+        await expect(trigger).toBeFocused();
+        await trigger.press("Enter");
+        await page.getByRole("button", { name: "Close image" }).click();
+        await expect(trigger).toBeFocused();
+    });
+}
+
 for (const width of [1440, 850, 768, 390]) {
     test(`reaudit store ${width}: shared sort portal and empty destination`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
