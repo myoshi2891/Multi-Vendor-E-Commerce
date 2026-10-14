@@ -8,7 +8,9 @@ if (!output) throw new Error("Usage: bun scripts/design/prepare-admin-master-rou
 const urls = ["DATABASE_URL", "DIRECT_URL", "E2E_DATABASE_URL"].map(name => process.env[name]?.trim());
 if (!urls[0] || urls.some(value => value !== urls[0])) throw new Error("Use the same dedicated database for all three database variables.");
 const parsed = new URL(urls[0]);
-if (!["localhost", "127.0.0.1"].includes(parsed.hostname) || !/e2e|test/.test(parsed.pathname)) {
+// "latest" や "contest_prod" を通さないよう、DB 名を区切り文字で分けた構成要素として照合する
+const databaseName = decodeURIComponent(parsed.pathname.replace(/^\//, ""));
+if (!["localhost", "127.0.0.1"].includes(parsed.hostname) || !/(?:^|[_-])(?:e2e|test)(?:$|[_-])/.test(databaseName)) {
     throw new Error("A local dedicated test database is required.");
 }
 if (!process.env.CLERK_SECRET_KEY?.startsWith("sk_test_")) throw new Error("Clerk development configuration is required.");
