@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import styles from "../design/seller.module.css";
 import { Badge } from "@/components/ui/badge";
 import type { getRecentStores } from "@/queries/dashboard";
 
@@ -62,6 +63,8 @@ export function RecentStores({ stores, design }: Props) {
                                     </span>
                                 </div>
                                 <Badge
+                                    className={design === "seller" ? styles.storeState : undefined}
+                                    data-store-state={design === "seller" ? store.status : undefined}
                                     variant={
                                         STATUS_VARIANT[store.status] ??
                                         "outline"

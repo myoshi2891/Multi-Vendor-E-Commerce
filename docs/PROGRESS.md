@@ -1,5 +1,11 @@
 # PROGRESS.md
 
+## 2026-10-13 P3残存8画面
+
+管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示とkeyboard操作を適用。画面別TDD・補助検証・仕様同期を完了。最新実測（PR#204 New Code カバレッジ回復・レビュー指摘対応後、[統計表](testing/QA_HANDOFF.md#現在の実装状態サマリ)と同値）は**3167 passed / 3170 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**、Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）、dashboard407 files/405 lcov/18 of 80 cells（不変）。P3完了時点（カバレッジ回復前）の実測は3151 passed / 3154 total・Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）・dashboard406 files。補助Chrome: p3 73/73、six 74/74、p4 56/56、seven products/inventory/orders 36/36、計239/239。chart要素画像の追加6/6も成功。1440/768/390px × light/dark、axe AA（contrast抑制なし）、focus/44px/入力境界3:1/Portal/空/失敗/pending/retry/successを確認。 型/lintエラー0、既存lint警告8。認証後実routeは8画面すべて受け入れ済み（`p3-residual-route` 54/54）。状態更新・保存・削除・画像upload・Cloudinary送信、Integration/フル3-browser E2Eは[QA正本](testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)の条件どおり未実行。
+
+[計画](../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
 ## 2026-10-12 ストアフロント残存8画面
 
 フォロー店舗・閲覧履歴・ホーム・Contact・FAQ・製品サポート・About・出店申請のtokens/hover/focus/44px操作を移行し、TDD・仕様更新・今回の表示受け入れを完了。**3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage最新実測（`bun run test -- --runInBand --coverage --silent`、[統計表](testing/QA_HANDOFF.md#現在の実装状態サマリ)と同値）。ストアフロント残存8画面完了時点の前回実測は3147/3150・Statements10954/12417。Integration238／18 suitesも同日再実測。
@@ -5757,4 +5763,29 @@ Stripe テスト決済・Place order・外部共有/印刷を実ルートで受�
 |------|--------|--------|
 | テスト総数 | 3140 passed / 3143 total | **3141 passed / 3144 total** |
 | スイート数 | 324（323 passed／1 skipped） | **324（323 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#204 New Code カバレッジ回復 (2026-10-13)
+
+#### 概要
+
+SonarCloud PR#204 の Coverage on New Code 62.3% に対し、P3 で追加した seller 分岐をテスト追加のみで検証。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/dashboard/admin/sales-chart.test.tsx` | `AreaChart` の props を捕捉し seller 配色・`valueFormatter`・`SalesTooltip`・空状態を検証（+8） | 未コミット |
+| `tests/component/dashboard/admin/recent-stores.test.tsx` | seller の `data-store-state`（+2） | 未コミット |
+| `src/components/shared/theme-toggle.test.tsx` | メニュー選択で `setTheme`（+4） | 未コミット |
+| `tests/component/dashboard/click-to-add-design.test.tsx` | 入力欄の無い行の削除（+1） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3151 passed / 3154 total | **3166 passed / 3169 total** |
+| スイート数 | 327（326 passed／1 skipped） | **327（326 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |

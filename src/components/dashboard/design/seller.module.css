@@ -17,7 +17,7 @@
     --accent: 43 28% 85%;
     --accent-foreground: 143 23% 12%;
     --border: 43 16% 72%;
-    --input: 43 16% 62%;
+    --input: 43 16% 50%;
     --ring: 39 43% 31%;
     --destructive: 0 68% 36%;
     --destructive-foreground: 0 0% 100%;
@@ -532,3 +532,34 @@
     display: flex;
     align-items: center;
 }
+
+/* Store status keeps its label while using scoped semantic colors. */
+.storeState {
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--card));
+    border: 1px solid currentColor;
+    border-radius: var(--seller-radius);
+}
+.storeState:hover { background: hsl(var(--card)); }
+.storeState[data-store-state="ACTIVE"] { color: var(--brand-success); }
+.storeState[data-store-state="PENDING"] { color: hsl(var(--warning)); }
+.storeState[data-store-state="BANNED"] { color: hsl(var(--destructive)); }
+
+/* Independent select menus opt in without changing default primitive callers. */
+.theme.popover {
+    background: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+    border-radius: var(--seller-radius);
+    box-shadow: none;
+}
+
+.standaloneHeader a:hover { color: var(--brand-gold); }
+
+.chartTooltip {
+    background: hsl(var(--popover));
+    color: hsl(var(--popover-foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--seller-radius);
+    padding: 0.75rem 1rem;
+}
+.chartTooltip > p + p { margin-top: 0.5rem; }

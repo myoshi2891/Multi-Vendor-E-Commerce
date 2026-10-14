@@ -189,19 +189,19 @@ describe("getProductVariantForEdit", () => {
                 saleEndDate: "2026-12-31T00:00:00.000Z",
                 keywords: ["camera", "black"],
                 images: [{ id: "i1", url: "https://example.test/1.png" }],
-                colors: [{ id: "c1", color: "Black" }],
+                // 行 id は ClickToAddInputs が入力欄として描画してしまうため返さない（保存側も使わない）
+                colors: [{ color: "Black" }],
                 sizes: [
                     {
-                        id: "z1",
                         size: "M",
                         quantity: 3,
                         price: 199.99,
                         discount: 10,
                     },
                 ],
-                product_specs: [{ id: "s1", name: "Care", value: "Wipe" }],
-                variant_specs: [{ id: "vs1", name: "Lens", value: "35mm" }],
-                questions: [{ id: "q1", question: "Q?", answer: "A" }],
+                product_specs: [{ name: "Care", value: "Wipe" }],
+                variant_specs: [{ name: "Lens", value: "35mm" }],
+                questions: [{ question: "Q?", answer: "A" }],
                 freeShippingCountriesIds: [
                     { label: "Japan", value: "jp" },
                     { label: "France", value: "fr" },

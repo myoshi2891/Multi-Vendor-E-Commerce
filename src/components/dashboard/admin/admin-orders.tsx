@@ -29,7 +29,7 @@ function Details({
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline">View order {order.id}</Button>
+                <Button className={styles.control} variant="outline">View order {order.id}</Button>
             </DialogTrigger>
             <DialogContent className={`${styles.theme} ${styles.dialog}`}>
                 <DialogHeader>
@@ -77,7 +77,15 @@ export function getAdminOrderColumns(
                 </div>
             ),
         },
-        { accessorKey: "paymentStatus", header: "Payment status" },
+        {
+            accessorKey: "paymentStatus",
+            header: "Payment status",
+            cell: ({ row }) => (
+                <span className={styles.paymentState} data-payment-state={row.original.paymentStatus}>
+                    {row.original.paymentStatus}
+                </span>
+            ),
+        },
         {
             id: "status",
             header: "Status",

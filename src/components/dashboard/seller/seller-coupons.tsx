@@ -69,7 +69,7 @@ function CouponDialog({
             }}
         >
             <DialogTrigger asChild>
-                <Button variant={coupon ? "outline" : "default"}>
+                <Button className={styles.control} variant={coupon ? "outline" : "default"}>
                     {coupon
                         ? `Edit coupon ${coupon.code}`
                         : "Create New Coupon"}
@@ -77,7 +77,7 @@ function CouponDialog({
             </DialogTrigger>
             <DialogContent
                 closeDisabled={busy}
-                className={`${styles.theme} ${styles.dialog}`}
+                className={`${styles.theme} ${styles.dialog} ${styles.controls}`}
                 onEscapeKeyDown={(event) => {
                     if (locked.current) event.preventDefault();
                 }}

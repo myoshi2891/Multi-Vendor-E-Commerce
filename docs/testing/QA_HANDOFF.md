@@ -1,6 +1,60 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-12 ストアフロント残存8画面（最新）
+## 2026-10-13 PR#204 レビュー指摘対応（最新）
+
+- `sales-chart.tsx`: seller の Y 軸目盛りを短縮 USD（`$12.3M`）にし、8 桁売上でも `yAxisWidth` 80 に収める。全額は `SalesTooltip` が従来の `formatRevenue` で表示。回帰 +1。
+- `tests/browser/seller-residual-assertions.ts` の `expectBoundaryContrast`: outline は親から外側の面を探す（border は従来どおり要素自身から）。境界色の alpha を保持して面へ合成してから輝度を算出し、完全透明は失敗させる。`DESIGN_SUITE=p3` 73/73・`six` 74/74 成功。
+- 全体Jest: **3167 passed / 3170 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage --silent`実測。Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）。dashboard407 test files/405 lcov/18 of 80 cells（セル状態不変）。型0、対象ファイルlint0。
+
+## 2026-10-13 PR#204 New Code カバレッジ回復
+
+[計画](../../plans/090-pr204-new-code-coverage.md)。SonarCloud PR#204 の Coverage on New Code 62.3% の主因（P3 で追加した `design === "seller"` 分岐の未検証）をテスト追加のみで解消（本番コード変更なし）。
+
+- `sales-chart.tsx`（Sonar 22.2%）: `AreaChart` モックが props を捨てていたため `valueFormatter`・`SalesTooltip` が未実行だった。props を捕捉して seller 配色/Y 軸幅/空状態・ツールチップ全分岐を検証（+8）。ローカル Lines/Branches 100%。
+- `recent-stores.tsx` +2（`data-store-state`）、`theme-toggle.tsx` +4（メニューを開いて setTheme）、`click-to-add.tsx` +1（入力欄の無い行の削除）。
+- 残る未カバー分岐は `click-to-add.tsx` の `container.current?.`（マウント中は常に非 null の防御的分岐）1 件のみ。
+- 全体Jest: **3166 passed / 3169 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage --silent`実測。Statements88.26%（10975/12434）／Branches78.64%（6784/8626）／Functions84.68%（2151/2540）／Lines88.8%（9992/11252）。dashboard407 test files/405 lcov/18 of 80 cells（セル状態不変）。型0、対象ファイルlint0。
+
+## 2026-10-13 P3残存8画面
+
+[承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示とkeyboard操作を適用。画面別TDD・補助検証・仕様同期を完了。認証後実routeは8画面すべて受け入れ（059は既存不具合を修正後に受け入れ、下記）。
+
+- 全体Jest: **3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage`実測。
+- Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。dashboard406 test files/405 lcov/18 of 80 cells（セル状態不変）。
+- 補助Chrome: p3 73/73、six 74/74、p4 56/56、seven products/inventory/orders 36/36、計239/239。chart要素画像の追加6/6も成功。1440/768/390px × light/dark、axe AA（contrast抑制なし）、focus/44px/入力境界3:1/Portal/空/失敗/pending/retry/successを確認。
+- 型0、lint0 errors/既存8 warnings、check:playwright/diff/文書リンク検査成功。
+- 先行Red: 店舗状態色、詳細/クーポン/header寸法、入力境界2.322、Portal角丸/面、動的行disabled/focus、chart tick/tooltip。環境・古いstore adapter・pending観測競合はRedに算入しない。
+
+### DS-P3-RESIDUAL-EIGHT-ROUTES
+
+DS-P3-RESIDUAL-EIGHT-ROUTES（2026-10-13 解除）: 既存専用DB `multivendor_e2e`（migration 27/27）と Clerk テスト管理者/販売者で、suite `p3-residual-route` **54/54**（8 route × 3幅 × light/dark の表示48・非保存操作6、axe違反0・page error 0）。7画面（049/048/050/054/053/060/065）を検証済みへ更新し、059 も修正後に検証済み。[証跡](../design/design-system/PROGRESS.md#認証後実route受け入れ2026-10-13)。
+
+- 準備: `scripts/design/prepare-seller-route.ts`（DB変数3つを同値で `multivendor_e2e` へ、`CLERK_SECRET_KEY` は sk_test_）。今回 ADMIN `design-admin+clerk_test@example.com` とクーポン `DESIGNP3` を冪等投入する処理を追加。実行は `DESIGN_SUITE=p3-residual-route DESIGN_BROWSER_CHANNEL=chrome DESIGN_SELLER_ROUTE=<出力json> bun run test:design`。dev 起動後は `tsconfig.json` の include 追記を戻す。
+- **DS-PAGE-059 解除済み**: 実データで行UUIDが入力欄に出る既存不具合（`a3a84de1` から）を、`getProductVariantForEdit` から行 `id` を除いて修正（[計画](../../plans/layout-design/variant-edit-row-id-fix-plan.md)）。Red 1件→関連Jest 110/110、Integration 編集往復 2/2、`p3-residual-route` 再実行 54/54（UUID非表示を assertion 化）。8画面すべて検証済み。
+- 観察: dev ログの ``Invalid prop `id` supplied to `React.Fragment` `` 警告（発生部品未特定、page error ではない）。
+- 未実行: 状態更新・保存・削除・画像upload・Cloudinary送信（操作範囲とデータを別途定める）、Integration/フル3-browser E2E。
+
+次着手: 実保存・削除・状態更新・upload の受け入れを行う場合は、データと操作範囲を定めた計画を保存してから実施する。dev ログの React.Fragment `id` 警告の発生部品特定。
+
+### P3残存8の段階コミット
+
+| commit | 内容 |
+|---|---|
+| `2addcd1d` | docs(plan): define eight P3 residual design migrations |
+| `059daeb1` | feat(design): finish admin overview semantic store states |
+| `bc0d35bb` | feat(design): finish admin order controls and payment states |
+| `546113b2` | feat(design): finish admin store and delete dialog controls |
+| `dd25f7b6` | feat(design): finish seller coupon dialog touch controls |
+| `0d1f5696` | feat(design): improve coupon form touch and input contrast |
+| `d3381743` | feat(design): align variant select portals with seller tokens |
+| `856f90ce` | fix(design): preserve variant editor focus after row removal |
+| `b387f138` | feat(design): finish standalone store creation navigation |
+
+最終統合コミット自身のhashはGit履歴を参照。
+
+## 2026-10-12 ストアフロント残存8画面（履歴）
 
 [承認済み計画](../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。
 
@@ -201,7 +255,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-12実測 / lcov: 2026-10-12実測 / Integration: 2026-10-12実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-10実測）
+### テスト統計（Jest: 2026-10-13実測 / lcov: 2026-10-13実測 / Integration: 2026-10-12実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -209,17 +263,17 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesも同日再実測。 |
-| 全体coverage（2026-10-12実測） | Statements88.21%（10953/12416）／Branches78.46%（6740/8590）／Functions84.49%（2142/2535）／Lines88.75%（9974/11238）。 |
+| Jest テスト総数 (unit/component) | **3167 passed / 3170 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。2026-10-13全体実測（PR#204 レビュー指摘対応後）。 |
+| 全体coverage（2026-10-13実測） | Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-12 実測: 238/238 pass**・`bun run test:integration`。直前の実測は2026-10-08 plan 087 実施時。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**Chromium 7/7 passed**。2026-10-07 実測（plan 084・Docker DB 接続）。OI-10 解消に伴い 6 spec の `disabledRules:["color-contrast"]` 抑制を解除済み（抑制なしで違反 0）。home（`/`）は spec 未作成（OI-9 は 2026-06-06 に解消済みで阻害要因ではない。追加は本書の「A11y-home」タスクで扱う）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-12 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-13 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **405ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-12再生成実測。 |
+| テストファイル総数（dashboard） | **407ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-13再生成実測。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 
@@ -1069,3 +1123,35 @@ purchase44/44・commerce24/24、公開ルートはhome/cart計6件とguest check
 専用 `E2E_DATABASE_URL` 未設定のため、認証後実ルート・実Clerk描画/Portal/hashの受け入れは保留。解除条件は現行schemaの専用テストDBとClerkテスト認証の用意。次回は6実ルートの3幅と正常/失敗/空/読み込みを確認し、SDK Portalとhash遷移を検証する。購入・アカウント削除・seed/DB初期化は実行しない。IntegrationとフルE2Eは今回未実行。
 
 [保存計画](../../plans/layout-design/priority-six-p2-residual-design-system-plan.md)・[TDD証跡](../design/design-system/PROGRESS.md#p2残存6画面移行記録)。
+
+### P3残存8 Step 1 DS-PAGE-049（2026-10-13）
+
+新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。 p3 overview/navigation/state 14/14、admin RTL65/65、型0、lint0 errors/既存8 warnings、harness成功。390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 2 DS-PAGE-048（2026-10-13）
+
+詳細buttonを44pxへ拡張し、支払状態へ既存paymentState意味色を接続。検索/金額/Action/詳細Portal/pending/error/retry/Escape復帰を保持。 p3 orders12/12、関連RTL71/71、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 3 DS-PAGE-050（2026-10-13）
+
+店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。 p3店舗/クーポン/作成/操作24/24、関連RTL80/80、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 4 DS-PAGE-054（2026-10-13）
+
+作成/編集triggerと編集Portalの入力・保存操作を44pxへ拡張。コード検索/日付/STORE scope/削除/取得失敗/入力保持/retry/閉じるlock/focus復帰を維持。 p3 coupons12/12、関連RTL23/23、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 5 DS-PAGE-053（2026-10-13）
+
+standalone CouponFormへcontrols・成功意味色を接続。seller light input tokenを50%へ調整し実境界contrast3:1以上を確保。入力/payload/日付/割引/保存/入力保持/retry/navigationを維持。共通callerを最終回帰する。 p3 coupon24/24、関連RTL62/62、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 6 DS-PAGE-060（2026-10-13）
+
+seller限定Select/属性Portalへpopover opt-inを追加し、3px角丸・影なし・popover面/文字tokenを適用。カテゴリ/継承項目/属性scope/payloadとEscape復帰を維持。 six追加/共有商品属性19/19、関連RTL43/43、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 7 DS-PAGE-059（2026-10-13）
+
+seller限定の動的行削除は残る行の先頭入力へfocusを戻す。最低1行の削除buttonをdisabledにし、既定caller/価格/画像/属性/値保持/保存payloadを維持。useLayoutEffectでDOM更新後にfocusし入力編集では移動しない。 six編集/画像/keyword14/14、関連RTL46/46、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### P3残存8 Step 8 DS-PAGE-065（2026-10-13）
+
+独立headerのworkspaceリンクを44pxとhoverへ接続し、ThemeToggle Portalへ既存popover opt-inを適用。フォーム/payload/no-id/返却URL/画像adapter/Featured/validation/pending/error/retryを保持。sixのupsertStore adapterを現行のok/id/url結果へ修正（業務コード変更なし）。 six作成/設定24/24、関連RTL15/15、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。

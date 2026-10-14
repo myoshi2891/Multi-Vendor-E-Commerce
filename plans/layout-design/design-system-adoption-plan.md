@@ -893,3 +893,26 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] DS-COMP-246: 公開4画面のeditorial操作CSS。fixture/実routeで検証。全体tokenや他callerの判定は保持。
 
 - [x] 最終統合: fixture150/150、公開15/15、guest3/3、認証後read-only1/1、全体Jest/coverage・型/lint・仕様/QA/進捗同期。実更新/SDK/全業務フローの既存保留は維持。
+
+
+### P3残存8画面（2026-10-13）
+
+[保存計画](priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。既存判定を維持し今回の変更受け入れを別記する。
+
+- [x] Step 1 DS-PAGE-049 管理者概要: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] Step 2 DS-PAGE-048 管理者注文: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] Step 3 DS-PAGE-050 管理者店舗: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] Step 4 DS-PAGE-054 販売者クーポン一覧: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] Step 5 DS-PAGE-053 販売者クーポン作成: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] Step 6 DS-PAGE-060 バリアント追加: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] Step 7 DS-PAGE-059 バリアント編集: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] Step 8 DS-PAGE-065 店舗作成: 残存表示・補助検証・仕様同期。認証後受け入れは証跡参照。
+
+- [x] P3残存8最終統合: 全体Jest/coverage・補助239/239・型/lint/harness・仕様/QA/進捗同期。認証後実route/SDKは別判定、67画面/246部品の既存履歴を保持。

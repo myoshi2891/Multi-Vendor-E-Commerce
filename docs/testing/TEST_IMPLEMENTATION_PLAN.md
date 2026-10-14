@@ -1273,3 +1273,21 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - Step 8 設定: ✅ Completed (2026-10-11)。TDD/既存回帰と仕様同期。
 
 実route/SDKの未確認範囲は[QA](QA_HANDOFF.md#2026-10-11-p2サポート-保留2件の解消最新)を参照し、実装完了と受け入れ保留を区別する。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 1 DS-PAGE-049 管理者概要 — p3 overview/navigation/state 14/14、admin RTL65/65、型0、lint0 errors/既存8 warnings、harness成功。390px dark画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 2 DS-PAGE-048 管理者注文 — p3 orders12/12、関連RTL71/71、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 3 DS-PAGE-050 管理者店舗 — p3店舗/クーポン/作成/操作24/24、関連RTL80/80、型0、lint0 errors/既存8 warnings、harness成功、390px dark詳細画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 4 DS-PAGE-054 販売者クーポン一覧 — p3 coupons12/12、関連RTL23/23、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 5 DS-PAGE-053 販売者クーポン作成 — p3 coupon24/24、関連RTL62/62、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 6 DS-PAGE-060 バリアント追加 — six追加/共有商品属性19/19、関連RTL43/43、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 7 DS-PAGE-059 バリアント編集 — six編集/画像/keyword14/14、関連RTL46/46、型0、lint0 errors/既存8 warnings、harness成功、390px dark画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8 Step 8 DS-PAGE-065 店舗作成 — six作成/設定24/24、関連RTL15/15、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。実routeは別判定。
+
+- ✅ Completed (2026-10-13): P3残存8最終統合 — 全体Jest3151/3154（3 skipped）、補助239/239、coverage/dashboard・仕様/QA同期。認証後実routeはQA別IDで保持。

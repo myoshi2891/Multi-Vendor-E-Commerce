@@ -183,3 +183,10 @@ P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440px
 ## ストアフロント残存8画面の表示受け入れ（2026-10-12）
 
 DS-PAGE-022/024/017/010/014/018/005/004は既存tokensを使用し、独立操作44px、明暗面でfocus可視/3:1、必要な入力境界3:1、文字AA、1440/768/390pxで折返しとoverflowを確認する。ContactはSupportFormのbrand opt-inでpending入力ロック・失敗保持/retry・受付通知を表示。公開静的本文/metadata/URLと出店申請の四段階・payload/認可を保持。API/DB/業務契約は変更しない。[計画](../../plans/layout-design/priority-eight-storefront-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)。
+
+
+## P3残存8画面（2026-10-13）
+
+8画面×1440/768/390px×light/darkで、44px操作領域、painted surfaceに対するfocus/入力境界contrast3:1、AA文字、長文/局所scroll/overflow、keyboard/Portal/Escape復帰、reduced-motionを検証する。売上chartは通貨tickをSVG内へ収め、tooltipにpopover tokensを使用。補助fixtureの成功は認証後実route/SDK受け入れと区別する。
+
+[承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。

@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "../design/seller.module.css";
-import { AreaChart } from "@tremor/react";
+import { AreaChart, type CustomTooltipProps } from "@tremor/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { SalesPoint } from "@/queries/dashboard";
 
@@ -9,6 +9,38 @@ interface Props {
     data: SalesPoint[];
     design?: "seller";
     period?: "daily" | "monthly";
+}
+
+const formatRevenue = (value: number) =>
+    `$${value.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    })}`;
+
+// Y 軸目盛り用。8 桁の売上（$12,345,678.90）は yAxisWidth に収まらないため短縮表記にする。
+// 全額は SalesTooltip が formatRevenue で表示する。
+const compactRevenueFormat = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+});
+const formatCompactRevenue = (value: number) => compactRevenueFormat.format(value);
+
+function SalesTooltip({ active, payload, label }: CustomTooltipProps) {
+    if (!active || !payload?.length) return null;
+    return (
+        <div role="tooltip" className={styles.chartTooltip}>
+            <p>{label}</p>
+            {payload.filter((entry) => entry.type !== "none").map((entry, index) => (
+                <p key={index}>
+                    <span>{entry.name}</span>{" "}
+                    <strong>{typeof entry.value === "number" ? formatRevenue(entry.value) : String(entry.value ?? "")}</strong>
+                </p>
+            ))}
+        </div>
+    );
 }
 
 /**
@@ -41,12 +73,9 @@ export function SalesChart({ data, period = "monthly", design }: Props) {
                         index="label"
                         categories={["revenue"]}
                         colors={[design === "seller" ? "amber" : "slate"]}
-                        valueFormatter={(v: number) =>
-                            `$${v.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                            })}`
-                        }
+                        valueFormatter={design === "seller" ? formatCompactRevenue : formatRevenue}
+                        customTooltip={design === "seller" ? SalesTooltip : undefined}
+                        yAxisWidth={design === "seller" ? 80 : undefined}
                         showLegend={false}
                     />
                 )}

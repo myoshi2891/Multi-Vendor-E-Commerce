@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectTouch, expectTokenColor, expectBoundaryContrast } from "./seller-residual-assertions";
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {
@@ -616,4 +617,83 @@ for (const width of [1440, 768, 390])
             await expect(form.getByRole("status")).toHaveCSS("color", theme === "dark" ? "rgb(155, 204, 167)" : "rgb(40, 93, 60)");
             for (const button of await form.getByRole("button").all()) if (await button.isVisible()) await touchControl(button);
             await sellerEvidence(page, info);
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual newvariant portal ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=newvariant&attributes");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const category = page.getByRole("combobox", { name: "Category", exact: true });
+            await expectTouch(category);
+            await category.click();
+            const portal = page.getByRole("listbox");
+            await expect(portal).toHaveCSS("border-radius", "3px");
+            await expectTokenColor(portal, "background-color", "hsl(var(--popover))");
+            await expectTouch(page.getByRole("option", { name: /Watches/ }));
+            const option = page.getByRole("option", { name: /Watches/ });
+            await option.focus();
+            await page.keyboard.press("Tab");
+            await expect(option).toBeFocused();
+            await page.keyboard.press("Shift+Tab");
+            await expect(option).toBeFocused();
+            expect((await new AxeBuilder({page}).include('[role="listbox"]').withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+            await portal.screenshot({path:info.outputPath(`residual-newvariant-portal-${width}-${theme}.png`)});
+            await page.keyboard.press("Escape");
+            await expect(category).toBeFocused();
+            await expectBoundaryContrast(category, "outlineColor");
+            expect((await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({path: info.outputPath(`residual-newvariant-${width}-${theme}.png`),fullPage: true});
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual editvariant keyboard rows ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=editvariant");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const specs = page.getByRole("tabpanel", { name: "Product Specifications", exact: true });
+            await expect(specs.getByRole("button", { name: "Remove detail", exact: true })).toBeDisabled();
+            await specs.getByRole("button", { name: "Add new detail", exact: true }).click();
+            await specs.getByRole("textbox", { name: "name 2", exact: true }).fill("Kept specification");
+            await specs.getByRole("textbox", { name: "value 2", exact: true }).fill("Kept value");
+            const remove = specs.getByRole("button", { name: "Remove detail", exact: true }).first();
+            await expectTouch(remove);
+            await remove.focus();
+            await page.keyboard.press("Enter");
+            const retained = specs.getByRole("textbox", { name: "name 1", exact: true });
+            await expect(retained).toBeFocused();
+            await expect(retained).toHaveValue("Kept specification");
+            await expect(specs.getByRole("textbox", { name: "value 1", exact: true })).toHaveValue("Kept value");
+            await expectBoundaryContrast(retained, "outlineColor");
+            await expect(page.getByRole("spinbutton", { name: "price 1", exact: true })).toHaveValue("12.5");
+            await sellerEvidence(page, info, `residual-editvariant-${width}-${theme}.png`);
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual newstore navigation ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=newstore");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const workspace = page.getByRole("link", {name:"Seller workspace",exact:true});
+            await expectTouch(workspace);
+            await workspace.focus();
+            await expect(workspace).toHaveCSS("outline-style", "solid");
+            await expectBoundaryContrast(workspace, "outlineColor");
+            await expect(workspace).toHaveAttribute("href", "/dashboard/seller");
+            await page.getByRole("button", {name:"Toggle theme"}).click();
+            const menu = page.getByRole("menu");
+            await expect(menu).toHaveCSS("border-radius", "3px");
+            await expectTokenColor(menu, "background-color", "hsl(var(--popover))");
+            for (const name of ["Light","Dark","System"]) await expectTouch(page.getByRole("menuitem", {name,exact:true}));
+            await page.keyboard.press("Escape");
+            await expect(page.getByRole("button", {name:"Toggle theme"})).toBeFocused();
+            await expectBoundaryContrast(page.getByRole("textbox", {name:"Store name",exact:true}), "borderTopColor");
+            await sellerEvidence(page, info, `residual-newstore-${width}-${theme}.png`);
         });

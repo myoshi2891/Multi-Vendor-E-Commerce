@@ -47,6 +47,15 @@ const DESIGN_SUITES = {
         // 本番は webServer の起動待ちに build 時間を含む
         timeout: sellerRouteProd ? 600000 : 180000,
     },
+    // DB は seller-eight-route と同じ準備（prepare-seller-route.ts の管理者・クーポンを含む出力）を使う
+    "p3-residual-route": {
+        testMatch: "p3-residual-route-design.spec.ts",
+        port: 3133,
+        kind: "route",
+        command:
+            "NEXT_DEV_DIST_DIR=.next/p3-residual-route bun run dev -- --webpack --port 3133",
+        timeout: 180000,
+    },
     // DB は呼び出し側の DATABASE_URL 等（scripts/design/prepare-purchase-route.ts で検査済みの専用DB）を使う
     "purchase-route": {
         testMatch: "purchase-route-design.spec.ts",

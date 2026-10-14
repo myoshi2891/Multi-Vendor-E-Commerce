@@ -1,7 +1,12 @@
 import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
 import { expectReadableBorder } from "./purchase-assertions";
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+
+async function releaseInventorySave(page: Page) {
+    await expect.poll(() => page.evaluate(() => typeof (window as Window & { releaseInventorySave?: () => void }).releaseInventorySave)).toBe("function");
+    await page.evaluate(() => (window as Window & { releaseInventorySave?: () => void }).releaseInventorySave?.());
+}
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"]) {
         test(`shell ${width} ${theme}`, async ({ page }, info) => {
@@ -333,7 +338,7 @@ for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"])
         test(`inventory ${width} ${theme}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 900 });
-            await page.goto("/?screen=inventory");
+            await page.goto("/?screen=inventory&hold-inventory=1");
             await page.evaluate(
                 (d) => document.documentElement.classList.toggle("dark", d),
                 theme === "dark"
@@ -379,8 +384,10 @@ for (const width of [1440, 768, 390])
                 await expect(
                     editor.getByRole("button", { name: "保存中…" })
                 ).toBeDisabled();
+                await releaseInventorySave(page);
                 await expect(editor.getByRole("alert")).toContainText("失敗");
                 await editor.getByRole("button", { name: "再試行" }).click();
+                await releaseInventorySave(page);
                 await expect(editor.getByRole("status")).toContainText(
                     "更新しました"
                 );
@@ -813,7 +820,7 @@ for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"])
         test(`residual inventory ${width} ${theme}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 900 });
-            await page.goto("/?screen=inventory");
+            await page.goto("/?screen=inventory&hold-inventory=1");
             await page.evaluate(
                 (dark) =>
                     document.documentElement.classList.toggle("dark", dark),
@@ -831,9 +838,11 @@ for (const width of [1440, 768, 390])
             await expect(
                 editor.getByRole("button", { name: "保存中…" })
             ).toBeDisabled();
+                await releaseInventorySave(page);
             await expect(editor.getByRole("alert")).toContainText("失敗");
             await touchControl(editor.getByRole("button", { name: "再試行" }));
             await editor.getByRole("button", { name: "再試行" }).click();
+            await releaseInventorySave(page);
             const status = editor.getByRole("status");
             await expect(status).toContainText("更新しました");
             await expect(status).toHaveCSS(

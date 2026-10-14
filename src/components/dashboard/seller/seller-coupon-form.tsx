@@ -73,7 +73,7 @@ export default function SellerCouponForm({
         }
     }
     return (
-        <section className={styles.panel}>
+        <section className={`${styles.panel} ${styles.controls}`}>
             <h2 className="text-xl">Coupon information</h2>
             <Form {...form}>
                 <form
@@ -104,7 +104,7 @@ export default function SellerCouponForm({
                     again.
                 </p>
             )}
-            {feedback === "saved" && <p role="status">Coupon saved.</p>}
+            {feedback === "saved" && <p role="status" className={styles.success}>Coupon saved.</p>}
         </section>
     );
 }

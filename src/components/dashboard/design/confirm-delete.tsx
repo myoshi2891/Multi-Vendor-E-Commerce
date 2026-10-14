@@ -52,11 +52,11 @@ export default function ConfirmDelete({
                 }}
             >
                 <DialogTrigger asChild>
-                    <Button variant="outline">Delete {label}</Button>
+                    <Button className={styles.control} variant="outline">Delete {label}</Button>
                 </DialogTrigger>
                 <DialogContent
                     closeDisabled={busy}
-                    className={`${styles.theme} ${styles.dialog}`}
+                    className={`${styles.theme} ${styles.dialog} ${styles.controls}`}
                     onEscapeKeyDown={(e) => {
                         if (pending.current) e.preventDefault();
                     }}

@@ -9,7 +9,7 @@ export default function SellerNewStorePage() {
     return (
         <div className={`${styles.theme} ${styles.standalone}`}>
             <header className={styles.standaloneHeader}>
-                <Link href="/dashboard/seller">Seller workspace</Link>
+                <Link className={styles.control} href="/dashboard/seller">Seller workspace</Link>
                 <ThemeToggle design="seller" />
             </header>
             <main className={styles.standaloneMain}>

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectTokenColor, expectTouch, expectBoundaryContrast } from "./seller-residual-assertions";
 for (const width of [1440, 768, 390])
     for (const theme of ["light", "dark"]) {
         test(`overview ${width} ${theme}`, async ({ page }, info) => {
@@ -255,6 +256,7 @@ for (const width of [1440, 768, 390])
                 .getByRole("button", { name: "Save coupon", exact: true })
                 .click();
             await expect(page.getByText("Coupon saved.")).toBeVisible();
+            await expectTokenColor(page.getByText("Coupon saved."), "color", "var(--brand-success)");
             expect(
                 (
                     await new AxeBuilder({ page })
@@ -351,6 +353,7 @@ for (const width of [1440, 768, 390])
                 .getByRole("button", { name: "Create coupon", exact: true })
                 .click();
             await expect(page.getByText("Coupon saved.")).toBeVisible();
+            await expectTokenColor(page.getByText("Coupon saved."), "color", "var(--brand-success)");
             expect(
                 await page.evaluate(
                     () =>
@@ -465,3 +468,110 @@ for (const width of [1440, 390])
             fullPage: true,
         });
     });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual overview state ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=overview");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            await expectTokenColor(page.getByText("審査中", { exact: true }), "color", "hsl(var(--warning))");
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual orders controls ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=orders");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const details = page.getByRole("button", { name: "View order order-1" });
+            await expectTouch(details);
+            await expectTokenColor(page.getByRole("cell", { name: "Paid", exact: true }).locator("span"), "color", "var(--brand-success)");
+            await details.click();
+            await expectTouch(page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }));
+            await page.keyboard.press("Escape");
+            await expect(details).toBeFocused();
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual stores controls ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=stores");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const details = page.getByRole("button", { name: "View store Example store" });
+            await expectTouch(details);
+            await details.click();
+            await expectTouch(page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }));
+            await page.keyboard.press("Escape");
+            await expect(details).toBeFocused();
+            const remove = page.getByRole("button", { name: "Delete store Example store", exact: true });
+            await expectTouch(remove);
+            await remove.click();
+            await expectTouch(page.getByRole("button", { name: "Cancel", exact: true }));
+            await expectTouch(page.getByRole("button", { name: "Confirm delete", exact: true }));
+            await page.keyboard.press("Escape");
+            await expect(remove).toBeFocused();
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual coupons controls ${width} ${theme}`, async ({ page }) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=coupons");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const create = page.getByRole("button", { name: "Create New Coupon", exact: true });
+            const edit = page.getByRole("button", { name: "Edit coupon WELCOME", exact: true });
+            await expectTouch(create);
+            await expectTouch(edit);
+            await edit.click();
+            const dialog = page.getByRole("dialog");
+            await expectTouch(dialog.getByRole("textbox", {name: "Coupon code"}));
+            await expectTouch(dialog.getByRole("button", {name: "Save coupon", exact:true}));
+            await page.keyboard.press("Escape");
+            await expect(edit).toBeFocused();
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual newcoupon boundaries ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=newcoupon");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const code = page.getByRole("textbox", {name:"Coupon code"});
+            await expectBoundaryContrast(code, "borderTopColor");
+            for (const input of [code, page.getByRole("spinbutton", {name:"Coupon discount"}), page.getByLabel("Start date", {exact:true}), page.getByLabel("End date", {exact:true})]) {
+                await expectTouch(input);
+                await expectBoundaryContrast(input, "borderTopColor");
+            }
+            await expectTouch(page.getByRole("button", {name:"Create coupon",exact:true}));
+            await code.focus();
+            await expect(code).toHaveCSS("outline-style", "solid");
+            await expectBoundaryContrast(code, "outlineColor");
+            await page.screenshot({path:info.outputPath(`residual-newcoupon-${width}-${theme}.png`),fullPage:true});
+        });
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"])
+        test(`residual overview chart ${width} ${theme}`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.emulateMedia({ reducedMotion: "reduce" });
+            await page.goto("/?screen=overview");
+            await page.evaluate((dark) => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const chart = page.locator(".recharts-wrapper");
+            await expect(chart).toBeVisible();
+            const clipped = await page.locator(".recharts-yAxis text").evaluateAll(elements => elements.some(element => {
+                const svg = element.closest("svg")!;
+                return element.getBoundingClientRect().left < svg.getBoundingClientRect().left;
+            }));
+            expect(clipped, "currency tick labels remain inside the SVG viewport").toBe(false);
+            const box = (await chart.boundingBox())!;
+            await chart.hover({position:{x:Math.floor(box.width/2),y:100}});
+            const tooltip = page.getByRole("tooltip");
+            await expect(tooltip).toBeVisible();
+            await expectTokenColor(tooltip, "background-color", "hsl(var(--popover))");
+            await expectTokenColor(tooltip, "color", "hsl(var(--popover-foreground))");
+            expect((await new AxeBuilder({page}).withTags(["wcag2a","wcag2aa","wcag21aa"]).analyze()).violations).toEqual([]);
+            await chart.screenshot({path:info.outputPath(`overview-chart-${width}-${theme}.png`)});
+        });

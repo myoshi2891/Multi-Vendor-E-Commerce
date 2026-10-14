@@ -61,3 +61,38 @@
 ### ストアフロント残存8画面・最終受け入れ（2026-10-12）
 
 今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。
+
+
+### P3残存8画面 Step 4（2026-10-13）
+
+DS-PAGE-054 販売者クーポン一覧: 作成/編集triggerと編集Portalの入力・保存操作を44pxへ拡張。コード検索/日付/STORE scope/削除/取得失敗/入力保持/retry/閉じるlock/focus復帰を維持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3残存8画面 Step 5（2026-10-13）
+
+DS-PAGE-053 販売者クーポン作成: standalone CouponFormへcontrols・成功意味色を接続。seller light input tokenを50%へ調整し実境界contrast3:1以上を確保。入力/payload/日付/割引/保存/入力保持/retry/navigationを維持。共通callerを最終回帰する。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3残存8画面 Step 6（2026-10-13）
+
+DS-PAGE-060 バリアント追加: seller限定Select/属性Portalへpopover opt-inを追加し、3px角丸・影なし・popover面/文字tokenを適用。カテゴリ/継承項目/属性scope/payloadとEscape復帰を維持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3残存8画面 Step 7（2026-10-13）
+
+DS-PAGE-059 バリアント編集: seller限定の動的行削除は残る行の先頭入力へfocusを戻す。最低1行の削除buttonをdisabledにし、既定caller/価格/画像/属性/値保持/保存payloadを維持。useLayoutEffectでDOM更新後にfocusし入力編集では移動しない。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3残存8画面 Step 8（2026-10-13）
+
+DS-PAGE-065 店舗作成: 独立headerのworkspaceリンクを44pxとhoverへ接続し、ThemeToggle Portalへ既存popover opt-inを適用。フォーム/payload/no-id/返却URL/画像adapter/Featured/validation/pending/error/retryを保持。sixのupsertStore adapterを現行のok/id/url結果へ修正（業務コード変更なし）。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。

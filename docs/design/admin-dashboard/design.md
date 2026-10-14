@@ -860,3 +860,29 @@ DS-PAGE-043は既存管理者theme内の名前付きページ、検索可能な�
 Server Componentが属性/カテゴリを読み、AdminAttributesへ型付きAttributeActionsを渡す。Client側で列を組み立て、フォーム・行操作はContext/Props経由で注入されたActionを呼ぶ。既存SellerPage/DataTable seller、作成MasterDialogと編集CustomModalを再利用。編集Modalの独立Portalへthemeを明示し、busy状態でdismissを禁止してトリガーへfocusを戻す。カテゴリ/type/scopeはnative selectでラベル・階層/値を維持する。
 
 属性選択肢はServer ComponentからAttributeOptionActionsを渡し、Client側getAttributeOptionColumnsで列を構築する。MasterDialog/CustomModalへ任意classNameを追加し、attribute.module.cssをroot/form/Portalへ限定適用して44pxを確保する。汎用theme/他画面への一括上書きは行わない。
+
+
+### P3残存8画面 Step 1（2026-10-13）
+
+DS-PAGE-049 管理者概要: 新規店舗の状態バッジへseller限定の意味色・card面・3px角丸を適用。既定caller・名称・日付・集計・chartを保持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3残存8画面 Step 2（2026-10-13）
+
+DS-PAGE-048 管理者注文: 詳細buttonを44pxへ拡張し、支払状態へ既存paymentState意味色を接続。検索/金額/Action/詳細Portal/pending/error/retry/Escape復帰を保持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3残存8画面 Step 3（2026-10-13）
+
+DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
+
+[計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+### P3最終統合・売上chart（2026-10-13）
+
+seller opt-inの売上chartはyAxisWidth=80で通貨tickをSVG内へ収め、typed CustomTooltipPropsの専用tooltipへpopover面/文字/境界/3px角丸を接続する。数値formatter/USD/期間/集計は保持し、既定callerのtooltip/軸幅は変更しない。先行browserでtick欠け6件、tooltip面未接続6件を確認してからGreen。8画面の最終証跡は[進捗](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)を参照。
