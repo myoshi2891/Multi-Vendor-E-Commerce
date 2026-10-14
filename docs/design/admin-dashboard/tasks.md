@@ -311,3 +311,7 @@ DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共�
 - [x] 管理マスタ8 Step 7 DS-PAGE-044 クーポン作成（2026-10-14）: 差分改修/既存実装回帰・補助検証・仕様同期。実routeは最終受け入れ欄参照。
 
 - [x] 管理マスタ8 Step 8 DS-PAGE-047 オファータグ一覧（2026-10-14）: 差分改修/既存実装回帰・補助検証・仕様同期。実routeは最終受け入れ欄参照。
+
+## 管理マスタ8最終統合（2026-10-14）
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。

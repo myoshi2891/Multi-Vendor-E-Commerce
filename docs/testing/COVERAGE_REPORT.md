@@ -12,8 +12,8 @@
 | 指標 | 値 |
 |---|---|
 | Jestテスト総数（2026-10-14） | **3168 passed / 3171 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage（2026-10-14実測） | Statements88.25%（10968/12427）／Branches78.64%（6782/8624）／Functions84.66%（2147/2536）／Lines88.79%（9987/11247）。 |
-| テストファイル総数（dashboard） | **407ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-14再生成実測。 |
+| 全体coverage（2026-10-14実測） | Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。 |
+| テストファイル総数（dashboard） | **408ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-14再生成実測。 |
 | Jest スイート総数（unit/component） | **327スイート**（326 passed／1 skipped、2026-10-14実測）。 |
 | テスト総数 | **3168 unit/component passed**（3171 total／3 skipped）。Integration238／18 suites（2026-10-12実測、今回未実行）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
@@ -706,3 +706,7 @@ Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.
 **3151 passed / 3154 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）。新規RTLは動的行のminimum/削除focus/既定callerの3件。dashboard406 files/405 lcov、18/80セルの状態不変。補助Chrome: p3 73/73、six 74/74、p4 56/56、seven products/inventory/orders 36/36、計239/239。chart要素画像の追加6/6も成功。1440/768/390px × light/dark、axe AA（contrast抑制なし）、focus/44px/入力境界3:1/Portal/空/失敗/pending/retry/successを確認。 画面とPortalの実computed styleと操作で検証し、CSS文字列テストは追加しない。[QA正本](./QA_HANDOFF.md#ds-p3-residual-eight-routes)。
 
 2026-10-14: 購入再監査8。ProductSwiperのfocus回帰+1、全体Jest3168/3171・327 suites・127 snapshots。Statements88.25%（10968/12427）／Branches78.64%（6782/8624）／Functions84.66%（2147/2536）／Lines88.79%（9987/11247）。手書きEscape handlerを既存Radix Dialogへ置換したため分母も変化。dashboard407 files/405 lcov/18 of 80（セル状態不変）。[QA正本](QA_HANDOFF.md#現在の実装状態サマリ)。
+
+## 2026-10-14 管理マスタ8の実測
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 [QA正本](QA_HANDOFF.md#現在の実装状態サマリ)。

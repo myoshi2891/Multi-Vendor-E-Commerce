@@ -1,5 +1,9 @@
 # PROGRESS.md
 
+## 2026-10-14 管理マスタ8
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 画面別8コミットと計画・最終統合を含む10段階。[計画](../plans/layout-design/priority-eight-admin-master-residual-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#管理マスタ8最終統合2026-10-14)。実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。
+
 ## 2026-10-14 購入再監査8
 
 P1/P2購入導線8画面の再監査・TDD・画面別コミット・仕様同期を実施。sort境界、画像modal、cart短名link、compare hero導線、Wishlist current hoverを改善。**3168 passed / 3171 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。Statements88.25%（10968/12427）／Branches78.64%（6782/8624）／Functions84.66%（2147/2536）／Lines88.79%（9987/11247）。dashboard407 files/405 lcov/18 of 80 cells。統計の正本は[QA_HANDOFF](testing/QA_HANDOFF.md#現在の実装状態サマリ)、画面別証跡は[デザイン進捗](design/design-system/PROGRESS.md#購入再監査8最終統合2026-10-14)。既存判定を保持し、今回の実データ/認証後/SDK受け入れは[QAの条件](testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)待ち。

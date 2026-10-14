@@ -152,3 +152,7 @@ Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへco
 ### 管理マスタ8 Step 8（2026-10-14）
 
 既存実装回帰（新規Redなし）: 共有MasterDialog/SaveFeedbackの適用を確認。p4新旧一覧+対象外独立作成18/18、関連RTL15/15、型成功、lint0 errors/既存8 warnings。3幅/light/dark・取得失敗/retry44px・入力境界/focus・編集/削除/値保持/成功・axe、390px dark画像確認。追加の固有改修なし。name/url/作成と編集のID/遷移を保持。
+
+## 管理マスタ8最終統合（2026-10-14）
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。

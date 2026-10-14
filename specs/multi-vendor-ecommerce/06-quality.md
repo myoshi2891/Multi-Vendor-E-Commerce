@@ -1,5 +1,9 @@
 # Quality Attributes
 
+## 管理マスタ8画面の表示品質（2026-10-14）
+
+1440/768/390px×light/dark、44px操作領域（checkboxはlabel込み）、入力境界/focus 3:1以上、独立Portal、成功/失敗の意味色とstatus/alert、pending lock/値保持/retry、局所scroll/overflow/reduced-motion/axe AAを検証する。属性行メニューは非モーダルで背景を不必要にaria-hiddenにせず、編集Dialogは従来のmodal/focus復帰を保持する。補助fixtureの保存/削除と実ルートの非保存操作を区別する。[計画](../../plans/layout-design/priority-eight-admin-master-residual-design-system-plan.md)。
+
 ## Security
 - `/dashboard`, `/checkout`, and `/profile` are protected at the resource level (layout / page / Server Action auth checks); `src/proxy.ts` (`clerkMiddleware`) only establishes auth context and does not path-match routes.
 - Server actions validate authentication via `currentUser`.

@@ -76,6 +76,8 @@ Following remains a force-dynamic Server route and injects the existing followSt
 
 6画面のServer Componentsは既存queries facadeのload/save/delete（couponはtoggleも）を型付きPropsとして専用Clientと列factoryへ渡す。ClientではActionのtype importだけを使用する。表示は既存管理者Shell/SellerPageとscoped theme、MasterDialog/SaveFeedbackを再利用する。親カテゴリとcoupon scopeはnative selectを使用する。DB・認可・業務queryの境界は変更しない。
 
+2026-10-14: MasterDialogのtriggerと独立Portalに既存control/controlsを接続し、カテゴリ/管理者クーポンの独立フォームにも適用する。属性/選択肢の行メニューだけmodal=falseとtheme/popoverを指定する。共通SaveFeedbackの成功はbrand-success、native Active checkboxはprimaryを使用。既存typed Props・投影・guard・schemaは不変。
+
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
 
 管理者クーポン一覧はServer ComponentでCouponのスカラー項目とstore.nameだけに投影してClientへ渡す。Storeの配送Decimalや不要な店舗内部情報を境界へ持ち込まない。

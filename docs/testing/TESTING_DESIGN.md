@@ -541,3 +541,14 @@ Clerk's embedded UserProfile editor is inline. At narrower widths, open its mobi
 seven inventoryは`hold-inventory=1`の場合だけ保存adapterをPromise gateで保持し、処理中/disabledを確認してから`releaseInventorySave`で応答を解放する。失敗/retry成功の両方を解放し、短い300msに依存しない。productionの通信/保存処理は変更しない。
 
 開いたRadix Selectは背景をaria-hiddenにし、Tab/Shift+TabをPortal内に留める。その状態はlistboxを対象にaxe AAを実行し、Escapeで閉じてtrigger focus復帰を確認してから全ページaxe AAを実行する。ルール抑制はしない。背景を含めたopen snapshotのaria-hidden-focus指摘と実Tab trapを区別する。Portalとchartは要素画像、通常ページは先頭へscroll後の画像を保存する。
+
+## 管理マスタ8実ルート検証
+
+既存`playwright.design.config.ts`の`admin-master-route` suite（port3134）と`tests/browser/admin-master-route-design.spec.ts`を使用。新規config/fixtureサーバーは作成しない。既存のローカル専用test/e2e DBをDATABASE_URL/DIRECT_URL/E2E_DATABASE_URLの同一値で設定し、既存Clerk開発キーとテスト管理者を利用する。値をコミットしない。
+
+```sh
+bun scripts/design/prepare-admin-master-route.ts /tmp/master-eight-route.json
+DESIGN_ADMIN_MASTER_ROUTE=/tmp/master-eight-route.json DESIGN_SUITE=admin-master-route DESIGN_BROWSER_CHANNEL=chrome bun run test:design
+```
+
+prepareはDB/Clerkの読み取りだけで管理者のrole/idと既存カテゴリ/ENUM属性/クーポン/オファータグを確認する。JSONは識別子のみ、認証storageStateはメモリー内。同名カテゴリはURLで行を特定する。保存・削除・状態更新・画像送信を実行せず、入力送信の成功/失敗はfixture/RTL側で確認する。1440/768/390px×light/darkの48ケースで実HTTP200・theme・操作寸法・focus・全体axe・overflowと画像を確認。2026-10-14実測48/48。

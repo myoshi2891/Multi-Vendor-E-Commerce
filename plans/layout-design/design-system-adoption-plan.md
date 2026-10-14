@@ -960,3 +960,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 7 DS-PAGE-044 クーポン作成: 差分改修/既存実装回帰・補助検証・仕様同期。今回の実routeは最終受け入れ欄参照。
 
 - [x] Step 8 DS-PAGE-047 オファータグ一覧: 差分改修/既存実装回帰・補助検証・仕様同期。今回の実routeは最終受け入れ欄参照。
+
+- [x] 管理マスタ8最終統合: 全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 [証跡](../../docs/design/design-system/PROGRESS.md#管理マスタ8最終統合2026-10-14)。
+
+最新台帳集計（2026-10-14）: 67画面＝検証済み51／保留4／TODO7／実装済み5。部品246件。過去の集計は履歴として保持。

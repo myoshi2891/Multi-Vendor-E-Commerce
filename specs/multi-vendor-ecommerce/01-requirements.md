@@ -99,6 +99,8 @@ Store creation has a standalone branded light/dark workspace with a main landmar
 
 カテゴリ・管理者クーポン・オファータグの一覧/作成は管理者light/dark theme、名前付きページ/form、検索、取得失敗/retryを使用する。編集/作成/削除とクーポンActivate/Deactivateを維持し、pending重複/close lock、失敗時入力保持と状態通知を提供する。カテゴリ階層・slug、coupon scope/storeId・割引/日時、offer name/urlの既存仕様は維持する。
 
+2026-10-14管理マスタ8: カテゴリ一覧/作成・属性一覧/作成/ENUM選択肢・管理者クーポン一覧/作成・オファータグ一覧の残存操作を統一する。独立入力/操作/booleanラベルは44×44px以上、入力境界とfocusは3:1以上。属性行メニューは非モーダル・3px角丸・影なしの独立popover、保存成功はstatusと意味色を併用する。既存DB/認可/業務/Action契約を保持する。
+
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
 
 ## Store purchase header presentation

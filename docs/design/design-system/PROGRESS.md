@@ -1,6 +1,10 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-13 P3残存8画面の実ルート受け入れ（現在地）
+## 2026-10-14 管理マスタ8（現在地）
+
+8画面の残存差分・画面別TDD・仕様同期・認証後受け入れを完了。[最終証跡](#管理マスタ8最終統合2026-10-14)。台帳67画面は検証済み51／保留4／TODO7／実装済み5、部品246件。
+
+## 2026-10-13 P3残存8画面の実ルート受け入れ（履歴）
 
 既存の専用DB `multivendor_e2e` と Clerk テスト管理者/販売者で、管理者概要/注文/店舗・クーポン一覧/作成・バリアント追加・店舗作成の7画面（DS-PAGE-049/048/050/054/053/060/065）を検証済みへ更新。suite `p3-residual-route` 54/54（表示48・非保存操作6）。DS-PAGE-059 バリアント編集は、実データの色・サイズ・仕様の行IDが入力欄として表示される既存不具合を画像で発見し、編集用クエリから行IDを除く修正（TDD）後に再受け入れして検証済みへ更新（8画面すべて完了）。保存・削除・状態更新・uploadは未実行。[証跡](#認証後実route受け入れ2026-10-13)・[QA](../../testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。
 
@@ -119,15 +123,15 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
-| DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
-| DS-PAGE-040 | `/dashboard/admin/attributes/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
-| DS-PAGE-041 | `/dashboard/admin/attributes` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
-| DS-PAGE-042 | `/dashboard/admin/categories/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-044 | `/dashboard/admin/coupons/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-045 | `/dashboard/admin/coupons` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 実装・補助検証済み、以前は認証後保留。[証跡](#監査指摘6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-040 | `/dashboard/admin/attributes/new` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 実装・補助検証済み、以前は認証後保留。[証跡](#監査指摘6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-041 | `/dashboard/admin/attributes` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 実装・補助検証済み、以前は認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-042 | `/dashboard/admin/categories/new` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-044 | `/dashboard/admin/coupons/new` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-045 | `/dashboard/admin/coupons` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
 | DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-047 | `/dashboard/admin/offer-tags` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-047 | `/dashboard/admin/offer-tags` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
 | DS-PAGE-048 | `/dashboard/admin/orders` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-049 | `/dashboard/admin` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-050 | `/dashboard/admin/stores` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/stores/page.tsx](<../../../src/app/dashboard/admin/stores/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
@@ -1746,3 +1750,11 @@ Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへco
 ### 管理マスタ8 Step 8 — DS-PAGE-047 オファータグ一覧（2026-10-14）
 
 既存実装回帰（新規Redなし）: 共有MasterDialog/SaveFeedbackの適用を確認。p4新旧一覧+対象外独立作成18/18、関連RTL15/15、型成功、lint0 errors/既存8 warnings。3幅/light/dark・取得失敗/retry44px・入力境界/focus・編集/削除/値保持/成功・axe、390px dark画像確認。追加の固有改修なし。name/url/作成と編集のID/遷移を保持。
+
+## 管理マスタ8最終統合（2026-10-14）
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 型エラー0、lint errors0／既存warnings8、check:playwright成功。
+
+実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。
+
+最初の実routeは47/48、カテゴリfocus復帰1件失敗。カテゴリ6件の再確認は成功。同名カテゴリ3件の曖昧さを除くためURLで行を特定し、全48件を再実行して成功。本体追加修正なし。Next生成型の更新中のTS6053はサーバー終了・自動include除去後に再確認して成功。製品Redに算入しない。

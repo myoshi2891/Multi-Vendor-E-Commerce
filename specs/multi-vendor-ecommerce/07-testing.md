@@ -1,5 +1,11 @@
 # Testing Strategy
 
+## 管理マスタ8の受け入れ（2026-10-14）
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。
+
+実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。 共通configの`admin-master-route` suiteで既存データを使用する。[実行手順](../../docs/testing/TESTING_DESIGN.md#管理マスタ8実ルート検証)。
+
 ## 全実ルートのデザイン再監査
 
 実Nextルートの全数到達記録とfixtureの部品検証を区別する。未認証の転送・HTTPエラー・仮実装は本体移行完了と扱わない。収集spec成功だけでデザイン合格にせず、操作寸法・theme・表示状態・認証後本体の受け入れを確認する。[2026-10-09監査](../../docs/design/design-system/full-route-reaudit-2026-10-09.md)。機能/API/データ仕様は今回変更なし。
