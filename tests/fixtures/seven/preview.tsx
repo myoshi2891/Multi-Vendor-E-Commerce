@@ -84,16 +84,21 @@ const inventoryRows = [0, 3, 10].map((quantity, index) => ({
     variantId: "variant",
 }));
 // Tests can hold a save until the pending UI has been observed.
+// Held saves are queued so each release call resolves exactly one waiter (FIFO).
+const heldInventorySaves: Array<() => void> = [];
+const inventoryWindow = window as Window & { releaseInventorySave?: () => void };
+function releaseInventorySave() {
+    heldInventorySaves.shift()?.();
+    if (heldInventorySaves.length === 0) delete inventoryWindow.releaseInventorySave;
+}
 async function waitForInventorySave() {
     if (!location.search.includes("hold-inventory")) {
         await new Promise((resolve) => setTimeout(resolve, 300));
         return;
     }
     await new Promise<void>((resolve) => {
-        (window as Window & { releaseInventorySave?: () => void }).releaseInventorySave = () => {
-            delete (window as Window & { releaseInventorySave?: () => void }).releaseInventorySave;
-            resolve();
-        };
+        heldInventorySaves.push(resolve);
+        inventoryWindow.releaseInventorySave = releaseInventorySave;
     });
 }
 let stockAttempts = 0,
