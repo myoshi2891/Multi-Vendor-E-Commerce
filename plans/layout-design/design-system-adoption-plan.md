@@ -923,3 +923,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-eight-purchase-reaudit-design-system-plan.md)。既存台帳と履歴を保持し、今回の差分・回帰・実route検証を別記録する。
 
 - [x] Step 1 DS-PAGE-006 商品一覧: 改修または既存実装回帰・補助検証・仕様同期。今回の実routeは最終検証欄参照。
+
+- [x] Step 2 DS-PAGE-037 店舗詳細: 改修または既存実装回帰・補助検証・仕様同期。今回の実routeは最終検証欄参照。

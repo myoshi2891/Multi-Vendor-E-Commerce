@@ -45,3 +45,7 @@ purchase-themeへcontrol-line（#877957）、line-on-dark、divider-on-dark、da
 ### 再監査 Step 1 DS-PAGE-006 商品一覧（2026-10-14）
 
 ProductSortの通常・hover境界は隣接面に対して3:1以上とし、Portalの選択面はpurchase-selected。並び替え時に繰り返しsizeとsearchを保持する。API/DB/認可/金額契約は不変。
+
+### 再監査 Step 2 DS-PAGE-037 店舗詳細（2026-10-14）
+
+店舗のProductSortにも共通の境界contrast・選択面を適用し、850px境界と空状態の/store/fixture#collection導線を回帰確認。店舗のデータ取得・rating・URL・商品操作の設計変更は不要。

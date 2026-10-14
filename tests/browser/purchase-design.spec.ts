@@ -4,6 +4,26 @@ import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
 
+for (const width of [1440, 850, 768, 390]) {
+    test(`reaudit store ${width}: shared sort portal and empty destination`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/store/fixture?screen=store&size=M&sort=top-rated");
+        const trigger = page.getByRole("button", { name: "Sort by Top Rated" });
+        await expectReadableBorder(trigger);
+        await trigger.hover();
+        await expectReadableBorder(trigger);
+        await expectReadableFocus(trigger);
+        await trigger.press("Enter");
+        await expect(page.getByRole("menuitemradio", { name: "Top Rated" })).toHaveAttribute("aria-checked", "true");
+        await page.keyboard.press("Escape");
+        await expect(trigger).toBeFocused();
+        await expect(page).toHaveURL(/size=M&sort=top-rated$/);
+        await expect(page.getByRole("link", { name: "Clear filters" })).toHaveAttribute("href", "/store/fixture#collection");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-store-${width}.png`), fullPage: true });
+    });
+}
+
 for (const width of [1440, 768, 390]) {
     test(`reaudit browse ${width}: sort boundary and keyboard selection`, async ({ page }, info) => {
         await page.setViewportSize({ width, height: 1000 });
