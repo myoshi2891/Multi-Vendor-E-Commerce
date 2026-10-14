@@ -98,7 +98,7 @@ const CategoryForm: FC<CategoryFormProps> = ({
 
     return (
         <Card
-            className={`${styles.panel} ${styles.editor} ${categoryStyles.editor}`}
+            className={`${styles.panel} ${styles.editor} ${styles.controls} ${categoryStyles.editor}`}
         >
             <CardHeader>
                 <h2 className="text-xl">Category information</h2>
@@ -284,7 +284,7 @@ const CategoryForm: FC<CategoryFormProps> = ({
                                             />
                                         </FormControl>
                                         <div className="space-y-1 leading-none">
-                                            <FormLabel>Featured</FormLabel>
+                                            <FormLabel className={styles.control}>Featured</FormLabel>
                                             <FormDescription>
                                                 This Category will appear on the
                                                 home page

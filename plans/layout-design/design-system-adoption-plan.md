@@ -946,3 +946,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-eight-admin-master-residual-design-system-plan.md)。既存台帳と履歴を保持し今回の受け入れを別記録。
 
 - [x] Step 1 DS-PAGE-043 カテゴリ一覧: 差分改修/既存実装回帰・補助検証・仕様同期。今回の実routeは最終受け入れ欄参照。
+
+- [x] Step 2 DS-PAGE-042 カテゴリ作成: 差分改修/既存実装回帰・補助検証・仕様同期。今回の実routeは最終受け入れ欄参照。

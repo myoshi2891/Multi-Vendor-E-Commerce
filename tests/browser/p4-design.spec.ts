@@ -1,6 +1,36 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { expectTouch, expectBoundaryContrast } from "./seller-residual-assertions";
+import { masterAccessible, masterFocus } from "./master-eight-assertions";
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight newcategory ${width} ${theme}: standalone input and featured targets`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=newcategory");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const form = page.getByRole("form", { name: "Category information" });
+            for (const input of await form.locator('input:not([type="checkbox"]):not([aria-hidden="true"]), select').all()) {
+                await expectTouch(input);
+                await expectBoundaryContrast(input, "borderTopColor");
+            }
+            const featured = form.locator("label").filter({ hasText: /^Featured$/ });
+            await expectTouch(featured);
+            await featured.click();
+            await expect(form.getByRole("checkbox", { name: "Featured", exact: true })).toBeChecked();
+            const parent = form.getByRole("combobox", { name: "Parent category" });
+            await parent.selectOption("cat-1");
+            await expect(parent).toHaveValue("cat-1");
+            await parent.selectOption("__root__");
+            const upload = form.getByRole("button", { name: "Upload profile image" });
+            await expectTouch(upload);
+            await masterFocus(upload);
+            await expectTouch(form.getByRole("button", { name: "Create category", exact: true }));
+            await masterAccessible(page);
+            await page.screenshot({ path: info.outputPath(`master-eight-newcategory-${width}-${theme}.png`), fullPage: true });
+        });
+    }
+}
 
 for (const width of [1440, 768, 390]) {
     for (const theme of ["light", "dark"]) {

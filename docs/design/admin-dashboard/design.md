@@ -890,3 +890,7 @@ seller opt-inの売上chartはyAxisWidth=80で通貨tickをSVG内へ収め、typ
 ### 管理マスタ8 Step 1（2026-10-14）
 
 管理者MasterDialogのtriggerに既存control、theme/dialogの独立Portalにcontrolsを接続。共有I/Oとload世代管理を維持する。
+
+### 管理マスタ8 Step 2（2026-10-14）
+
+CategoryForm rootに既存controls、FeaturedのFormLabelにcontrolを付与。画像proxy入力は非表示で表示寸法検査から除外。category-treeの業務設計は変更不要。

@@ -240,3 +240,7 @@ DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共�
 ### 管理マスタ8 Step 1（2026-10-14）
 
 カテゴリの作成/編集triggerとPortal内入力・保存/retryは44px以上。light/darkで入力境界3:1以上、Escape復帰・値保持・pending lockを維持する。
+
+### 管理マスタ8 Step 2（2026-10-14）
+
+独立カテゴリフォームの入力/select/画像/保存とFeatured labelは44px以上。既存親選択とlabel操作・pending/失敗値保持を維持。
