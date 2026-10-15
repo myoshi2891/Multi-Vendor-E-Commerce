@@ -59,6 +59,10 @@ jest.mock("@/lib/db", () => ({
             update: jest.fn(),
             updateMany: jest.fn().mockResolvedValue({ count: 1 }),
         },
+        // 返品済み数量の差し引き（plan 088）。既定は「返品なし」で、戻す量は購入数のまま
+        returnRequestItem: {
+            groupBy: jest.fn().mockResolvedValue([]),
+        },
         // updateOrderGroupStatus が tx 内で更新前の状態をロックして読む（plan 086）
         $queryRaw: jest.fn().mockResolvedValue([]),
         $transaction: jest.fn(),
