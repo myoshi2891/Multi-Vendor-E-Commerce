@@ -29,7 +29,6 @@ import {
     resolveReturnWindowDays,
 } from "@/lib/returns-policy";
 import {
-    getReturnedQuantities,
     isRestockTerminalItem,
     restockOrderItems,
     settleOrderItems,
@@ -515,9 +514,19 @@ const resolveSideEffects =
             data: { refundAmount },
         });
 
-        const returned = await getReturnedQuantities(
-            tx,
-            eligible.map((item) => item.orderItemId)
+        // 終端にするかは解決済み（RESOLVED）の数量だけで判定する。RECEIVED を数えると、
+        // 同じ item の別の RMA が未解決のまま item が Returned になり、その RMA の返金額が 0 になる。
+        // この RMA は updateMany で RESOLVED になっているので、合計に含まれる
+        const resolved = await tx.returnRequestItem.groupBy({
+            by: ["orderItemId"],
+            where: {
+                orderItemId: { in: eligible.map((item) => item.orderItemId) },
+                returnRequest: { status: ReturnRequestStatus.RESOLVED },
+            },
+            _sum: { quantity: true },
+        });
+        const returned = new Map(
+            resolved.map((row) => [row.orderItemId, row._sum.quantity ?? 0])
         );
         const fullyReturned = eligible
             .filter(
