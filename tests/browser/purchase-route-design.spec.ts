@@ -7,7 +7,7 @@ import {
 } from "@clerk/testing/playwright";
 import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
-import { expectReadableFocus } from "./purchase-assertions";
+import { expectReadableBorder, expectReadableFocus } from "./purchase-assertions";
 
 /**
  * 購入優先8画面の認証後実ルート受け入れ（checkout・注文詳細・wishlist）。
@@ -454,9 +454,14 @@ test("wishlist: real items, pagination and history", async ({
             await expectReadableFocus(next);
             await page.keyboard.press("Enter");
             await expect(page).toHaveURL(/\/profile\/wishlist\/2$/);
-            await expect(
-                nav.getByRole("link", { name: "Page 2", exact: true })
-            ).toHaveAttribute("aria-current", "page");
+            const current = nav.getByRole("link", { name: "Page 2", exact: true });
+            await expect(current).toHaveAttribute("aria-current", "page");
+            // 購入再監査: 現在ページは hover しても境界色が変わらず 3:1 を保つ
+            await expectReadableBorder(current);
+            const border = await current.evaluate((element) => getComputedStyle(element).borderTopColor);
+            await current.hover();
+            await expect(current).toHaveCSS("border-top-color", border);
+            await expectReadableBorder(current);
             await expect(
                 nav.getByText("Next", { exact: true })
             ).toHaveAttribute("aria-disabled", "true");
@@ -583,6 +588,13 @@ test("storefront eight account discovery: authenticated read-only routes", async
                 const main=page.getByRole("main");
                 await expect(main.getByRole("heading",{level:1})).toBeVisible();
                 await expect(main.getByRole("alert")).toHaveCount(0);
+                // step-1 は Clerk 読み込み前（isSignedIn 未確定）に未ログイン分岐を描画し、読み込み後に
+                // 差し替わる。SSR の HTML はサインイン済みなので、Clerk の読み込み完了を待ってから部品を列挙する
+                // （列挙中に DOM が入れ替わると nth が別の部品を指す）
+                if (path === "/seller/apply") {
+                    await clerk.loaded({ page });
+                    await expect(main.getByRole("link",{name:"Sign in"})).toHaveCount(0);
+                }
                 if (path.includes("history")) {
                     if (process.env.DESIGN_HISTORY_IDS) await expect(main.locator('[data-variant="editorial"]')).toBeVisible();
                     else await expect(main.getByRole("heading",{name:"No recently viewed pieces."})).toBeVisible();
