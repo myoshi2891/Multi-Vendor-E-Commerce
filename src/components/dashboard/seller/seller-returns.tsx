@@ -1,6 +1,7 @@
 "use client";
 import { useId, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ReturnItemCondition, ReturnRequestStatus } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,6 +9,7 @@ import {
     RETURN_STATUS_LABELS,
     type ReturnRequestSellerActions,
     type ReturnRequestView,
+    type ReturnStatusCounts,
 } from "@/lib/returns-view";
 import styles from "../design/seller.module.css";
 import SellerPage from "../design/seller-page";
@@ -274,25 +276,47 @@ function ReturnCard({
  * 店舗の返品キュー（plan 088 Step 5・DS-COMP-248）。
  * DataTable は使わない —— 行の remount で成功表示と focus 復帰先を失うため
  * （seller-orders.tsx の注記と同じ問題）。Server Action は初回の参照を固定する。
+ * 絞り込みとページは URL（?status=&page=）で持ち、サーバーが 1 ページ分だけ渡す。
+ * 件数はサーバーの状態別集計（counts）から出す。
  */
 export default function SellerReturns({
     storeUrl,
     requests,
+    counts,
+    status,
+    page,
+    totalPages,
     actions,
 }: Readonly<{
     storeUrl: string;
+    /** 現在のページ・絞り込みに該当する分だけ */
     requests: ReturnRequestView[];
+    counts: ReturnStatusCounts;
+    status: ReturnRequestStatus | null;
+    page: number;
+    totalPages: number;
     actions: ReturnRequestSellerActions;
 }>) {
-    const filterId = useId();
-    const [stableActions] = useState(() => actions),
-        [filter, setFilter] = useState<ReturnRequestStatus | "ALL">("ALL");
-    const count = (status: ReturnRequestStatus) =>
-        requests.filter((request) => request.status === status).length;
-    const visible =
-        filter === "ALL"
-            ? requests
-            : requests.filter((request) => request.status === filter);
+    const filterId = useId(),
+        router = useRouter(),
+        pathname = usePathname(),
+        searchParams = useSearchParams();
+    const [stableActions] = useState(() => actions);
+    const total = STATUSES.reduce((sum, s) => sum + counts[s], 0);
+
+    /** 現在の URL を保ったまま status / page を差し替える。page 1 と ALL は URL から外す */
+    const hrefFor = (next: {
+        status: ReturnRequestStatus | null;
+        page: number;
+    }): string => {
+        const query = new URLSearchParams(searchParams.toString());
+        if (next.status) query.set("status", next.status);
+        else query.delete("status");
+        if (next.page > 1) query.set("page", String(next.page));
+        else query.delete("page");
+        const qs = query.toString();
+        return qs ? `${pathname}?${qs}` : pathname;
+    };
 
     return (
         <SellerPage
@@ -300,7 +324,7 @@ export default function SellerReturns({
             title="Returns"
             description="Review return requests, record received items, and resolve refunds."
         >
-            {requests.length === 0 ? (
+            {total === 0 ? (
                 <p className={styles.panel}>No return requests yet.</p>
             ) : (
                 <>
@@ -311,31 +335,35 @@ export default function SellerReturns({
                         <select
                             id={filterId}
                             className="border bg-background p-2"
-                            value={filter}
-                            onChange={(event) =>
-                                setFilter(
-                                    event.target.value as
-                                        | ReturnRequestStatus
-                                        | "ALL"
-                                )
-                            }
+                            value={status ?? "ALL"}
+                            onChange={(event) => {
+                                const value = event.target.value;
+                                router.push(
+                                    hrefFor({
+                                        status:
+                                            value === "ALL"
+                                                ? null
+                                                : (value as ReturnRequestStatus),
+                                        page: 1,
+                                    })
+                                );
+                            }}
                         >
-                            <option value="ALL">All ({requests.length})</option>
-                            {STATUSES.map((status) => (
-                                <option key={status} value={status}>
-                                    {RETURN_STATUS_LABELS[status]} (
-                                    {count(status)})
+                            <option value="ALL">All ({total})</option>
+                            {STATUSES.map((s) => (
+                                <option key={s} value={s}>
+                                    {RETURN_STATUS_LABELS[s]} ({counts[s]})
                                 </option>
                             ))}
                         </select>
                     </div>
-                    {visible.length === 0 ? (
+                    {requests.length === 0 ? (
                         <p className={styles.panel}>
                             No returns with this status.
                         </p>
                     ) : (
                         <div className="grid gap-4">
-                            {visible.map((request) => (
+                            {requests.map((request) => (
                                 <ReturnCard
                                     key={request.id}
                                     storeUrl={storeUrl}
@@ -344,6 +372,32 @@ export default function SellerReturns({
                                 />
                             ))}
                         </div>
+                    )}
+                    {totalPages > 1 && (
+                        <nav
+                            aria-label="Returns pages"
+                            className="flex flex-wrap items-center gap-4 text-sm"
+                        >
+                            {page > 1 && (
+                                <Link
+                                    href={hrefFor({ status, page: page - 1 })}
+                                    className="underline"
+                                >
+                                    Previous page
+                                </Link>
+                            )}
+                            <span>
+                                Page {page} of {totalPages}
+                            </span>
+                            {page < totalPages && (
+                                <Link
+                                    href={hrefFor({ status, page: page + 1 })}
+                                    className="underline"
+                                >
+                                    Next page
+                                </Link>
+                            )}
+                        </nav>
                     )}
                 </>
             )}
