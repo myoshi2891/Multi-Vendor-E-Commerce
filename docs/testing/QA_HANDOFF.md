@@ -4,7 +4,7 @@
 
 注文詳細の返品欄（申請・状態・取り下げ・追跡番号）、seller 返品キュー `/dashboard/seller/stores/[storeUrl]/returns`（絞り込み・承認・却下・受け取り・解決）、`/returns-exchange` の文面（日数を `RETURN_WINDOW_DAYS_DEFAULT` から描き、注文履歴へ案内、フォームは相談窓口）。[計画](../../plans/layout-design/returns-rma-ui-plan.md)／[証跡](../design/design-system/PROGRESS.md#返品-rma-の-ui2026-10-15plan-088-step-5未コミット)。
 
-- TDD: 新規 RTL 35 件中 28 件の Red を空の実装で確認 → Green。新規: `returns-view.test.ts` 8、`return-request-panel.test.tsx` 9、`seller-returns.test.tsx` 8、`returns-exchange-page.test.tsx` 2、`order-detail-page.test.tsx` +2。
+- TDD: 新規 29 件（RTL 21・ユニット 8。Jest 総数 3228 → 3257 の増分と一致）のうち 28 件の Red を空の実装で確認 → Green。新規: `returns-view.test.ts` 8、`return-request-panel.test.tsx` 9、`seller-returns.test.tsx` 8、`returns-exchange-page.test.tsx` 2、`order-detail-page.test.tsx` +2。
 - 実測: Jest **3254/3257**（3 skipped）・**334 スイート**・127 snapshots、tsc 0、lint 0 errors（既存 warnings 8）。`DESIGN_SUITE=returns` **10/10**（新設・port 3135）、`DESIGN_SUITE=priority` 83/83、`returns-exchange-design.spec.ts` chromium 4/4、`check:playwright` pass。Integration はバックエンド時点（257/19）から変更なし。
 - 環境: :3000 の Docker アプリは Prisma の再生成後に Turbopack が `@prisma/client-<hash>` を解決できず全ページ 500（今回のコードとは無関係）。復旧はコンテナの再起動（`docker compose restart app`）で行う想定・未実施。E2E は port 3136 の一時 dev サーバー（`NEXT_DEV_DIST_DIR=.next/returns-check`）に `E2E_BASE_URL` で接続した。
 - 保留: 認証後の実ルート（解除: plan 088 Step 6）。観察（既存）: 未認証の `/order/[orderId]` は `requireUser` の throw で 500。
@@ -13,6 +13,7 @@
 ---
 - PR#206 レビュー対応（RMA 解決の終端判定、同日・未コミット）: `resolveReturnRequest` が item を `Returned` にする判定で RECEIVED の RMA まで数えていたため、同じ item に RECEIVED の RMA が 2 件あると、先に解決した側で item が終端になり、後の RMA の返金額が 0 になっていた。判定を RESOLVED の数量だけに変更（在庫の差し引き `getReturnedQuantities` は RECEIVED + RESOLVED のまま）。`returns.test.ts` +1（新しい方から 2 件を解決）。Jest **3262/3265**・335 スイート・127 snapshots、tsc 0（`18733ad1` の +1 を含む全体実測。1 回目の全体実行で 2 件がフレークし、再実行で全件パス）。
 - PR#206 追加レビュー対応（同日）: seller 返品キューの手動返金の注記を RESOLVED でも出す（返金は解決後に手動で行うため・design DIRECTION-01）。`seedCommerce` のリセットで Order より先に seed ユーザーの `ReturnRequest` を消す（`orderGroupId` / `orderItemId` は返品の記録を残すため `onDelete: Restrict` のまま・design §9-4）。`seller-returns.test.tsx` +1。Jest **3260/3263**・335 スイート・127 snapshots、tsc 0。
+- PR#206 レビュー対応（返金額と相談窓口、2026-10-16・未コミット）: `resolveReturnRequest` の返金額から外すのを Canceled / Refunded だけにした（手動の `Returned` は返金を伴わないので含める。終端の再精算からは引き続き外す）。`/returns-exchange` の相談フォームは注文番号が必須なので、案内を注文済みに絞り、注文前の質問は `/contact` へ誘導。QA_HANDOFF の TDD 件数を 29 件（3228 → 3257）に訂正。`returns.test.ts` +1。Jest **3263/3266**・335 スイート・127 snapshots、tsc 0（`--no-coverage` 全体実測）。
 
 ## 2026-10-15 返品 RMA のバックエンド（plan 088 Step 0〜4、未コミット）
 
@@ -319,7 +320,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3262 passed / 3265 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-15全体実測（`bun run test -- --no-coverage --silent`、RMA 解決の終端判定の修正後）。 |
+| Jest テスト総数 (unit/component) | **3263 passed / 3266 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --no-coverage --silent`、RMA 返金額の対象修正後）。 |
 | 全体coverage（2026-10-15実測） | Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

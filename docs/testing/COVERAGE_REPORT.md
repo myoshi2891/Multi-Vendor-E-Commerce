@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-15） | **3262 passed / 3265 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| Jestテスト総数（2026-10-16） | **3263 passed / 3266 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
 | 全体coverage（2026-10-15実測） | Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。 |
 | テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-15再生成実測（UI 後）。 |
 | Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-15実測）。 |
-| テスト総数 | **3262 unit/component passed**（3265 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
+| テスト総数 | **3263 unit/component passed**（3266 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -357,6 +357,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 2026-10-15: PR#206 レビュー・SonarCloud 指摘対応（未コミット）。`returns.test.ts` +1（ロック後の冪等キー再確認）、`return-request-panel.test.tsx` +1、`seller-returns.test.tsx` +1、`seller-returns-page.test.tsx` +2（新規）。Jest3254/3257・334 suites → 3259/3262・335 suites。Statements88.33%（11434/12944）／Branches78.94%（7069/8954）／Functions85.11%（2264/2660）／Lines88.89%（10404/11704） → Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。dashboard417→418 files/412 lcov。
 
 2026-10-15: RMA 解決の終端判定を RESOLVED のみに（未コミット）。`returns.test.ts` +1（同じ item の RECEIVED 2 件を新しい方から解決）。`18733ad1` の +1 を含め Jest3260/3263 → 3262/3265・335 suites（`--no-coverage` 実測、カバレッジ率は前回値）。
+
+2026-10-16: RMA 返金額の除外を Canceled / Refunded のみに（未コミット）。`returns.test.ts` +1（手動の Returned を返金額に含め、再精算しない）。Jest3262/3265 → 3263/3266・335 suites（`--no-coverage` 実測、カバレッジ率は前回値）。
 
 2026-10-15: PR#206 追加レビュー対応（未コミット）。`seller-returns.test.tsx` +1（RESOLVED でも手動返金の注記）。Jest3259/3262 → 3260/3263・335 suites。Lines/Branches/Functions は 10413/11715・7083/8966・2264/2662 で変化なし。dashboard418 files/412 lcov。
 
