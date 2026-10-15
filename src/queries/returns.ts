@@ -478,6 +478,8 @@ const receiveSideEffects =
 /**
  * T7 の副作用: 返金額（商品代金の目安）を Decimal で確定し、返品が全数になった OrderItem を
  * `Returned` の終端にする。settleOrderItems は返品済み数量を差し引くので、戻す量は 0 になる。
+ * 対象の OrderItem 行をロックしてから計算するので、取り消し・返金（settleOrderItems）と直列になる。
+ * その OrderItem がすでに終端なら、取り消し・返金のほうで精算済みなので返金額に含めない。
  */
 const resolveSideEffects =
     (returnRequestId: string) =>
@@ -490,8 +492,21 @@ const resolveSideEffects =
                 orderItem: { select: { price: true, quantity: true } },
             },
         });
+        const locked = await lockOrderItems(
+            tx,
+            items.map((item) => item.orderItemId)
+        );
+        const lockedById = new Map(locked.map((row) => [row.id, row]));
+        const eligible = items.filter((item) => {
+            const orderItem = lockedById.get(item.orderItemId);
+            return (
+                orderItem !== undefined &&
+                !isRestockTerminalItem(orderItem.status)
+            );
+        });
+
         // 金額は Prisma.Decimal のまま積み上げる（tech.md の金額規約）
-        const refundAmount = items.reduce(
+        const refundAmount = eligible.reduce(
             (sum, item) => sum.add(item.orderItem.price.mul(item.quantity)),
             new Prisma.Decimal(0)
         );
@@ -500,10 +515,11 @@ const resolveSideEffects =
             data: { refundAmount },
         });
 
-        const orderItemIds = items.map((item) => item.orderItemId);
-        await lockOrderItems(tx, orderItemIds);
-        const returned = await getReturnedQuantities(tx, orderItemIds);
-        const fullyReturned = items
+        const returned = await getReturnedQuantities(
+            tx,
+            eligible.map((item) => item.orderItemId)
+        );
+        const fullyReturned = eligible
             .filter(
                 (item) =>
                     (returned.get(item.orderItemId) ?? 0) >=
