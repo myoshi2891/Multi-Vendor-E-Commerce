@@ -7,6 +7,11 @@
   captured, `status` defaults to `OPEN`). The downstream refund processing
   (stock restock, Stripe/PayPal refund) and an operator-side ticket viewing/
   status-update UI remain out of scope — see `docs/design/support-forms/` §4.)*
+  *(Further resolved 2026-10-15 — plan 088 backend: structured store-scoped RMA
+  (`ReturnRequest` state machine, return window policy, restock on receipt with
+  subtraction on later refunds, notifications) in `src/queries/returns.ts`.
+  Still open: the customer/seller UI (plan 088 Step 5) and executing refunds
+  through Stripe/PayPal (DIRECTION-01); `refundAmount` is an estimate only.)*
 - What analytics or reporting requirements are expected for sellers/admins?
   *(Partially resolved — admin KPI dashboard (Phase 2 F1) and seller store
   dashboard (seller-dashboard Phase 3: revenue from Paid orders, orders, views,

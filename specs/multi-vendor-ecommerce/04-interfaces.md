@@ -14,7 +14,7 @@ Storefront:
 - `/store/[storeUrl]` store page
 - `/cart` cart
 - `/checkout` checkout (protected)
-- `/order/[orderId]` order detail
+- `/order/[orderId]` order detail; each store group renders a returns section (`ReturnRequestPanel`, plan 088) when it has eligible items or return requests. Data: `getReturnRequestsForOrder(order.id)` + `buildGroupReturnOptions` (`src/lib/returns-view.ts`); a failed lookup keeps the page and shows a reload hint without the request entry
 - `/profile` profile overview
 - `/profile/orders` and `/profile/orders/[filter]` order history
 - `/profile/addresses` shipping addresses
@@ -42,6 +42,7 @@ Dashboard:
 - `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` edit an existing product + variant (`force-dynamic`; loads via `getProductVariantForEdit`, including category-attribute initial values)
 - `/dashboard/seller/stores/[storeUrl]/inventory` inventory management (F2)
 - `/dashboard/seller/stores/[storeUrl]/messages` seller-side messaging (force-dynamic; two-pane list identified by buyer + reused thread)
+- `/dashboard/seller/stores/[storeUrl]/returns` returns queue (force-dynamic; `getStoreReturnRequests` → `SellerReturns`, status filter, approve / reject / receive / resolve) — plan 088
 - `/dashboard/admin` admin overview
 - `/dashboard/admin/stores` manage stores
 - `/dashboard/admin/categories` manage categories
@@ -64,7 +65,7 @@ Dashboard:
 - Domain modules live in `src/queries/*.ts`.
 - Notable modules: category, subCategory, offer-tag, product, store, order,
   home, profile, review, coupon, stripe, PayPal, user, size, dashboard, inventory,
-  store-dashboard, message, support, attribute, notification.
+  store-dashboard, message, support, attribute, notification, returns.
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
@@ -76,6 +77,9 @@ Dashboard:
   state, so that a concurrent delete or a lost `connect` target is not misreported as
   "already paid"; returns `false` without throwing when the re-read itself fails, preserving
   the original P2025). Both are shared by `stripe.ts` and `paypal.ts`.
+  `order-item-settlement.ts` (`settleOrderItems` / `restockOrderItems` / `getReturnedQuantities`)
+  holds the OrderItem terminal transition and restock shared by `order.ts` and `returns.ts`
+  (plans 087 / 088); exporting it from a `"use server"` file would expose restock as a Server Action.
 - `createStripePaymentIntent` passes through only its intended rejections (`Order not found.`,
   `Order payment is already settled.`, `Stripe payment intent could not be recreated.`) and
   throws `Payment could not be initialized.` for any other failure (Stripe / Prisma errors are
@@ -193,7 +197,7 @@ Four support form types (contact / return / dispute / problem-report) collapse i
 |----------|-------------|------|
 | `createSupportTicket(input)` | Validates with `SupportTicketSchema` (outside `try/catch`), then `db.supportTicket.create` selecting `{ id }`. Returns `{ id }`. Throws `"入力内容を確認してください。"` (validation) or `"送信に失敗しました。..."` (DB). | Public (guest-allowed; `userId` only when signed in) |
 
-`SupportTicketSchema` / `SupportTicketCategoryEnum` / `SupportTicketInput` live in `src/lib/schemas.ts`. `superRefine` requires `orderId` only for `RETURN_REQUEST`/`DISPUTE`; empty strings are normalized to `undefined` via `z.preprocess` before the optional uuid check. UI: shared client form `src/components/store/support/support-form.tsx` (RHF + zodResolver, `useRef` double-submit guard, `requireOrderId` toggles the orderId field) rendered by public pages `/contact`, `/returns-exchange` (with `content/returns.ts` policy summary), `/dispute`, `/report-problem` — all stay `○ Static` (no `force-dynamic`; Prisma is only touched in the submit action).
+`SupportTicketSchema` / `SupportTicketCategoryEnum` / `SupportTicketInput` live in `src/lib/schemas.ts`. `superRefine` requires `orderId` only for `RETURN_REQUEST`/`DISPUTE`; empty strings are normalized to `undefined` via `z.preprocess` before the optional uuid check. UI: shared client form `src/components/store/support/support-form.tsx` (RHF + zodResolver, `useRef` double-submit guard, `requireOrderId` toggles the orderId field) rendered by public pages `/contact`, `/returns-exchange` (with `buildReturnsPolicySummary(resolveReturnWindowDays(null))` from `content/returns.ts`; the form is the guest / out-of-policy consultation channel, structured returns start from the order detail — plan 088), `/dispute`, `/report-problem` — all stay `○ Static` (no `force-dynamic`; Prisma is only touched in the submit action).
 
 ### notification module (`src/queries/notification.ts`) — in-app notifications (plan 086)
 
@@ -207,6 +211,25 @@ Reads and marks the signed-in user's `Notification` rows. Every function calls `
 | `markAllNotificationsRead()` | `updateMany({ userId, isRead: false })`. | `requireUser` |
 
 Writing and sending live in `src/lib/notifications/` (design: [`notification-foundation/design.md`](../../docs/design/notification-foundation/design.md)): `recordNotifications(tx, events)` writes `Notification` + `NotificationDelivery(PENDING)` with `createManyAndReturn({ skipDuplicates: true })` **inside the caller's transaction** (a write failure rolls back the state change), `scheduleDispatch(ids)` sends after commit via `after()`, and `dispatchPendingDeliveries()` claims rows with a lease, sends through `EmailProvider` (`EMAIL_PROVIDER`; stub by default) with idempotency key `${dedupeKey}:email`, and stops retrying 23h after the first attempt. Wired today: `updateOrderGroupStatus` / `updateOrderGroupStatusAsAdmin` → `order.group.shipped` / `order.group.delivered` for the customer.
+
+### returns module (`src/queries/returns.ts`) — returns RMA (plan 088)
+
+Store-scoped return requests (`ReturnRequest` header per `OrderGroup` + `ReturnRequestItem` per `OrderItem`). Design: [`returns-rma/design.md`](../../docs/design/returns-rma/design.md). Auth guards run **outside** `try/catch`. Every transition is a conditional `updateMany` pinned to the source status and the caller's scope (`storeId` for sellers, `userId` for customers, none for admins); side effects and notifications run only when `count === 1`. When `count === 0`: out of scope / missing → `"Return request not found."`, already at the target status → returns it with no side effects, otherwise `"Return request is not in a valid state for this action."`. Notifications are recorded in the same tx (`recordReturnRequestNotification`) and dispatched after commit. No refund API is called (DIRECTION-01).
+
+| Function | Transition | Auth |
+|----------|------------|------|
+| `createReturnRequest({ orderGroupId, idempotencyKey, resolution: "REFUND", customerNote?, items[] })` | T1 → `REQUESTED`. Locks the items with `FOR UPDATE OF oi` joined to `o."userId" = user` (other users' items → `"Order item not found"`), checks eligibility (`"Order item is not eligible for return."`) and R-1 (`"Return quantity exceeds purchased quantity."`). Same key + same `requestHash` returns the existing RMA; a different request → `"Idempotency key was reused with a different request."`. Notifies the seller (`rma.requested`). | `requireUser` |
+| `approveReturnRequest(storeUrl, id)` / `approveReturnRequestAsAdmin(id)` | T2 `REQUESTED → APPROVED` (`rma.approved` → customer) | `requireStoreOwner` / `requireAdmin` |
+| `rejectReturnRequest(storeUrl, id, sellerNote)` / `rejectReturnRequestAsAdmin(id, sellerNote)` | T3 `REQUESTED → REJECTED`, note required (`rma.rejected`) | `requireStoreOwner` / `requireAdmin` |
+| `cancelReturnRequest(id)` | T4 `REQUESTED/APPROVED → CANCELED` (`rma.canceled` → seller) | `requireUser` (requester) |
+| `setReturnTrackingNumber(id, trackingNumber)` | T5, `APPROVED` only, status unchanged | `requireUser` (requester) |
+| `receiveReturnRequest(storeUrl, id, items[])` / `receiveReturnRequestAsAdmin(id, items[])` | T6 `APPROVED → RECEIVED`. A condition is required for every item; `RESELLABLE` restocks `quantity` unless the OrderItem is already terminal (`restockedQuantity = 0`), `DAMAGED` restocks 0 (`rma.received`) | `requireStoreOwner` / `requireAdmin` |
+| `resolveReturnRequest(storeUrl, id)` / `resolveReturnRequestAsAdmin(id)` | T7 `RECEIVED → RESOLVED`. Sets `refundAmount = Σ quantity × OrderItem.price` (`Prisma.Decimal`, excludes shipping/coupons); fully returned items move to `Returned` via `settleOrderItems` (restocks 0) (`rma.resolved`) | `requireStoreOwner` / `requireAdmin` |
+| `cancelReturnRequestAsAdmin(id)` | T8 `REQUESTED/APPROVED → CANCELED` (`rma.canceled` → customer and seller) | `requireAdmin` |
+| `getReturnRequestsForOrder(orderId)` | The requester's RMAs for an order, newest first | `requireUser` |
+| `getStoreReturnRequests(storeUrl, status?)` | Store queue, optional status filter (validated) | `requireStoreOwner` |
+
+`settleOrderItems` (order cancellation/refund) now restores `quantity − returned quantity`, where returned quantity is the sum of `RECEIVED`/`RESOLVED` RMA items for that OrderItem, so a return followed by a refund restores exactly the purchased quantity. Return window: `src/lib/returns-policy.ts` (`RETURN_WINDOW_DAYS_DEFAULT`, default 30, overridden by `Store.returnWindowDays`; deadline = `Order.createdAt + OrderGroup.shippingDeliveryMax + window days`).
 
 ## External Services
 - Clerk for auth and user metadata.
@@ -224,6 +247,7 @@ Writing and sending live in `src/lib/notifications/` (design: [`notification-fou
 - `WEBHOOK_SECRET`
 - `EMAIL_PROVIDER` (notifications; unset/`stub` = no real send)
 - `CRON_SECRET` (`/api/cron/notifications` bearer token)
+- `RETURN_WINDOW_DAYS_DEFAULT` (returns; unset/blank = 30, non-integer or negative throws)
 
 ### Order tracking presentation boundary (2026-10-01)
 
