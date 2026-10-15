@@ -1,8 +1,16 @@
 # PROGRESS.md
 
+## 2026-10-14 管理マスタ8
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 画面別8コミットと計画・最終統合を含む10段階。[計画](../plans/layout-design/priority-eight-admin-master-residual-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#管理マスタ8最終統合2026-10-14)。実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。
+
+## 2026-10-14 購入再監査8
+
+P1/P2購入導線8画面の再監査・TDD・画面別コミット・仕様同期を実施。sort境界、画像modal、cart短名link、compare hero導線、Wishlist current hoverを改善。**3168 passed / 3171 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。Statements88.25%（10968/12427）／Branches78.64%（6782/8624）／Functions84.66%（2147/2536）／Lines88.79%（9987/11247）。dashboard407 files/405 lcov/18 of 80 cells。統計の正本は[QA_HANDOFF](testing/QA_HANDOFF.md#現在の実装状態サマリ)、画面別証跡は[デザイン進捗](design/design-system/PROGRESS.md#購入再監査8最終統合2026-10-14)。既存判定を保持し、今回の実データ/認証後/SDK受け入れは[QAの条件](testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)待ち。
+
 ## 2026-10-13 P3残存8画面
 
-管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示とkeyboard操作を適用。画面別TDD・補助検証・仕様同期を完了。最新実測（PR#204 New Code カバレッジ回復・レビュー指摘対応後、[統計表](testing/QA_HANDOFF.md#現在の実装状態サマリ)と同値）は**3167 passed / 3170 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**、Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）、dashboard407 files/405 lcov/18 of 80 cells（不変）。P3完了時点（カバレッジ回復前）の実測は3151 passed / 3154 total・Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）・dashboard406 files。補助Chrome: p3 73/73、six 74/74、p4 56/56、seven products/inventory/orders 36/36、計239/239。chart要素画像の追加6/6も成功。1440/768/390px × light/dark、axe AA（contrast抑制なし）、focus/44px/入力境界3:1/Portal/空/失敗/pending/retry/successを確認。 型/lintエラー0、既存lint警告8。認証後実routeは8画面すべて受け入れ済み（`p3-residual-route` 54/54）。状態更新・保存・削除・画像upload・Cloudinary送信、Integration/フル3-browser E2Eは[QA正本](testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)の条件どおり未実行。
+管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示とkeyboard操作を適用。画面別TDD・補助検証・仕様同期を完了。2026-10-13実測（PR#204 New Code カバレッジ回復・レビュー指摘対応後、[統計表](testing/QA_HANDOFF.md#現在の実装状態サマリ)と同値）は**3167 passed / 3170 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**、Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）、dashboard407 files/405 lcov/18 of 80 cells（不変）。P3完了時点（カバレッジ回復前）の実測は3151 passed / 3154 total・Statements88.19%（10966/12434）／Branches78.39%（6762/8626）／Functions84.4%（2144/2540）／Lines88.73%（9985/11252）・dashboard406 files。補助Chrome: p3 73/73、six 74/74、p4 56/56、seven products/inventory/orders 36/36、計239/239。chart要素画像の追加6/6も成功。1440/768/390px × light/dark、axe AA（contrast抑制なし）、focus/44px/入力境界3:1/Portal/空/失敗/pending/retry/successを確認。 型/lintエラー0、既存lint警告8。認証後実routeは8画面すべて受け入れ済み（`p3-residual-route` 54/54）。状態更新・保存・削除・画像upload・Cloudinary送信、Integration/フル3-browser E2Eは[QA正本](testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)の条件どおり未実行。
 
 [計画](../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
 

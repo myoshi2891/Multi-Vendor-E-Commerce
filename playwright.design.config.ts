@@ -36,6 +36,13 @@ const sellerRouteProd =
     process.env.DESIGN_SELLER_ROUTE_SERVER?.trim() === "prod";
 
 const DESIGN_SUITES = {
+    "admin-master-route": {
+        testMatch: "admin-master-route-design.spec.ts",
+        port: 3134,
+        kind: "route",
+        command: "NEXT_DEV_DIST_DIR=.next/admin-master-route bun run dev -- --webpack --port 3134",
+        timeout: 180000,
+    },
     "seller-eight-route": {
         testMatch: "seller-eight-route-design.spec.ts",
         port: 3131,

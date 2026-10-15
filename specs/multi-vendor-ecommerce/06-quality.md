@@ -1,5 +1,9 @@
 # Quality Attributes
 
+## 管理マスタ8画面の表示品質（2026-10-14）
+
+1440/768/390px×light/dark、44px操作領域（checkboxはlabel込み）、入力境界/focus 3:1以上、独立Portal、成功/失敗の意味色とstatus/alert、pending lock/値保持/retry、局所scroll/overflow/reduced-motion/axe AAを検証する。属性行メニューは非モーダルで背景を不必要にaria-hiddenにせず、編集Dialogは従来のmodal/focus復帰を保持する。補助fixtureの保存/削除と実ルートの非保存操作を区別する。[計画](../../plans/layout-design/priority-eight-admin-master-residual-design-system-plan.md)。
+
 ## Security
 - `/dashboard`, `/checkout`, and `/profile` are protected at the resource level (layout / page / Server Action auth checks); `src/proxy.ts` (`clerkMiddleware`) only establishes auth context and does not path-match routes.
 - Server actions validate authentication via `currentUser`.
@@ -176,6 +180,8 @@ P3対象ではscoped themeとPortal scopeでlight/darkを統一、390/768/1440px
 ## 購入優先8画面の品質条件（2026-10-11）
 
 1440/768/390pxでfocus・44px操作・長文/空/在庫切れ/pending/error/retry/success・独立住所Portal・局所scroll・axe AA（contrast除外なし）を検証する。computed focus/border contrastは実面に対して3:1以上とする。helperが扱わない画像/gradient/透明合成は画像目視とaxeで補完。暗い面のinvoice失敗はalertと意味色を併用し、削除後のfocusは消えない要素へ戻す。
+
+2026-10-14再監査: sortの通常/hover境界とWishlist currentのhover境界は隣接面に対し3:1以上。短いカート商品名link・比較hero導線も44×44px以上。商品画像の独立Portalは自身のpurchase theme、focus trap、Close初期focus、Escape/Closeでtrigger復帰、背景scroll lockを持つ。800/850/700/480pxの該当境界も検証する。[計画](../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)。
 
 補助fixtureの確認は既存Chromeを使う任意channelで行い、この証跡では新環境・DB初期化・顧客作成・購入/送信を行わない。実Next/認証後/外部SDKの受け入れはこれと分け、承認済みの専用DB・Clerkテスト顧客・sandboxサービスで行う。本番購入と実外部送信はいずれの証跡でも対象外。[QAの解除条件](../../docs/testing/QA_HANDOFF.md#ds-purchase-eight-browser)。
 

@@ -1,5 +1,238 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectTouch, expectBoundaryContrast, expectTokenColor } from "./seller-residual-assertions";
+import { masterAccessible, masterFocus } from "./master-eight-assertions";
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight offertags ${width} ${theme}: load retry and edit controls`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=offertags&loadfailure");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const trigger = page.getByRole("button", { name: "Edit offer tag Summer offers with a long seasonal title", exact: true });
+            await expectTouch(trigger);
+            await trigger.click();
+            const dialog = page.getByRole("dialog");
+            await expect(dialog.getByRole("alert")).toContainText("Could not load information");
+            const retry = dialog.getByRole("button", { name: "Retry load" });
+            await expectTouch(retry);
+            await masterFocus(retry);
+            await retry.press("Enter");
+            const name = dialog.getByLabel("Offer tag name", { exact: true });
+            await expect(name).toHaveValue("Summer offers with a long seasonal title");
+            for (const field of await dialog.getByRole("textbox").all()) {
+                await expectTouch(field);
+                await expectBoundaryContrast(field, "borderTopColor");
+            }
+            await masterFocus(name);
+            await expectTouch(dialog.getByRole("button", { name: "Save offer tag", exact: true }));
+            await masterAccessible(page);
+            await page.screenshot({ path: info.outputPath(`master-eight-offertags-${width}-${theme}.png`), fullPage: true });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight adminnewcoupon ${width} ${theme}: independent form and active label`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=adminnewcoupon");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const form = page.getByRole("form", { name: "Coupon information" });
+            for (const input of await form.locator('input:not([type="checkbox"]), select').all()) {
+                await expectTouch(input);
+                await expectBoundaryContrast(input, "borderTopColor");
+            }
+            const active = form.locator("label").filter({ hasText: /^Active$/ });
+            await expectTouch(active);
+            const check = form.getByRole("checkbox", { name: "Active", exact: true });
+            await expect(check).toBeChecked();
+            const primary = await check.evaluate(element => {
+                const probe = document.createElement("span");
+                probe.style.color = "hsl(var(--primary))";
+                element.parentElement!.append(probe);
+                const color = getComputedStyle(probe).color;
+                probe.remove();
+                return color;
+            });
+            await expect(check).toHaveCSS("accent-color", primary);
+            await active.click();
+            await expect(check).not.toBeChecked();
+            await form.getByLabel("Scope").selectOption("PLATFORM");
+            await expect(form.getByLabel("Store ID")).toHaveCount(0);
+            await form.getByLabel("Scope").selectOption("STORE");
+            await expect(form.getByLabel("Store ID")).toBeVisible();
+            await masterFocus(form.getByLabel("Coupon code", { exact: true }));
+            await masterAccessible(page);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({ path: info.outputPath(`master-eight-adminnewcoupon-${width}-${theme}.png`), fullPage: true });
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight admincoupons ${width} ${theme}: activation target and failed retry`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=admincoupons&failure");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const toggle = page.getByRole("button", { name: "Deactivate WELCOME", exact: true });
+            await expectTouch(toggle);
+            await masterFocus(toggle);
+            await toggle.press("Enter");
+            await expect(page.getByRole("button", { name: "Updating…" })).toBeDisabled();
+            await expect(page.getByRole("alert")).toContainText("input has been kept");
+            await toggle.click();
+            const success = page.getByRole("status").filter({ hasText: "Changes saved." });
+            await expect(success).toBeVisible();
+            await expectTokenColor(success, "color", "var(--brand-success)");
+            expect(await page.evaluate(() => (window as unknown as { calls: unknown[][] }).calls)).toEqual([["coupon-1"], ["coupon-1"]]);
+            await masterAccessible(page);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({ path: info.outputPath(`master-eight-admincoupons-${width}-${theme}.png`), fullPage: true });
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight attributeoptions ${width} ${theme}: option menu and immutable edit`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=attributeoptions");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const trigger = page.getByRole("button", { name: "Open menu for Linen", exact: true });
+            await trigger.focus();
+            await trigger.press("Enter");
+            const menu = page.getByRole("menu");
+            await expect(menu).toHaveCSS("border-radius", "3px");
+            await expect(menu).toHaveCSS("box-shadow", "none");
+            await expectTokenColor(menu, "background-color", "hsl(var(--popover))");
+            await masterAccessible(page);
+            const edit = menu.getByRole("menuitem", { name: "Edit label", exact: true });
+            await expectTouch(edit);
+            await edit.press("Enter");
+            const dialog = page.getByRole("dialog");
+            await expect(dialog.getByLabel("Value", { exact: true })).toBeDisabled();
+            const label = dialog.getByLabel("Label", { exact: true });
+            await expectTouch(label);
+            await expectBoundaryContrast(label, "borderTopColor");
+            await masterFocus(label);
+            await masterAccessible(page);
+            await page.screenshot({ path: info.outputPath(`master-eight-attributeoptions-${width}-${theme}.png`), fullPage: true });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight newattribute ${width} ${theme}: semantic success and boolean labels`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=newattribute");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const form = page.getByRole("form", { name: "Attribute information" });
+            await form.getByLabel("Category").selectOption("cat-1");
+            await form.getByLabel("Key", { exact: true }).fill("material");
+            await form.getByLabel("Display name", { exact: true }).fill("Material");
+            await form.getByLabel("Type", { exact: true }).selectOption("ENUM");
+            for (const name of ["Required", "Facetable", "Multi-valued"]) {
+                await expectTouch(form.locator("label").filter({ hasText: new RegExp(`^${name}$`) }));
+            }
+            const submit = form.getByRole("button", { name: "Create attribute", exact: true });
+            await masterFocus(submit);
+            await submit.press("Enter");
+            const success = page.getByRole("status").filter({ hasText: "Changes saved." });
+            await expect(success).toBeVisible();
+            await expectTokenColor(success, "color", "var(--brand-success)");
+            await masterAccessible(page);
+            await page.evaluate(() => window.scrollTo(0, 0));
+            await page.screenshot({ path: info.outputPath(`master-eight-newattribute-${width}-${theme}.png`), fullPage: true });
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight attributes ${width} ${theme}: independent menu surface`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=attributes");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const trigger = page.getByRole("button", { name: "Open menu for Material", exact: true });
+            await masterFocus(trigger);
+            await trigger.press("Enter");
+            const menu = page.getByRole("menu");
+            await expect(menu).toHaveCSS("border-radius", "3px");
+            await expect(menu).toHaveCSS("box-shadow", "none");
+            await expectTokenColor(menu, "background-color", "hsl(var(--popover))");
+            const edit = menu.getByRole("menuitem", { name: "Edit details" });
+            await expectTouch(edit);
+            await edit.focus();
+            await expectBoundaryContrast(edit, "outlineColor");
+            await masterAccessible(page);
+            await page.screenshot({ path: info.outputPath(`master-eight-attributes-${width}-${theme}.png`), fullPage: true });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight newcategory ${width} ${theme}: standalone input and featured targets`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto("/?screen=newcategory");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const form = page.getByRole("form", { name: "Category information" });
+            for (const input of await form.locator('input:not([type="checkbox"]):not([aria-hidden="true"]), select').all()) {
+                await expectTouch(input);
+                await expectBoundaryContrast(input, "borderTopColor");
+            }
+            const featured = form.locator("label").filter({ hasText: /^Featured$/ });
+            await expectTouch(featured);
+            await featured.click();
+            await expect(form.getByRole("checkbox", { name: "Featured", exact: true })).toBeChecked();
+            const parent = form.getByRole("combobox", { name: "Parent category" });
+            await parent.selectOption("cat-1");
+            await expect(parent).toHaveValue("cat-1");
+            await parent.selectOption("__root__");
+            const upload = form.getByRole("button", { name: "Upload profile image" });
+            await expectTouch(upload);
+            await masterFocus(upload);
+            await expectTouch(form.getByRole("button", { name: "Create category", exact: true }));
+            await masterAccessible(page);
+            await page.screenshot({ path: info.outputPath(`master-eight-newcategory-${width}-${theme}.png`), fullPage: true });
+        });
+    }
+}
+
+for (const width of [1440, 768, 390]) {
+    for (const theme of ["light", "dark"]) {
+        test(`master eight categories ${width} ${theme}: dialog controls and recovery`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 900 });
+            await page.goto("/?screen=categories&failure");
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            const trigger = page.getByRole("button", { name: "Create New Category", exact: true });
+            await expectTouch(trigger);
+            await trigger.focus();
+            await trigger.press("Enter");
+            const dialog = page.getByRole("dialog");
+            for (const input of await dialog.locator('input:not([type="checkbox"]):not([aria-hidden="true"]), select').all()) {
+                await expectTouch(input);
+                await expectBoundaryContrast(input, "borderTopColor");
+            }
+            await expectTouch(dialog.getByRole("button", { name: "Create category", exact: true }));
+            await expectTouch(dialog.getByRole("button", { name: "Close", exact: true }));
+            expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+            await page.screenshot({ path: info.outputPath(`master-eight-categories-${width}-${theme}.png`), fullPage: true });
+            await page.keyboard.press("Escape");
+            await expect(trigger).toBeFocused();
+        });
+    }
+}
+
 const screens = [
     { screen: "newoffertag", title: "Create offer tag" },
     { screen: "offertags", title: "Offer tags" },

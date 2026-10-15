@@ -1,6 +1,10 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-13 P3残存8画面の実ルート受け入れ（現在地）
+## 2026-10-14 管理マスタ8（現在地）
+
+8画面の残存差分・画面別TDD・仕様同期・認証後受け入れを完了。[最終証跡](#管理マスタ8最終統合2026-10-14)。台帳67画面は検証済み51／保留4／TODO7／実装済み5、部品246件。
+
+## 2026-10-13 P3残存8画面の実ルート受け入れ（履歴）
 
 既存の専用DB `multivendor_e2e` と Clerk テスト管理者/販売者で、管理者概要/注文/店舗・クーポン一覧/作成・バリアント追加・店舗作成の7画面（DS-PAGE-049/048/050/054/053/060/065）を検証済みへ更新。suite `p3-residual-route` 54/54（表示48・非保存操作6）。DS-PAGE-059 バリアント編集は、実データの色・サイズ・仕様の行IDが入力欄として表示される既存不具合を画像で発見し、編集用クエリから行IDを除く修正（TDD）後に再受け入れして検証済みへ更新（8画面すべて完了）。保存・削除・状態更新・uploadは未実行。[証跡](#認証後実route受け入れ2026-10-13)・[QA](../../testing/QA_HANDOFF.md#ds-p3-residual-eight-routes)。
 
@@ -119,15 +123,15 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
-| DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
-| DS-PAGE-040 | `/dashboard/admin/attributes/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 実装・補助検証済み、認証後保留。[証跡](#監査指摘6画面移行記録) |
-| DS-PAGE-041 | `/dashboard/admin/attributes` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 実装・補助検証済み、認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) |
-| DS-PAGE-042 | `/dashboard/admin/categories/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-044 | `/dashboard/admin/coupons/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-045 | `/dashboard/admin/coupons` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 実装・補助検証済み、以前は認証後保留。[証跡](#監査指摘6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-040 | `/dashboard/admin/attributes/new` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/attributes/new/page.tsx](<../../../src/app/dashboard/admin/attributes/new/page.tsx>) | 実装・補助検証済み、以前は認証後保留。[証跡](#監査指摘6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-041 | `/dashboard/admin/attributes` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/attributes/page.tsx](<../../../src/app/dashboard/admin/attributes/page.tsx>) | 実装・補助検証済み、以前は認証後受け入れ保留。[証跡](#監査指摘6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-042 | `/dashboard/admin/categories/new` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/categories/new/page.tsx](<../../../src/app/dashboard/admin/categories/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-043 | `/dashboard/admin/categories` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/categories/page.tsx](<../../../src/app/dashboard/admin/categories/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-044 | `/dashboard/admin/coupons/new` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/coupons/new/page.tsx](<../../../src/app/dashboard/admin/coupons/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
+| DS-PAGE-045 | `/dashboard/admin/coupons` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/coupons/page.tsx](<../../../src/app/dashboard/admin/coupons/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
 | DS-PAGE-046 | `/dashboard/admin/offer-tags/new` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../../src/app/dashboard/admin/offer-tags/new/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
-| DS-PAGE-047 | `/dashboard/admin/offer-tags` | 本体適用・検証保留 | P4 | 保留 | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | [P4証跡](#p4優先6画面移行記録) |
+| DS-PAGE-047 | `/dashboard/admin/offer-tags` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/offer-tags/page.tsx](<../../../src/app/dashboard/admin/offer-tags/page.tsx>) | [P4証跡](#p4優先6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
 | DS-PAGE-048 | `/dashboard/admin/orders` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/orders/page.tsx](<../../../src/app/dashboard/admin/orders/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-049 | `/dashboard/admin` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/page.tsx](<../../../src/app/dashboard/admin/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-050 | `/dashboard/admin/stores` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/admin/stores/page.tsx](<../../../src/app/dashboard/admin/stores/page.tsx>) | [P3移行記録](#p3優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
@@ -1651,3 +1655,117 @@ Red: workspaceリンク高さ24pxで6/6失敗。古いstore adapterによる保�
 - Green: product-edit / product / click-to-add / 商品ページdesign 110/110。Integration の編集往復（実DBで読込→無変更保存、属性保持・他店舗null）2/2。型0、lint 0 errors/既存8 warnings、`check:playwright` 成功。
 - 実route: `p3-residual-route` に「動的行の入力欄にUUID形式の値が無いこと」を追加し、再準備後に suite 全体 **54/54**。390px dark 画像で色 Black・サイズ M/10/99/0・仕様 E2E material/Sterling silver を目視。DS-PAGE-059 を検証済みへ更新。
 - テスト件数は不変（既存テストの期待値訂正と既存 browser テストへの assertion 追加のみ）のため全体統計は再計測しない。
+
+### 購入再監査8 Step 1 — DS-PAGE-006 商品一覧（2026-10-14）
+
+Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit browseとfilter/sort6/6、browse RTL22/22、型成功、lint0 errors/既存8 warnings。境界/hover/Portal選択面を既存purchase tokensへ統一し、複数size/search/URLとfocus復帰を保持。初回listen EPERMと変更後ラベルに対する旧テストlocatorの失敗は製品Redに含めない。
+
+### 購入再監査8 Step 2 — DS-PAGE-037 店舗詳細（2026-10-14）
+
+既存実装回帰（新規Redなし）: 共通sort修正を店舗でも確認。purchase店舗10/10（1440/850/768/390px、長文/空/カード操作、境界contrast・Portal checked・Escape/focus・URL保持・axe・overflow）、RTL23/23。390px画像目視。型/lintは最終再実行へ継続。店舗固有の追加改修なし。
+
+### 購入再監査8 Step 3 — DS-PAGE-019 商品詳細（2026-10-14）
+
+Red: 拡大画像を開いてもtriggerにfocusが残る（browser3幅、RTL1件）。Green/Refactor: Radix Dialogへ置換しPortalにtheme/overlayを明示、初期focus・trap・Escape/Close復帰を追加。商品browser12/12、overlay追加後3/3再確認、関連RTL64/64（最終swiper13/13）、型成功、lint0 errors/既存8 warnings。画像選択/alt/在庫/共有契約は保持。
+
+### 購入再監査8 Step 4 — DS-PAGE-007 カート（2026-10-14）
+
+Red: 短い商品名の独立linkが高さ28/25pxで3幅失敗。Green/Refactor: productNameへinline-flexと44px最小領域を適用、fixtureへ短い名称を追加。purchase11/11、cart関連RTL52/52、型成功、lint0 errors/既存8 warnings。商品URL・数量・送料・在庫制約・失敗後保持を維持。
+
+### 購入再監査8 Step 5 — DS-PAGE-008 Checkout（2026-10-14）
+
+既存実装回帰（新規Redなし）: 編集Portalの既存値・全入力境界・close44px・初期focus/復帰・radio保持を3幅と800pxで確認。commerce10/10（pending lock/coupon失敗保持/address保存失敗含む）、関連RTL18/18、型成功、lint0 errors/既存8 warnings、390px画像目視。Checkout固有の追加改修なし。
+
+### 購入再監査8 Step 6 — DS-PAGE-003 注文詳細（2026-10-14）
+
+既存実装回帰（新規Redなし）: 未払いerror色・retry境界/focus・pending通知・単一合計を3幅/800pxで確認。commerce16/16（Paid/Pending・invoice失敗・全状態light/dark含む）、注文route RTL6/6、型成功、lint0 errors/既存8 warnings、390px画像目視。注文固有の追加改修なし。実SDKと認証後routeの今回受け入れは専用DB不在で保留、過去履歴は維持。
+
+### 購入再監査8 Step 7 — DS-PAGE-009 比較（2026-10-14）
+
+Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Continue exploringをpurchase-touchへ接続し、折返し/縦揃えと重複media selectorを整理。priority11/11（700px含むfocus/axe/局所scroll/削除/empty/error/retry）、RTL28/28、型成功、lint0 errors/既存8 warnings、390px画像目視。URL・価格・4件制限・focus復帰を保持。
+
+### 購入再監査8 Step 8 — DS-PAGE-033 Wishlist（2026-10-14）
+
+Red: currentページhoverで境界contrast1.37:1となり4幅失敗。Green/Refactor: 非currentだけにhoverの罫線を適用。priority11/11（480px含むcurrent/focus/axe・URL/history・empty/error/pending）、RTL7/7、型成功、lint0 errors/既存8 warnings、390px画像目視。商品カード・保存variant・ページング契約は不変。
+
+
+## 購入再監査8最終統合（2026-10-14）
+
+[保存計画](../../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)。8画面の差分改修/既存実装回帰と画面別コミット、仕様同期を完了。既存の67画面/246部品のID・検証済み履歴を保持し、今回の受け入れを別記録する。
+
+- 最終補助Chrome: `DESIGN_SUITE=purchase` **82/82**、`commerce` **38/38**、`priority` **83/83**、計**203/203**。1440/768/390px、850/800/700/480px境界、通常/長文/空/loading/pending/error/retry/success、focus/操作領域/axe AA（contrast除外なし）・overflow・reduced-motion。8画面390px画像目視済み。
+- 実Next公開: `purchase-public --grep '(/cart|/compare) .*public route|guest'` **8/8**（cart/compare各3幅、checkout/wishlist未認証戻り先）。比較heroの44px/focusを追加後の3幅も成功。実データ/認証後/決済SDKは[QAの保留条件](../../testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)へ集約。専用DBの読み取り監査は権限付きでもP1001、Docker既存コンテナーなし。公開NextのDB接続エラーによる既存fallbackを商品あり表示の成功に数えない。
+- 全体Jest: **3168 passed / 3171 total、3 skipped、327 suites（326 passed/1 skipped）、127 snapshots**。Statements88.25%（10968/12427）／Branches78.64%（6782/8624）／Functions84.66%（2147/2536）／Lines88.79%（9987/11247）。dashboard407 files/405 lcov/18 of 80 cells。手書きEscape handlerをRadixへ置換し分母も変化。Integration/フルE2Eは今回未実行。
+- 型検査成功、lint0 errors/既存8 warnings、check:playwright成功。Nextによるtsconfigの一時include追加は除去。公開比較の国判定timeoutは既存fallbackで表示し、UIのRedに含めない。
+- 比較実route追加検証の初回は3assertion成功後に終了処理で待機し、停止したためexit130。ログ保存で再実行し**3/3・exit0**（30.7秒）を確認した。中断を成功コマンドとして数えない。
+
+### 実データ・認証後・実SDK受け入れ（2026-10-15 解除）
+
+[計画](../../../plans/layout-design/purchase-reaudit-real-route-acceptance-plan.md)。10-14 の P1001 は DB 消失ではなく Docker の `multivendor-postgres-dev` 停止が原因（volume 残存、`multivendor_e2e` migration 27/27）。`docker compose up -d db` のみで復旧し、初期化・migrate はしていない。DB変数3つを `multivendor_e2e` に揃え、Chrome channel・Clerk sk_test_・Stripe 有効キーで実行。
+
+- `purchase-public` **27/27**（inventory は `prepare-route-audit.ts`、読み取りのみ）。追加の `reaudit real` 6件（1440/768/390 × light/dark）で実データの browse/store sort 境界3:1・focus・URL保持（search維持）、実商品カートの商品名link 44px/focus/href、実商品2件比較時の hero 導線44px/focus、axe AA（main）を確認。
+- `purchase-route` **12 passed / 1 skipped**（`prepare-purchase-route.ts` で準備後に全件、書き込みあり）: checkout実カート/住所Dialog/クーポン/注文確定、注文paid/invoice/print、pending の PayPal・Stripe Elements 実描画、Stripe テストカード決済、wishlist（実12件・2ページ、current の hover 境界不変・3:1 を追加 assertion）、P2 通知/設定、account discovery。skip は PayPal sandbox 購入者承認（`PAYPAL_SANDBOX_BUYER_*` 未設定、従来からの別保留）。
+- **実データでの未確認**: 商品画像 modal の focus 制御。専用DBの商品画像45件はすべて `/no_image` で、プレースホルダー時は拡大ボタンを出さない仕様（`product-swiper.test.tsx`）のため開けない。実ルートではプレースホルダー表示を確認し、modal の focus は fixture（purchase 82/82）・RTL の検証に依拠する（test annotation `real-data-gap`）。
+- テスト基盤の修正（製品コード変更なし）: `prepare-route-audit.ts` が `store.findFirst` で商品1件の店舗を拾い、既存の `audit store` 3件が失敗していた → 商品数の多い順に決定論的に選ぶよう変更。`account discovery` の `/seller/apply` は Clerk 読み込み前に未ログイン分岐を描画してから差し替わり、`controls.all()` の nth がずれて 3回中1回失敗していた → `clerk.loaded` を待ってから列挙（5/5）。
+- 観察（未対応）: `/seller/apply` step-1 は `useUser().isLoaded` を見ないため、サインイン済みでも読み込み中は Sign in/Sign up が一瞬表示される。
+- 型0、対象 lint 0、check:playwright・diff --check 成功。Jest は対象外（変更なし、統計不変）。実行後 `tsconfig.json` の一時 include を戻し、DB コンテナを停止（volume 保持）。
+
+### 仕様同期
+
+SDD [requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[quality](../../../specs/multi-vendor-ecommerce/06-quality.md)・[testing](../../../specs/multi-vendor-ecommerce/07-testing.md)を更新。overview/data-model/interfaces/workflowsは既存URL・Action・認可・DB・金額・状態遷移が不変のため変更不要。[購入残存要件](../purchase-residual/requirements.md)、[Cart要件/設計](../cart/requirements.md)、[Compare要件/設計/タスク](../compare/requirements.md)、[Wishlist要件/設計/タスク](../profile-wishlist/requirements.md)を同期。店舗固有・[Checkout](../checkout/requirements.md)・[Order](../order-detail/requirements.md)の業務要件/設計/タスクは既存実装回帰のみのため変更不要。QA・テスト実装計画・COVERAGE_REPORT・全体PROGRESS・coverage dashboardを実測同期。テストハーネスの使い方は不変のためTESTING_DESIGN変更不要。
+
+### 段階コミット
+
+| commit | 段階 |
+|---|---|
+| `75d1416d` | 計画保存 |
+| `60d0e273` | 商品一覧・共有sort境界 |
+| `5233d00a` | 店舗詳細回帰 |
+| `43704068` | 商品画像modal Portal/focus |
+| `71bd6265` | Cart短い商品link |
+| `dcb4c5b1` | Checkout編集Portal/状態回帰 |
+| `920e836f` | 注文詳細error/retry回帰 |
+| `cf826c46` | Compare hero導線 |
+| `89f3c58e` | Wishlist current hover |
+
+最終統合コミット自身のhashはGit履歴を参照。共通基盤はStep1の共有sortに含め、不要な基盤単独コミットは省略。
+
+### 管理マスタ8 Step 1 — DS-PAGE-043 カテゴリ一覧（2026-10-14）
+
+Red: MasterDialog作成trigger高さ40pxで6件失敗。Green/Refactor: triggerへcontrol、独立Portalへcontrolsを接続。新6件+親select/reduced-motion1件7/7、既存一覧6/6、関連RTL29/29、型成功、lint0 errors/既存8 warnings。画像aria-hidden proxy入力への検査失敗はテスト対象誤りでRedに含めず除外。390px dark画像確認。既存取得/保存/削除/URL/親候補を保持。
+
+### 管理マスタ8 Step 2 — DS-PAGE-042 カテゴリ作成（2026-10-14）
+
+Red: standalone入力高さ40pxで6件失敗。Green/Refactor: CategoryFormへcontrols、Featured labelへcontrolを適用。p4新旧カテゴリ作成12/12、関連RTL31/31、型成功、lint0 errors/既存8 warnings。3幅/light/dark、親Root/候補・label操作・画像button・入力境界/focus・validation/保存失敗/retry・axe、390px dark画像目視。既存payload/slug/親深さ/Featured/作成遷移を保持。
+
+### 管理マスタ8 Step 3 — DS-PAGE-041 属性一覧（2026-10-14）
+
+Red: メニュー角丸6px（期待3px）で6件失敗、続いて展開時aria-hidden-focusを6件検出。Green/Refactor: styles.popoverとmodal=falseを属性行メニューへ適用。p4新旧属性一覧12/12、関連RTL38/38、型成功、lint0 errors/既存8 warnings。light/dark・3幅・面/影/角丸・menu item44px・focus/Escape・編集/失敗保持/retry・axe、390px dark画像確認。key/scope/archive/convert/URL契約を保持。
+
+### 管理マスタ8 Step 4 — DS-PAGE-040 属性作成（2026-10-14）
+
+Red: 保存成功statusが通常文字色でbrand-success不一致、6件失敗。Green/Refactor: 共通SaveFeedbackへsuccess意味色を接続。p4新旧属性作成12/12、関連RTL22/22、型成功、lint0 errors/既存8 warnings。boolean label44px・ENUM選択・送信/validation/失敗保持/retry・axeと390px dark画像確認。最初の誤ったsubmit名による中断はRedに含めない。カテゴリ/型/scope/key/payload/遷移は不変。
+
+### 管理マスタ8 Step 5 — DS-PAGE-039 属性選択肢（2026-10-14）
+
+Red: 行メニュー角丸6pxで6件失敗。Green/Refactor: 属性一覧と同じpopover/non-modalを選択肢行へ明示。p4新旧選択肢12/12、関連RTLは2ファイルをrunTestsByPathで確認、型成功、lint0 errors/既存8 warnings。3幅/light/dark・menu/編集Portal・Value disabled/Label境界/focus・追加/失敗保持/retry・archive/empty・axe、390px dark画像確認。definitionId/value/label/状態契約は不変。
+
+### 管理マスタ8 Step 6 — DS-PAGE-045 クーポン一覧（2026-10-14）
+
+Red: Activate/Deactivate button高さ40pxで6件失敗。Green/Refactor: ToggleCouponへcontrolを明示。p4新旧一覧12/12、関連RTL38/38、型成功、lint0 errors/既存8 warnings。3幅/light/dark・pending lock・error/retry・同一couponId payload・success意味色・編集/削除/空/取得失敗・axe、390px dark画像確認。scope/期間/有効化/Decimal表示投影と既存Action契約を保持。
+
+### 管理マスタ8 Step 7 — DS-PAGE-044 クーポン作成（2026-10-14）
+
+Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへcontrols、Active labelへcontrolと共有controlの最小幅44px、native checkbox accentをprimaryへ接続。p4新旧作成12/12、関連RTL23/23、型成功、lint0 errors/既存8 warnings。scope切替/Store ID・日時/割引/Active label操作・境界/focus・保存失敗/retry・axeを確認。3幅/light/dark、scope/storeId/isActive/payloadと既存refreshを保持。
+
+### 管理マスタ8 Step 8 — DS-PAGE-047 オファータグ一覧（2026-10-14）
+
+既存実装回帰（新規Redなし）: 共有MasterDialog/SaveFeedbackの適用を確認。p4新旧一覧+対象外独立作成18/18、関連RTL15/15、型成功、lint0 errors/既存8 warnings。3幅/light/dark・取得失敗/retry44px・入力境界/focus・編集/削除/値保持/成功・axe、390px dark画像確認。追加の固有改修なし。name/url/作成と編集のID/遷移を保持。
+
+## 管理マスタ8最終統合（2026-10-14）
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 型エラー0、lint errors0／既存warnings8、check:playwright成功。
+
+実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。
+
+最初の実routeは47/48、カテゴリfocus復帰1件失敗。カテゴリ6件の再確認は成功。同名カテゴリ3件の曖昧さを除くためURLで行を特定し、全48件を再実行して成功。本体追加修正なし。Next生成型の更新中のTS6053はサーバー終了・自動include除去後に再確認して成功。製品Redに算入しない。

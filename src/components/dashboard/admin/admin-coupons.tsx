@@ -17,6 +17,7 @@ import ConfirmDelete from "../design/confirm-delete";
 import CouponForm from "./coupon-form";
 import MasterDialog from "./master-dialog";
 import { useSaveState, SaveFeedback } from "./save-state";
+import styles from "../design/seller.module.css";
 export type AdminCouponRow = Coupon & { store: { name: string } | null };
 export type AdminCouponActions = {
     loadAction: typeof getCouponAsAdmin;
@@ -36,6 +37,7 @@ function ToggleCoupon({
     return (
         <div>
             <Button
+                className={styles.control}
                 variant="outline"
                 disabled={state.busy}
                 onClick={() =>

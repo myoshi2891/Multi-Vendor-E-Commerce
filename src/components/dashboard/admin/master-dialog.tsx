@@ -65,7 +65,7 @@ export default function MasterDialog<T>({
         >
             <DialogTrigger asChild>
                 <Button
-                    className={className}
+                    className={`${styles.control} ${className ?? ""}`}
                     variant={loadAction ? "outline" : "default"}
                 >
                     {label}
@@ -73,7 +73,7 @@ export default function MasterDialog<T>({
             </DialogTrigger>
             <DialogContent
                 closeDisabled={busy}
-                className={`${styles.theme} ${styles.dialog} ${className ?? ""}`}
+                className={`${styles.theme} ${styles.dialog} ${styles.controls} ${className ?? ""}`}
                 onEscapeKeyDown={(e) => {
                     if (locked.current) e.preventDefault();
                 }}

@@ -21,3 +21,8 @@
 
 - [x] 3幅の最終ページkeyboard/history回帰を追加、既存4幅の通常/empty/error/pendingと併せChrome7/7。Jest18/18、lint 0 errors/8既存warnings、tsc exit0、390px画像目視。
 - [ ] 認証後の実データ受け入れは最終QAに条件を記録。
+
+## 購入再監査8（2026-10-14）
+
+- [x] current hover境界contrast1.37:1 Red→accent境界維持、4幅（480px含む）のfocus/axe・URL/history/状態回帰。
+- [ ] 今回の認証後実ルートは専用DB不在で保留。既存履歴は維持。

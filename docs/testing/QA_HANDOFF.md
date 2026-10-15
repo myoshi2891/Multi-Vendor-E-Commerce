@@ -1,6 +1,38 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-13 PR#204 レビュー指摘対応（最新）
+## 2026-10-15 購入再監査8 実ルート受け入れ（最新）
+
+DS-PURCHASE-REAUDIT-EIGHT-ROUTES を解除。P1001 の原因は Docker `multivendor-postgres-dev` の停止（DB・volume は残存、migration 27/27）で、`docker compose up -d db` で復旧した。`purchase-public` **27/27**（実データ reaudit 6件 = 3幅 × light/dark を追加）、`purchase-route` **12 passed / 1 skipped**（注文確定・クーポン・Stripe テストカード決済を含む全件、skip は PayPal sandbox 購入者承認）。[計画](../../plans/layout-design/purchase-reaudit-real-route-acceptance-plan.md)／[証跡](../design/design-system/PROGRESS.md#実データ認証後実sdk受け入れ2026-10-15-解除)。
+
+- 実データでの残り: 商品画像 modal の focus 制御（専用DBの画像は全件 `/no_image` で拡大ボタンが出ない仕様。fixture/RTL の検証に依拠）。実画像を持つ商品を専用DBに用意すれば `reaudit real` が自動で modal 分岐を検証する。
+- テスト基盤: `prepare-route-audit.ts` の店舗選択を商品数の多い順に固定（既存の `audit store` 3件が商品1件の店舗で失敗していた）、`account discovery` の `/seller/apply` は `clerk.loaded` を待ってから部品を列挙（3回中1回 flaky → 5/5）。
+- 観察（未対応）: `/seller/apply` step-1 が `isLoaded` を見ず、サインイン済みでも読み込み中に Sign in/Sign up が一瞬表示される。
+- Jest 変更なし（統計は 10-14 から不変）。型0、対象lint0、check:playwright 成功。
+- 継続中の保留: 管理マスタ8の対象外項目（実保存・削除・archive/restore・型変換・クーポン有効切替・Cloudinary upload）、DS-PAGE-046 の実ルート受け入れ、PayPal sandbox 購入者承認。
+
+## 2026-10-14 管理マスタ8（履歴）
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 型0、lint errors0／既存warnings8、check:playwright成功。[計画](../../plans/layout-design/priority-eight-admin-master-residual-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#管理マスタ8最終統合2026-10-14)。
+
+### DS-ADMIN-MASTER-EIGHT-ROUTES
+
+実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。 今回8画面の表示受け入れ保留は解消。購入再監査や対象外画面の保留は別履歴として保持。
+
+## 2026-10-14 購入再監査8（履歴）
+
+[保存計画](../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#購入再監査8最終統合2026-10-14)。DS-PAGE-006/037/019/007/008/003/009/033を監査し、sort境界・画像modal・短いcart商品link・比較hero導線・Wishlist current hoverを修正。店舗/Checkout/注文詳細の固有表示は既存実装回帰。
+
+- 全体Jest: **3168 passed / 3171 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage --silent`実測。Statements88.25%（10968/12427）／Branches78.64%（6782/8624）／Functions84.66%（2147/2536）／Lines88.79%（9987/11247）。dashboard407 files/405 lcov/18 of 80 cells（不変）。Integration/フル3-browser E2Eの過去実測は保持。
+- ブラウザー最終: purchase82/82、commerce38/38、priority83/83、補助計203/203。公開実8/8（cart/compare各3幅とguest checkout/wishlist）、比較hero追加後3幅再確認。型0、lint0 errors/既存8 warnings、check:playwright成功。
+- 先行Red: sort境界1.85:1、画像modal初期focus（RTL+browser）、cart短いlink25〜28px、compare Home16.5px、Wishlist current hover境界1.37:1。listen EPERMと変更後sort名への旧locatorは製品Redに算入しない。
+
+### DS-PURCHASE-REAUDIT-EIGHT-ROUTES
+
+今回の実データ付きbrowse/store/product、認証後checkout/order/wishlistと実決済SDKの受け入れは保留。既存専用DB `multivendor_e2e` の読み取り監査は権限付き再試行でもP1001、Dockerのコンテナー一覧は空。公開実Nextは外部DB接続エラーから既存fallbackで表示し、商品あり表示の成功とは扱わない。過去の検証済み判定・受け入れ履歴は変更しない。
+
+**2026-10-15 解除**（[最新節](#2026-10-15-購入再監査8-実ルート受け入れ最新)）。以下は当時の次着手: 現行schemaと既存テストデータを持つ専用DBおよびClerkテスト顧客が利用可能になったら、今回の変更を3幅で実ルート受け入れする。sort境界/URL、商品画像modal、cart短名link、compare hero、Wishlist current hoverを確認する。決済送信・注文確定・住所保存・DB初期化は今回の検証範囲に含めない。実SDK受け入れは実描画のみとし、既存PayPal sandbox承認の別保留は保持する。
+
+## 2026-10-13 PR#204 レビュー指摘対応（履歴）
 
 - `sales-chart.tsx`: seller の Y 軸目盛りを短縮 USD（`$12.3M`）にし、8 桁売上でも `yAxisWidth` 80 に収める。全額は `SalesTooltip` が従来の `formatRevenue` で表示。回帰 +1。
 - `tests/browser/seller-residual-assertions.ts` の `expectBoundaryContrast`: outline は親から外側の面を探す（border は従来どおり要素自身から）。境界色の alpha を保持して面へ合成してから輝度を算出し、完全透明は失敗させる。`DESIGN_SUITE=p3` 73/73・`six` 74/74 成功。
@@ -255,7 +287,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-13実測 / lcov: 2026-10-13実測 / Integration: 2026-10-12実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
+### テスト統計（Jest: 2026-10-14実測 / lcov: 2026-10-14実測 / Integration: 2026-10-12実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -263,17 +295,17 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3167 passed / 3170 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。2026-10-13全体実測（PR#204 レビュー指摘対応後）。 |
-| 全体coverage（2026-10-13実測） | Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）。 |
+| Jest テスト総数 (unit/component) | **3168 passed / 3171 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。2026-10-14全体実測（管理マスタ8）。 |
+| 全体coverage（2026-10-14実測） | Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。 |
 | Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-12 実測: 238/238 pass**・`bun run test:integration`。直前の実測は2026-10-08 plan 087 実施時。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**Chromium 7/7 passed**。2026-10-07 実測（plan 084・Docker DB 接続）。OI-10 解消に伴い 6 spec の `disabledRules:["color-contrast"]` 抑制を解除済み（抑制なしで違反 0）。home（`/`）は spec 未作成（OI-9 は 2026-06-06 に解消済みで阻害要因ではない。追加は本書の「A11y-home」タスクで扱う）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-13 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-14 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **407ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-13再生成実測。 |
+| テストファイル総数（dashboard） | **408ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-14再生成実測。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 
@@ -1155,3 +1187,67 @@ seller限定の動的行削除は残る行の先頭入力へfocusを戻す。最
 ### P3残存8 Step 8 DS-PAGE-065（2026-10-13）
 
 独立headerのworkspaceリンクを44pxとhoverへ接続し、ThemeToggle Portalへ既存popover opt-inを適用。フォーム/payload/no-id/返却URL/画像adapter/Featured/validation/pending/error/retryを保持。sixのupsertStore adapterを現行のok/id/url結果へ修正（業務コード変更なし）。 six作成/設定24/24、関連RTL15/15、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。部分実行のため全体統計は変更しない。認証後/実SDKは最終受け入れ欄へ集約する。
+
+### 購入再監査8 Step 1（2026-10-14）
+
+Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit browseとfilter/sort6/6、browse RTL22/22、型成功、lint0 errors/既存8 warnings。境界/hover/Portal選択面を既存purchase tokensへ統一し、複数size/search/URLとfocus復帰を保持。初回listen EPERMと変更後ラベルに対する旧テストlocatorの失敗は製品Redに含めない。 部分検証のため全体統計は変更しない。
+
+### 購入再監査8 Step 2（2026-10-14）
+
+既存実装回帰（新規Redなし）: 共通sort修正を店舗でも確認。purchase店舗10/10（1440/850/768/390px、長文/空/カード操作、境界contrast・Portal checked・Escape/focus・URL保持・axe・overflow）、RTL23/23。390px画像目視。型/lintは最終再実行へ継続。店舗固有の追加改修なし。 部分検証のため全体統計は変更しない。
+
+### 購入再監査8 Step 3（2026-10-14）
+
+Red: 拡大画像を開いてもtriggerにfocusが残る（browser3幅、RTL1件）。Green/Refactor: Radix Dialogへ置換しPortalにtheme/overlayを明示、初期focus・trap・Escape/Close復帰を追加。商品browser12/12、overlay追加後3/3再確認、関連RTL64/64（最終swiper13/13）、型成功、lint0 errors/既存8 warnings。画像選択/alt/在庫/共有契約は保持。 部分検証のため全体統計は変更しない。
+
+### 購入再監査8 Step 4（2026-10-14）
+
+Red: 短い商品名の独立linkが高さ28/25pxで3幅失敗。Green/Refactor: productNameへinline-flexと44px最小領域を適用、fixtureへ短い名称を追加。purchase11/11、cart関連RTL52/52、型成功、lint0 errors/既存8 warnings。商品URL・数量・送料・在庫制約・失敗後保持を維持。 部分検証のため全体統計は変更しない。
+
+### 購入再監査8 Step 5（2026-10-14）
+
+既存実装回帰（新規Redなし）: 編集Portalの既存値・全入力境界・close44px・初期focus/復帰・radio保持を3幅と800pxで確認。commerce10/10（pending lock/coupon失敗保持/address保存失敗含む）、関連RTL18/18、型成功、lint0 errors/既存8 warnings、390px画像目視。Checkout固有の追加改修なし。 部分検証のため全体統計は変更しない。
+
+### 購入再監査8 Step 6（2026-10-14）
+
+既存実装回帰（新規Redなし）: 未払いerror色・retry境界/focus・pending通知・単一合計を3幅/800pxで確認。commerce16/16（Paid/Pending・invoice失敗・全状態light/dark含む）、注文route RTL6/6、型成功、lint0 errors/既存8 warnings、390px画像目視。注文固有の追加改修なし。実SDKと認証後routeの今回受け入れは専用DB不在で保留、過去履歴は維持。 部分検証のため全体統計は変更しない。
+
+### 購入再監査8 Step 7（2026-10-14）
+
+Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Continue exploringをpurchase-touchへ接続し、折返し/縦揃えと重複media selectorを整理。priority11/11（700px含むfocus/axe/局所scroll/削除/empty/error/retry）、RTL28/28、型成功、lint0 errors/既存8 warnings、390px画像目視。URL・価格・4件制限・focus復帰を保持。 部分検証のため全体統計は変更しない。
+
+### 購入再監査8 Step 8（2026-10-14）
+
+Red: currentページhoverで境界contrast1.37:1となり4幅失敗。Green/Refactor: 非currentだけにhoverの罫線を適用。priority11/11（480px含むcurrent/focus/axe・URL/history・empty/error/pending）、RTL7/7、型成功、lint0 errors/既存8 warnings、390px画像目視。商品カード・保存variant・ページング契約は不変。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 1（2026-10-14）
+
+Red: MasterDialog作成trigger高さ40pxで6件失敗。Green/Refactor: triggerへcontrol、独立Portalへcontrolsを接続。新6件+親select/reduced-motion1件7/7、既存一覧6/6、関連RTL29/29、型成功、lint0 errors/既存8 warnings。画像aria-hidden proxy入力への検査失敗はテスト対象誤りでRedに含めず除外。390px dark画像確認。既存取得/保存/削除/URL/親候補を保持。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 2（2026-10-14）
+
+Red: standalone入力高さ40pxで6件失敗。Green/Refactor: CategoryFormへcontrols、Featured labelへcontrolを適用。p4新旧カテゴリ作成12/12、関連RTL31/31、型成功、lint0 errors/既存8 warnings。3幅/light/dark、親Root/候補・label操作・画像button・入力境界/focus・validation/保存失敗/retry・axe、390px dark画像目視。既存payload/slug/親深さ/Featured/作成遷移を保持。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 3（2026-10-14）
+
+Red: メニュー角丸6px（期待3px）で6件失敗、続いて展開時aria-hidden-focusを6件検出。Green/Refactor: styles.popoverとmodal=falseを属性行メニューへ適用。p4新旧属性一覧12/12、関連RTL38/38、型成功、lint0 errors/既存8 warnings。light/dark・3幅・面/影/角丸・menu item44px・focus/Escape・編集/失敗保持/retry・axe、390px dark画像確認。key/scope/archive/convert/URL契約を保持。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 4（2026-10-14）
+
+Red: 保存成功statusが通常文字色でbrand-success不一致、6件失敗。Green/Refactor: 共通SaveFeedbackへsuccess意味色を接続。p4新旧属性作成12/12、関連RTL22/22、型成功、lint0 errors/既存8 warnings。boolean label44px・ENUM選択・送信/validation/失敗保持/retry・axeと390px dark画像確認。最初の誤ったsubmit名による中断はRedに含めない。カテゴリ/型/scope/key/payload/遷移は不変。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 5（2026-10-14）
+
+Red: 行メニュー角丸6pxで6件失敗。Green/Refactor: 属性一覧と同じpopover/non-modalを選択肢行へ明示。p4新旧選択肢12/12、関連RTLは2ファイルをrunTestsByPathで確認、型成功、lint0 errors/既存8 warnings。3幅/light/dark・menu/編集Portal・Value disabled/Label境界/focus・追加/失敗保持/retry・archive/empty・axe、390px dark画像確認。definitionId/value/label/状態契約は不変。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 6（2026-10-14）
+
+Red: Activate/Deactivate button高さ40pxで6件失敗。Green/Refactor: ToggleCouponへcontrolを明示。p4新旧一覧12/12、関連RTL38/38、型成功、lint0 errors/既存8 warnings。3幅/light/dark・pending lock・error/retry・同一couponId payload・success意味色・編集/削除/空/取得失敗・axe、390px dark画像確認。scope/期間/有効化/Decimal表示投影と既存Action契約を保持。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 7（2026-10-14）
+
+Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへcontrols、Active labelへcontrolと共有controlの最小幅44px、native checkbox accentをprimaryへ接続。p4新旧作成12/12、関連RTL23/23、型成功、lint0 errors/既存8 warnings。scope切替/Store ID・日時/割引/Active label操作・境界/focus・保存失敗/retry・axeを確認。3幅/light/dark、scope/storeId/isActive/payloadと既存refreshを保持。 部分検証のため全体統計は変更しない。
+
+### 管理マスタ8 Step 8（2026-10-14）
+
+既存実装回帰（新規Redなし）: 共有MasterDialog/SaveFeedbackの適用を確認。p4新旧一覧+対象外独立作成18/18、関連RTL15/15、型成功、lint0 errors/既存8 warnings。3幅/light/dark・取得失敗/retry44px・入力境界/focus・編集/削除/値保持/成功・axe、390px dark画像確認。追加の固有改修なし。name/url/作成と編集のID/遷移を保持。 部分検証のため全体統計は変更しない。

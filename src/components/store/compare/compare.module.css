@@ -26,9 +26,17 @@
 }
 .breadcrumb {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 15px;
     color: var(--purchase-muted-on-dark);
     font-size: 11px;
+}
+.breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    min-width: var(--purchase-touch);
+    min-height: var(--purchase-touch);
 }
 .heroContent {
     display: flex;
@@ -61,6 +69,7 @@
 }
 .heroFoot {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     gap: 20px;
     border-top: 1px solid color-mix(in srgb, var(--purchase-gold) 20%, transparent);
@@ -74,6 +83,8 @@
     gap: 15px;
     align-items: center;
     color: var(--purchase-gold);
+    min-width: var(--purchase-touch);
+    min-height: var(--purchase-touch);
 }
 .selection {
     max-width: 1600px;
@@ -276,10 +287,7 @@
     border: 1px solid var(--purchase-line);
 }
 @media (max-width: 700px) {
-    .hero a:focus-visible {
-    outline-color: var(--purchase-gold);
-}
-.heroInner {
+    .heroInner {
         padding: 25px 6%;
     }
     .heroContent {

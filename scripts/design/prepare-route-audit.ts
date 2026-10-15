@@ -20,7 +20,13 @@ try {
                 variants: { take: 1, select: { id: true, slug: true } },
             },
         }),
-        db.store.findFirst({ select: { url: true } }),
+        // 店舗詳細・比較の監査は商品 2 件以上が前提。findFirst の既定順だと商品 1 件の店舗を拾うため、
+        // 商品数の多い店舗を決定論的に選ぶ（公開されるのは ACTIVE の店舗のみ）
+        db.store.findFirst({
+            where: { status: "ACTIVE" },
+            orderBy: [{ products: { _count: "desc" } }, { url: "asc" }],
+            select: { url: true },
+        }),
         db.attributeDefinition.findFirst({
             where: { type: "ENUM" },
             select: { id: true },

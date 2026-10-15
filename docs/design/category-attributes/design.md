@@ -676,3 +676,5 @@ ADR-007 D-5（`scope`）/ D-6（`type`）と同じ「複合 FK + CHECK」の形�
 ## 管理画面の表示移行（2026-10-09）
 
 既存データ・制約を保持したまま属性フォーム/行操作をAction Propsへ移行し、管理者light/darkテーマを個別フォームと独立編集Portalへ適用する。nativeカテゴリ選択はpre-order/depth/pathを表示する。送信中の二重送信/入力/dismissを防ぎ、失敗時の入力保持/retryと成功statusを提供する。業務・DB契約の変更なし。[計画](../../../plans/layout-design/priority-six-audit-remediation-design-system-plan.md)。
+
+2026-10-14管理マスタ8: 属性一覧とENUM選択肢の行メニューは非モーダルとし、独立Portalへ既存theme/popoverを適用する。3px角丸・影なし・popover面と44px操作、可読focus、展開中のaxe AAを満たす。編集Portalは従来のmodal/focus復帰、key/value不変とarchive/restore/型変換契約を保持する。共通保存成功statusはbrand-successを併用する。[計画](../../../plans/layout-design/priority-eight-admin-master-residual-design-system-plan.md)。

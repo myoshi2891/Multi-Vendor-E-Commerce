@@ -886,3 +886,35 @@ DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共�
 ### P3最終統合・売上chart（2026-10-13）
 
 seller opt-inの売上chartはyAxisWidth=80で通貨tickをSVG内へ収め、typed CustomTooltipPropsの専用tooltipへpopover面/文字/境界/3px角丸を接続する。数値formatter/USD/期間/集計は保持し、既定callerのtooltip/軸幅は変更しない。先行browserでtick欠け6件、tooltip面未接続6件を確認してからGreen。8画面の最終証跡は[進捗](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)を参照。
+
+### 管理マスタ8 Step 1（2026-10-14）
+
+管理者MasterDialogのtriggerに既存control、theme/dialogの独立Portalにcontrolsを接続。共有I/Oとload世代管理を維持する。
+
+### 管理マスタ8 Step 2（2026-10-14）
+
+CategoryForm rootに既存controls、FeaturedのFormLabelにcontrolを付与。画像proxy入力は非表示で表示寸法検査から除外。category-treeの業務設計は変更不要。
+
+### 管理マスタ8 Step 3（2026-10-14）
+
+既存DropdownMenuContentにtheme/popoverを併用し、行DropdownMenuだけmodal=falseへ指定。フォーム/Action Props/列データは不変。
+
+### 管理マスタ8 Step 4（2026-10-14）
+
+管理者共通SaveFeedbackのsaved通知に既存success classを接続。失敗のalert/本文/Action契約は不変。共有カテゴリ/クーポン/オファーでも最終回帰する。
+
+### 管理マスタ8 Step 5（2026-10-14）
+
+選択肢DropdownMenuへmodal=false、Contentへtheme/popoverを追加。AttributeOptionDetailsと保存I/Oは維持。category-attributes設計へ表示条件を同期。
+
+### 管理マスタ8 Step 6（2026-10-14）
+
+ToggleCoupon buttonへ既存controlを接続。列factory/表示投影/Action引数の変更はない。MasterDialog/SaveFeedbackの共有変更も回帰。
+
+### 管理マスタ8 Step 7（2026-10-14）
+
+CouponForm rootへcontrolsとActive FormLabelへcontrolを追加し、controlの最小幅をseller-touchへ統一。native checkboxのaccentは既存primary token。既定primitive callerは変更しない。
+
+### 管理マスタ8 Step 8（2026-10-14）
+
+MasterDialog/SaveFeedbackの既存共有変更で一覧の残存操作を充足するため追加実装なし。OfferTagForm/列factory/既存Action Propsは維持。

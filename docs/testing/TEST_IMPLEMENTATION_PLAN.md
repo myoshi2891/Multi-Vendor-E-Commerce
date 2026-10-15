@@ -1291,3 +1291,41 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-13): P3残存8 Step 8 DS-PAGE-065 店舗作成 — six作成/設定24/24、関連RTL15/15、型0、lint0 errors/既存8 warnings、harness成功、390px light画像確認。実routeは別判定。
 
 - ✅ Completed (2026-10-13): P3残存8最終統合 — 全体Jest3151/3154（3 skipped）、補助239/239、coverage/dashboard・仕様/QA同期。認証後実routeはQA別IDで保持。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 1 DS-PAGE-006 商品一覧。Red: sort境界contrast1.85:1で3幅失敗。Green/Refactor: purchaseのreaudit browseとfilter/sort6/6、browse RTL22/22、型成功、lint0 errors/既存8 warnings。境界/hover/Portal選択面を既存purchase tokensへ統一し、複数size/search/URLとfocus復帰を保持。初回listen EPERMと変更後ラベルに対する旧テストlocatorの失敗は製品Redに含めない。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 2 DS-PAGE-037 店舗詳細。既存実装回帰（新規Redなし）: 共通sort修正を店舗でも確認。purchase店舗10/10（1440/850/768/390px、長文/空/カード操作、境界contrast・Portal checked・Escape/focus・URL保持・axe・overflow）、RTL23/23。390px画像目視。型/lintは最終再実行へ継続。店舗固有の追加改修なし。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 3 DS-PAGE-019 商品詳細。Red: 拡大画像を開いてもtriggerにfocusが残る（browser3幅、RTL1件）。Green/Refactor: Radix Dialogへ置換しPortalにtheme/overlayを明示、初期focus・trap・Escape/Close復帰を追加。商品browser12/12、overlay追加後3/3再確認、関連RTL64/64（最終swiper13/13）、型成功、lint0 errors/既存8 warnings。画像選択/alt/在庫/共有契約は保持。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 4 DS-PAGE-007 カート。Red: 短い商品名の独立linkが高さ28/25pxで3幅失敗。Green/Refactor: productNameへinline-flexと44px最小領域を適用、fixtureへ短い名称を追加。purchase11/11、cart関連RTL52/52、型成功、lint0 errors/既存8 warnings。商品URL・数量・送料・在庫制約・失敗後保持を維持。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 5 DS-PAGE-008 Checkout。既存実装回帰（新規Redなし）: 編集Portalの既存値・全入力境界・close44px・初期focus/復帰・radio保持を3幅と800pxで確認。commerce10/10（pending lock/coupon失敗保持/address保存失敗含む）、関連RTL18/18、型成功、lint0 errors/既存8 warnings、390px画像目視。Checkout固有の追加改修なし。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 6 DS-PAGE-003 注文詳細。既存実装回帰（新規Redなし）: 未払いerror色・retry境界/focus・pending通知・単一合計を3幅/800pxで確認。commerce16/16（Paid/Pending・invoice失敗・全状態light/dark含む）、注文route RTL6/6、型成功、lint0 errors/既存8 warnings、390px画像目視。注文固有の追加改修なし。実SDKと認証後routeの今回受け入れは専用DB不在で保留、過去履歴は維持。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 7 DS-PAGE-009 比較。Red: heroのHome link高さ16.5pxで4幅失敗。Green/Refactor: breadcrumb/Continue exploringをpurchase-touchへ接続し、折返し/縦揃えと重複media selectorを整理。priority11/11（700px含むfocus/axe/局所scroll/削除/empty/error/retry）、RTL28/28、型成功、lint0 errors/既存8 warnings、390px画像目視。URL・価格・4件制限・focus復帰を保持。
+
+- ✅ Completed (2026-10-14): 購入再監査8 Step 8 DS-PAGE-033 Wishlist。Red: currentページhoverで境界contrast1.37:1となり4幅失敗。Green/Refactor: 非currentだけにhoverの罫線を適用。priority11/11（480px含むcurrent/focus/axe・URL/history・empty/error/pending）、RTL7/7、型成功、lint0 errors/既存8 warnings、390px画像目視。商品カード・保存variant・ページング契約は不変。
+
+- ✅ Completed (2026-10-14): 購入再監査8最終統合。補助Chrome203/203・公開実8/8・全体Jest3168/3171（3skip）・127snapshots・型/lint/harness・仕様/QA/coverage同期。今回の認証後実route/SDKは専用DB不在のため[QAの解除条件](QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)待ち。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 1 DS-PAGE-043 カテゴリ一覧。Red: MasterDialog作成trigger高さ40pxで6件失敗。Green/Refactor: triggerへcontrol、独立Portalへcontrolsを接続。新6件+親select/reduced-motion1件7/7、既存一覧6/6、関連RTL29/29、型成功、lint0 errors/既存8 warnings。画像aria-hidden proxy入力への検査失敗はテスト対象誤りでRedに含めず除外。390px dark画像確認。既存取得/保存/削除/URL/親候補を保持。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 2 DS-PAGE-042 カテゴリ作成。Red: standalone入力高さ40pxで6件失敗。Green/Refactor: CategoryFormへcontrols、Featured labelへcontrolを適用。p4新旧カテゴリ作成12/12、関連RTL31/31、型成功、lint0 errors/既存8 warnings。3幅/light/dark、親Root/候補・label操作・画像button・入力境界/focus・validation/保存失敗/retry・axe、390px dark画像目視。既存payload/slug/親深さ/Featured/作成遷移を保持。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 3 DS-PAGE-041 属性一覧。Red: メニュー角丸6px（期待3px）で6件失敗、続いて展開時aria-hidden-focusを6件検出。Green/Refactor: styles.popoverとmodal=falseを属性行メニューへ適用。p4新旧属性一覧12/12、関連RTL38/38、型成功、lint0 errors/既存8 warnings。light/dark・3幅・面/影/角丸・menu item44px・focus/Escape・編集/失敗保持/retry・axe、390px dark画像確認。key/scope/archive/convert/URL契約を保持。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 4 DS-PAGE-040 属性作成。Red: 保存成功statusが通常文字色でbrand-success不一致、6件失敗。Green/Refactor: 共通SaveFeedbackへsuccess意味色を接続。p4新旧属性作成12/12、関連RTL22/22、型成功、lint0 errors/既存8 warnings。boolean label44px・ENUM選択・送信/validation/失敗保持/retry・axeと390px dark画像確認。最初の誤ったsubmit名による中断はRedに含めない。カテゴリ/型/scope/key/payload/遷移は不変。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 5 DS-PAGE-039 属性選択肢。Red: 行メニュー角丸6pxで6件失敗。Green/Refactor: 属性一覧と同じpopover/non-modalを選択肢行へ明示。p4新旧選択肢12/12、関連RTLは2ファイルをrunTestsByPathで確認、型成功、lint0 errors/既存8 warnings。3幅/light/dark・menu/編集Portal・Value disabled/Label境界/focus・追加/失敗保持/retry・archive/empty・axe、390px dark画像確認。definitionId/value/label/状態契約は不変。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 6 DS-PAGE-045 クーポン一覧。Red: Activate/Deactivate button高さ40pxで6件失敗。Green/Refactor: ToggleCouponへcontrolを明示。p4新旧一覧12/12、関連RTL38/38、型成功、lint0 errors/既存8 warnings。3幅/light/dark・pending lock・error/retry・同一couponId payload・success意味色・編集/削除/空/取得失敗・axe、390px dark画像確認。scope/期間/有効化/Decimal表示投影と既存Action契約を保持。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 7 DS-PAGE-044 クーポン作成。Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへcontrols、Active labelへcontrolと共有controlの最小幅44px、native checkbox accentをprimaryへ接続。p4新旧作成12/12、関連RTL23/23、型成功、lint0 errors/既存8 warnings。scope切替/Store ID・日時/割引/Active label操作・境界/focus・保存失敗/retry・axeを確認。3幅/light/dark、scope/storeId/isActive/payloadと既存refreshを保持。
+
+- ✅ Completed (2026-10-14): 管理マスタ8 Step 8 DS-PAGE-047 オファータグ一覧。既存実装回帰（新規Redなし）: 共有MasterDialog/SaveFeedbackの適用を確認。p4新旧一覧+対象外独立作成18/18、関連RTL15/15、型成功、lint0 errors/既存8 warnings。3幅/light/dark・取得失敗/retry44px・入力境界/focus・編集/削除/値保持/成功・axe、390px dark画像確認。追加の固有改修なし。name/url/作成と編集のID/遷移を保持。
+
+## 管理マスタ8最終統合（2026-10-14）
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。

@@ -10,6 +10,7 @@
 - Compare up to four persisted product variants side by side, remove individual selections or clear them, and reach the collection from empty or unavailable states. Show accessible loading and failure feedback with retry while preserving the selection.
 - View product details, variants, sizes, colors, images, and specs.
 - On a product detail page, inspect gallery images and their enlarged view, see the selected size's price and stock, and review delivery, returns, seller, reviews, questions, and related products when available.
+- The enlarged product image is a modal with keyboard focus contained inside it; opening focuses its close control, and closing with Escape or the close control restores focus to the image trigger.
 - Prevent purchase actions when no valid in-stock size is selected; show a clear selection or sold-out message.
 - Add items to cart with quantity and size selection.
 - Manage cart contents (update quantity, remove items).
@@ -97,6 +98,8 @@ Store creation has a standalone branded light/dark workspace with a main landmar
 ## P4管理マスタ6画面のデザイン移行（2026-10-06）
 
 カテゴリ・管理者クーポン・オファータグの一覧/作成は管理者light/dark theme、名前付きページ/form、検索、取得失敗/retryを使用する。編集/作成/削除とクーポンActivate/Deactivateを維持し、pending重複/close lock、失敗時入力保持と状態通知を提供する。カテゴリ階層・slug、coupon scope/storeId・割引/日時、offer name/urlの既存仕様は維持する。
+
+2026-10-14管理マスタ8: カテゴリ一覧/作成・属性一覧/作成/ENUM選択肢・管理者クーポン一覧/作成・オファータグ一覧の残存操作を統一する。独立入力/操作/booleanラベルは44×44px以上、入力境界とfocusは3:1以上。属性行メニューは非モーダル・3px角丸・影なしの独立popover、保存成功はstatusと意味色を併用する。既存DB/認可/業務/Action契約を保持する。
 
 [証跡と受け入れ保留](../../docs/design/design-system/PROGRESS.md#p4優先6画面移行記録)。
 

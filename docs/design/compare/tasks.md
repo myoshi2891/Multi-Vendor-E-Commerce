@@ -115,3 +115,8 @@
 
 - [x] RTL2件・browser3幅のfocus欠落Red→修正→回帰。Chrome7/7、Jest28/28、lint 0 errors/8既存warnings、tsc exit0、390px画像目視。
 - [ ] 実ルート受け入れは最終QAに記録。
+
+## 購入再監査8（2026-10-14）
+
+- [x] heroリンクの16.5px Red→44px Green、1440/768/700/390px・focus/axe/overflowと選択・削除・状態回帰。
+- [ ] 今回の実ルート受け入れは専用DB不在で保留。既存履歴は保持する。

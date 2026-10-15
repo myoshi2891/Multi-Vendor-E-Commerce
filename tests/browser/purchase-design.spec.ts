@@ -2,7 +2,89 @@ import { supportAccessible as accessible } from "./support-eight-assertions";
 import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { expectReadableFocus } from "./purchase-assertions";
+import { expectReadableFocus, expectReadableBorder } from "./purchase-assertions";
+
+for (const width of [1440, 768, 390]) {
+    test(`reaudit cart ${width}: short product title remains a touch target`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=cart&short-name=1");
+        const title = page.getByTestId("cart-item-name");
+        await expect(title).toHaveText("Pearl ・ Ivory");
+        const box = await title.boundingBox();
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+        await expect(title).toHaveAttribute("href", /\/product\/.+\/.+\?size=/);
+        await expectReadableFocus(title);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-cart-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`reaudit product ${width}: enlarged image contains keyboard focus`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/?screen=product&audit=1&gallery=1");
+        const trigger = page.getByRole("button", { name: "Enlarge product image" });
+        await trigger.focus();
+        await trigger.press("Enter");
+        const dialog = page.getByRole("dialog", { name: "Enlarged product image" });
+        const close = dialog.getByRole("button", { name: "Close image" });
+        await expect(close).toBeFocused();
+        await page.keyboard.press("Tab");
+        await expect(close).toBeFocused();
+        await page.keyboard.press("Shift+Tab");
+        await expect(close).toBeFocused();
+        await expectReadableFocus(close);
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-product-${width}.png`), fullPage: true });
+        await page.keyboard.press("Escape");
+        await expect(dialog).toBeHidden();
+        await expect(trigger).toBeFocused();
+        await trigger.press("Enter");
+        await page.getByRole("button", { name: "Close image" }).click();
+        await expect(trigger).toBeFocused();
+    });
+}
+
+for (const width of [1440, 850, 768, 390]) {
+    test(`reaudit store ${width}: shared sort portal and empty destination`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/store/fixture?screen=store&size=M&sort=top-rated");
+        const trigger = page.getByRole("button", { name: "Sort by Top Rated" });
+        await expectReadableBorder(trigger);
+        await trigger.hover();
+        await expectReadableBorder(trigger);
+        await expectReadableFocus(trigger);
+        await trigger.press("Enter");
+        await expect(page.getByRole("menuitemradio", { name: "Top Rated" })).toHaveAttribute("aria-checked", "true");
+        await page.keyboard.press("Escape");
+        await expect(trigger).toBeFocused();
+        await expect(page).toHaveURL(/size=M&sort=top-rated$/);
+        await expect(page.getByRole("link", { name: "Clear filters" })).toHaveAttribute("href", "/store/fixture#collection");
+        await accessible(page);
+        await page.screenshot({ path: info.outputPath(`reaudit-store-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 768, 390]) {
+    test(`reaudit browse ${width}: sort boundary and keyboard selection`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/browse?screen=browse&size=M&size=L&search=piece");
+        const trigger = page.getByRole("button", { name: /^Sort by / });
+        await expectReadableBorder(trigger);
+        await expectReadableFocus(trigger);
+        await trigger.press("Enter");
+        const option = page.getByRole("menuitemradio", { name: "New Arrivals" });
+        await option.focus();
+        await expect(option).toHaveCSS("background-color", "rgb(236, 231, 218)");
+        await option.press("Enter");
+        await expect(page).toHaveURL(/sort=new-arrivals/);
+        expect(new URL(page.url()).searchParams.getAll("size")).toEqual(["M", "L"]);
+        expect(new URL(page.url()).searchParams.get("search")).toBe("piece");
+        await expect(trigger).toBeFocused();
+        await page.screenshot({ path: info.outputPath(`reaudit-browse-${width}.png`), fullPage: true });
+    });
+}
 
 for (const width of [1440, 768, 390]) {
     test(`acceptance cart ${width}: branded breadcrumb and unavailable item`, async ({ page }, info) => {

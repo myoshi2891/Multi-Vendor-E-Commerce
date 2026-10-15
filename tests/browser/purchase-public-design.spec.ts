@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
-import { expectReadableFocus } from "./purchase-assertions";
+import { expectReadableBorder, expectReadableFocus } from "./purchase-assertions";
 
 for (const width of [1440, 768, 390]) {
     for (const route of ["/", "/browse", "/cart", "/compare"]) {
@@ -21,6 +21,15 @@ for (const width of [1440, 768, 390]) {
                 await expect(page.getByRole("heading", { name: "Compare products" })).toBeVisible();
                 await expect(page.getByTestId("compare-empty")).toBeVisible();
                 await expectReadableFocus(page.getByRole("link", { name: "Explore the collection" }));
+                for (const link of [
+                    page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Home", exact: true }),
+                    page.getByRole("link", { name: "Continue exploring" }),
+                ]) {
+                    const box = await link.boundingBox();
+                    expect(box!.height).toBeGreaterThanOrEqual(44);
+                    expect(box!.width).toBeGreaterThanOrEqual(44);
+                    await expectReadableFocus(link);
+                }
                 expect((await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
             }
             await page.getByLabel("Account menu", { exact: true }).click();
@@ -195,6 +204,16 @@ for (const width of [1440, 768, 390]) {
         const selection = page.getByRole("region", { name: "Selected products" });
         await expect(selection.getByRole("article")).toHaveCount(2);
         await expect(page.getByText("2 of 4 selected")).toBeVisible();
+        // 購入再監査: 実商品を並べた状態でも hero 導線が 44px を保つ
+        for (const link of [
+            page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Home", exact: true }),
+            page.getByRole("link", { name: "Continue exploring" }),
+        ]) {
+            const box = await link.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await expectReadableFocus(link);
+        }
         for (const link of await selection
             .getByRole("link", { name: /^View / })
             .all()) {
@@ -228,6 +247,93 @@ for (const width of [1440, 768, 390]) {
             page.getByRole("heading", { name: "Your selection" })
         ).toBeFocused();
     });
+}
+
+// 購入再監査8の修正点（sort 境界・URL 保持、画像 modal の focus 制御）を実 DB の商品・店舗で受け入れる
+for (const width of [1440, 768, 390]) {
+    for (const colorScheme of ["light", "dark"] as const) {
+        test(`reaudit real ${width} ${colorScheme}: sort boundary and enlarged image focus`, async ({
+            page,
+        }, info) => {
+            test.setTimeout(120000);
+            const inventoryPath = process.env.DESIGN_AUDIT_INVENTORY;
+            test.skip(!inventoryPath, "Read-only DB inventory is required.");
+            const inventory: Array<{ id: string; actualPath: string }> = JSON.parse(
+                readFileSync(inventoryPath!, "utf8")
+            );
+            const pathOf = (id: string) => {
+                const row = inventory.find((entry) => entry.id === id);
+                expect(row, `inventory row ${id} is missing`).toBeDefined();
+                return row!.actualPath;
+            };
+            await page.emulateMedia({ colorScheme });
+            await page.setViewportSize({ width, height: 1000 });
+
+            await page.goto("/browse?search=a");
+            const browseSort = page.getByRole("button", { name: /^Sort by / });
+            await expectReadableBorder(browseSort);
+            await expectReadableFocus(browseSort);
+            await browseSort.press("Enter");
+            await page.getByRole("menuitemradio", { name: "New Arrivals" }).press("Enter");
+            await expect(page).toHaveURL(/sort=new-arrivals/);
+            expect(new URL(page.url()).searchParams.get("search")).toBe("a");
+            await expect(browseSort).toBeFocused();
+            await page.screenshot({ path: info.outputPath(`reaudit-real-browse-${width}-${colorScheme}.png`), fullPage: true });
+
+            await page.goto(pathOf("DS-PAGE-037"));
+            const storeSort = page.getByRole("button", { name: /^Sort by / });
+            await expectReadableBorder(storeSort);
+            await storeSort.hover();
+            await expectReadableBorder(storeSort);
+            await expectReadableFocus(storeSort);
+            await storeSort.press("Enter");
+            await page.getByRole("menuitemradio", { name: "Top Rated" }).press("Enter");
+            await expect(page).toHaveURL(/sort=top-rated/);
+            await expect(storeSort).toBeFocused();
+
+            await page.goto(pathOf("DS-PAGE-019"));
+            // 専用DBの商品画像は全件 /no_image のプレースホルダー。プレースホルダー選択中は拡大ボタンを
+            // 出さない仕様（product-swiper.test.tsx）なので、実データで開けるときだけ modal を検証する
+            const trigger = page.getByRole("button", { name: "Enlarge product image" });
+            if ((await trigger.count()) === 0) {
+                await expect(page.getByText("Product imagery coming soon")).toBeVisible();
+                info.annotations.push({ type: "real-data-gap", description: "No non-placeholder product image in the dedicated DB; modal focus is covered by fixture/RTL." });
+            } else {
+                await trigger.focus();
+                await trigger.press("Enter");
+                const dialog = page.getByRole("dialog", { name: "Enlarged product image" });
+                const close = dialog.getByRole("button", { name: "Close image" });
+                await expect(close).toBeFocused();
+                await page.keyboard.press("Tab");
+                await expect(close).toBeFocused();
+                await expectReadableFocus(close);
+                await page.keyboard.press("Escape");
+                await expect(dialog).toBeHidden();
+                await expect(trigger).toBeFocused();
+            }
+            await page.screenshot({ path: info.outputPath(`reaudit-real-product-${width}-${colorScheme}.png`), fullPage: true });
+            expect(
+                (await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations
+            ).toEqual([]);
+
+            // カートは localStorage（Zustand persist）なので、実商品を在庫のあるサイズで入れてから確認する
+            // 画像サムネイルも aria-pressed を持つため、サイズ選択は size-option の test ID で絞る
+            await page.locator('[data-testid^="size-option-"]:not([disabled])').first().click();
+            await page.getByRole("button", { name: "Add to bag" }).click();
+            await page.goto("/cart");
+            const title = page.getByTestId("cart-item-name").first();
+            await expect(title).toBeVisible();
+            const box = await title.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+            await expect(title).toHaveAttribute("href", /\/product\/.+\/.+\?size=/);
+            await expectReadableFocus(title);
+            expect(
+                (await new AxeBuilder({ page }).include("main").withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations
+            ).toEqual([]);
+            await page.screenshot({ path: info.outputPath(`reaudit-real-cart-${width}-${colorScheme}.png`), fullPage: true });
+        });
+    }
 }
 
 // 外部共有は遷移させず、各ボタンが実商品 URL を含む共有 URL を開こうとすることだけ確認する

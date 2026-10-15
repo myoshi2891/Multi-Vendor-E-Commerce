@@ -275,6 +275,10 @@
     gap: 12px;
 }
 .productName {
+    display: inline-flex;
+    align-items: center;
+    min-width: var(--purchase-touch);
+    min-height: var(--purchase-touch);
     font:
         400 20px/1.4 Georgia,
         serif;

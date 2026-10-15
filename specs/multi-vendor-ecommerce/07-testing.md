@@ -1,5 +1,11 @@
 # Testing Strategy
 
+## 管理マスタ8の受け入れ（2026-10-14）
+
+全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。
+
+実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。 共通configの`admin-master-route` suiteで既存データを使用する。[実行手順](../../docs/testing/TESTING_DESIGN.md#管理マスタ8実ルート検証)。
+
 ## 全実ルートのデザイン再監査
 
 実Nextルートの全数到達記録とfixtureの部品検証を区別する。未認証の転送・HTTPエラー・仮実装は本体移行完了と扱わない。収集spec成功だけでデザイン合格にせず、操作寸法・theme・表示状態・認証後本体の受け入れを確認する。[2026-10-09監査](../../docs/design/design-system/full-route-reaudit-2026-10-09.md)。機能/API/データ仕様は今回変更なし。
@@ -1378,3 +1384,9 @@ CONTACTを既存SupportFormのpayload/pending/input lock/失敗保持/retry/rece
 先行browser Redは店舗状態色、詳細/クーポン/独立header寸法、入力境界contrast、Select Portal角丸/面、chart tick/tooltip。動的行のlast-row disabledとfocus復帰はRTL Red。既存機能は回帰確認として別記。p3/six/p4/sevenの既存config/共有fixtureを使用し新設しない。six store adapterは現行ok/id/url結果へ合わせる。環境・adapter失敗はRedに算入しない。全体Jest/coverage統計はQA_HANDOFFの最終実測を正本とする。
 
 [承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+## 購入再監査8（2026-10-14）
+
+DS-PAGE-006/037/019/007/008/003/009/033。先行Redはsort境界contrast、画像modal初期focus（RTL+browser）、短いcart商品link寸法、compare hero寸法、Wishlist current hover境界。店舗/Checkout/注文詳細は既存実装の回帰確認。環境エラーとsortラベル変更後の旧locatorは製品Redに含めない。
+
+既存purchase/commerce/priorityを拡張し、新config/serverなし。補助Chrome82/38/83の計203件が成功。1440/768/390pxと該当境界幅、focus・44px・入力境界・Portal・axe AA・状態遷移を検証。公開実ルート8件とcompare hero追加3幅も確認。商品あり/認証後/実SDKの今回受け入れは専用DB不在のため別保留とし、既存履歴を保持。[計画](../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入再監査8最終統合2026-10-14)／[QA](../../docs/testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)。全体統計はQAの実測を正本とする。

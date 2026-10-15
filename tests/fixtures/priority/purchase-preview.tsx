@@ -46,7 +46,8 @@ if (screen === "cart")
                 ? []
                 : [
                       createMockCartProduct({
-                          name: "A considered cart piece ".repeat(8),
+                          name: new URLSearchParams(location.search).has("short-name") ? "Pearl" : "A considered cart piece ".repeat(8),
+                          ...(new URLSearchParams(location.search).has("short-name") ? { variantName: "Ivory" } : {}),
                           image: "/assets/images/no_image.png",
                           variantImage: "/assets/images/no_image.png",
                           price: 10,

@@ -8,7 +8,7 @@
 
 ## 1. 目的
 
-マルチベンダー E コマースの **運営者（ADMIN）** が、プラットフォーム全体の健全性を把握し、全店舗横断で注文とクーポンを統制できるようにする。現状 `/dashboard/admin` はプレースホルダー、`/dashboard/admin/orders` と `/dashboard/admin/coupons` は未作成で、sidebar にリンクのみ存在する。
+マルチベンダー E コマースの **運営者（ADMIN）** が、プラットフォーム全体の健全性を把握し、全店舗横断で注文とクーポンを統制できるようにする。初期計画時点では `/dashboard/admin` はプレースホルダー、注文・クーポンは未作成だった。現在は概要・注文・店舗と管理マスタを実装済み。2026-10-14の管理マスタ8画面の表示条件は本書の「管理マスタ8 Step」各項を参照する。
 
 ## 2. ペルソナ
 
@@ -236,3 +236,35 @@ DS-PAGE-048 管理者注文: 詳細buttonを44pxへ拡張し、支払状態へ�
 DS-PAGE-050 管理者店舗: 店舗詳細・削除triggerを44pxへ拡張。共有ConfirmDeleteのPortalへcontrolsを明示しcancel/confirm/retryも44px。長文/配送/画像/状態操作/削除lockとfocus復帰を維持。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
 
 [計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+### 管理マスタ8 Step 1（2026-10-14）
+
+カテゴリの作成/編集triggerとPortal内入力・保存/retryは44px以上。light/darkで入力境界3:1以上、Escape復帰・値保持・pending lockを維持する。
+
+### 管理マスタ8 Step 2（2026-10-14）
+
+独立カテゴリフォームの入力/select/画像/保存とFeatured labelは44px以上。既存親選択とlabel操作・pending/失敗値保持を維持。
+
+### 管理マスタ8 Step 3（2026-10-14）
+
+属性行メニューは3px・影なし・popover面を持つ非モーダル操作。メニュー内/外のkeyboardとaxeを満たし、編集Portalのmodal/focus復帰と既存状態操作を保持する。
+
+### 管理マスタ8 Step 4（2026-10-14）
+
+属性作成の保存成功はbrand-successとrole=statusを併用。既存booleanラベル44px、validation/pending/値保持/retryを維持。
+
+### 管理マスタ8 Step 5（2026-10-14）
+
+ENUM選択肢の独立行メニューも3px・影なし・popover面の非モーダルとする。編集Valueの不変/disabled、Label入力の境界/focusとEscape復帰を維持。
+
+### 管理マスタ8 Step 6（2026-10-14）
+
+クーポン有効化/無効化の独立操作も44px以上とし、処理中ロック・失敗時再試行・成功意味色を維持する。
+
+### 管理マスタ8 Step 7（2026-10-14）
+
+クーポン独立フォームの入力/select/保存とActive labelは44×44px以上。checkbox配色はprimary、STORE/PLATFORM切替・値・保存契約は保持。
+
+### 管理マスタ8 Step 8（2026-10-14）
+
+オファータグの作成/編集Dialogに共有44px操作・可読境界/focus・成功意味色を適用し、取得再試行から編集へ進める。独立作成046は共有回帰のみ。
