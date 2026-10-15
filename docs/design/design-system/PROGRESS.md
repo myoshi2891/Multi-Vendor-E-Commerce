@@ -1699,6 +1699,17 @@ Red: currentページhoverで境界contrast1.37:1となり4幅失敗。Green/Ref
 - 型検査成功、lint0 errors/既存8 warnings、check:playwright成功。Nextによるtsconfigの一時include追加は除去。公開比較の国判定timeoutは既存fallbackで表示し、UIのRedに含めない。
 - 比較実route追加検証の初回は3assertion成功後に終了処理で待機し、停止したためexit130。ログ保存で再実行し**3/3・exit0**（30.7秒）を確認した。中断を成功コマンドとして数えない。
 
+### 実データ・認証後・実SDK受け入れ（2026-10-15 解除）
+
+[計画](../../../plans/layout-design/purchase-reaudit-real-route-acceptance-plan.md)。10-14 の P1001 は DB 消失ではなく Docker の `multivendor-postgres-dev` 停止が原因（volume 残存、`multivendor_e2e` migration 27/27）。`docker compose up -d db` のみで復旧し、初期化・migrate はしていない。DB変数3つを `multivendor_e2e` に揃え、Chrome channel・Clerk sk_test_・Stripe 有効キーで実行。
+
+- `purchase-public` **27/27**（inventory は `prepare-route-audit.ts`、読み取りのみ）。追加の `reaudit real` 6件（1440/768/390 × light/dark）で実データの browse/store sort 境界3:1・focus・URL保持（search維持）、実商品カートの商品名link 44px/focus/href、実商品2件比較時の hero 導線44px/focus、axe AA（main）を確認。
+- `purchase-route` **12 passed / 1 skipped**（`prepare-purchase-route.ts` で準備後に全件、書き込みあり）: checkout実カート/住所Dialog/クーポン/注文確定、注文paid/invoice/print、pending の PayPal・Stripe Elements 実描画、Stripe テストカード決済、wishlist（実12件・2ページ、current の hover 境界不変・3:1 を追加 assertion）、P2 通知/設定、account discovery。skip は PayPal sandbox 購入者承認（`PAYPAL_SANDBOX_BUYER_*` 未設定、従来からの別保留）。
+- **実データでの未確認**: 商品画像 modal の focus 制御。専用DBの商品画像45件はすべて `/no_image` で、プレースホルダー時は拡大ボタンを出さない仕様（`product-swiper.test.tsx`）のため開けない。実ルートではプレースホルダー表示を確認し、modal の focus は fixture（purchase 82/82）・RTL の検証に依拠する（test annotation `real-data-gap`）。
+- テスト基盤の修正（製品コード変更なし）: `prepare-route-audit.ts` が `store.findFirst` で商品1件の店舗を拾い、既存の `audit store` 3件が失敗していた → 商品数の多い順に決定論的に選ぶよう変更。`account discovery` の `/seller/apply` は Clerk 読み込み前に未ログイン分岐を描画してから差し替わり、`controls.all()` の nth がずれて 3回中1回失敗していた → `clerk.loaded` を待ってから列挙（5/5）。
+- 観察（未対応）: `/seller/apply` step-1 は `useUser().isLoaded` を見ないため、サインイン済みでも読み込み中は Sign in/Sign up が一瞬表示される。
+- 型0、対象 lint 0、check:playwright・diff --check 成功。Jest は対象外（変更なし、統計不変）。実行後 `tsconfig.json` の一時 include を戻し、DB コンテナを停止（volume 保持）。
+
 ### 仕様同期
 
 SDD [requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[quality](../../../specs/multi-vendor-ecommerce/06-quality.md)・[testing](../../../specs/multi-vendor-ecommerce/07-testing.md)を更新。overview/data-model/interfaces/workflowsは既存URL・Action・認可・DB・金額・状態遷移が不変のため変更不要。[購入残存要件](../purchase-residual/requirements.md)、[Cart要件/設計](../cart/requirements.md)、[Compare要件/設計/タスク](../compare/requirements.md)、[Wishlist要件/設計/タスク](../profile-wishlist/requirements.md)を同期。店舗固有・[Checkout](../checkout/requirements.md)・[Order](../order-detail/requirements.md)の業務要件/設計/タスクは既存実装回帰のみのため変更不要。QA・テスト実装計画・COVERAGE_REPORT・全体PROGRESS・coverage dashboardを実測同期。テストハーネスの使い方は不変のためTESTING_DESIGN変更不要。

@@ -1,6 +1,16 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-14 管理マスタ8（最新）
+## 2026-10-15 購入再監査8 実ルート受け入れ（最新）
+
+DS-PURCHASE-REAUDIT-EIGHT-ROUTES を解除。P1001 の原因は Docker `multivendor-postgres-dev` の停止（DB・volume は残存、migration 27/27）で、`docker compose up -d db` で復旧した。`purchase-public` **27/27**（実データ reaudit 6件 = 3幅 × light/dark を追加）、`purchase-route` **12 passed / 1 skipped**（注文確定・クーポン・Stripe テストカード決済を含む全件、skip は PayPal sandbox 購入者承認）。[計画](../../plans/layout-design/purchase-reaudit-real-route-acceptance-plan.md)／[証跡](../design/design-system/PROGRESS.md#実データ認証後実sdk受け入れ2026-10-15-解除)。
+
+- 実データでの残り: 商品画像 modal の focus 制御（専用DBの画像は全件 `/no_image` で拡大ボタンが出ない仕様。fixture/RTL の検証に依拠）。実画像を持つ商品を専用DBに用意すれば `reaudit real` が自動で modal 分岐を検証する。
+- テスト基盤: `prepare-route-audit.ts` の店舗選択を商品数の多い順に固定（既存の `audit store` 3件が商品1件の店舗で失敗していた）、`account discovery` の `/seller/apply` は `clerk.loaded` を待ってから部品を列挙（3回中1回 flaky → 5/5）。
+- 観察（未対応）: `/seller/apply` step-1 が `isLoaded` を見ず、サインイン済みでも読み込み中に Sign in/Sign up が一瞬表示される。
+- Jest 変更なし（統計は 10-14 から不変）。型0、対象lint0、check:playwright 成功。
+- 継続中の保留: 管理マスタ8の対象外項目（実保存・削除・archive/restore・型変換・クーポン有効切替・Cloudinary upload）、DS-PAGE-046 の実ルート受け入れ、PayPal sandbox 購入者承認。
+
+## 2026-10-14 管理マスタ8（履歴）
 
 全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 型0、lint errors0／既存warnings8、check:playwright成功。[計画](../../plans/layout-design/priority-eight-admin-master-residual-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#管理マスタ8最終統合2026-10-14)。
 
@@ -20,7 +30,7 @@
 
 今回の実データ付きbrowse/store/product、認証後checkout/order/wishlistと実決済SDKの受け入れは保留。既存専用DB `multivendor_e2e` の読み取り監査は権限付き再試行でもP1001、Dockerのコンテナー一覧は空。公開実Nextは外部DB接続エラーから既存fallbackで表示し、商品あり表示の成功とは扱わない。過去の検証済み判定・受け入れ履歴は変更しない。
 
-次着手: 現行schemaと既存テストデータを持つ専用DBおよびClerkテスト顧客が利用可能になったら、今回の変更を3幅で実ルート受け入れする。sort境界/URL、商品画像modal、cart短名link、compare hero、Wishlist current hoverを確認する。決済送信・注文確定・住所保存・DB初期化は今回の検証範囲に含めない。実SDK受け入れは実描画のみとし、既存PayPal sandbox承認の別保留は保持する。
+**2026-10-15 解除**（[最新節](#2026-10-15-購入再監査8-実ルート受け入れ最新)）。以下は当時の次着手: 現行schemaと既存テストデータを持つ専用DBおよびClerkテスト顧客が利用可能になったら、今回の変更を3幅で実ルート受け入れする。sort境界/URL、商品画像modal、cart短名link、compare hero、Wishlist current hoverを確認する。決済送信・注文確定・住所保存・DB初期化は今回の検証範囲に含めない。実SDK受け入れは実描画のみとし、既存PayPal sandbox承認の別保留は保持する。
 
 ## 2026-10-13 PR#204 レビュー指摘対応（履歴）
 
