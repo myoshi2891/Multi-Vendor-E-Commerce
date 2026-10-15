@@ -59,7 +59,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3260 passed / 3263 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-15 plan 088 Step 5（返品 RMA の UI）後の全体Jest/coverage実測（`bun run test -- --coverage --silent`）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3262 passed / 3265 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-15全体実測（`bun run test -- --no-coverage --silent`、RMA 解決の終端判定の修正後）。カバレッジ値は同日 plan 088 Step 5（返品 RMA の UI）後の coverage 実測（`bun run test -- --coverage --silent`）のもの。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
