@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-16） | **3263 passed / 3266 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| Jestテスト総数（2026-10-16） | **3275 passed / 3278 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
 | 全体coverage（2026-10-15実測） | Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。 |
-| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-15再生成実測（UI 後）。 |
-| Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-15実測）。 |
-| テスト総数 | **3263 unit/component passed**（3266 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
+| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16再生成実測（返品キューのページング後）。 |
+| Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-16実測）。 |
+| テスト総数 | **3275 unit/component passed**（3278 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
 | lcov エントリ数 | **412**（2026-10-15全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0件**（2026-10-15 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-16 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -353,6 +353,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-16: PR#206 レビュー対応 —— seller 返品キューのサーバー側ページング（未コミット・HEAD `8ec78a9a`）。`returns.test.ts` +4、`seller-returns.test.tsx` +5、`seller-returns-page.test.tsx` +3。Jest3263/3266 → 3275/3278・335 suites（不変）。lcov: Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715） → Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）。dashboard418 files/412 lcov/18 of 80 cells（不変）。
 
 2026-10-15: PR#206 レビュー・SonarCloud 指摘対応（未コミット）。`returns.test.ts` +1（ロック後の冪等キー再確認）、`return-request-panel.test.tsx` +1、`seller-returns.test.tsx` +1、`seller-returns-page.test.tsx` +2（新規）。Jest3254/3257・334 suites → 3259/3262・335 suites。Statements88.33%（11434/12944）／Branches78.94%（7069/8954）／Functions85.11%（2264/2660）／Lines88.89%（10404/11704） → Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。dashboard417→418 files/412 lcov。
 

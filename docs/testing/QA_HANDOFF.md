@@ -14,6 +14,7 @@
 - PR#206 レビュー対応（RMA 解決の終端判定、同日・未コミット）: `resolveReturnRequest` が item を `Returned` にする判定で RECEIVED の RMA まで数えていたため、同じ item に RECEIVED の RMA が 2 件あると、先に解決した側で item が終端になり、後の RMA の返金額が 0 になっていた。判定を RESOLVED の数量だけに変更（在庫の差し引き `getReturnedQuantities` は RECEIVED + RESOLVED のまま）。`returns.test.ts` +1（新しい方から 2 件を解決）。Jest **3262/3265**・335 スイート・127 snapshots、tsc 0（`18733ad1` の +1 を含む全体実測。1 回目の全体実行で 2 件がフレークし、再実行で全件パス）。
 - PR#206 追加レビュー対応（同日）: seller 返品キューの手動返金の注記を RESOLVED でも出す（返金は解決後に手動で行うため・design DIRECTION-01）。`seedCommerce` のリセットで Order より先に seed ユーザーの `ReturnRequest` を消す（`orderGroupId` / `orderItemId` は返品の記録を残すため `onDelete: Restrict` のまま・design §9-4）。`seller-returns.test.tsx` +1。Jest **3260/3263**・335 スイート・127 snapshots、tsc 0。
 - PR#206 レビュー対応（返金額と相談窓口、2026-10-16・未コミット）: `resolveReturnRequest` の返金額から外すのを Canceled / Refunded だけにした（手動の `Returned` は返金を伴わないので含める。終端の再精算からは引き続き外す）。`/returns-exchange` の相談フォームは注文番号が必須なので、案内を注文済みに絞り、注文前の質問は `/contact` へ誘導。QA_HANDOFF の TDD 件数を 29 件（3228 → 3257）に訂正。`returns.test.ts` +1。Jest **3263/3266**・335 スイート・127 snapshots、tsc 0（`--no-coverage` 全体実測）。
+- PR#206 レビュー対応（seller 返品キューのサーバー側ページング、2026-10-16・未コミット）: `getStoreReturnRequests` が上限なしの `findMany` で全履歴を返し、ページが全件を直列化してクライアントで絞り込み・件数集計していたため、`{ status?, page? }` を受けて 1 ページ 20 件（`createdAt desc, id desc`・page は `normalizePageParam` でクランプ）と `groupBy` の状態別件数を返す形に変更。ページは `?status=&page=` を正規化し、範囲外は最終ページへ `redirect()`。`SellerReturns` はフィルタとページ送りを URL で駆動。もう 1 件の指摘（`ReturnRequest.orderGroup` / `ReturnRequestItem.orderItem` の削除挙動）は、`onDelete: Restrict` が design §9-4 の「返品の記録を残す」意図どおりで、削除経路（`seedCommerce` は先に RMA を削除、統合テストは TRUNCATE CASCADE、アプリに注文削除 action なし）も対応済みのため変更なし。`returns.test.ts` +4、`seller-returns.test.tsx` +5、`seller-returns-page.test.tsx` +3。Jest **3275/3278**・335 スイート・127 snapshots、tsc 0、lint 0 errors（既存 warnings 8）、`DESIGN_SUITE=returns` **12/12**、`check:playwright` pass。
 
 ## 2026-10-15 返品 RMA のバックエンド（plan 088 Step 0〜4、未コミット）
 
@@ -312,7 +313,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-15実測〔UI 後〕 / lcov: 2026-10-15実測〔UI 後〕 / Integration: 2026-10-15実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
+### テスト統計（Jest: 2026-10-16実測〔返品キューのページング後〕 / lcov: 2026-10-16実測〔同〕 / Integration: 2026-10-15実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -320,14 +321,14 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3263 passed / 3266 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --no-coverage --silent`、RMA 返金額の対象修正後）。 |
-| 全体coverage（2026-10-15実測） | Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。 |
+| Jest テスト総数 (unit/component) | **3275 passed / 3278 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、seller 返品キューのサーバー側ページング後）。 |
+| 全体coverage（2026-10-16実測） | Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）。`coverage/lcov.info` の集計（今回の実行では json-summary が更新されないため Statements は未計測）。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**Chromium 7/7 passed**。2026-10-07 実測（plan 084・Docker DB 接続）。OI-10 解消に伴い 6 spec の `disabledRules:["color-contrast"]` 抑制を解除済み（抑制なしで違反 0）。home（`/`）は spec 未作成（OI-9 は 2026-06-06 に解消済みで阻害要因ではない。追加は本書の「A11y-home」タスクで扱う）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-15 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-16 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
 | テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-15再生成実測（UI 後）。 |

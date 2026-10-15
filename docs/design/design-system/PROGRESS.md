@@ -414,7 +414,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-245 | P4 | 属性選択肢Client境界 | [AdminAttributeOptions](../../../src/components/dashboard/admin/admin-attribute-options.tsx) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
 
 | DS-COMP-246 | P2 | 公開editorial操作 | [storefront controls CSS](../../../src/components/store/shared/storefront-controls.module.css) | 検証済み | Contact/FAQ/Product support/Aboutのopt-inのみ。3幅のfixture/実route・44px/focus/axeと仕様同期。[証跡](#ストアフロント残存8画面移行記録2026-10-12) |
-| DS-COMP-247 | P2 | 返品 RMA（顧客） | [ReturnRequestPanel](../../../src/components/store/order-page/return-request-panel.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-COMP-247 | P2 | 返品 RMA（顧客） | [ReturnRequestPanel](../../../src/components/store/order-page/return-request-panel.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。2026-10-16 にフィルタとページ送りを URL（`?status=&page=`）駆動・サーバー側ページングへ変更（fixture `returns` 12/12）。認証後の実ルートは保留（解除: plan 088 Step 6）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 | DS-COMP-248 | P3 | 返品 RMA（seller） | [SellerReturns](../../../src/components/dashboard/seller/seller-returns.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 
 ## 前セッションの確認結果

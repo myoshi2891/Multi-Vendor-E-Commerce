@@ -59,7 +59,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3263 passed / 3266 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --no-coverage --silent`、RMA 返金額の対象修正後）。カバレッジ値は同日 plan 088 Step 5（返品 RMA の UI）後の coverage 実測（`bun run test -- --coverage --silent`）のもの。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3275 passed / 3278 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、seller 返品キューのサーバー側ページング後）。カバレッジ（lcov）は Branches79.08%／Functions85.13%／Lines88.94%。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5896,5 +5896,31 @@ seller 返品キューの手動返金の注記を RESOLVED でも表示し、see
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | テスト総数 | 3260 passed / 3263 total | **3262 passed / 3265 total**（`18733ad1` の +1 を含む） |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#206 レビュー対応（seller 返品キューのサーバー側ページング） (2026-10-16)
+
+#### 概要
+
+seller 返品キューが店舗の全 RMA 履歴を取得・直列化していたため、1 ページ 20 件の取得と `groupBy` による状態別件数に置き換え、フィルタとページを URL で駆動するようにした。`ReturnRequest` の削除挙動の指摘は design §9-4 どおり（`onDelete: Restrict` で返品の記録を残す）で、変更なし。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/returns.ts` | `getStoreReturnRequests(storeUrl, { status?, page? })` → `{ requests, counts, total, page, pageSize }` | 未コミット |
+| `src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx` | `?status=&page=` の正規化、範囲外ページの `redirect()` | 未コミット |
+| `src/components/dashboard/seller/seller-returns.tsx` | URL 駆動のフィルタ・ページ送り、件数はサーバーの `counts` から | 未コミット |
+| `src/lib/returns-view.ts` | `STORE_RETURNS_PAGE_SIZE`・`ReturnStatusCounts`・`emptyReturnStatusCounts` | 未コミット |
+| `tests/fixtures/returns/*` | 新しい props とモック `push` の URL 遷移 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3263 passed / 3266 total | **3275 passed / 3278 total** |
 | スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |

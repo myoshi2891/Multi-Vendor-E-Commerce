@@ -197,3 +197,14 @@ tx をモックし、各 action について次を確かめる（AAA）: 認可�
 - 注文詳細の返品欄・seller 返品キュー・`/returns-exchange` の文面を実装。RTL 35 件（Red 28 件を確認後に Green）、`DESIGN_SUITE=returns` 10/10、priority 83/83、`returns-exchange-design.spec.ts` chromium 4/4、全体 Jest 3254/3257・334 スイート、tsc 0、lint 0 errors。
 - 保留: 認証後の実ルート。**残り（次の着手）は Step 6** — `seed:e2e` に Delivered 注文を足し、`tests/e2e/returns-rma.spec.ts` で申請 → 承認 → 受け取り → 解決を通す。
 
+
+## 追補 — seller 返品キューのサーバー側ページング（2026-10-16・レビュー対応）
+
+- **問題**: `getStoreReturnRequests` が上限なしの `findMany` で店舗の全履歴を返し、ページが全件を直列化して `SellerReturns` がクライアントで絞り込み・件数集計していた。履歴の増加に比例してペイロードと DB 負荷が伸びる。
+- **対象**: `src/queries/returns.ts`（`getStoreReturnRequests`）、`src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx`、`src/components/dashboard/seller/seller-returns.tsx`、`src/lib/returns-view.ts`、fixture `tests/fixtures/returns/*`。
+- **受け入れ条件**:
+  - クエリは `{ status?, page? }` を受け、`skip`/`take`（1 ページ 20 件・`createdAt desc, id desc`）で 1 ページ分だけ返す。page はサーバー側でも `normalizePageParam` で上限クランプする。
+  - 状態別件数は `groupBy({ by: ["status"] })` で別途集計し、フィルタの件数表示に使う（全件の直列化はしない）。
+  - ページは `searchParams` の `status`（不正値は全件扱い）と `page` を正規化し、範囲外ページは正準 URL へ `redirect()` する。
+  - フィルタとページ送りは URL（`?status=&page=`）で駆動し、フィルタ変更で page を 1 に戻す。
+- **検証**: `returns.test.ts`（where / skip / take / groupBy）、`seller-returns.test.tsx`・`seller-returns-page.test.tsx`、`DESIGN_SUITE=returns bun run test:design`、tsc / lint。

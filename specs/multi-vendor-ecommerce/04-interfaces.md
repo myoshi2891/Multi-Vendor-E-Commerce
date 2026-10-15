@@ -42,7 +42,7 @@ Dashboard:
 - `/dashboard/seller/stores/[storeUrl]/products/[productId]/variants/[variantId]` edit an existing product + variant (`force-dynamic`; loads via `getProductVariantForEdit`, including category-attribute initial values)
 - `/dashboard/seller/stores/[storeUrl]/inventory` inventory management (F2)
 - `/dashboard/seller/stores/[storeUrl]/messages` seller-side messaging (force-dynamic; two-pane list identified by buyer + reused thread)
-- `/dashboard/seller/stores/[storeUrl]/returns` returns queue (force-dynamic; `getStoreReturnRequests` → `SellerReturns`, status filter, approve / reject / receive / resolve) — plan 088
+- `/dashboard/seller/stores/[storeUrl]/returns` returns queue (force-dynamic; `?status=&page=` → `getStoreReturnRequests` (one page of 20 + status counts) → `SellerReturns`, URL-driven status filter and pagination, out-of-range page redirects to the last page, approve / reject / receive / resolve) — plan 088
 - `/dashboard/admin` admin overview
 - `/dashboard/admin/stores` manage stores
 - `/dashboard/admin/categories` manage categories
@@ -227,7 +227,7 @@ Store-scoped return requests (`ReturnRequest` header per `OrderGroup` + `ReturnR
 | `resolveReturnRequest(storeUrl, id)` / `resolveReturnRequestAsAdmin(id)` | T7 `RECEIVED → RESOLVED`. Sets `refundAmount = Σ quantity × OrderItem.price` (`Prisma.Decimal`, excludes shipping/coupons); fully returned items move to `Returned` via `settleOrderItems` (restocks 0) (`rma.resolved`) | `requireStoreOwner` / `requireAdmin` |
 | `cancelReturnRequestAsAdmin(id)` | T8 `REQUESTED/APPROVED → CANCELED` (`rma.canceled` → customer and seller) | `requireAdmin` |
 | `getReturnRequestsForOrder(orderId)` | The requester's RMAs for an order, newest first | `requireUser` |
-| `getStoreReturnRequests(storeUrl, status?)` | Store queue, optional status filter (validated) | `requireStoreOwner` |
+| `getStoreReturnRequests(storeUrl, { status?, page? })` | Store queue, one page (`STORE_RETURNS_PAGE_SIZE` = 20, `createdAt desc, id desc`) with optional status filter (validated); page clamped by `normalizePageParam`. Returns `{ requests, counts, total, page, pageSize }` — `counts` is a per-status `groupBy` over the whole store | `requireStoreOwner` |
 
 `settleOrderItems` (order cancellation/refund) now restores `quantity − returned quantity`, where returned quantity is the sum of `RECEIVED`/`RESOLVED` RMA items for that OrderItem, so a return followed by a refund restores exactly the purchased quantity. Return window: `src/lib/returns-policy.ts` (`RETURN_WINDOW_DAYS_DEFAULT`, default 30, overridden by `Store.returnWindowDays`; deadline = `Order.createdAt + OrderGroup.shippingDeliveryMax + window days`).
 
