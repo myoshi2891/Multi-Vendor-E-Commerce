@@ -1,5 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { Prisma } from "@prisma/client";
+import { Prisma, type ReturnRequestStatus } from "@prisma/client";
 import {
     approveReturnRequest,
     approveReturnRequestAsAdmin,
@@ -14,6 +14,8 @@ import {
 } from "./returns";
 import { ProductStatus } from "../lib/types";
 import { createMockStore } from "../config/test-fixtures";
+import { STORE_RETURNS_PAGE_SIZE } from "../lib/returns-view";
+import { MAX_PAGE } from "../lib/utils";
 
 // ---- モック設定 ----
 jest.mock("@clerk/nextjs/server", () => ({
@@ -30,6 +32,7 @@ jest.mock("@/lib/db", () => ({
             create: jest.fn(),
             update: jest.fn(),
             updateMany: jest.fn(),
+            groupBy: jest.fn(),
         },
         returnRequestItem: {
             groupBy: jest.fn(),
@@ -940,26 +943,111 @@ describe("getStoreReturnRequests", () => {
 
         // Act & Assert
         await expect(
-            getStoreReturnRequests(
-                STORE_URL,
-                "BOGUS" as Parameters<typeof getStoreReturnRequests>[1]
-            )
+            getStoreReturnRequests(STORE_URL, {
+                status: "BOGUS" as ReturnRequestStatus,
+            })
         ).rejects.toThrow("Invalid return request status.");
         expect(mockDb.returnRequest.findMany).not.toHaveBeenCalled();
+        expect(mockDb.returnRequest.groupBy).not.toHaveBeenCalled();
     });
 
-    it("所有店舗の storeId で絞り込む", async () => {
+    it("所有店舗の storeId と状態で絞り込み、1 ページ分だけ取得する", async () => {
         // Arrange
         mockSellerOwnsStore();
         mockDb.returnRequest.findMany.mockResolvedValue([]);
+        mockDb.returnRequest.groupBy.mockResolvedValue([]);
 
         // Act
-        await getStoreReturnRequests(STORE_URL, "REQUESTED");
+        await getStoreReturnRequests(STORE_URL, {
+            status: "REQUESTED",
+            page: 3,
+        });
+
+        // Assert
+        const query = mockDb.returnRequest.findMany.mock.calls[0][0];
+        expect(query.where).toEqual({ storeId: STORE_ID, status: "REQUESTED" });
+        expect(query.skip).toBe(2 * STORE_RETURNS_PAGE_SIZE);
+        expect(query.take).toBe(STORE_RETURNS_PAGE_SIZE);
+        expect(query.orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
+    });
+
+    it("状態別件数は店舗全体を groupBy で集計し、絞り込み中の総数に使う", async () => {
+        // Arrange
+        mockSellerOwnsStore();
+        mockDb.returnRequest.findMany.mockResolvedValue([]);
+        mockDb.returnRequest.groupBy.mockResolvedValue([
+            { status: "REQUESTED", _count: { _all: 3 } },
+            { status: "RESOLVED", _count: { _all: 2 } },
+        ]);
+
+        // Act
+        const result = await getStoreReturnRequests(STORE_URL, {
+            status: "REQUESTED",
+        });
+
+        // Assert
+        expect(mockDb.returnRequest.groupBy.mock.calls[0][0]).toMatchObject({
+            by: ["status"],
+            where: { storeId: STORE_ID },
+        });
+        expect(result.counts).toMatchObject({
+            REQUESTED: 3,
+            RESOLVED: 2,
+            APPROVED: 0,
+        });
+        expect(result.total).toBe(3);
+        expect(result.page).toBe(1);
+        expect(result.pageSize).toBe(STORE_RETURNS_PAGE_SIZE);
+    });
+
+    it("状態未指定なら全状態の合計を総数にする", async () => {
+        // Arrange
+        mockSellerOwnsStore();
+        mockDb.returnRequest.findMany.mockResolvedValue([]);
+        mockDb.returnRequest.groupBy.mockResolvedValue([
+            { status: "REQUESTED", _count: { _all: 3 } },
+            { status: "RESOLVED", _count: { _all: 2 } },
+        ]);
+
+        // Act
+        const result = await getStoreReturnRequests(STORE_URL);
 
         // Assert
         expect(mockDb.returnRequest.findMany.mock.calls[0][0].where).toEqual({
             storeId: STORE_ID,
-            status: "REQUESTED",
         });
+        expect(result.total).toBe(5);
+    });
+
+    it("巨大な page は上限にクランプして skip を Int 範囲に収める", async () => {
+        // Arrange
+        mockSellerOwnsStore();
+        mockDb.returnRequest.findMany.mockResolvedValue([]);
+        mockDb.returnRequest.groupBy.mockResolvedValue([]);
+
+        // Act
+        await getStoreReturnRequests(STORE_URL, { page: 1e21 });
+
+        // Assert
+        expect(mockDb.returnRequest.findMany.mock.calls[0][0].skip).toBe(
+            (MAX_PAGE - 1) * STORE_RETURNS_PAGE_SIZE
+        );
+    });
+
+    it("DB 失敗は汎用メッセージに畳む", async () => {
+        // Arrange
+        mockSellerOwnsStore();
+        mockDb.returnRequest.findMany.mockRejectedValue(new Error("db down"));
+        mockDb.returnRequest.groupBy.mockResolvedValue([]);
+        const errorSpy = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
+
+        // Act & Assert
+        await expect(getStoreReturnRequests(STORE_URL)).rejects.toThrow(
+            "Failed to get return requests."
+        );
+        expect(errorSpy).toHaveBeenCalled();
+        errorSpy.mockRestore();
     });
 });
