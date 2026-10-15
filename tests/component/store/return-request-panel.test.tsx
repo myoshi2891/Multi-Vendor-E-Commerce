@@ -283,6 +283,58 @@ describe("ReturnRequestPanel — 申請", () => {
     });
 });
 
+describe("ReturnRequestPanel — 失敗後に内容を変えた再送", () => {
+    it("明細の選択を変えたら新しい冪等キーで送り、メモだけの変更では同じキーを使う", async () => {
+        // Arrange
+        const user = userEvent.setup();
+        const a = actions();
+        a.createAction
+            .mockRejectedValueOnce(
+                new Error("Failed to create return request.")
+            )
+            .mockRejectedValueOnce(
+                new Error("Failed to create return request.")
+            )
+            .mockResolvedValueOnce({ id: "rma-9", status: "REQUESTED" });
+        render(
+            <ReturnRequestPanel
+                options={options()}
+                actions={a}
+                createIdempotencyKey={keys()}
+            />
+        );
+        await user.click(
+            screen.getByRole("button", { name: "Request a return" })
+        );
+        const quantity = screen.getByLabelText(
+            "Quantity to return: Silk scarf (M)"
+        );
+        const submit = screen.getByRole("button", {
+            name: "Submit return request",
+        });
+        await user.selectOptions(quantity, "1");
+        await user.click(submit);
+        await screen.findByRole("alert");
+
+        // Act 1 —— メモだけ変える（customerNote は requestHash に含めない・design §2.3）
+        await user.type(
+            screen.getByLabelText("Note for the store (optional)"),
+            "x"
+        );
+        await user.click(submit);
+        await screen.findByRole("alert");
+
+        // Act 2 —— 明細を変える
+        await user.selectOptions(quantity, "2");
+        await user.click(submit);
+
+        // Assert
+        expect(
+            a.createAction.mock.calls.map(([input]) => input.idempotencyKey)
+        ).toEqual(["key-1", "key-1", "key-2"]);
+    });
+});
+
 describe("ReturnRequestPanel — 既存の RMA", () => {
     it("状態と明細を出し、REQUESTED は取り下げられる", async () => {
         // Arrange

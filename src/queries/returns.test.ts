@@ -316,6 +316,35 @@ describe("createReturnRequest", () => {
         expect(mockScheduleDispatch).not.toHaveBeenCalled();
     });
 
+    it("ロックを待つ間に同じキーの申請が確定していたら、数量を数えずに既存を返す", async () => {
+        // Arrange —— 1 回目でハッシュを得る
+        mockAuth(USER_ID, "USER");
+        mockDb.$queryRaw.mockResolvedValue([lockedRow()]);
+        await createReturnRequest(validRequest());
+        const { requestHash } =
+            mockDb.returnRequest.create.mock.calls[0][0].data;
+        jest.clearAllMocks();
+        mockDb.$transaction.mockImplementation(
+            (callback: (tx: unknown) => Promise<unknown>) => callback(mockDb)
+        );
+        mockDb.$queryRaw.mockResolvedValue([lockedRow()]);
+        mockDb.returnRequest.findUnique
+            .mockResolvedValueOnce(null) // ロック前: まだ無い
+            .mockResolvedValueOnce({
+                id: RMA_ID,
+                status: "REQUESTED",
+                requestHash,
+            }); // ロック後: 並行した同じキーの申請が確定済み
+
+        // Act
+        const result = await createReturnRequest(validRequest());
+
+        // Assert
+        expect(result).toEqual({ id: RMA_ID, status: "REQUESTED" });
+        expect(mockDb.returnRequestItem.groupBy).not.toHaveBeenCalled();
+        expect(mockDb.returnRequest.create).not.toHaveBeenCalled();
+    });
+
     it("同じキーで内容が違えば拒否する", async () => {
         // Arrange
         mockAuth(USER_ID, "USER");
@@ -337,7 +366,8 @@ describe("createReturnRequest", () => {
         mockDb.$queryRaw.mockResolvedValue([lockedRow()]);
         let capturedHash = "";
         mockDb.returnRequest.findUnique
-            .mockResolvedValueOnce(null) // tx 内の事前確認
+            .mockResolvedValueOnce(null) // tx 内の事前確認（ロック前）
+            .mockResolvedValueOnce(null) // tx 内の再確認（ロック後）
             .mockImplementationOnce(async () => ({
                 id: RMA_ID,
                 status: "REQUESTED",
@@ -361,7 +391,7 @@ describe("createReturnRequest", () => {
 
         // Assert
         expect(result).toEqual({ id: RMA_ID, status: "REQUESTED" });
-        expect(mockDb.returnRequest.findUnique).toHaveBeenCalledTimes(2);
+        expect(mockDb.returnRequest.findUnique).toHaveBeenCalledTimes(3);
         expect(mockScheduleDispatch).not.toHaveBeenCalled();
     });
 

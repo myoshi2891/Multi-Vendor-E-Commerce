@@ -239,6 +239,23 @@ describe("SellerReturns", () => {
         expect(refresh).not.toHaveBeenCalled();
     });
 
+    it("却下理由の見出しは REJECTED のときだけ出す", () => {
+        renderQueue([
+            request("r1", "REJECTED", { sellerNote: "Worn item" }),
+            request("r2", "CANCELED", { sellerNote: "Leftover note" }),
+        ]);
+        expect(
+            within(
+                screen.getByRole("article", { name: "Return r1" })
+            ).getByText("Rejection reason: Worn item")
+        ).toBeInTheDocument();
+        expect(
+            within(
+                screen.getByRole("article", { name: "Return r2" })
+            ).queryByText(/Rejection reason/)
+        ).not.toBeInTheDocument();
+    });
+
     it("終端の RMA には操作を出さない", () => {
         renderQueue([request("r1", "CANCELED")]);
         const card = screen.getByRole("article", { name: "Return r1" });
