@@ -92,9 +92,19 @@ export const NOTIFICATION_TEMPLATES: Record<
         body: (p) => `Your return for ${order(p)} was declined.`,
         emailSubject: () => "Your return was declined",
     },
-    "rma.refunded": {
-        title: () => "Your return was refunded",
-        body: (p) => `The refund for your return on ${order(p)} was issued.`,
-        emailSubject: () => "Your return was refunded",
+    "rma.resolved": {
+        title: () => "Your return was resolved",
+        body: (p) => `Your return for ${order(p)} was resolved.`,
+        emailSubject: () => "Your return was resolved",
+    },
+    "rma.canceled": {
+        title: () => "A return request was canceled",
+        body: (p) => `The return request for ${order(p)} was canceled.`,
+        emailSubject: () => "A return request was canceled",
+    },
+    "rma.received": {
+        title: () => "Your returned items arrived",
+        body: (p) => `${store(p)} received your return for ${order(p)}.`,
+        emailSubject: () => "Your returned items arrived",
     },
 };

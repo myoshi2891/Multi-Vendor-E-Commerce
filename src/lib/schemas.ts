@@ -1,6 +1,9 @@
 import {
     AttributeScope,
     AttributeType,
+    ReturnItemCondition,
+    ReturnReasonCode,
+    ReturnRequestStatus,
     ShippingFeeMethod,
 } from "@prisma/client";
 import { OrderStatus, PaymentStatus } from "@/lib/types";
@@ -867,3 +870,81 @@ export const AttributeOptionFormSchema = z.object({
 export type AttributeOptionFormValues = z.infer<
     typeof AttributeOptionFormSchema
 >;
+
+// ------------------------------------------------------------------
+// 返品 RMA（plan 088 / docs/design/returns-rma/design.md）
+// ------------------------------------------------------------------
+
+/** 1 明細の数量の上限（入口の粗い上限。購入数との比較は DB 側で行う・design §2.2） */
+const RETURN_ITEM_MAX_QUANTITY = 1000;
+
+// 申請（T1）。userId はボディから受け取らない（requireUser() から取る・design §2.3）
+export const CreateReturnRequestSchema = z.object({
+    orderGroupId: z.string().uuid(),
+    // クライアントがフォームを開いた時点で作る。サーバー側では生成しない（再送でキーが変わるため）
+    idempotencyKey: z.string().uuid(),
+    // MVP は REFUND のみ。EXCHANGE は enum にあるが受け付けない（design §2.4）
+    resolution: z.literal("REFUND"),
+    customerNote: z.string().trim().max(2000).optional(),
+    items: z
+        .array(
+            z.object({
+                orderItemId: z.string().uuid(),
+                quantity: z
+                    .number()
+                    .int()
+                    .positive()
+                    .max(RETURN_ITEM_MAX_QUANTITY),
+                reasonCode: z.nativeEnum(ReturnReasonCode),
+            })
+        )
+        .min(1)
+        .max(100)
+        .refine(
+            (items) =>
+                new Set(items.map((item) => item.orderItemId)).size ===
+                items.length,
+            { message: "Duplicate order items in return request." }
+        ),
+});
+
+export type CreateReturnRequestInput = z.infer<
+    typeof CreateReturnRequestSchema
+>;
+
+export const ReturnRequestIdSchema = z.string().uuid();
+
+// 返品キューの状態での絞り込み（省略で全件）
+export const ReturnRequestStatusFilterSchema = z
+    .nativeEnum(ReturnRequestStatus)
+    .optional();
+
+// 却下（T3）。理由は必須
+export const RejectReturnRequestSchema = z.object({
+    returnRequestId: ReturnRequestIdSchema,
+    sellerNote: z.string().trim().min(1).max(2000),
+});
+
+// 受け取り（T6）。明細ごとに状態を記録する（全明細ぶん必須かは action 側で確かめる）
+export const ReceiveReturnRequestSchema = z.object({
+    returnRequestId: ReturnRequestIdSchema,
+    items: z
+        .array(
+            z.object({
+                returnRequestItemId: z.string().uuid(),
+                condition: z.nativeEnum(ReturnItemCondition),
+            })
+        )
+        .min(1)
+        .max(100),
+});
+
+export type ReceiveReturnRequestItemInput = z.infer<
+    typeof ReceiveReturnRequestSchema
+>["items"][number];
+
+// 追跡番号（T5）。配送業者との連携はスコープ外で、顧客の手入力を保存するだけ
+export const SetReturnTrackingNumberSchema = z.object({
+    returnRequestId: ReturnRequestIdSchema,
+    trackingNumber: z.string().trim().min(1).max(100),
+});

@@ -13,6 +13,12 @@ import {
 import { Prisma } from "@prisma/client";
 import { recordOrderGroupStatusNotification } from "@/lib/notifications/order-events";
 import { scheduleDispatch } from "@/lib/notifications/schedule";
+import {
+    NOT_SETTLED_ITEM,
+    isRestockTerminalItem,
+    settleOrderItems,
+    type RestockTerminalItemStatus,
+} from "@/lib/order-item-settlement";
 
 /**
  * 在庫復元（F3-5）の対象とみなす終端 OrderStatus 判定。
@@ -22,82 +28,6 @@ const isRestockTerminalOrderStatus = (
     status: OrderStatus | undefined
 ): status is OrderStatus.Canceled | OrderStatus.Refunded =>
     status === OrderStatus.Canceled || status === OrderStatus.Refunded;
-
-/**
- * 減算済み在庫を復元する（placeOrder の decrement の対）。
- * 各 OrderItem の quantity を対応する Size.quantity に increment で戻す。
- * 直接呼ばず、遷移した item だけを渡す settleOrderItems 経由で呼ぶこと（二重復元を防ぐ）。
- *
- * Size が作り直し・削除で消えている場合（updateProduct の全置換・design F-3）は戻す先が無いので、
- * 警告を残して続行する。update だと P2025 で取り消しそのものが失敗するため updateMany を使う。
- */
-const restockOrderItems = async (
-    tx: OrderTransactionClient,
-    items: { sizeId: string; quantity: number }[]
-): Promise<void> => {
-    for (const item of items) {
-        const result = await tx.size.updateMany({
-            where: { id: item.sizeId },
-            data: { quantity: { increment: item.quantity } },
-        });
-        if (result.count === 0) {
-            console.warn(
-                "[Order:restockOrderItems] Size not found, skip restock",
-                {
-                    sizeId: item.sizeId,
-                }
-            );
-        }
-    }
-};
-
-/**
- * 在庫復元の印になる OrderItem の終端 status（plan 087・design §3）。
- * 終端は吸収状態で、終端 → 非終端の遷移は拒否する（I-2）。
- */
-const RESTOCK_TERMINAL_ITEM_STATUSES = [
-    ProductStatus.Canceled,
-    ProductStatus.Refunded,
-    ProductStatus.Returned,
-] as const;
-
-type RestockTerminalItemStatus =
-    (typeof RESTOCK_TERMINAL_ITEM_STATUSES)[number];
-
-const isRestockTerminalItem = (
-    status: string
-): status is RestockTerminalItemStatus =>
-    (RESTOCK_TERMINAL_ITEM_STATUSES as readonly string[]).includes(status);
-
-/** OrderItem が「まだ終端でない」ことを表す条件 */
-const NOT_SETTLED_ITEM: Prisma.OrderItemWhereInput = {
-    status: { notIn: [...RESTOCK_TERMINAL_ITEM_STATUSES] },
-};
-
-/**
- * 対象 item のうち「まだ終端でないもの」だけを終端へ遷移させ、遷移した行の在庫だけを戻す
- * （design §2）。どの経路（order / group / item）もこの 1 か所を通すことで、経路をまたいでも、
- * 並行しても、在庫はちょうど 1 回だけ戻る。並行時は UPDATE が行ロック後に WHERE を
- * 評価し直すため、先に終端にされた行は RETURNING に出てこない。
- *
- * @param where 対象の絞り込み（{ id } / { orderGroupId } / { orderGroup: { orderId } }）
- * @param options.restock false は「品物を回収しない返金」など在庫を戻さない精算（plan 088）
- * @returns 実際に遷移した item
- */
-const settleOrderItems = async (
-    tx: OrderTransactionClient,
-    where: Prisma.OrderItemWhereInput,
-    status: RestockTerminalItemStatus,
-    options: { restock: boolean } = { restock: true }
-): Promise<{ id: string; sizeId: string; quantity: number }[]> => {
-    const settled = await tx.orderItem.updateManyAndReturn({
-        where: { AND: [where, NOT_SETTLED_ITEM] },
-        data: { status },
-        select: { id: true, sizeId: true, quantity: true },
-    });
-    if (options.restock) await restockOrderItems(tx, settled);
-    return settled;
-};
 
 /**
  * item 単位の status 更新（経路 C / D 共通・design §2.1 の遷移表）。
