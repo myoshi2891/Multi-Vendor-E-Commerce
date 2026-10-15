@@ -11,6 +11,7 @@
 - PR#206 レビュー対応（同日）: ロック後に冪等キーを再確認（並行した同じキーの全数申請が「数量超過」になる経路）、seller 返品ページの認可ガードを catch の外へ、失敗後に明細を変えたら新しい冪等キー（メモだけの変更は同じキー・design §2.3）、却下理由の見出しは REJECTED のみ。SonarCloud 18 件のうち 14 件を修正（props の Readonly、`role="status"` → `<output>`、sort の比較関数、`options` 既定値、`Set`、catch 引数名、拒否の再 throw）、`await` in loop 3 件は tx 内で行ロックの順序を固定するための逐次実行なので対応しない。Jest 3259/3262・335 スイート、Integration（returns-rma・order-lifecycle）37/37、`DESIGN_SUITE=returns` 10/10。
 
 ---
+- PR#206 追加レビュー対応（同日）: seller 返品キューの手動返金の注記を RESOLVED でも出す（返金は解決後に手動で行うため・design DIRECTION-01）。`seedCommerce` のリセットで Order より先に seed ユーザーの `ReturnRequest` を消す（`orderGroupId` / `orderItemId` は返品の記録を残すため `onDelete: Restrict` のまま・design §9-4）。`seller-returns.test.tsx` +1。Jest **3260/3263**・335 スイート・127 snapshots、tsc 0。
 
 ## 2026-10-15 返品 RMA のバックエンド（plan 088 Step 0〜4、未コミット）
 
@@ -317,7 +318,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3259 passed / 3262 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-15全体実測（plan 088 Step 5 UI 後）。 |
+| Jest テスト総数 (unit/component) | **3260 passed / 3263 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-15全体実測（plan 088 Step 5 UI 後）。 |
 | 全体coverage（2026-10-15実測） | Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

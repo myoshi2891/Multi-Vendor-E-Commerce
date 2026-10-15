@@ -59,7 +59,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3259 passed / 3262 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-15 plan 088 Step 5（返品 RMA の UI）後の全体Jest/coverage実測（`bun run test -- --coverage --silent`）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3260 passed / 3263 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-15 plan 088 Step 5（返品 RMA の UI）後の全体Jest/coverage実測（`bun run test -- --coverage --silent`）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5851,3 +5851,27 @@ SonarCloud PR#204 の Coverage on New Code 62.3% に対し、P3 で追加した 
 | スイート数 | 330（329 passed／1 skipped） | **334（333 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
 
+
+---
+
+### PR#206 追加レビュー対応（返品 RMA） (2026-10-15)
+
+#### 概要
+
+seller 返品キューの手動返金の注記を RESOLVED でも表示し、seed のリセットが返品記録の外部キー（Restrict）で失敗しないようにした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/seller/seller-returns.tsx` | 手動返金の注記を RECEIVED / RESOLVED の両方で表示 | 未コミット |
+| `prisma/seed/seeders/commerce-seeder.ts` | Order 削除の前に seed ユーザーの `ReturnRequest` を削除（明細は Cascade） | 未コミット |
+| `tests/component/dashboard/seller-returns.test.tsx` | RESOLVED の注記テスト +1 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3259 passed / 3262 total | **3260 passed / 3263 total** |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
