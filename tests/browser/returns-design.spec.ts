@@ -65,10 +65,6 @@ for (const width of [1440, 768, 390]) {
             name: "Submit return request",
         });
         await submit.click();
-        await expect(
-            panel.getByRole("button", { name: "Submitting…" })
-        ).toBeDisabled();
-        await expect(quantity).toBeDisabled();
         await expect(panel.getByRole("alert")).toHaveText(
             "Return quantity exceeds purchased quantity."
         );
@@ -144,7 +140,6 @@ for (const width of [1440, 768, 390]) {
 
             // 失敗 → 再試行で成功
             await approve.click();
-            await expect(requested.getByRole("status")).toHaveText("Saving…");
             await expect(requested.getByRole("alert")).toHaveText(
                 "Return quantity exceeds purchased quantity."
             );
@@ -167,6 +162,35 @@ for (const width of [1440, 768, 390]) {
         });
     }
 }
+
+// 送信中の表示は scenario=pending で固定して検査する（fail の 400ms の窓では間に合わないことがある）
+test("customer return panel: submitting state disables the form", async ({
+    page,
+}) => {
+    await page.goto("/?screen=order&scenario=pending");
+    const panel = page
+        .getByRole("article", { name: "Order group group-0" })
+        .getByRole("region", { name: "Returns" });
+    await panel.getByRole("button", { name: "Request a return" }).click();
+    const quantity = panel.getByLabel("Quantity to return: Silk scarf (M)");
+    await quantity.selectOption("2");
+    await panel.getByRole("button", { name: "Submit return request" }).click();
+    await expect(
+        panel.getByRole("button", { name: "Submitting…" })
+    ).toBeDisabled();
+    await expect(quantity).toBeDisabled();
+});
+
+test("seller returns: saving state disables actions", async ({ page }) => {
+    await page.goto("/?screen=seller&scenario=pending");
+    const requested = page.getByRole("article", {
+        name: "Return rma-requested",
+    });
+    const approve = requested.getByRole("button", { name: "Approve" });
+    await approve.click();
+    await expect(requested.getByRole("status")).toHaveText("Saving…");
+    await expect(approve).toBeDisabled();
+});
 
 test("seller returns empty state", async ({ page }) => {
     await page.goto("/?screen=seller&scenario=empty");
