@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-14） | **3168 passed / 3171 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage（2026-10-14実測） | Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。 |
-| テストファイル総数（dashboard） | **408ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-14再生成実測。 |
-| Jest スイート総数（unit/component） | **327スイート**（326 passed／1 skipped、2026-10-14実測）。 |
-| テスト総数 | **3168 unit/component passed**（3171 total／3 skipped）。Integration238／18 suites（2026-10-12実測、今回未実行）。 |
+| Jestテスト総数（2026-10-15） | **3254 passed / 3257 total、3 skipped、127 snapshots passed、334 スイート（333 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage（2026-10-15実測） | Statements88.33%（11434/12944）／Branches78.94%（7069/8954）／Functions85.11%（2264/2660）／Lines88.89%（10404/11704）。 |
+| テストファイル総数（dashboard） | **417ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-15再生成実測（UI 後）。 |
+| Jest スイート総数（unit/component） | **334スイート**（333 passed／1 skipped、2026-10-15実測）。 |
+| テスト総数 | **3254 unit/component passed**（3257 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
-| カバー済みセル | **18/80（23%）**（2026-10-14 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **405**（2026-10-14全体coverage/dashboard実測）。 |
+| カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
+| lcov エントリ数 | **412**（2026-10-15全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0件**（2026-10-14 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-15 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -353,6 +353,10 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-15: 返品 RMA の UI（[plan 088](../../plans/088-implement-returns-rma.md) Step 5、未コミット）。`returns-view.test.ts` +8、`return-request-panel.test.tsx` +9、`seller-returns.test.tsx` +8、`returns-exchange-page.test.tsx` +2、`order-detail-page.test.tsx` +2。前回値（同日・バックエンド後）: Jest3225/3228・330 suites、Statements88.18%（11237/12742）／Branches78.73%（6904/8769）／Functions84.75%（2202/2598）／Lines88.72%（10218/11517）、dashboard412 files/409 lcov → Jest3254/3257・334 suites・127 snapshots、Statements88.33%（11434/12944）／Branches78.94%（7069/8954）／Functions85.11%（2264/2660）／Lines88.89%（10404/11704）、dashboard417 files/412 lcov/18 of 80（セル不変）。Integration257/19 は不変。
+
+2026-10-15: 返品 RMA バックエンド（[plan 088](../../plans/088-implement-returns-rma.md) Step 0〜4、未コミット）。`returns.test.ts` +38、`returns-policy.test.ts` / `order-item-settlement.test.ts` +19、統合 `returns-rma.test.ts` +19。前回値（2026-10-14）: Jest3168/3171・327 suites、Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）、dashboard408 files/405 lcov、Integration238/18 suites → Jest3225/3228・330 suites・127 snapshots、Statements88.18%（11237/12742）／Branches78.73%（6904/8769）／Functions84.75%（2202/2598）／Lines88.72%（10218/11517）、dashboard412 files/409 lcov/18 of 80（セル不変）、Integration257/19 suites。
 
 2026-10-13: PR#204 レビュー指摘対応（未コミット）。sales-chart の seller Y 軸短縮表記 +1。Jest3166/3169→3167/3170、327 suites・127 snapshots不変。Statements88.26%（10978/12437）／Branches78.65%（6786/8628）／Functions84.69%（2152/2541）／Lines88.8%（9994/11254）。dashboard407 files/405 lcov/18 of 80（セル不変）。
 

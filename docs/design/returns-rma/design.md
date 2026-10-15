@@ -286,3 +286,26 @@ await db.$transaction(async (tx) => {
 - DIRECTION-03 のコンソールに RMA のキューを並べること。
 - plan 022 の `deliveredAt` による期限判定の置き換え（§6）。
 - 実装: [plan 088](../../../plans/088-implement-returns-rma.md)。
+
+## 9. 実装で確定した差分（plan 088・2026-10-15）
+
+設計の決定は変えていない。実装の都合で次を確定した。
+
+| # | 差分 | 理由 |
+| --- | --- | --- |
+| 9-1 | `settleOrderItems` / `restockOrderItems` を `src/queries/order.ts` から `src/lib/order-item-settlement.ts` へ移した | `"use server"` のファイルから export すると、在庫を戻す関数がクライアントから呼べる Server Action になる。`returns.ts` と共有するため、`"use server"` の外へ出した |
+| 9-2 | §4.3 の「`RETURNING` で得た item」は、087 の実装どおり `updateManyAndReturn` の戻り値を使う | 同じ UPDATE が行ロックを取るので、差し引きの合計はロック後に読まれる（意味は同じ） |
+| 9-3 | `ReturnRequestItem` に CHECK 制約 `quantity > 0`、`0 <= restockedQuantity <= quantity` をマイグレーションで追加した | §2.1 の「CHECK 相当の検証」。Prisma スキーマでは表現できないので SQL に手で書いた |
+| 9-4 | `ReturnRequest` の `orderGroupId` / `storeId` / `userId` の外部キーも `onDelete: Restrict` にした | 返品の記録を親の削除で消さない。`User` は `Order` が既に Restrict なので、ユーザー削除の挙動は変わらない（`user-deletion-webhook.test.ts` で確認） |
+| 9-5 | 遷移の `count === 0` は、読み直して「スコープ外・不存在」→ `"Return request not found."`、「すでに遷移先」→ 副作用なしで成功、それ以外 → `"Return request is not in a valid state for this action."` に分けた | 他店舗の RMA の存在を漏らさず、再実行（二重クリック）は成功扱いにするため |
+| 9-6 | 申請の tx は、ロックの前に `(userId, idempotencyKey)` の既存行を引く | 全数の申請を再送したとき、R-1 の「数量超過」より先に冪等性で既存を返すため。並行の再送は従来どおり P2002 を tx の外で処理する |
+| 9-7 | T7 も対象の OrderItem 行を `FOR UPDATE` でロックしてから「全数が返品済みか」を数える | 同じ item の別の RMA の解決と並行したときに、全数の判定を取りこぼさないため |
+
+### 9.1 UI で確定した差分（plan 088 Step 5・2026-10-15）
+
+| # | 差分 | 理由 |
+| --- | --- | --- |
+| 9-8 | 注文詳細の返品欄は、RMA の取得に失敗したら申請導線を出さず再読み込みの案内だけを出す（注文詳細そのものは出す） | 残り数量を正しく導けないまま申請させないため。最終的な上限はサーバーの R-1 が守る |
+| 9-9 | 申請できる残り数量の表示は `quantity − 有効な RMA の数量`（REJECTED / CANCELED を除く）で、`returns-view.ts` が計算する | §2.2 の R-1 と同じ数え方を表示にも使う |
+| 9-10 | `/returns-exchange` の期限の文言は「商品の到着予定日から N 日以内」 | §6 の基準時刻（配達予定日の上限）と表現をそろえた。plan 022 で `deliveredAt` が入ったら「到着から」に戻す |
+| 9-11 | seller キューはカード一覧（DataTable は使わない） | 行の remount で成功表示と focus 復帰先を失う既知の問題を避けるため |

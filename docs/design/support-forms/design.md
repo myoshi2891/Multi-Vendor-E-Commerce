@@ -270,7 +270,7 @@ export async function createSupportTicket(
 各公開Server Componentが `createSupportTicket` をimportし `submitAction` として渡す。レンダリング時のDB読取なし、force-dynamic不要。
 
 - contact: category CONTACT、既存表示を維持（ブランドページの外側スタイルを再利用、フォームappearance既定）。
-- returns-exchange: category RETURN_REQUEST、appearance brand。深緑ヒーロー・パンくず・セリフh1・ゴールド装飾、クリーム本文。既存RETURNS_POLICY_SUMMARYを全文表示し、ポリシー＋申請の2列（800px以下1列）。フォームにはh2・全項目入力案内。サポート窓口へLink。返品条件・返金処理は変更しない。
+- returns-exchange: category RETURN_REQUEST、appearance brand。深緑ヒーロー・パンくず・セリフh1・ゴールド装飾、クリーム本文。返品ポリシー要約を全文表示し（2026-10-15 以降は `buildReturnsPolicySummary(resolveReturnWindowDays(null))`、フォームは「返品・交換のご相談」・plan 088）、ポリシー＋申請の2列（800px以下1列）。フォームにはh2・全項目入力案内。サポート窓口へLink。返品条件・返金処理は変更しない。
 - dispute: category DISPUTE、appearance brand。DesignPageと必須注文番号付き申立フォーム、Customer service導線。
 - report-problem: category PROBLEM_REPORT、appearance brand。DesignPageと既存の問題報告フォーム（注文番号欄なし）、Customer service導線。
 

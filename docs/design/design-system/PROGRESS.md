@@ -1,6 +1,10 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-14 管理マスタ8（現在地）
+## 2026-10-15 返品 RMA の UI（現在地）
+
+plan 088 Step 5。注文詳細の返品欄（DS-COMP-247）、seller 返品キュー（DS-PAGE-068／DS-COMP-248）、`/returns-exchange` の文面（DS-PAGE-036）。RTL・fixture suite `returns` 10/10・既存 E2E で検証。認証後の実ルートは保留（解除条件: plan 088 Step 6）。[証跡](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット)。台帳68画面は検証済み51／保留5／TODO7／実装済み5、部品248件。
+
+## 2026-10-14 管理マスタ8（履歴）
 
 8画面の残存差分・画面別TDD・仕様同期・認証後受け入れを完了。[最終証跡](#管理マスタ8最終統合2026-10-14)。台帳67画面は検証済み51／保留4／TODO7／実装済み5、部品246件。
 
@@ -87,7 +91,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 |---|---|---|---|---|---|---|
 | DS-PAGE-001 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-002 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
-| DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 検証済み | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11)、[決済/印刷](#残り保留の解消2026-10-11) |
+| DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 検証済み | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11)、[決済/印刷](#残り保留の解消2026-10-11)／[返品 RMA の UI（2026-10-15）](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 | DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
 | DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、補助/RTL済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
@@ -120,7 +124,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-033 | `/profile/wishlist/[page]` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/profile/wishlist/[page]/page.tsx](<../../../src/app/(store)/profile/wishlist/[page]/page.tsx>) | [wishlist実施記録](#wishlist移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-034 | `/profile/wishlist` | 転送専用 | 回帰検証 | 検証済み | [src/app/(store)/profile/wishlist/page.tsx](<../../../src/app/(store)/profile/wishlist/page.tsx>) | [wishlist実施記録](#wishlist移行記録) |
 | DS-PAGE-035 | `/report-problem` | 検証済み | P2 | 検証済み | [src/app/(store)/report-problem/page.tsx](<../../../src/app/(store)/report-problem/page.tsx>) | [P2実施記録](#p2優先5画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
-| DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
+| DS-PAGE-036 | `/returns-exchange` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/returns-exchange/page.tsx](<../../../src/app/(store)/returns-exchange/page.tsx>) | [returns-exchange移行記録](#returns-exchange移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)／[返品 RMA の UI（2026-10-15）](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 | DS-PAGE-037 | `/store/[storeUrl]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/store/[storeUrl]/page.tsx](<../../../src/app/(store)/store/[storeUrl]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、長文/空/商品あり補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-038 | `/track-order` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/track-order/page.tsx](<../../../src/app/(store)/track-order/page.tsx>) | [track-order移行記録](#track-order移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-039 | `/dashboard/admin/attributes/[id]/options` | 本体適用・検証保留 | P4 | 検証済み | [src/app/dashboard/admin/attributes/[id]/options/page.tsx](<../../../src/app/dashboard/admin/attributes/[id]/options/page.tsx>) | 実装・補助検証済み、以前は認証後保留。[証跡](#監査指摘6画面移行記録) [管理マスタ8実受け入れ](#管理マスタ8最終統合2026-10-14) |
@@ -152,6 +156,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
 | DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-11実ルート受け入れ） | P2 | 検証済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)／[残存6画面](#p2残存6画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)／[保留2件の解消](#p2保留2件の解消2026-10-11)。実Clerk・実Action・専用DBで未読3件の3幅表示、単件/リンク遷移/一括の既読と再読込保持を確認 |
+| DS-PAGE-068 | `/dashboard/seller/stores/[storeUrl]/returns` | 新規（2026-10-15・plan 088 Step 5） | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx>) | 実装済み・fixture 補助検証済み（3幅×light/dark・axe 0）。認証後の実ルートは保留（解除: plan 088 Step 6 の seed と E2E）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 
 ## 部品台帳
 
@@ -409,6 +414,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-245 | P4 | 属性選択肢Client境界 | [AdminAttributeOptions](../../../src/components/dashboard/admin/admin-attribute-options.tsx) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
 
 | DS-COMP-246 | P2 | 公開editorial操作 | [storefront controls CSS](../../../src/components/store/shared/storefront-controls.module.css) | 検証済み | Contact/FAQ/Product support/Aboutのopt-inのみ。3幅のfixture/実route・44px/focus/axeと仕様同期。[証跡](#ストアフロント残存8画面移行記録2026-10-12) |
+| DS-COMP-247 | P2 | 返品 RMA（顧客） | [ReturnRequestPanel](../../../src/components/store/order-page/return-request-panel.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-COMP-248 | P3 | 返品 RMA（seller） | [SellerReturns](../../../src/components/dashboard/seller/seller-returns.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 
 ## 前セッションの確認結果
 
@@ -1769,3 +1776,15 @@ Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへco
 実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。
 
 最初の実routeは47/48、カテゴリfocus復帰1件失敗。カテゴリ6件の再確認は成功。同名カテゴリ3件の曖昧さを除くためURLで行を特定し、全48件を再実行して成功。本体追加修正なし。Next生成型の更新中のTS6053はサーバー終了・自動include除去後に再確認して成功。製品Redに算入しない。
+
+### 返品 RMA の UI（2026-10-15・plan 088 Step 5・未コミット）
+
+- [計画](../../../plans/layout-design/returns-rma-ui-plan.md)／親プラン [088](../../../plans/088-implement-returns-rma.md)／設計 [returns-rma/design.md](../returns-rma/design.md) §3・§4.1・§6。対象: DS-PAGE-003（返品欄の追加）、DS-PAGE-036（文面）、DS-PAGE-068（新規）、DS-COMP-247、DS-COMP-248。
+- 実装: 顧客の返品欄 `ReturnRequestPanel`（既存の `commerce.module.css` を再利用し、`.field` の select/textarea と返品欄の配置だけを追加）、seller キュー `SellerReturns`（`SellerPage`・`seller.module.css`・shadcn `Button`。DataTable は remount 問題のため使わない）、`src/lib/returns-view.ts`（シリアライズと適格性。`returns-policy.ts` を再利用）。`/returns-exchange` は `buildReturnsPolicySummary(resolveReturnWindowDays(null))` で日数を描き、注文履歴への導線を追加、フォームは「返品・交換のご相談」（category は RETURN_REQUEST のまま）。サイドバーに Returns。
+- Red: 新規 RTL 35 件のうち 28 件が、空の実装に対する要素なし・空の結果で失敗（モジュール未作成の失敗は数えていない）。「何も描かない」1 件と既存の注文詳細 6 件は空の実装でも通るため回帰ガードとして記録。
+- Green / Refactor: テスト側の誤り 2 件を修正（成功後はフォームを閉じる仕様なのに `aria-expanded=true` を見ていた／URL ではなく取得済みの注文 ID で返品を引くのが正しい）。`choose` の型重複（TS2783）を解消。関連 Jest 107 スイート・600 件 pass、全体 Jest 3254/3257（3 skipped）・334 スイート、tsc 0、lint 0 errors（既存 warnings 8）。
+- ブラウザー: `DESIGN_SUITE=returns bun run test:design` 10/10（顧客 1440/768/390: 一覧・申請フォーム・送信中ロック・失敗 alert と値の保持・再送で成功・フォームを閉じる／seller 1440/768/390 × light/dark: 6 状態のカード・却下理由の必須・受け取り状態の必須・失敗→再試行・絞り込み／空状態）。各状態で横スクロールなし・axe AA 違反 0、44px・focus outline・境界のコントラスト。PC/モバイルの画像を目視。初回は seller の focus 確認がマウス操作の後で `:focus-visible` が付かず失敗 → 確認順を前へ移した（製品の修正なし）。
+- 回帰: `DESIGN_SUITE=priority` 83/83（support-returns を含む）。`tests/e2e/returns-exchange-design.spec.ts` chromium 4/4（:3000 の Docker アプリは Prisma 再生成後の Turbopack 外部モジュール解決エラーで全ページ 500 だったため、別 distDir・port 3136 の一時 dev サーバーに `E2E_BASE_URL` で接続。終了後に `tsconfig.json` の自動追記を戻した）。`bun run check:playwright` pass。
+- 保留: 認証後の実ルート（実 DB の Delivered 注文と Clerk の顧客・seller）。解除条件は plan 088 Step 6（`seed:e2e` に Delivered 注文、E2E で申請 → 承認 → 受け取り → 解決）。
+- 観察（未対応・既存）: 未認証で `/order/[orderId]` を開くと `getOrder` の `requireUser` が throw して 500 になる（今回の変更前から同じ。`(fullscreen)` にサインイン転送の layout が無い）。
+
