@@ -478,7 +478,8 @@ const receiveSideEffects =
  * T7 の副作用: 返金額（商品代金の目安）を Decimal で確定し、返品が全数になった OrderItem を
  * `Returned` の終端にする。settleOrderItems は返品済み数量を差し引くので、戻す量は 0 になる。
  * 対象の OrderItem 行をロックしてから計算するので、取り消し・返金（settleOrderItems）と直列になる。
- * その OrderItem がすでに終端なら、取り消し・返金のほうで精算済みなので返金額に含めない。
+ * 取り消し・返金済み（Canceled / Refunded）の OrderItem はお金が戻っているので返金額に含めない。
+ * 手動の `Returned`（updateOrderItemStatus）は返金を伴わないので含め、終端の判定からだけ外す。
  */
 const resolveSideEffects =
     (returnRequestId: string) =>
@@ -496,16 +497,23 @@ const resolveSideEffects =
             items.map((item) => item.orderItemId)
         );
         const lockedById = new Map(locked.map((row) => [row.id, row]));
-        const eligible = items.filter((item) => {
-            const orderItem = lockedById.get(item.orderItemId);
+        const statusOf = (item: (typeof items)[number]) =>
+            lockedById.get(item.orderItemId)?.status;
+        const refundable = items.filter((item) => {
+            const status = statusOf(item);
             return (
-                orderItem !== undefined &&
-                !isRestockTerminalItem(orderItem.status)
+                status !== undefined &&
+                status !== ProductStatus.Canceled &&
+                status !== ProductStatus.Refunded
             );
         });
+        // すでに終端（手動の Returned を含む）の item は精算し直さない
+        const eligible = refundable.filter(
+            (item) => !isRestockTerminalItem(statusOf(item) ?? "")
+        );
 
         // 金額は Prisma.Decimal のまま積み上げる（tech.md の金額規約）
-        const refundAmount = eligible.reduce(
+        const refundAmount = refundable.reduce(
             (sum, item) => sum.add(item.orderItem.price.mul(item.quantity)),
             new Prisma.Decimal(0)
         );
