@@ -249,6 +249,40 @@
 .field input[aria-invalid="true"] {
     border-color: var(--purchase-danger);
 }
+/* 返品の申請（plan 088 Step 5）。select / textarea も input と同じ見た目にする */
+.field select,
+.field textarea {
+    width: 100%;
+    min-height: 44px;
+    background: var(--purchase-panel);
+    color: var(--purchase-ink);
+    border: 1px solid var(--purchase-control-line);
+    padding: 12px;
+    font: inherit;
+}
+.returns {
+    display: grid;
+    gap: 16px;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--purchase-line);
+}
+.returns h4 {
+    font:
+        400 20px/1.4 Georgia,
+        serif;
+}
+.returnCard {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--purchase-line);
+}
+.returnFields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 12px;
+}
 .coupon {
     display: grid;
     gap: 12px;

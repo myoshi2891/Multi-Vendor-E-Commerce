@@ -5,14 +5,27 @@ import StoreHeader from "@/components/store/layout/header/header";
 import OrderGroupsContainer from "@/components/store/order-page/groups-container";
 import OrderHeader from "@/components/store/order-page/header";
 import OrderPayment from "@/components/store/order-page/payment";
+import ReturnRequestPanel from "@/components/store/order-page/return-request-panel";
 import styles from "@/components/store/shared/commerce.module.css";
 import { serializeOrderInvoice } from "@/lib/order-invoice";
+import { logError } from "@/lib/log";
+import {
+    buildGroupReturnOptions,
+    serializeReturnRequests,
+    type ReturnRequestView,
+} from "@/lib/returns-view";
 import {
     createStripePaymentIntent,
     createStripePayment,
 } from "@/queries/stripe";
 import { createPayPalPayment, capturePayPalPayment } from "@/queries/paypal";
 import { getOrder } from "@/queries/order";
+import {
+    cancelReturnRequest,
+    createReturnRequest,
+    getReturnRequestsForOrder,
+    setReturnTrackingNumber,
+} from "@/queries/returns";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +61,42 @@ export default async function OrderPage({
         }
         return total;
     }, 0);
+    // 返品の取得に失敗しても注文詳細は出す。残り数量を正しく導けないので申請導線は出さない
+    let returnRequests: ReturnRequestView[] | null;
+    try {
+        returnRequests = serializeReturnRequests(
+            await getReturnRequestsForOrder(order.id)
+        );
+    } catch (error: unknown) {
+        logError("[OrderPage] Failed to load return requests", error);
+        returnRequests = null;
+    }
+    const returnOptions = returnRequests
+        ? buildGroupReturnOptions(order, returnRequests)
+        : {};
+    const returnActions = {
+        createAction: createReturnRequest,
+        cancelAction: cancelReturnRequest,
+        trackingAction: setReturnTrackingNumber,
+    };
+    const returnSlots = Object.fromEntries(
+        order.groups.map((group) => [
+            group.id,
+            returnRequests ? (
+                returnOptions[group.id] && (
+                    <ReturnRequestPanel
+                        options={returnOptions[group.id]}
+                        actions={returnActions}
+                    />
+                )
+            ) : (
+                <p className={styles.note}>
+                    Return requests could not be loaded. Reload the page to try
+                    again.
+                </p>
+            ),
+        ])
+    );
     const needsPayment =
         order.paymentStatus === "Pending" || order.orderStatus === "Failed";
     return (
@@ -57,7 +106,10 @@ export default async function OrderPage({
                 <OrderHeader order={serializeOrderInvoice(order)} />
                 <div className={styles.layout}>
                     <div className={styles.column}>
-                        <OrderGroupsContainer groups={order.groups} />
+                        <OrderGroupsContainer
+                            groups={order.groups}
+                            returnSlots={returnSlots}
+                        />
                     </div>
                     <aside
                         className={styles.aside}

@@ -1,11 +1,15 @@
+import type { ReactNode } from "react";
 import type { OrderGroupWithItemsType } from "@/lib/types";
 import { getShippingDatesRange } from "@/lib/utils";
 import OrderGroupTable from "./group-table";
 import styles from "../shared/commerce.module.css";
 export default function OrderGroupsContainer({
     groups,
+    returnSlots = {},
 }: {
     groups: OrderGroupWithItemsType[];
+    /** group ごとの返品欄（plan 088 Step 5）。無い group には何も出さない */
+    returnSlots?: Record<string, ReactNode>;
 }) {
     return (
         <section aria-labelledby="order-items" className={styles.column}>
@@ -26,6 +30,7 @@ export default function OrderGroupsContainer({
                         <OrderGroupTable
                             key={group.id}
                             group={group}
+                            returns={returnSlots[group.id]}
                             deliveryInfo={{
                                 shippingService: group.shippingService,
                                 deliveryMinDate: minDate,
