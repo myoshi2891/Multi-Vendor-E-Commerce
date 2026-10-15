@@ -1,9 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { buildReturnsPolicySummary } from "../../src/components/store/static/content/returns";
+import { resolveReturnWindowDays } from "../../src/lib/returns-policy";
 
-// ページは RETURN_WINDOW_DAYS_DEFAULT（未設定なら 30 日）で描く。E2E の dev サーバーは未設定
-const RETURNS_POLICY_SUMMARY = buildReturnsPolicySummary(30);
+// ページと同じリゾルバーで日数を導く（RETURN_WINDOW_DAYS_DEFAULT、未設定なら 30 日）
+const RETURNS_POLICY_SUMMARY = buildReturnsPolicySummary(
+    resolveReturnWindowDays(null)
+);
 
 async function accessible(page: Page) {
     expect(
