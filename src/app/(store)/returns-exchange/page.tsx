@@ -90,7 +90,9 @@ export default function ReturnsExchangePage() {
                     <p className={styles.eyebrow}>LET US HELP</p>
                     <h2 id="returns-form-title">返品・交換のご相談</h2>
                     <p className={styles.formIntro}>
-                        ログインせずにお問い合わせの方、期限や対象についてご相談の方はこちらからお送りください。ご注文番号と内容をお知らせください。すべての項目をご入力ください。
+                        ご注文済みの商品について、ログインせずにお問い合わせの方、期限や対象についてご相談の方はこちらからお送りください。ご注文番号と内容をお知らせください。すべての項目をご入力ください。ご注文前のご質問は
+                        <Link href="/contact">お問い合わせフォーム</Link>
+                        へお寄せください。
                     </p>
                     <SupportForm
                         category="RETURN_REQUEST"
