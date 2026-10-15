@@ -5875,3 +5875,26 @@ seller 返品キューの手動返金の注記を RESOLVED でも表示し、see
 | テスト総数 | 3259 passed / 3262 total | **3260 passed / 3263 total** |
 | スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#206 レビュー対応（RMA 解決の終端判定） (2026-10-15)
+
+#### 概要
+
+`resolveReturnRequest` で OrderItem を `Returned` にする判定が RECEIVED の RMA まで数えていたため、同じ item の未解決 RMA の返金額が 0 になる経路を塞いだ。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/returns.ts` | 終端判定を RESOLVED の数量だけで行う（在庫の差し引きは従来どおり RECEIVED + RESOLVED） | `08bef6cb` |
+| `src/queries/returns.test.ts` | 同じ item の RECEIVED 2 件を新しい方から解決する回帰テスト +1 | `7dddb26c` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3260 passed / 3263 total | **3262 passed / 3265 total**（`18733ad1` の +1 を含む） |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
