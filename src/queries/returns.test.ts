@@ -746,6 +746,33 @@ describe("resolveReturnRequest", () => {
         expect(data.refundAmount.toFixed(2)).toBe("100.00");
     });
 
+    it("手動で Returned にされた item は返金額に含め、精算（settle）はし直さない", async () => {
+        // Arrange: seller が updateOrderItemStatus で Returned にしても、返金はまだ行われていない
+        mockSellerOwnsStore();
+        mockDb.returnRequest.updateMany.mockResolvedValue({ count: 1 });
+        mockDb.returnRequestItem.findMany.mockResolvedValue([
+            {
+                orderItemId: ITEM_ID,
+                quantity: 1,
+                orderItem: { price: new Prisma.Decimal("80"), quantity: 1 },
+            },
+        ]);
+        mockDb.$queryRaw.mockResolvedValue([
+            { id: ITEM_ID, status: ProductStatus.Returned, sizeId: "s1" },
+        ]);
+        mockDb.returnRequestItem.groupBy.mockResolvedValue([
+            { orderItemId: ITEM_ID, _sum: { quantity: 1 } },
+        ]);
+
+        // Act
+        await resolveReturnRequest(STORE_URL, RMA_ID);
+
+        // Assert
+        const { data } = mockDb.returnRequest.update.mock.calls[0][0];
+        expect(data.refundAmount.toFixed(2)).toBe("80.00");
+        expect(mockDb.orderItem.updateManyAndReturn).not.toHaveBeenCalled();
+    });
+
     it("同じ item の RECEIVED が 2 件あるとき、新しい方から解決しても両方に返金額が付く", async () => {
         // Arrange: 購入数 2 の item に、1 個ずつの RMA（古い順に older / newer）が RECEIVED で並ぶ
         mockSellerOwnsStore();
