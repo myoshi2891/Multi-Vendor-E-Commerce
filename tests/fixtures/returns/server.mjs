@@ -8,7 +8,7 @@ await startFixtureServer({
     port: 3135,
     title: "Returns RMA design fixture",
     mocks: {
-        "next/navigation": `export function useRouter(){return {push(){},replace(){},refresh(){window.refreshed=(window.refreshed??0)+1}}} export function usePathname(){return location.pathname} export function useSearchParams(){return new URLSearchParams(location.search)}`,
+        "next/navigation": `export function useRouter(){return {push(h){location.assign(h)},replace(h){location.replace(h)},refresh(){window.refreshed=(window.refreshed??0)+1}}} export function usePathname(){return location.pathname} export function useSearchParams(){return new URLSearchParams(location.search)}`,
     },
     loader: { ".jpg": "dataurl", ".png": "dataurl", ".svg": "dataurl" },
 });

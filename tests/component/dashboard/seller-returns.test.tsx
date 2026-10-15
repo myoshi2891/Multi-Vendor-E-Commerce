@@ -4,14 +4,20 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import SellerReturns from "@/components/dashboard/seller/seller-returns";
-import type {
-    ReturnRequestSellerActions,
-    ReturnRequestView,
+import {
+    emptyReturnStatusCounts,
+    type ReturnRequestSellerActions,
+    type ReturnRequestView,
+    type ReturnStatusCounts,
 } from "@/lib/returns-view";
 
 const refresh = jest.fn();
+const push = jest.fn();
+let search = "";
 jest.mock("next/navigation", () => ({
-    useRouter: () => ({ refresh, push: jest.fn() }),
+    useRouter: () => ({ refresh, push }),
+    usePathname: () => "/dashboard/seller/stores/my-store/returns",
+    useSearchParams: () => new URLSearchParams(search),
 }));
 
 const item = (id: string, name: string) => ({
@@ -59,15 +65,39 @@ const actions = (): jest.Mocked<ReturnRequestSellerActions> => ({
     resolveAction: jest.fn().mockResolvedValue("RESOLVED"),
 });
 
+/** 渡した行から状態別件数を作る（サーバーの groupBy の代わり） */
+const countsOf = (requests: ReturnRequestView[]): ReturnStatusCounts => {
+    const counts = emptyReturnStatusCounts();
+    for (const r of requests) counts[r.status] += 1;
+    return counts;
+};
+
 const renderQueue = (
     requests: ReturnRequestView[],
-    a: ReturnRequestSellerActions = actions()
+    a: ReturnRequestSellerActions = actions(),
+    view: Partial<{
+        counts: ReturnStatusCounts;
+        status: ReturnRequestView["status"] | null;
+        page: number;
+        totalPages: number;
+    }> = {}
 ) =>
     render(
-        <SellerReturns storeUrl="my-store" requests={requests} actions={a} />
+        <SellerReturns
+            storeUrl="my-store"
+            requests={requests}
+            counts={view.counts ?? countsOf(requests)}
+            status={view.status ?? null}
+            page={view.page ?? 1}
+            totalPages={view.totalPages ?? 1}
+            actions={a}
+        />
     );
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+    jest.clearAllMocks();
+    search = "";
+});
 
 describe("SellerReturns", () => {
     it("RMA が無ければ空の案内を出す", () => {
@@ -78,27 +108,113 @@ describe("SellerReturns", () => {
         expect(screen.getByText("No return requests yet.")).toBeInTheDocument();
     });
 
-    it("状態で絞り込め、選択肢に件数を出す", async () => {
+    it("選択肢の件数はサーバーの状態別件数から出す", () => {
         // Arrange
-        const user = userEvent.setup();
-        renderQueue([
-            request("r1", "REQUESTED"),
-            request("r2", "REQUESTED"),
-            request("r3", "RESOLVED"),
-        ]);
-        const filter = screen.getByLabelText("Filter by status");
+        const counts = {
+            ...emptyReturnStatusCounts(),
+            REQUESTED: 42,
+            RESOLVED: 8,
+        };
 
         // Act
-        await user.selectOptions(filter, "RESOLVED");
+        renderQueue([request("r1", "REQUESTED")], actions(), { counts });
+
+        // Assert
+        const filter = screen.getByLabelText("Filter by status");
+        expect(
+            within(filter).getByRole("option", { name: "All (50)" })
+        ).toBeInTheDocument();
+        expect(
+            within(filter).getByRole("option", { name: "Requested (42)" })
+        ).toBeInTheDocument();
+    });
+
+    it("状態で絞り込むと status を URL に入れ、page を 1 に戻す", async () => {
+        // Arrange
+        const user = userEvent.setup();
+        search = "page=3";
+        renderQueue([request("r1", "REQUESTED"), request("r3", "RESOLVED")]);
+
+        // Act
+        await user.selectOptions(
+            screen.getByLabelText("Filter by status"),
+            "RESOLVED"
+        );
+
+        // Assert
+        expect(push).toHaveBeenCalledWith(
+            "/dashboard/seller/stores/my-store/returns?status=RESOLVED"
+        );
+    });
+
+    it("All に戻すと status を URL から外す", async () => {
+        // Arrange
+        const user = userEvent.setup();
+        search = "status=RESOLVED";
+        renderQueue([request("r3", "RESOLVED")], actions(), {
+            status: "RESOLVED",
+            counts: { ...emptyReturnStatusCounts(), REQUESTED: 1, RESOLVED: 1 },
+        });
+
+        // Act
+        await user.selectOptions(
+            screen.getByLabelText("Filter by status"),
+            "ALL"
+        );
+
+        // Assert
+        expect(push).toHaveBeenCalledWith(
+            "/dashboard/seller/stores/my-store/returns"
+        );
+    });
+
+    it("絞り込んだ状態に該当が無ければ、その旨を出す", () => {
+        // Arrange & Act
+        renderQueue([], actions(), {
+            status: "APPROVED",
+            counts: { ...emptyReturnStatusCounts(), REQUESTED: 2 },
+        });
 
         // Assert
         expect(
-            within(filter).getByRole("option", { name: "Requested (2)" })
+            screen.getByText("No returns with this status.")
         ).toBeInTheDocument();
-        expect(screen.getAllByRole("article")).toHaveLength(1);
+    });
+
+    it("複数ページなら現在の絞り込みを保ったページ送りを出す", () => {
+        // Arrange
+        search = "status=REQUESTED&page=2";
+
+        // Act
+        renderQueue([request("r1", "REQUESTED")], actions(), {
+            status: "REQUESTED",
+            counts: { ...emptyReturnStatusCounts(), REQUESTED: 60 },
+            page: 2,
+            totalPages: 3,
+        });
+
+        // Assert
+        const nav = screen.getByRole("navigation", { name: "Returns pages" });
+        expect(within(nav).getByText("Page 2 of 3")).toBeInTheDocument();
         expect(
-            screen.getByRole("article", { name: "Return r3" })
-        ).toBeVisible();
+            within(nav).getByRole("link", { name: "Previous page" })
+        ).toHaveAttribute(
+            "href",
+            "/dashboard/seller/stores/my-store/returns?status=REQUESTED"
+        );
+        expect(
+            within(nav).getByRole("link", { name: "Next page" })
+        ).toHaveAttribute(
+            "href",
+            "/dashboard/seller/stores/my-store/returns?status=REQUESTED&page=3"
+        );
+    });
+
+    it("1 ページに収まるならページ送りを出さない", () => {
+        renderQueue([request("r1", "REQUESTED")]);
+        expect(
+            screen.queryByRole("navigation", { name: "Returns pages" })
+        ).not.toBeInTheDocument();
     });
 
     it("REQUESTED は承認でき、(storeUrl, id) で呼ぶ", async () => {

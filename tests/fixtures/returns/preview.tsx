@@ -6,12 +6,14 @@ import ReturnRequestPanel from "@/components/store/order-page/return-request-pan
 import SellerReturns from "@/components/dashboard/seller/seller-returns";
 import SellerShell from "@/components/dashboard/design/seller-shell";
 import styles from "@/components/store/shared/commerce.module.css";
-import type {
-    GroupReturnOptions,
-    ReturnRequestCustomerActions,
-    ReturnRequestSellerActions,
-    ReturnRequestView,
+import {
+    emptyReturnStatusCounts,
+    type GroupReturnOptions,
+    type ReturnRequestCustomerActions,
+    type ReturnRequestSellerActions,
+    type ReturnRequestView,
 } from "@/lib/returns-view";
+import type { ReturnRequestStatus } from "@prisma/client";
 import type { OrderGroupWithItemsType } from "@/lib/types";
 import {
     createMockOrderGroup,
@@ -155,6 +157,16 @@ const options: Record<string, GroupReturnOptions> = {
     "group-1": { groupId: "group-1", deadline: null, items: [], requests: [] },
 };
 
+// サーバーの絞り込みと状態別件数（groupBy）の代わり。?status= は useRouter().push の遷移で付く
+const sellerAll = scenario === "empty" ? [] : sellerRequests;
+const sellerStatus =
+    (params.get("status") as ReturnRequestStatus | null) ?? null;
+const sellerVisible = sellerStatus
+    ? sellerAll.filter((r) => r.status === sellerStatus)
+    : sellerAll;
+const sellerCounts = emptyReturnStatusCounts();
+for (const r of sellerAll) sellerCounts[r.status] += 1;
+
 function App() {
     if (screen === "seller")
         return (
@@ -168,7 +180,11 @@ function App() {
             >
                 <SellerReturns
                     storeUrl="maison-example"
-                    requests={scenario === "empty" ? [] : sellerRequests}
+                    requests={sellerVisible}
+                    counts={sellerCounts}
+                    status={sellerStatus}
+                    page={1}
+                    totalPages={1}
                     actions={sellerActions}
                 />
             </SellerShell>
