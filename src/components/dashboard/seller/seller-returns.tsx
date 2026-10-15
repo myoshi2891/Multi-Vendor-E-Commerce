@@ -181,8 +181,9 @@ function ReturnCard({
                         2
                     )}{" "}
                     (product price only).{" "}
-                    {request.status === "RECEIVED" &&
-                        "Issue the refund manually in the payment provider after resolving."}
+                    {request.status === "RECEIVED"
+                        ? "Issue the refund manually in the payment provider after resolving."
+                        : "Issue the refund manually in the payment provider."}
                 </p>
             )}
 
