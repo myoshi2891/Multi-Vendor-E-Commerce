@@ -216,6 +216,20 @@ describe("SellerReturns", () => {
         expect(a.resolveAction).toHaveBeenCalledWith("my-store", "r1");
     });
 
+    it("RESOLVED でも手動返金の注記を出す（返金は解決後に行うため）", () => {
+        // Arrange & Act
+        renderQueue([request("r1", "RESOLVED", { estimatedRefund: 50 })]);
+        const card = screen.getByRole("article", { name: "Return r1" });
+
+        // Assert
+        expect(
+            within(card).getByText(/Issue the refund manually/)
+        ).toBeInTheDocument();
+        expect(
+            within(card).queryByRole("button", { name: "Resolve return" })
+        ).not.toBeInTheDocument();
+    });
+
     it("失敗したら理由を alert に出し、ボタンを戻す", async () => {
         // Arrange
         const user = userEvent.setup();
