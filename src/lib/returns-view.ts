@@ -28,7 +28,7 @@ import type {
  */
 
 export type ReturnRequestRow = Omit<
-    Awaited<ReturnType<typeof getStoreReturnRequests>>[number],
+    Awaited<ReturnType<typeof getStoreReturnRequests>>["requests"][number],
     "orderGroup"
 > & { orderGroup?: { orderId: string } };
 
@@ -119,6 +119,21 @@ export const RETURN_STATUS_LABELS: Record<ReturnRequestStatus, string> = {
     RESOLVED: "Resolved",
     CANCELED: "Canceled",
 };
+
+/** seller 返品キューの 1 ページの件数（getStoreReturnRequests とページで共有） */
+export const STORE_RETURNS_PAGE_SIZE = 20;
+
+/** 店舗の状態別 RMA 件数（フィルタの件数表示用。全件を直列化せずに groupBy で数える） */
+export type ReturnStatusCounts = Record<ReturnRequestStatus, number>;
+
+export const emptyReturnStatusCounts = (): ReturnStatusCounts => ({
+    REQUESTED: 0,
+    APPROVED: 0,
+    REJECTED: 0,
+    RECEIVED: 0,
+    RESOLVED: 0,
+    CANCELED: 0,
+});
 
 /** 表示用の理由（並び順は申請フォームの選択肢の順） */
 export const RETURN_REASON_LABELS: Record<ReturnReasonCode, string> = {

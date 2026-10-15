@@ -29,6 +29,11 @@ import {
     resolveReturnWindowDays,
 } from "@/lib/returns-policy";
 import {
+    emptyReturnStatusCounts,
+    STORE_RETURNS_PAGE_SIZE,
+} from "@/lib/returns-view";
+import { normalizePageParam } from "@/lib/utils";
+import {
     isRestockTerminalItem,
     restockOrderItems,
     settleOrderItems,
@@ -901,30 +906,58 @@ export const getReturnRequestsForOrder = async (orderId: string) => {
 
 /**
  * @function getStoreReturnRequests
- * @description 店舗の返品キュー。状態で絞り込める（seller ダッシュボード用）。
+ * @description 店舗の返品キューを 1 ページ分だけ返す（seller ダッシュボード用）。
+ *              状態で絞り込める。状態別件数は全件を読まずに groupBy で別途数える。
  * @access SELLER（storeUrl の所有者）
+ * @param options.status 絞り込む状態（未指定なら全状態）
+ * @param options.page 1 始まりのページ番号（normalizePageParam で上限クランプ）
+ * @returns { requests, counts, total, page, pageSize } —— total は絞り込み後の件数
  */
 export const getStoreReturnRequests = async (
     storeUrl: string,
-    status?: ReturnRequestStatus
+    options: { status?: ReturnRequestStatus; page?: number } = {}
 ) => {
     const { store } = await requireStoreOwner(storeUrl);
-    const parsedStatus = ReturnRequestStatusFilterSchema.safeParse(status);
+    const parsedStatus = ReturnRequestStatusFilterSchema.safeParse(
+        options.status
+    );
     if (!parsedStatus.success) {
         throw new Error("Invalid return request status.");
     }
+    const status = parsedStatus.data;
+    // Server Action はクライアントからも呼べるため、ページ側で正規化済みでも再度クランプする
+    const page = normalizePageParam(options.page);
     try {
-        return await db.returnRequest.findMany({
-            where: {
-                storeId: store.id,
-                ...(parsedStatus.data ? { status: parsedStatus.data } : {}),
-            },
-            select: {
-                ...RETURN_REQUEST_SELECT,
-                orderGroup: { select: { orderId: true } },
-            },
-            orderBy: { createdAt: "desc" },
-        });
+        const [requests, grouped] = await Promise.all([
+            db.returnRequest.findMany({
+                where: { storeId: store.id, ...(status ? { status } : {}) },
+                select: {
+                    ...RETURN_REQUEST_SELECT,
+                    orderGroup: { select: { orderId: true } },
+                },
+                // 同時刻の行でページ境界が揺れないよう id を第 2 キーにする
+                orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+                skip: (page - 1) * STORE_RETURNS_PAGE_SIZE,
+                take: STORE_RETURNS_PAGE_SIZE,
+            }),
+            db.returnRequest.groupBy({
+                by: ["status"],
+                where: { storeId: store.id },
+                _count: { _all: true },
+            }),
+        ]);
+        const counts = emptyReturnStatusCounts();
+        for (const row of grouped) counts[row.status] = row._count._all;
+        const total = status
+            ? counts[status]
+            : Object.values(counts).reduce((sum, n) => sum + n, 0);
+        return {
+            requests,
+            counts,
+            total,
+            page,
+            pageSize: STORE_RETURNS_PAGE_SIZE,
+        };
     } catch (error: unknown) {
         logError("[Returns:getStoreReturnRequests] Query failed", error);
         throw new Error("Failed to get return requests.");
