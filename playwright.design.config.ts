@@ -72,6 +72,12 @@ const DESIGN_SUITES = {
             "NEXT_DEV_DIST_DIR=.next/purchase-route bun run dev -- --webpack --port 3132",
         timeout: 180000,
     },
+    returns: {
+        testMatch: "returns-design.spec.ts",
+        port: 3135,
+        kind: "fixture",
+        command: "node tests/fixtures/returns/server.mjs",
+    },
     postpurchase: {
         testMatch: "postpurchase-design.spec.ts",
         port: 3130,

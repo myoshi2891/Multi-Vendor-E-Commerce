@@ -63,6 +63,8 @@ type MockStore = {
     defaultDeliveryTimeMax: number;
     lowStockThreshold: number;
     returnPolicy: string;
+    returnWindowDays: number | null;
+    acceptsReturns: boolean;
     userId: string;
     isDeleted: boolean;
     deletedAt: Date | null;
@@ -371,6 +373,8 @@ export const createMockStore = (
         defaultDeliveryTimeMax: 14,
         lowStockThreshold: 5,
         returnPolicy: TEST_CONFIG.DEFAULT_RETURN_POLICY,
+        returnWindowDays: null,
+        acceptsReturns: true,
         userId: TEST_CONFIG.DEFAULT_USER_ID,
         isDeleted: false,
         deletedAt: null,
