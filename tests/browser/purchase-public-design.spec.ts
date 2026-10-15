@@ -317,7 +317,8 @@ for (const width of [1440, 768, 390]) {
             ).toEqual([]);
 
             // カートは localStorage（Zustand persist）なので、実商品を在庫のあるサイズで入れてから確認する
-            await page.locator("button[aria-pressed]:not([disabled])").first().click();
+            // 画像サムネイルも aria-pressed を持つため、サイズ選択は size-option の test ID で絞る
+            await page.locator('[data-testid^="size-option-"]:not([disabled])').first().click();
             await page.getByRole("button", { name: "Add to bag" }).click();
             await page.goto("/cart");
             const title = page.getByTestId("cart-item-name").first();
