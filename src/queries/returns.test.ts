@@ -666,7 +666,9 @@ describe("resolveReturnRequest", () => {
                 orderItem: { price: new Prisma.Decimal("100.10"), quantity: 2 },
             },
         ]);
-        mockDb.$queryRaw.mockResolvedValue([]);
+        mockDb.$queryRaw.mockResolvedValue([
+            { id: ITEM_ID, status: ProductStatus.Delivered, sizeId: "s1" },
+        ]);
         mockDb.returnRequestItem.groupBy.mockResolvedValue([
             { orderItemId: ITEM_ID, _sum: { quantity: 2 } },
         ]);
@@ -696,7 +698,9 @@ describe("resolveReturnRequest", () => {
                 orderItem: { price: new Prisma.Decimal("100"), quantity: 3 },
             },
         ]);
-        mockDb.$queryRaw.mockResolvedValue([]);
+        mockDb.$queryRaw.mockResolvedValue([
+            { id: ITEM_ID, status: ProductStatus.Delivered, sizeId: "s1" },
+        ]);
         mockDb.returnRequestItem.groupBy.mockResolvedValue([
             { orderItemId: ITEM_ID, _sum: { quantity: 1 } },
         ]);
@@ -706,6 +710,40 @@ describe("resolveReturnRequest", () => {
 
         // Assert
         expect(mockDb.orderItem.updateManyAndReturn).not.toHaveBeenCalled();
+    });
+
+    it("ロック時点で終端（取り消し・返金済み）の item は返金額に含めない", async () => {
+        // Arrange
+        mockSellerOwnsStore();
+        mockDb.returnRequest.updateMany.mockResolvedValue({ count: 1 });
+        mockDb.returnRequestItem.findMany.mockResolvedValue([
+            {
+                orderItemId: ITEM_ID,
+                quantity: 1,
+                orderItem: { price: new Prisma.Decimal("100"), quantity: 1 },
+            },
+            {
+                orderItemId: "item-refunded",
+                quantity: 1,
+                orderItem: { price: new Prisma.Decimal("50"), quantity: 1 },
+            },
+        ]);
+        mockDb.$queryRaw.mockResolvedValue([
+            { id: ITEM_ID, status: ProductStatus.Delivered, sizeId: "s1" },
+            {
+                id: "item-refunded",
+                status: ProductStatus.Refunded,
+                sizeId: "s2",
+            },
+        ]);
+        mockDb.returnRequestItem.groupBy.mockResolvedValue([]);
+
+        // Act
+        await resolveReturnRequest(STORE_URL, RMA_ID);
+
+        // Assert
+        const { data } = mockDb.returnRequest.update.mock.calls[0][0];
+        expect(data.refundAmount.toFixed(2)).toBe("100.00");
     });
 });
 
