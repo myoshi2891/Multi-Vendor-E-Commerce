@@ -31,11 +31,11 @@ function ReturnCard({
     storeUrl,
     request,
     actions,
-}: {
+}: Readonly<{
     storeUrl: string;
     request: ReturnRequestView;
     actions: ReturnRequestSellerActions;
-}) {
+}>) {
     const router = useRouter(),
         id = useId(),
         pending = useRef(false);
@@ -168,7 +168,7 @@ function ReturnCard({
                     Return tracking number: {request.returnTrackingNumber}
                 </p>
             )}
-            {request.sellerNote && (
+            {request.status === "REJECTED" && request.sellerNote && (
                 <p className="text-sm">
                     Rejection reason: {request.sellerNote}
                 </p>
@@ -254,15 +254,11 @@ function ReturnCard({
                     Resolve return
                 </Button>
             )}
-            {busy && (
-                <p role="status" className="text-sm">
-                    Saving…
-                </p>
-            )}
+            {busy && <output className="block text-sm">Saving…</output>}
             {!busy && feedback?.kind === "ok" && (
-                <p role="status" className={`${styles.success} text-sm`}>
+                <output className={`${styles.success} block text-sm`}>
                     {feedback.text}
-                </p>
+                </output>
             )}
             {feedback?.kind === "error" && (
                 <p role="alert" className={styles.alert}>
@@ -282,11 +278,11 @@ export default function SellerReturns({
     storeUrl,
     requests,
     actions,
-}: {
+}: Readonly<{
     storeUrl: string;
     requests: ReturnRequestView[];
     actions: ReturnRequestSellerActions;
-}) {
+}>) {
     const filterId = useId();
     const [stableActions] = useState(() => actions),
         [filter, setFilter] = useState<ReturnRequestStatus | "ALL">("ALL");

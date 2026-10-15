@@ -1,6 +1,7 @@
 import SellerReturns from "@/components/dashboard/seller/seller-returns";
 import SellerPage from "@/components/dashboard/design/seller-page";
 import { LookupFailure } from "@/components/dashboard/design/seller-error";
+import { requireStoreOwner } from "@/lib/auth-guards";
 import { serializeReturnRequests } from "@/lib/returns-view";
 import {
     approveReturnRequest,
@@ -10,13 +11,17 @@ import {
     resolveReturnRequest,
 } from "@/queries/returns";
 export const dynamic = "force-dynamic";
-/** 店舗の返品キュー（plan 088 Step 5・DS-PAGE-068）。認可は getStoreReturnRequests の requireStoreOwner */
+/**
+ * 店舗の返品キュー（plan 088 Step 5・DS-PAGE-068）。
+ * 認可ガードは catch の外に置き、認可エラーを「取得失敗」の表示に畳まない（tech.md）。
+ */
 export default async function SellerReturnsPage({
     params,
-}: {
+}: Readonly<{
     params: Promise<{ storeUrl: string }>;
-}) {
+}>) {
     const { storeUrl } = await params;
+    await requireStoreOwner(storeUrl);
     const requests = await getStoreReturnRequests(storeUrl).catch(() => null);
     if (!requests)
         return (

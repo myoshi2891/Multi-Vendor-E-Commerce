@@ -29,10 +29,10 @@ const defaultIdempotencyKey = (): string => crypto.randomUUID();
 function ReturnRequestCard({
     request,
     actions,
-}: {
+}: Readonly<{
     request: ReturnRequestView;
     actions: ReturnRequestCustomerActions;
-}) {
+}>) {
     const router = useRouter(),
         trackingId = useId(),
         pending = useRef(false);
@@ -141,9 +141,9 @@ function ReturnRequestCard({
                 </div>
             )}
             {feedback?.kind === "ok" && (
-                <p role="status" className={styles.success}>
+                <output className={`${styles.success} block`}>
                     {feedback.text}
-                </p>
+                </output>
             )}
             {feedback?.kind === "error" && (
                 <p role="alert" className={styles.error}>
@@ -168,16 +168,19 @@ export default function ReturnRequestPanel({
     options,
     actions,
     createIdempotencyKey = defaultIdempotencyKey,
-}: {
+}: Readonly<{
     options: GroupReturnOptions;
     actions: ReturnRequestCustomerActions;
     createIdempotencyKey?: () => string;
-}) {
+}>) {
     const router = useRouter(),
         formId = useId(),
         noteId = useId(),
         pending = useRef(false),
-        key = useRef<string | null>(null);
+        key = useRef<string | null>(null),
+        // 送信が失敗した後に明細を変えたら、別の申請なので新しいキーにする。メモは
+        // requestHash に含めない（design §2.3）ので、メモだけの変更では同じキーのまま再送する
+        failedAttempt = useRef(false);
     const [open, setOpen] = useState(false),
         [busy, setBusy] = useState(false),
         [note, setNote] = useState(""),
@@ -195,7 +198,14 @@ export default function ReturnRequestPanel({
         setError(null);
     };
 
-    const choose = (itemId: string, patch: Partial<Selection[string]>): void =>
+    const choose = (
+        itemId: string,
+        patch: Partial<Selection[string]>
+    ): void => {
+        if (failedAttempt.current) {
+            key.current = null;
+            failedAttempt.current = false;
+        }
         setSelection((current) => ({
             ...current,
             [itemId]: {
@@ -203,6 +213,7 @@ export default function ReturnRequestPanel({
                 ...patch,
             },
         }));
+    };
 
     const submit = async () => {
         if (pending.current) return;
@@ -221,6 +232,7 @@ export default function ReturnRequestPanel({
         pending.current = true;
         setBusy(true);
         setError(null);
+        setSubmitted(false);
         try {
             await actions.createAction({
                 orderGroupId: options.groupId,
@@ -230,14 +242,16 @@ export default function ReturnRequestPanel({
                 items,
             });
             key.current = null;
+            failedAttempt.current = false;
             setSelection({});
             setNote("");
             setOpen(false);
             setSubmitted(true);
             router.refresh();
-        } catch (caught: unknown) {
+        } catch (error_: unknown) {
+            failedAttempt.current = true;
             setError(
-                errorMessage(caught, "The return request could not be sent.")
+                errorMessage(error_, "The return request could not be sent.")
             );
         } finally {
             pending.current = false;
@@ -262,9 +276,9 @@ export default function ReturnRequestPanel({
                 />
             ))}
             {submitted && (
-                <p role="status" className={styles.success}>
+                <output className={`${styles.success} block`}>
                     Return request submitted.
-                </p>
+                </output>
             )}
             {options.items.length > 0 && (
                 <>
