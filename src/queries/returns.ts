@@ -160,7 +160,9 @@ export const createReturnRequest = async (
     const data = parsed.data;
     const requestHash = buildRequestHash(data);
     // ロックの順序を固定してデッドロックを避ける（SQL 側の ORDER BY と同じ順）
-    const itemIds = data.items.map((item) => item.orderItemId).sort();
+    const itemIds = data.items
+        .map((item) => item.orderItemId)
+        .sort((a, b) => a.localeCompare(b));
 
     let outcome: CreateOutcome;
     try {
@@ -191,6 +193,15 @@ export const createReturnRequest = async (
             `;
             // IDOR: 存在しないのと同じ応答にする
             if (locked.length !== itemIds.length) return { kind: "not_found" };
+
+            // ロックを待つ間に、同じキーの並行な申請が確定していることがある。数量を数える前に
+            // 引き直す（そのまま数えると、全数の申請の再送が「数量超過」で弾かれる）
+            const committed = await findByIdempotencyKey(
+                tx,
+                user.id,
+                data.idempotencyKey
+            );
+            if (committed) return { kind: "existing", ...committed };
 
             const now = new Date();
             const eligible = locked.every((row) =>
@@ -369,9 +380,8 @@ const runTransition = async (
             }
         );
     } catch (error: unknown) {
-        if (error instanceof ReturnRequestRejection) {
-            throw new Error(error.message);
-        }
+        // 業務上の拒否はその文言のまま返す（汎用メッセージで上書きしない）
+        if (error instanceof ReturnRequestRejection) throw error;
         logError(`[Returns:${spec.fn}] Transition failed`, error);
         throw new Error(spec.failMessage);
     }
@@ -402,7 +412,9 @@ const lockOrderItems = (tx: SettlementTx, orderItemIds: string[]) =>
     tx.$queryRaw<{ id: string; status: string; sizeId: string }[]>`
         SELECT "id", "status"::text AS "status", "sizeId"
         FROM "OrderItem"
-        WHERE "id" IN (${Prisma.join([...orderItemIds].sort())})
+        WHERE "id" IN (${Prisma.join(
+            [...orderItemIds].sort((a, b) => a.localeCompare(b))
+        )})
         ORDER BY "id"
         FOR UPDATE
     `;

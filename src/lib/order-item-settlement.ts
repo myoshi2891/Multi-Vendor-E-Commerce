@@ -119,25 +119,28 @@ export const settleOrderItems = async (
     tx: SettlementTx,
     where: Prisma.OrderItemWhereInput,
     status: RestockTerminalItemStatus,
-    options: { restock: boolean } = { restock: true }
+    options?: { restock?: boolean }
 ): Promise<{ id: string; sizeId: string; quantity: number }[]> => {
     const settled = await tx.orderItem.updateManyAndReturn({
         where: { AND: [where, NOT_SETTLED_ITEM] },
         data: { status },
         select: { id: true, sizeId: true, quantity: true },
     });
-    if (!options.restock || settled.length === 0) return settled;
-
-    const returned = await getReturnedQuantities(
-        tx,
-        settled.map((item) => item.id)
-    );
-    await restockOrderItems(
-        tx,
-        settled.map((item) => ({
-            sizeId: item.sizeId,
-            quantity: Math.max(0, item.quantity - (returned.get(item.id) ?? 0)),
-        }))
-    );
+    if ((options?.restock ?? true) && settled.length > 0) {
+        const returned = await getReturnedQuantities(
+            tx,
+            settled.map((item) => item.id)
+        );
+        await restockOrderItems(
+            tx,
+            settled.map((item) => ({
+                sizeId: item.sizeId,
+                quantity: Math.max(
+                    0,
+                    item.quantity - (returned.get(item.id) ?? 0)
+                ),
+            }))
+        );
+    }
     return settled;
 };

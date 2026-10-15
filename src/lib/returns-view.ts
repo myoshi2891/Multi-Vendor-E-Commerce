@@ -132,10 +132,10 @@ export const RETURN_REASON_LABELS: Record<ReturnReasonCode, string> = {
 };
 
 /** 有効な RMA（申請できる残り数量から引く）でない状態 */
-const INACTIVE_STATUSES: readonly ReturnRequestStatus[] = [
+const INACTIVE_STATUSES: ReadonlySet<ReturnRequestStatus> = new Set([
     "REJECTED",
     "CANCELED",
-];
+]);
 
 const toIso = (value: Date | null): string | null =>
     value ? value.toISOString() : null;
@@ -196,7 +196,7 @@ export function buildGroupReturnOptions(
 ): Record<string, GroupReturnOptions> {
     const requested = new Map<string, number>();
     for (const request of requests) {
-        if (INACTIVE_STATUSES.includes(request.status)) continue;
+        if (INACTIVE_STATUSES.has(request.status)) continue;
         for (const item of request.items) {
             requested.set(
                 item.orderItemId,
