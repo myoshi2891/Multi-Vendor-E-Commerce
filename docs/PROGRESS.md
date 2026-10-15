@@ -54,12 +54,12 @@ Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-12実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-15実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3254 passed / 3257 total、3 skipped、127 snapshots passed、334 スイート（333 passed／1 skipped、failed 0）**。2026-10-15 plan 088 Step 5（返品 RMA の UI）後の全体Jest/coverage実測（`bun run test -- --coverage --silent`）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3259 passed / 3262 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-15 plan 088 Step 5（返品 RMA の UI）後の全体Jest/coverage実測（`bun run test -- --coverage --silent`）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |

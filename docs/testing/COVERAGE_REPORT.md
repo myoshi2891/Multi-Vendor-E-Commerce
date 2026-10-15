@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-15） | **3254 passed / 3257 total、3 skipped、127 snapshots passed、334 スイート（333 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage（2026-10-15実測） | Statements88.33%（11434/12944）／Branches78.94%（7069/8954）／Functions85.11%（2264/2660）／Lines88.89%（10404/11704）。 |
-| テストファイル総数（dashboard） | **417ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-15再生成実測（UI 後）。 |
-| Jest スイート総数（unit/component） | **334スイート**（333 passed／1 skipped、2026-10-15実測）。 |
-| テスト総数 | **3254 unit/component passed**（3257 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
+| Jestテスト総数（2026-10-15） | **3259 passed / 3262 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage（2026-10-15実測） | Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。 |
+| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-15再生成実測（UI 後）。 |
+| Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-15実測）。 |
+| テスト総数 | **3259 unit/component passed**（3262 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -353,6 +353,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-15: PR#206 レビュー・SonarCloud 指摘対応（未コミット）。`returns.test.ts` +1（ロック後の冪等キー再確認）、`return-request-panel.test.tsx` +1、`seller-returns.test.tsx` +1、`seller-returns-page.test.tsx` +2（新規）。Jest3254/3257・334 suites → 3259/3262・335 suites。Statements88.33%（11434/12944）／Branches78.94%（7069/8954）／Functions85.11%（2264/2660）／Lines88.89%（10404/11704） → Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。dashboard417→418 files/412 lcov。
 
 2026-10-15: 返品 RMA の UI（[plan 088](../../plans/088-implement-returns-rma.md) Step 5、未コミット）。`returns-view.test.ts` +8、`return-request-panel.test.tsx` +9、`seller-returns.test.tsx` +8、`returns-exchange-page.test.tsx` +2、`order-detail-page.test.tsx` +2。前回値（同日・バックエンド後）: Jest3225/3228・330 suites、Statements88.18%（11237/12742）／Branches78.73%（6904/8769）／Functions84.75%（2202/2598）／Lines88.72%（10218/11517）、dashboard412 files/409 lcov → Jest3254/3257・334 suites・127 snapshots、Statements88.33%（11434/12944）／Branches78.94%（7069/8954）／Functions85.11%（2264/2660）／Lines88.89%（10404/11704）、dashboard417 files/412 lcov/18 of 80（セル不変）。Integration257/19 は不変。
 

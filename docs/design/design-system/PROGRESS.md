@@ -1786,5 +1786,6 @@ Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへco
 - ブラウザー: `DESIGN_SUITE=returns bun run test:design` 10/10（顧客 1440/768/390: 一覧・申請フォーム・送信中ロック・失敗 alert と値の保持・再送で成功・フォームを閉じる／seller 1440/768/390 × light/dark: 6 状態のカード・却下理由の必須・受け取り状態の必須・失敗→再試行・絞り込み／空状態）。各状態で横スクロールなし・axe AA 違反 0、44px・focus outline・境界のコントラスト。PC/モバイルの画像を目視。初回は seller の focus 確認がマウス操作の後で `:focus-visible` が付かず失敗 → 確認順を前へ移した（製品の修正なし）。
 - 回帰: `DESIGN_SUITE=priority` 83/83（support-returns を含む）。`tests/e2e/returns-exchange-design.spec.ts` chromium 4/4（:3000 の Docker アプリは Prisma 再生成後の Turbopack 外部モジュール解決エラーで全ページ 500 だったため、別 distDir・port 3136 の一時 dev サーバーに `E2E_BASE_URL` で接続。終了後に `tsconfig.json` の自動追記を戻した）。`bun run check:playwright` pass。
 - 保留: 認証後の実ルート（実 DB の Delivered 注文と Clerk の顧客・seller）。解除条件は plan 088 Step 6（`seed:e2e` に Delivered 注文、E2E で申請 → 承認 → 受け取り → 解決）。
+- PR#206 レビュー・SonarCloud 対応（同日）: 返品パネルは失敗後に明細を変えたら新しい冪等キー（メモだけなら同じキー）、成功表示は送信開始で消す。seller キューは却下理由の見出しを REJECTED のみに。成功・送信中の表示を `role="status"` の `<p>` から `<output>` に（RTL の `getByRole("status")` はそのまま通る）。seller 返品ページは認可ガードを catch の外へ。RTL +5、`DESIGN_SUITE=returns` 10/10 を再確認。
 - 観察（未対応・既存）: 未認証で `/order/[orderId]` を開くと `getOrder` の `requireUser` が throw して 500 になる（今回の変更前から同じ。`(fullscreen)` にサインイン転送の layout が無い）。
 
