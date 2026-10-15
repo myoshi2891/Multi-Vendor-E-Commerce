@@ -745,6 +745,78 @@ describe("resolveReturnRequest", () => {
         const { data } = mockDb.returnRequest.update.mock.calls[0][0];
         expect(data.refundAmount.toFixed(2)).toBe("100.00");
     });
+
+    it("同じ item の RECEIVED が 2 件あるとき、新しい方から解決しても両方に返金額が付く", async () => {
+        // Arrange: 購入数 2 の item に、1 個ずつの RMA（古い順に older / newer）が RECEIVED で並ぶ
+        mockSellerOwnsStore();
+        const OLDER_ID = RMA_ID;
+        const NEWER_ID = "2d3e4f5a-6b7c-4d8e-9f0a-1b2c3d4e5f6a";
+        const rmaStatus = new Map<string, string>([
+            [OLDER_ID, "RECEIVED"],
+            [NEWER_ID, "RECEIVED"],
+        ]);
+        let itemStatus: string = ProductStatus.Delivered;
+        const matchesStatus = (status: string, filter: unknown): boolean => {
+            if (typeof filter === "string") return status === filter;
+            if (filter && typeof filter === "object" && "in" in filter) {
+                const list = (filter as { in: unknown }).in;
+                return Array.isArray(list) && list.includes(status);
+            }
+            return false;
+        };
+        mockDb.returnRequest.updateMany.mockImplementation(
+            async ({
+                where,
+                data,
+            }: {
+                where: { id: string };
+                data: { status: string };
+            }) => {
+                rmaStatus.set(where.id, data.status);
+                return { count: 1 };
+            }
+        );
+        mockDb.returnRequestItem.findMany.mockImplementation(async () => [
+            {
+                orderItemId: ITEM_ID,
+                quantity: 1,
+                orderItem: { price: new Prisma.Decimal("100"), quantity: 2 },
+            },
+        ]);
+        mockDb.$queryRaw.mockImplementation(async () => [
+            { id: ITEM_ID, status: itemStatus, sizeId: "s1" },
+        ]);
+        mockDb.returnRequestItem.groupBy.mockImplementation(
+            async ({
+                where,
+            }: {
+                where: { returnRequest: { status: unknown } };
+            }) => {
+                const sum = [...rmaStatus.values()].filter((status) =>
+                    matchesStatus(status, where.returnRequest.status)
+                ).length;
+                return sum > 0
+                    ? [{ orderItemId: ITEM_ID, _sum: { quantity: sum } }]
+                    : [];
+            }
+        );
+        mockDb.orderItem.updateManyAndReturn.mockImplementation(async () => {
+            itemStatus = ProductStatus.Returned;
+            return [];
+        });
+
+        // Act
+        await resolveReturnRequest(STORE_URL, NEWER_ID);
+        await resolveReturnRequest(STORE_URL, OLDER_ID);
+
+        // Assert: どちらの RMA も 1 個分の返金額を持ち、item は 2 件目の解決で初めて終端になる
+        const amounts = mockDb.returnRequest.update.mock.calls.map(
+            ([arg]: [{ data: { refundAmount: Prisma.Decimal } }]) =>
+                arg.data.refundAmount.toFixed(2)
+        );
+        expect(amounts).toEqual(["100.00", "100.00"]);
+        expect(mockDb.orderItem.updateManyAndReturn).toHaveBeenCalledTimes(1);
+    });
 });
 
 // ==================================================
