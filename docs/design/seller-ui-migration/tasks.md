@@ -119,3 +119,6 @@ DS-PAGE-004 出店申請。既存実装の回帰確認（新規Redなし・追�
 
 
 - [x] 販売者8再監査 Step 6 DS-PAGE-061（2026-10-16）: 商品登録 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 7 DS-PAGE-064（2026-10-16）: 配送設定 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。

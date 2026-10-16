@@ -40,7 +40,7 @@ SellerShell/SellerPageとseller tokensを再利用し、深緑・アイボリー
 - [x] Step 4 注文
 - [x] Step 5 メッセージ
 - [x] Step 6 商品登録
-- [ ] Step 7 配送
+- [x] Step 7 配送
 - [ ] Step 8 店舗設定
 - [ ] 最終統合・仕様/QA同期
 
