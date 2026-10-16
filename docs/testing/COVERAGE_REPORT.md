@@ -631,7 +631,7 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 | 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
 | テストファイル総数 | **371ファイル**（2026-10-06 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **299スイート**（298 passed／1 skipped、2026-10-06全体実測）。 |
-| テスト総数 | **3280 unit/component passed**（3283 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
+| テスト総数 | **2742 unit/component passed** (2745 total / 3 skipped・**257 スイート**・2026-10-04 全体実測)。以前の記録: **2726 unit/component passed** (2729 total / 3 skipped・254 スイート・2026-10-04)。Integration **222** / 17 スイート（2026-10-04 実測・以前の記録: 221・2026-10-04）。以前の記録: **2725 unit/component passed** (2728 total・2026-10-04 browse 属性チップ後)、**2709 unit/component passed** (2712 total / 3 skipped・254 スイート・2026-10-03)。 |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
 | lcov エントリ数 | **383**（2026-10-06全体coverage/dashboard実測）。 |
 | 型エラー | **0件**（2026-10-06実測）。 |
