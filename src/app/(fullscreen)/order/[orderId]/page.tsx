@@ -61,19 +61,19 @@ export default async function OrderPage({
         }
         return total;
     }, 0);
-    // 返品の取得に失敗しても注文詳細は出す。残り数量を正しく導けないので申請導線は出さない
+    // 返品の取得・組み立てに失敗しても注文詳細は出す。残り数量を正しく導けないので申請導線は出さない
+    // （返品日数の設定 RETURN_WINDOW_DAYS_DEFAULT が不正なときも、組み立てで throw する）
     let returnRequests: ReturnRequestView[] | null;
+    let returnOptions: ReturnType<typeof buildGroupReturnOptions> = {};
     try {
         returnRequests = serializeReturnRequests(
             await getReturnRequestsForOrder(order.id)
         );
+        returnOptions = buildGroupReturnOptions(order, returnRequests);
     } catch (error: unknown) {
         logError("[OrderPage] Failed to load return requests", error);
         returnRequests = null;
     }
-    const returnOptions = returnRequests
-        ? buildGroupReturnOptions(order, returnRequests)
-        : {};
     const returnActions = {
         createAction: createReturnRequest,
         cancelAction: cancelReturnRequest,
