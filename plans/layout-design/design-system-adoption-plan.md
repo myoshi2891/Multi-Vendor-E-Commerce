@@ -1012,3 +1012,6 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 
 - [x] 販売者8再監査 Step 7 DS-PAGE-064 配送設定: 今回範囲の補助検証・仕様同期。[計画](priority-eight-seller-reaudit-design-system-plan.md)。過去の全画面判定は維持。
+
+
+- [x] 販売者8再監査 Step 8 DS-PAGE-063 店舗設定: 今回範囲の補助検証・仕様同期。[計画](priority-eight-seller-reaudit-design-system-plan.md)。過去の全画面判定は維持。

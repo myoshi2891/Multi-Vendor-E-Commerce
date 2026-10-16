@@ -41,7 +41,7 @@ SellerShell/SellerPageとseller tokensを再利用し、深緑・アイボリー
 - [x] Step 5 メッセージ
 - [x] Step 6 商品登録
 - [x] Step 7 配送
-- [ ] Step 8 店舗設定
+- [x] Step 8 店舗設定
 - [ ] 最終統合・仕様/QA同期
 
 [移行元](design-system-adoption-plan.md) / [進捗](../../docs/design/design-system/PROGRESS.md)

@@ -1476,3 +1476,8 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 ### 販売者8再監査 Step 7 DS-PAGE-064（2026-10-16）
 
 配送設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six shipping6/6（3幅×light/dark・国検索/12.5ドル初期値/Portal/pending/失敗/retry/success/閉じるlock/Escape focus復帰/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）
+
+店舗設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six storesettings6/6（3幅×light/dark・画像adapter/Featured/validation/pending/失敗/値保持/retry/success/refresh/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。実Cloudinary送信・実保存は今回対象外。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。

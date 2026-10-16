@@ -1368,3 +1368,6 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 
 - [x] 販売者8再監査 Step 7 DS-PAGE-064（2026-10-16）: 配送設定 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）: 店舗設定 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
