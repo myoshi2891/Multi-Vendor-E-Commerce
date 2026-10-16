@@ -287,7 +287,12 @@ for (const width of [1440, 801, 800, 768, 390]) {
         await storefrontControls(widget.locator("a,button"));
         const email = widget.getByRole("textbox", { name: "Email address", exact: true });
         await expect(email).toBeVisible();
-        await expectReadableBorder(email);
+        for (const input of await widget.locator('input:not([type="hidden"])').all()) {
+            if (!(await input.isVisible())) continue;
+            await input.blur();
+            await expectReadableBorder(input);
+            await expectReadableFocus(input);
+        }
         await expectReadableFocus(email);
         await email.fill("invalid-email");
         await expect(email).toHaveValue("invalid-email");

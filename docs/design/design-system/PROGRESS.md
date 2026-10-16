@@ -1,6 +1,11 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-15 返品 RMA の UI（現在地）
+## 2026-10-16 受け入れ未完了8画面（現在地）
+
+実装・TDD/回帰・今回の受け入れ・仕様同期を完了。001/002/005/010/017/024を検証済みへ更新。022/004は実データ/SDK/保存を別保留として維持。[証跡](#受け入れ未完了8画面2026-10-16)。台帳68画面＝検証済み57／保留4／TODO7／実装済み0、部品248件。共通基盤・他callerの既存判定は保持。
+
+
+## 2026-10-15 返品 RMA の UI（履歴）
 
 plan 088 Step 5。注文詳細の返品欄（DS-COMP-247）、seller 返品キュー（DS-PAGE-068／DS-COMP-248）、`/returns-exchange` の文面（DS-PAGE-036）。RTL・fixture suite `returns` 10/10・既存 E2E で検証。認証後の実ルートは保留（解除条件: plan 088 Step 6）。[証跡](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット)。台帳68画面は検証済み51／保留5／TODO7／実装済み5、部品248件。
 
@@ -89,30 +94,30 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 
 | ID | URL | ソース判定 | 優先度 | 状態 | 対象ファイル | 証跡・次の作業 |
 |---|---|---|---|---|---|---|
-| DS-PAGE-001 | `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
-| DS-PAGE-002 | `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
+| DS-PAGE-001 | `/sign-in` | 本体適用（2026-10-16受け入れ） | 周辺部品を監査 | 検証済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
+| DS-PAGE-002 | `/sign-up` | 本体適用（2026-10-16受け入れ） | 周辺部品を監査 | 検証済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 検証済み | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11)、[決済/印刷](#残り保留の解消2026-10-11)／[返品 RMA の UI（2026-10-15）](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
-| DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) |
-| DS-PAGE-005 | `/about` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
+| DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) ／[今回の読取・補助検証と残保留](#受け入れ未完了8画面2026-10-16) |
+| DS-PAGE-005 | `/about` | 本体適用（2026-10-16受け入れ） | 周辺部品を監査 | 検証済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、補助/RTL済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録) |
 | DS-PAGE-008 | `/checkout` | 本体適用・検証保留 | P1 | 検証済み | [src/app/(store)/checkout/page.tsx](<../../../src/app/(store)/checkout/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-009 | `/compare` | 本体適用（2026-09-30移行） | P2 | 検証済み | [src/app/(store)/compare/page.tsx](<../../../src/app/(store)/compare/page.tsx>) | [compare実施記録](#compare移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
-| DS-PAGE-010 | `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) |
+| DS-PAGE-010 | `/contact` | 本体適用（2026-10-16受け入れ） | 周辺部品を監査 | 検証済み | [src/app/(store)/contact/page.tsx](<../../../src/app/(store)/contact/page.tsx>) | [前セッションの確認](#前セッションの確認結果) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-011 | `/customer-service` | 本体適用（2026-10-01移行） | P2 | 検証済み | [src/app/(store)/customer-service/page.tsx](<../../../src/app/(store)/customer-service/page.tsx>) | [customer-service移行記録](#customer-service移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-012 | `/dispute` | 検証済み | P2 | 検証済み | [src/app/(store)/dispute/page.tsx](<../../../src/app/(store)/dispute/page.tsx>) | [P2実施記録](#p2優先5画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
 | DS-PAGE-013 | `/faq` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/faq/page.tsx](<../../../src/app/(store)/faq/page.tsx>) | 未実施 |
 | DS-PAGE-014 | `/faqs` | 本体適用（2026-09-30移行） | P3 | 検証済み | [src/app/(store)/faqs/page.tsx](<../../../src/app/(store)/faqs/page.tsx>) | [FAQs実施記録](#faqs移行記録) |
 | DS-PAGE-015 | `/legal` | 検証済み | P3 | 検証済み | [src/app/(store)/legal/page.tsx](<../../../src/app/(store)/legal/page.tsx>) | [P3移行記録](#p3優先6画面移行記録) |
 | DS-PAGE-016 | `/offers` | 検証済み | P2 | 検証済み | [src/app/(store)/offers/page.tsx](<../../../src/app/(store)/offers/page.tsx>) | [P2実施記録](#p2優先5画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録) |
-| DS-PAGE-017 | `/` | 本体適用・周辺確認 | 周辺部品を監査 | 実装済み | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、header/reduced-motion回帰済み、商品あり実route保留 |
+| DS-PAGE-017 | `/` | 本体適用（2026-10-16受け入れ） | 周辺部品を監査 | 検証済み | [src/app/(store)/page.tsx](<../../../src/app/(store)/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、header/reduced-motion回帰済み、商品あり実route保留 ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-018 | `/product-support` | 本体適用（2026-10-01移行） | P3 | 検証済み | [src/app/(store)/product-support/page.tsx](<../../../src/app/(store)/product-support/page.tsx>) | [product-support移行記録](#product-support移行記録) |
 | DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、操作/ページング補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-020 | `/product/[productSlug]` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/product/[productSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-021 | `/profile/addresses` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/addresses/page.tsx](<../../../src/app/(store)/profile/addresses/page.tsx>) | [addresses実施記録](#profile-addresses移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
-| DS-PAGE-022 | `/profile/following/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
+| DS-PAGE-022 | `/profile/following/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) ／[今回の読取・補助検証と残保留](#受け入れ未完了8画面2026-10-16) |
 | DS-PAGE-023 | `/profile/following` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/following/page.tsx](<../../../src/app/(store)/profile/following/page.tsx>) | aliasのRTL回帰済み。認証後実ルートは[P2記録](#p2優先5画面移行記録)の保留を継続 |
-| DS-PAGE-024 | `/profile/history/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) |
+| DS-PAGE-024 | `/profile/history/[page]` | 本体適用（2026-10-16受け入れ） | P2 | 検証済み | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-025 | `/profile/history` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/history/page.tsx](<../../../src/app/(store)/profile/history/page.tsx>) | aliasのRTL回帰済み。認証後実ルートは[P2記録](#p2優先5画面移行記録)の保留を継続 |
 | DS-PAGE-026 | `/profile/messages` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/messages/page.tsx](<../../../src/app/(store)/profile/messages/page.tsx>) | [messages実施記録](#profile-messages移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
 | DS-PAGE-027 | `/profile/orders/[filter]` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../../src/app/(store)/profile/orders/[filter]/page.tsx>) | [orders実施記録](#profile-orders移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
@@ -1826,3 +1831,11 @@ Step4の共通AuthFrame/theme/appearanceをサインアップへ適用し実SDK�
 ### Step 8 DS-PAGE-004 出店申請
 
 既存実装の回帰確認（新規Redなし・追加改修不要）。seven apply6/6: 3幅の4段階・入力保持・upload adapter・validation/pending/error/retry/success・説明summary/44px/focus・axe AA。認証後read-only1/1内3幅、guest3/3。Contact/About/申請関連RTL計17/17。実routeのClerk読込とPrevious無効/Next有効の準備完了を待ち、動的DOM列挙のraceを解消（製品Redではない）。PC/390px画像目視、型0・lint0 errors/既存8 warnings。実Cloudinary upload/申請保存は対象外で既存保留を維持。既存4段階・schema・payload・業務契約は変更不要。
+
+### 未完了8最終統合
+
+3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）。Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。補助47/47（following10・history13・home9・Contact6・About3・apply6）、公開実route9/9、認証実SDK10/10（5幅×2画面）、認証後read-only3/3（各3幅）、申請guest3/3。計72/72。 型0・lint0 errors/既存8 warnings・check:playwright・diff/文書リンク検証。PC/モバイル画像確認。overview/architecture/data-model/interfaces/workflowsは既存業務契約不変で変更不要。Nextのtsconfig自動変更は復元しコミットしない。
+
+追加回帰: sign-up全入力（username/email/password）の未focus時境界とfocusを5幅で再確認、5/5。ブラウザー72件のうち同じ5ケースの検証を補強したため重複加算しない。最終lint/tscはこのテスト変更後に再実行して成功。
+
+文書最終検証: 追加/変更行のローカルリンク72件に欠落0、DS-PAGE68/DS-COMP248の重複0。dashboard80セルのdata-statusは変更前と同一。git diff --check成功。段階コミットは[保存計画](../../../plans/layout-design/priority-eight-unaccepted-design-system-plan.md#段階コミット)に記録。

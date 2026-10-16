@@ -38,6 +38,37 @@
 - [x] Step 6 Contact
 - [x] Step 7 About
 - [x] Step 8 出店申請
-- [ ] 最終統合・文書同期
+- [x] 最終統合・文書同期
 
 [移行元計画](design-system-adoption-plan.md) / [進捗](../../docs/design/design-system/PROGRESS.md)
+
+## 最終結果
+
+3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）。Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。補助47/47（following10・history13・home9・Contact6・About3・apply6）、公開実route9/9、認証実SDK10/10（5幅×2画面）、認証後read-only3/3（各3幅）、申請guest3/3。計72/72。 型0・lint0 errors/既存8 warnings・harness成功。follow実データ/更新と出店申請実SDK/保存は別保留。詳細は[QA](../../docs/testing/QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。
+
+## 再実行
+
+既存design config・Chrome channelを利用。実routeは既存専用DBへDATABASE_URL/DIRECT_URLを同値で指定し、認証後は既存顧客のcustomerEmailを含むJSONをDESIGN_PURCHASE_ROUTE、既存variant ID配列JSONをDESIGN_HISTORY_IDSへ渡す。準備は読み取りのみで、prepare-purchase-route.tsの書き込み準備は実行しない。
+
+- `DESIGN_SUITE=priority DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep 'following|history|storefront eight (contact|about)'`（32ケース）
+- `DESIGN_SUITE=purchase DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep home`（9ケース）
+- `DESIGN_SUITE=seven DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep apply`（6ケース）
+- `DESIGN_SUITE=priority-public DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep 'pending eight sign-|storefront eight public (/|/contact|/about) [0-9]'`（19ケース）
+- `DESIGN_SUITE=purchase-route DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep 'pending eight read-only'`（3ケース・各3幅、上記顧客/履歴JSON環境変数が必要）
+- `DESIGN_SUITE=seven-public DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep 'seller application actual guest'`（3ケース）
+- `bun run test -- --runInBand --coverage`、`bun run lint`、`bunx tsc --noEmit`、`bun run check:playwright`、`bun run coverage:dashboard`。
+
+各実ルートsuiteは逐次実行し、終了処理完了を確認してから次を開始する。Nextのtsconfig副作用だけを復元する。
+
+## 段階コミット
+
+- `fd29014d` docs(design): plan eight pending storefront acceptances
+- `04975a7e` fix(design): retain follow action keyboard focus after requests
+- `ca23f107` test(design): accept history rendering and retained retry state
+- `04420ac9` docs(design): accept homepage tokens motion and responsive states
+- `50231be3` fix(design): apply storefront tokens and accessible auth targets
+- `2b3db651` test(design): accept Clerk signup and auth layout boundaries
+- `c684789d` docs(design): accept contact form states and responsive layout
+- `0f8e7ae1` docs(design): accept about page editorial navigation and layout
+- `a7c1e065` test(design): accept seller application states and ready controls
+- 最終統合: 本コミット（仕様/QA/台帳/coverage同期・全入力境界回帰）。

@@ -1,5 +1,17 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
+## 2026-10-16 受け入れ未完了8画面（最新）
+
+[計画](../../plans/layout-design/priority-eight-unaccepted-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。対象022/024/017/001/002/010/005/004。段階コミットでTDD・関連仕様同期を完了。
+
+- 実測: **3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。`bun run test -- --runInBand --coverage`。Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。古い`coverage-summary.json`を使わず今回のCLI集計を採用。dashboard418 files/412 lcov/18 of 80 cells、セル状態不変。
+- ブラウザー: 補助47/47（following10・history13・home9・Contact6・About3・apply6）、公開実route9/9、認証実SDK10/10（5幅×2画面）、認証後read-only3/3（各3幅）、申請guest3/3。計72/72。sign-upの5ケースは全入力の未focus時境界/focusを追加後にも5/5で再確認（重複加算なし）。viewport1440/768/390px、auth801/800px境界、discovery480pxを含む。axe AAはcontrastを除外しない。型0・lint0 errors/既存8 warnings・harness成功。
+- TDD: following送信後focus消失3幅Red→復帰修正Green。auth Home28.21875pxの3幅Red→tokens/44px/focus/入力境界修正Green。他は既存実装の回帰。sign-upの誤ったtype=email locator、準備待ち不足、sandbox EPERMは製品Redに数えない。修正前のSDK hydrationエラーは1度のみ、ページエラー検知付き最終10/10で再現なし。旧失敗実行の終了処理が停滞したため、そのPlaywrightとNextサーバーだけを終了して再実行した。
+- 実routeのDBは既存`multivendor_e2e`、顧客は既存Clerkテスト顧客。seed/DB初期化/データ追加/実送信/uploadなし。followは空、historyは既存12variant、applyは認証済第1段階。問い合わせ・申請の全送信状態はRTL/fixture。
+- 残る保留: **DS-PAGE-022**は実データあり表示/実更新未検証（解除: フォロー済み店舗のある既存テスト顧客と、専用DBへの更新を含む別受け入れ）。**DS-PAGE-004**は実Cloudinary upload/申請保存未検証（解除: SDK検証環境と送信を含む別受け入れ）。今回の読取受け入れだけで全面検証済みにしない。authの実認証送信/アカウント作成は今回対象外。046/068等の別保留を維持。
+- 次着手: 上記2画面の実データ/SDK/保存の受け入れ条件が揃った場合に専用計画で実施。Integration/フル3-browser E2Eは以前の実測を保持。
+
+
 ## 2026-10-15 返品 RMA の UI（plan 088 Step 5・最新、未コミット）
 
 注文詳細の返品欄（申請・状態・取り下げ・追跡番号）、seller 返品キュー `/dashboard/seller/stores/[storeUrl]/returns`（絞り込み・承認・却下・受け取り・解決）、`/returns-exchange` の文面（日数を `RETURN_WINDOW_DAYS_DEFAULT` から描き、注文履歴へ案内、フォームは相談窓口）。[計画](../../plans/layout-design/returns-rma-ui-plan.md)／[証跡](../design/design-system/PROGRESS.md#返品-rma-の-ui2026-10-15plan-088-step-5未コミット)。
@@ -322,8 +334,8 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3276 passed / 3279 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、注文詳細の返品オプション組み立て修正後）。 |
-| 全体coverage（2026-10-16実測） | Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）。`coverage/lcov.info` の集計（今回の実行では json-summary が更新されないため Statements は未計測）。 |
+| Jest テスト総数 (unit/component) | **3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --runInBand --coverage`、未完了8画面後）。 |
+| 全体coverage（2026-10-16実測） | Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。今回の全体Jest CLI集計。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
@@ -332,7 +344,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 | 型エラー | **0件**（2026-10-16 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-15再生成実測（UI 後）。 |
+| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16未完了8画面後の再生成実測。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 

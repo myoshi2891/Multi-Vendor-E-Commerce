@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-16） | **3276 passed / 3279 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage | Statements88.33%（11444/12955、2026-10-15実測）／Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）（2026-10-16実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
+| Jestテスト総数（2026-10-16） | **3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。未完了8画面後の全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage | Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）（2026-10-16未完了8画面後のCLI実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
 | テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16再生成実測（返品キューのページング後）。 |
 | Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-16実測）。 |
-| テスト総数 | **3276 unit/component passed**（3279 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
+| テスト総数 | **3277 unit/component passed**（3280 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -626,7 +626,7 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 | 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
 | テストファイル総数 | **371ファイル**（2026-10-06 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **299スイート**（298 passed／1 skipped、2026-10-06全体実測）。 |
-| テスト総数 | **2903 unit/component passed**（2906 total／3 skipped）。Integration222／17 suitesの既存実測は維持、今回は未実行。 |
+| テスト総数 | **3277 unit/component passed**（3280 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
 | lcov エントリ数 | **383**（2026-10-06全体coverage/dashboard実測）。 |
 | 型エラー | **0件**（2026-10-06実測）。 |
@@ -726,3 +726,8 @@ Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.
 ## 2026-10-14 管理マスタ8の実測
 
 全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 [QA正本](QA_HANDOFF.md#現在の実装状態サマリ)。
+
+
+### 受け入れ未完了8画面（2026-10-16）
+
+キーボード継続操作と実SDK入力境界の回帰を補強。全体coverage/dashboardを再計測、418 files/412 lcov/18 of 80 cells。ヒートマップ状態変更なし。[QA正本](QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。
