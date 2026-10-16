@@ -36,7 +36,7 @@
 - [x] Step 4 サインイン
 - [x] Step 5 サインアップ
 - [x] Step 6 Contact
-- [ ] Step 7 About
+- [x] Step 7 About
 - [ ] Step 8 出店申請
 - [ ] 最終統合・文書同期
 

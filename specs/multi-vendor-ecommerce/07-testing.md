@@ -1425,3 +1425,8 @@ DS-PAGE-002: Step4の共通AuthFrame/theme/appearanceをサインアップへ適
 ### 受け入れ未完了8 Step 6（2026-10-16）
 
 DS-PAGE-010: 既存実装の回帰確認（新規Redなし・追加改修不要）。priority Contact6/6: 3幅のtokens/44px/focus/アンカーとvalidation/pending lock/失敗後入力保持/retry/receipt、axe AA。公開Next実route3/3。Contact/About/申請関連RTL計17/17。390px画像目視、型0・lint0 errors/既存8 warnings。実問い合わせ送信はせずadapterで状態確認。既存payload/validation/URL/本文/業務仕様は変更不要。
+
+
+### 受け入れ未完了8 Step 7（2026-10-16）
+
+DS-PAGE-005: 既存実装の回帰確認（新規Redなし・追加改修不要）。priority About3/3: tokens/44px/明暗focus/アンカー・既存本文とCTA・axe AA。公開Next実route3/3。Contact/About/申請関連RTL計17/17。390px画像目視、型0・lint0 errors/既存8 warnings。既存本文・画像・SEO/metadata・リンク先・公開Server Component仕様は変更不要。
