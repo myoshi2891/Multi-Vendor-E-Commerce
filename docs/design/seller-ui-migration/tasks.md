@@ -96,3 +96,8 @@ DS-PAGE-059 バリアント編集: seller限定の動的行削除は残る行の
 DS-PAGE-065 店舗作成: 独立headerのworkspaceリンクを44pxとhoverへ接続し、ThemeToggle Portalへ既存popover opt-inを適用。フォーム/payload/no-id/返却URL/画像adapter/Featured/validation/pending/error/retryを保持。sixのupsertStore adapterを現行のok/id/url結果へ修正（業務コード変更なし）。 1440/768/390px × light/dark、keyboard/focus、axe AAを既存harnessで検証。業務契約は保持。実routeと補助検証は別判定。
 
 [計画](../../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+## 受け入れ未完了8 Step 8（2026-10-16）
+
+DS-PAGE-004 出店申請。既存実装の回帰確認（新規Redなし・追加改修不要）。seven apply6/6: 3幅の4段階・入力保持・upload adapter・validation/pending/error/retry/success・説明summary/44px/focus・axe AA。認証後read-only1/1内3幅、guest3/3。Contact/About/申請関連RTL計17/17。実routeのClerk読込とPrevious無効/Next有効の準備完了を待ち、動的DOM列挙のraceを解消（製品Redではない）。PC/390px画像目視、型0・lint0 errors/既存8 warnings。実Cloudinary upload/申請保存は対象外で既存保留を維持。既存4段階・schema・payload・業務契約は変更不要。 [証跡](../design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。

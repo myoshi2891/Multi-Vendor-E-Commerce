@@ -26,3 +26,8 @@ shared discoveryの空/失敗パネル・retry・読み込み文字をaccount al
 ### ストアフロント残存8画面・最終受け入れ（2026-10-12）
 
 今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。
+
+
+## 受け入れ未完了8 Step 2（2026-10-16）
+
+DS-PAGE-024 閲覧履歴。既存実装の回帰確認（新規Redなし）。priority history13/13（3幅＋480px・axe AA・loading/error/retry/empty・比較操作・URL/back）、history/discovery RTL14/14。再試行後の保存ID不変とalert消去も回帰追加。認証後read-only1/1内3幅で既存12variantの保存IDから商品表示とページングを確認、390px画像目視。商品画像placeholderは既存テストデータ。型0・lint0 errors/既存8 warnings。取得・保存順・URL・API/DBの仕様変更は不要。 [証跡](../design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。

@@ -1,5 +1,10 @@
 # PROGRESS.md
 
+## 2026-10-16 受け入れ未完了8画面
+
+認証画面に共通tokens・44px操作・focus/入力境界、フォロー操作にfocus復帰を適用。他5画面は既存実装を回帰確認。**3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。補助47/47（following10・history13・home9・Contact6・About3・apply6）、公開実route9/9、認証実SDK10/10（5幅×2画面）、認証後read-only3/3（各3幅）、申請guest3/3。計72/72。 型0・lint0 errors/既存8 warnings・harness成功。仕様・進捗・QA・dashboardを同期。[画面別証跡](design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)／[QA正本](testing/QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。
+
+
 ## 2026-10-14 管理マスタ8
 
 全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 画面別8コミットと計画・最終統合を含む10段階。[計画](../plans/layout-design/priority-eight-admin-master-residual-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#管理マスタ8最終統合2026-10-14)。実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。
@@ -59,7 +64,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3276 passed / 3279 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、注文詳細の返品オプション組み立て修正後）。カバレッジ（lcov）は Branches79.08%／Functions85.13%／Lines88.94%。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage`、PR#208 following focus回帰後）。Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5946,5 +5951,28 @@ seller 返品キューが店舗の全 RMA 履歴を取得・直列化してい�
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | テスト総数 | 3275 passed / 3278 total | **3276 passed / 3279 total** |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#208 Sonar 対応（following focus 復元の分岐） (2026-10-16)
+
+#### 概要
+
+SonarCloud PR#208 の New Code 未カバー条件5件（`following/container.tsx` のフォーカス復元）を回帰テストで解消。COVERAGE_REPORT の履歴表「テスト総数」行を 2026-10-05 原値へ復元。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/store/following-design.test.tsx` | フォーカス復帰／非奪取の回帰テスト +2 | 未コミット |
+| `docs/testing/COVERAGE_REPORT.md` | P2優先5画面節「更新前の統計」の「テスト総数」行を原文へ復元 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3277 passed / 3280 total | **3279 passed / 3282 total** |
 | スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |

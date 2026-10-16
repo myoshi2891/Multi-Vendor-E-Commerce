@@ -86,30 +86,30 @@
 
 | URL | 判定 | 優先度 | 根拠ファイル |
 |---|---|---|---|
-| `/sign-in` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) |
-| `/sign-up` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) |
+| `/sign-in` | 検証済み（2026-10-16・今回範囲） | 周辺部品を監査 | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) |
+| `/sign-up` | 検証済み（2026-10-16・今回範囲） | 周辺部品を監査 | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) |
 | `/order/[orderId]` | 本体適用・検証保留（2026-10-04） | P1 | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../src/app/(fullscreen)/order/[orderId]/page.tsx>) |
 | `/seller/apply` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../src/app/(fullscreen)/seller/apply/page.tsx>) |
-| `/about` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/about/page.tsx](<../../src/app/(store)/about/page.tsx>) |
+| `/about` | 検証済み（2026-10-16・今回範囲） | 周辺部品を監査 | [src/app/(store)/about/page.tsx](<../../src/app/(store)/about/page.tsx>) |
 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/browse/page.tsx](<../../src/app/(store)/browse/page.tsx>) |
 | `/cart` | 検証済み（2026-10-01） | P1 | [src/app/(store)/cart/page.tsx](<../../src/app/(store)/cart/page.tsx>) |
 | `/checkout` | 本体適用・検証保留（2026-10-04） | P1 | [src/app/(store)/checkout/page.tsx](<../../src/app/(store)/checkout/page.tsx>) |
 | `/compare` | 本体適用・周辺確認 | P2 | [src/app/(store)/compare/page.tsx](<../../src/app/(store)/compare/page.tsx>) |
-| `/contact` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/contact/page.tsx](<../../src/app/(store)/contact/page.tsx>) |
+| `/contact` | 検証済み（2026-10-16・今回範囲） | 周辺部品を監査 | [src/app/(store)/contact/page.tsx](<../../src/app/(store)/contact/page.tsx>) |
 | `/customer-service` | 検証済み（2026-10-01） | P2 | [src/app/(store)/customer-service/page.tsx](<../../src/app/(store)/customer-service/page.tsx>) |
 | `/dispute` | 検証済み（2026-10-05） | P2 | [src/app/(store)/dispute/page.tsx](<../../src/app/(store)/dispute/page.tsx>) |
 | `/faq` | 転送専用 | 回帰検証 | [src/app/(store)/faq/page.tsx](<../../src/app/(store)/faq/page.tsx>) |
 | `/faqs` | 本体適用・周辺確認 | P3 | [src/app/(store)/faqs/page.tsx](<../../src/app/(store)/faqs/page.tsx>) |
 | `/legal` | 検証済み（2026-10-05） | P3 | [src/app/(store)/legal/page.tsx](<../../src/app/(store)/legal/page.tsx>) |
 | `/offers` | 検証済み（2026-10-05） | P2 | [src/app/(store)/offers/page.tsx](<../../src/app/(store)/offers/page.tsx>) |
-| `/` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/page.tsx](<../../src/app/(store)/page.tsx>) |
+| `/` | 検証済み（2026-10-16・今回範囲） | 周辺部品を監査 | [src/app/(store)/page.tsx](<../../src/app/(store)/page.tsx>) |
 | `/product-support` | 検証済み（2026-10-01） | P3 | [src/app/(store)/product-support/page.tsx](<../../src/app/(store)/product-support/page.tsx>) |
 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) |
 | `/product/[productSlug]` | 転送専用 | 回帰検証 | [src/app/(store)/product/[productSlug]/page.tsx](<../../src/app/(store)/product/[productSlug]/page.tsx>) |
 | `/profile/addresses` | 検証済み | P2 | [src/app/(store)/profile/addresses/page.tsx](<../../src/app/(store)/profile/addresses/page.tsx>) |
 | `/profile/following/[page]` | 本体適用・検証保留（2026-10-05） | P2 | [src/app/(store)/profile/following/[page]/page.tsx](<../../src/app/(store)/profile/following/[page]/page.tsx>) |
 | `/profile/following` | 転送専用 | 回帰検証 | [src/app/(store)/profile/following/page.tsx](<../../src/app/(store)/profile/following/page.tsx>) |
-| `/profile/history/[page]` | 本体適用・検証保留（2026-10-05） | P2 | [src/app/(store)/profile/history/[page]/page.tsx](<../../src/app/(store)/profile/history/[page]/page.tsx>) |
+| `/profile/history/[page]` | 検証済み（2026-10-16・今回範囲） | P2 | [src/app/(store)/profile/history/[page]/page.tsx](<../../src/app/(store)/profile/history/[page]/page.tsx>) |
 | `/profile/history` | 転送専用 | 回帰検証 | [src/app/(store)/profile/history/page.tsx](<../../src/app/(store)/profile/history/page.tsx>) |
 | `/profile/messages` | 検証済み | P2 | [src/app/(store)/profile/messages/page.tsx](<../../src/app/(store)/profile/messages/page.tsx>) |
 | `/profile/orders/[filter]` | 検証済み | P2 | [src/app/(store)/profile/orders/[filter]/page.tsx](<../../src/app/(store)/profile/orders/[filter]/page.tsx>) |
@@ -964,3 +964,26 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] 管理マスタ8最終統合: 全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 [証跡](../../docs/design/design-system/PROGRESS.md#管理マスタ8最終統合2026-10-14)。
 
 最新台帳集計（2026-10-14）: 67画面＝検証済み51／保留4／TODO7／実装済み5。部品246件。過去の集計は履歴として保持。
+
+
+### 受け入れ未完了8画面（2026-10-16）
+
+[保存計画](priority-eight-unaccepted-design-system-plan.md)。既存台帳・履歴を保持し今回の受け入れを別記録。
+
+- [x] Step 1 DS-PAGE-022 フォロー店舗: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] Step 2 DS-PAGE-024 閲覧履歴: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] Step 3 DS-PAGE-017 ホーム: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] Step 4 DS-PAGE-001 サインイン: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] Step 5 DS-PAGE-002 サインアップ: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] Step 6 DS-PAGE-010 Contact: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] Step 7 DS-PAGE-005 About: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] Step 8 DS-PAGE-004 出店申請: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] 未完了8最終統合: Jest3277/3280（3 skipped）・browser72/72・型/lint/harness・仕様/QA同期。台帳68画面＝検証済み57／保留4／TODO7／実装済み0。部品248件の既存判定は保持。

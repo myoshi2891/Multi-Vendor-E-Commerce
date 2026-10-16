@@ -1,6 +1,7 @@
 import { storefrontControls, storefrontToken } from "./storefront-eight-assertions";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { expectReadableBorder, expectReadableFocus } from "./purchase-assertions";
 
 async function accessible(page: Page) {
     expect(
@@ -244,4 +245,59 @@ for (const width of [1440,768,390]) {
             await page.screenshot({path:info.outputPath(`storefront-real-${path === "/" ? "home" : path.slice(1)}-${width}.png`),fullPage:true});
         });
     }
+}
+
+// Real Clerk rendering: never submit credentials or create an account here.
+for (const width of [1440, 801, 800, 768, 390]) {
+    test(`pending eight sign-in ${width}: brand links and Clerk controls`, async ({ page }, info) => {
+        const pageErrors: string[] = [];
+        page.on("pageerror", error => pageErrors.push(error.message));
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/sign-in?redirect_url=%2Fprofile%2Ffollowing%2F1");
+        const main = page.getByRole("main");
+        await expect(main.locator(".cl-signIn-root")).toBeVisible();
+        await expect(main.getByRole("heading", { name: "Welcome back." })).toHaveCSS("font-family", /Georgia/);
+        await storefrontControls(main.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link"));
+        await storefrontControls(main.getByRole("link", { name: /Explore the collection|Customer service/ }));
+        const input = main.locator('input:not([type="hidden"])').first();
+        await expect(input).toBeVisible();
+        await expectReadableBorder(input);
+        await expectReadableFocus(input);
+        await storefrontControls(main.locator(".cl-signIn-root").locator("a,button"));
+        await input.fill("invalid-email");
+        await expect(input).toHaveValue("invalid-email");
+        await accessible(page);
+        expect(pageErrors, "uncaught authentication page errors").toEqual([]);
+        await page.screenshot({ path: info.outputPath(`pending-sign-in-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 801, 800, 768, 390]) {
+    test(`pending eight sign-up ${width}: shared theme and local input`, async ({ page }, info) => {
+        const pageErrors: string[] = [];
+        page.on("pageerror", error => pageErrors.push(error.message));
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/sign-up?redirect_url=%2Fprofile%2Ffollowing%2F1");
+        const main = page.getByRole("main");
+        const widget = main.locator(".cl-signUp-root");
+        await expect(widget).toBeVisible();
+        await expect(main.getByRole("heading", { name: "Begin something special." })).toHaveCSS("font-family", /Georgia/);
+        await storefrontControls(main.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link"));
+        await storefrontControls(main.getByRole("link", { name: /Explore the collection|Customer service/ }));
+        await storefrontControls(widget.locator("a,button"));
+        const email = widget.getByRole("textbox", { name: "Email address", exact: true });
+        await expect(email).toBeVisible();
+        for (const input of await widget.locator('input:not([type="hidden"])').all()) {
+            if (!(await input.isVisible())) continue;
+            await input.blur();
+            await expectReadableBorder(input);
+            await expectReadableFocus(input);
+        }
+        await expectReadableFocus(email);
+        await email.fill("invalid-email");
+        await expect(email).toHaveValue("invalid-email");
+        await accessible(page);
+        expect(pageErrors, "uncaught authentication page errors").toEqual([]);
+        await page.screenshot({ path: info.outputPath(`pending-sign-up-${width}.png`), fullPage: true });
+    });
 }

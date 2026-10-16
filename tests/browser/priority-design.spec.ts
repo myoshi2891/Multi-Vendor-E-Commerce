@@ -118,13 +118,18 @@ for (const width of [1440, 768, 390]) {
             "Could not update this store."
         );
         await expect(button).toHaveAttribute("aria-pressed", "true");
-        await button.click();
+        await expect(page.getByText("12 followers", { exact: true })).toBeVisible();
+        await expect(button).toBeEnabled();
+        await button.focus();
+        await page.keyboard.press("Enter");
         await expect(
             page.getByRole("button", { name: "Follow", exact: true })
         ).toHaveAttribute("aria-pressed", "false");
         await expect(
             page.getByText("11 followers", { exact: true })
         ).toBeVisible();
+        await expect(page.getByRole("status")).toContainText("You unfollowed");
+        await expect(page.getByRole("button", { name: "Follow", exact: true })).toBeFocused();
         await accessible(page);
         await page.screenshot({
             path: info.outputPath(`following-${width}.png`),

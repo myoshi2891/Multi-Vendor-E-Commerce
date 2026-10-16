@@ -55,3 +55,44 @@ it("server lookup failure provides a generic alert and reload", async () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Followed stores could not be loaded.");
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute("href", "/profile/following/2");
 });
+
+ it("restores keyboard focus after a failed follow request", async () => {
+    const followAction = jest.fn().mockRejectedValue(new Error("fixture"));
+    render(<FollowingContainer stores={[store]} page={1} totalPages={1} followAction={followAction} />);
+    const button = screen.getByRole("button", { name: "Following" });
+    button.focus();
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveFocus();
+ });
+
+it("returns focus to the button when disabling it dropped focus to the page", async () => {
+    let resolve!: (value: boolean) => void;
+    const followAction = jest.fn(() => new Promise<boolean>((done) => { resolve = done; }));
+    render(<FollowingContainer stores={[store]} page={1} totalPages={1} followAction={followAction} />);
+    const button = screen.getByRole("button", { name: "Following" });
+    button.focus();
+    fireEvent.click(button);
+    // jsdom は disabled 化でフォーカスを外さず、disabled 要素への blur() も無視する。
+    // 有効な要素を経由して外し、ブラウザの挙動（フォーカスが body へ落ちる）を再現する
+    const visit = screen.getByRole("link", { name: "Visit boutique ↗" });
+    act(() => { visit.focus(); visit.blur(); });
+    expect(document.activeElement).toBe(document.body);
+    await act(async () => resolve(false));
+    expect(button).toBeEnabled();
+    expect(button).toHaveFocus();
+});
+
+it("does not steal focus from a control the customer moved to while waiting", async () => {
+    let resolve!: (value: boolean) => void;
+    const followAction = jest.fn(() => new Promise<boolean>((done) => { resolve = done; }));
+    render(<FollowingContainer stores={[store]} page={1} totalPages={1} followAction={followAction} />);
+    const button = screen.getByRole("button", { name: "Following" });
+    const visit = screen.getByRole("link", { name: "Visit boutique ↗" });
+    button.focus();
+    fireEvent.click(button);
+    act(() => visit.focus());
+    await act(async () => resolve(false));
+    expect(button).toBeEnabled();
+    expect(visit).toHaveFocus();
+});

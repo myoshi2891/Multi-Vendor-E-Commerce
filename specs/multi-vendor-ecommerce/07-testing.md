@@ -23,7 +23,8 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 3276 passed / 3279 total across 335 suites (334 passed, one skipped suite, 3 skipped tests), measured on 2026-10-16 with `bun run test -- --coverage --silent` after moving the order-detail return-option build inside its fallback (+1 `tests/component/store/order-detail-page.test.tsx`). All 127 snapshots passed. Coverage (lcov): branches 79.08%, functions 85.13%, lines 88.94%. Dashboard 418 test files/412 lcov/18 of 80 cells. Design suite `returns` 12/12.
+- 3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）。2026-10-16 PR#208 following focus回帰後の全体Jest/coverage実測。Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。dashboard418 files/412 lcov/18 of 80 cells。
+- Earlier measurement (2026-10-16, return options): 3276 passed / 3279 total across 335 suites (334 passed, one skipped suite, 3 skipped tests), measured on 2026-10-16 with `bun run test -- --coverage --silent` after moving the order-detail return-option build inside its fallback (+1 `tests/component/store/order-detail-page.test.tsx`). All 127 snapshots passed. Coverage (lcov): branches 79.08%, functions 85.13%, lines 88.94%. Dashboard 418 test files/412 lcov/18 of 80 cells. Design suite `returns` 12/12.
 - Earlier measurement (2026-10-16, refund scope): 3263 passed / 3266 total across 335 suites, measured with `bun run test -- --no-coverage --silent` after limiting the RMA refund-amount exclusion to Canceled / Refunded order items (+1 `src/queries/returns.test.ts`).
 - Earlier measurement (2026-10-15, PR #206 review): 3260 passed / 3263 total across 335 suites (334 passed, one skipped suite, 3 skipped tests), measured on 2026-10-15 after the PR #206 review fixes (+1 `seller-returns.test.tsx` manual-refund note on RESOLVED, +1 `src/queries/returns.test.ts` idempotency recheck after locking, +1 return panel key reset, +1 seller rejection label, +2 new `tests/component/dashboard/seller-returns-page.test.tsx`) with `bun run test -- --coverage --silent`. Coverage: statements88.33%, branches78.99%, functions85.04%, lines88.88%. Dashboard418 test files/412 lcov/18 of 80 cells.
 - Earlier measurement (2026-10-15, returns UI): 3254 passed / 3257 total across 334 suites (333 passed, one skipped suite, 3 skipped tests), measured on 2026-10-15 after the plan 088 returns UI (+8 `src/lib/returns-view.test.ts`, +9 `tests/component/store/return-request-panel.test.tsx`, +8 `tests/component/dashboard/seller-returns.test.tsx`, +2 `tests/component/store/returns-exchange-page.test.tsx`, +2 `tests/component/store/order-detail-page.test.tsx`) with `bun run test -- --coverage --silent`. All 127 snapshots passed. Coverage: statements88.33%, branches78.94%, functions85.11%, lines88.89%. Dashboard417 test files/412 lcov/18 of 80 cells. Design suite `returns` (fixture, port 3135) 10/10. Integration: 257 tests across 19 suites (unchanged).
@@ -1395,3 +1396,48 @@ CONTACTを既存SupportFormのpayload/pending/input lock/失敗保持/retry/rece
 DS-PAGE-006/037/019/007/008/003/009/033。先行Redはsort境界contrast、画像modal初期focus（RTL+browser）、短いcart商品link寸法、compare hero寸法、Wishlist current hover境界。店舗/Checkout/注文詳細は既存実装の回帰確認。環境エラーとsortラベル変更後の旧locatorは製品Redに含めない。
 
 既存purchase/commerce/priorityを拡張し、新config/serverなし。補助Chrome82/38/83の計203件が成功。1440/768/390pxと該当境界幅、focus・44px・入力境界・Portal・axe AA・状態遷移を検証。公開実ルート8件とcompare hero追加3幅も確認。商品あり/認証後/実SDKの今回受け入れは専用DB不在のため別保留とし、既存履歴を保持。[計画](../../plans/layout-design/priority-eight-purchase-reaudit-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#購入再監査8最終統合2026-10-14)／[QA](../../docs/testing/QA_HANDOFF.md#ds-purchase-reaudit-eight-routes)。全体統計はQAの実測を正本とする。
+
+
+### 受け入れ未完了8 Step 1（2026-10-16）
+
+DS-PAGE-022: browser先行Redはキーボード再試行後のfocus消失3/3。無効化でbodyへ移った場合だけ操作元へfocusを復帰し、利用者が別要素へ移動した場合は奪わない。Green: priority following10/10（3幅＋480px・axe AA・空/失敗保持/件数/再試行/成功/URL）、RTL following5/5、関連discovery18/18（追加前）。認証後read-only1/1内3幅は既存顧客の空状態、実更新は対象外。型0・lint0 errors/既存8 warnings、390px画像目視。実データあり/実更新の既存保留は維持。要件・設計・テストを同期、overview/architecture/data-model/interfacesは既存契約不変のため変更不要。
+
+
+### 受け入れ未完了8 Step 2（2026-10-16）
+
+DS-PAGE-024: 既存実装の回帰確認（新規Redなし）。priority history13/13（3幅＋480px・axe AA・loading/error/retry/empty・比較操作・URL/back）、history/discovery RTL14/14。再試行後の保存ID不変とalert消去も回帰追加。認証後read-only1/1内3幅で既存12variantの保存IDから商品表示とページングを確認、390px画像目視。商品画像placeholderは既存テストデータ。型0・lint0 errors/既存8 warnings。取得・保存順・URL・API/DBの仕様変更は不要。
+
+
+### 受け入れ未完了8 Step 3（2026-10-16）
+
+DS-PAGE-017: 既存実装の回帰確認（新規Redなし・追加改修不要）。purchase home9/9: 3幅で商品あり/空/取得失敗/retry、共通tokens、44px、focus、motion切替とreduced-motion、axe AA。home関連RTL22/22。公開Nextのホーム実route3幅で200・tokens・全操作・axe AA・overflowを確認。390px画像目視。型0・lint0 errors/既存8 warnings。既存要件・ブランド・商品導線・アニメーションの仕様変更は不要。
+
+
+### 受け入れ未完了8 Step 4（2026-10-16）
+
+DS-PAGE-001: 先行Red: 実Clerkサインイン3幅のHomeリンク幅28.21875pxで44px未満。AuthFrameへstore限定purchase themeを合成、Home/collection/supportとSDK操作を44px化し、入力境界・明暗focusを統一。Green: priority-public sign-in3/3、全可視SDK操作44px/focus、入力境界3:1、ローカル入力保持、axe AA/overflow、390px画像目視。auth RTL6/6で共通appearanceとredirect props契約不変を確認。型0・lint0 errors/既存8 warnings。認証送信・認証後エラー/成功はClerk管理で今回対象外。
+
+
+### 受け入れ未完了8 Step 5（2026-10-16）
+
+DS-PAGE-002: Step4の共通AuthFrame/theme/appearanceをサインアップへ適用し実SDKで回帰受け入れ（追加の製品Redなし）。priority-public認証10/10（2画面×1440/801/800/768/390px）：リンク/SDK操作44px、可視focusと入力境界3:1、ローカル入力保持、axe AA・overflow・pageerrorなし。auth RTL6/6。PC/390px画像目視、型0・lint0 errors/既存8 warnings。SDKのemail欄はtype=emailでなくラベルで取得するようテストを訂正し、誤ったlocatorの失敗は製品Redに数えない。初回のhydrationエラーは最終検出付き10/10で再現なし。実認証送信/アカウント作成は対象外。
+
+
+### 受け入れ未完了8 Step 6（2026-10-16）
+
+DS-PAGE-010: 既存実装の回帰確認（新規Redなし・追加改修不要）。priority Contact6/6: 3幅のtokens/44px/focus/アンカーとvalidation/pending lock/失敗後入力保持/retry/receipt、axe AA。公開Next実route3/3。Contact/About/申請関連RTL計17/17。390px画像目視、型0・lint0 errors/既存8 warnings。実問い合わせ送信はせずadapterで状態確認。既存payload/validation/URL/本文/業務仕様は変更不要。
+
+
+### 受け入れ未完了8 Step 7（2026-10-16）
+
+DS-PAGE-005: 既存実装の回帰確認（新規Redなし・追加改修不要）。priority About3/3: tokens/44px/明暗focus/アンカー・既存本文とCTA・axe AA。公開Next実route3/3。Contact/About/申請関連RTL計17/17。390px画像目視、型0・lint0 errors/既存8 warnings。既存本文・画像・SEO/metadata・リンク先・公開Server Component仕様は変更不要。
+
+
+### 受け入れ未完了8 Step 8（2026-10-16）
+
+DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven apply6/6: 3幅の4段階・入力保持・upload adapter・validation/pending/error/retry/success・説明summary/44px/focus・axe AA。認証後read-only1/1内3幅、guest3/3。Contact/About/申請関連RTL計17/17。実routeのClerk読込とPrevious無効/Next有効の準備完了を待ち、動的DOM列挙のraceを解消（製品Redではない）。PC/390px画像目視、型0・lint0 errors/既存8 warnings。実Cloudinary upload/申請保存は対象外で既存保留を維持。既存4段階・schema・payload・業務契約は変更不要。
+
+
+### 受け入れ未完了8最終統合（2026-10-16）
+
+補助47/47（following10・history13・home9・Contact6・About3・apply6）、公開実route9/9、認証実SDK10/10（5幅×2画面）、認証後read-only3/3（各3幅）、申請guest3/3。計72/72。 実route/SDKとadapterを区別し、認証2画面はpageerrorを検出する。型/lint/harness・文書同期完了。統計/制約は[QA正本](../../docs/testing/QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。

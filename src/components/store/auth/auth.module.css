@@ -1,14 +1,14 @@
 .auth {
-    --gold: #d4ba83;
-    --ivory: #f1eee4;
-    --ink: #17251d;
+    --gold: var(--purchase-gold);
+    --ivory: var(--purchase-on-dark);
+    --ink: var(--purchase-ink);
     flex: 1;
-    background: #f3f0e8;
+    background: var(--purchase-page);
     color: var(--ink);
     color-scheme: light;
 }
 .auth a:focus-visible, .auth button:focus-visible {
-    outline: 2px solid #8b7346;
+    outline: 2px solid var(--purchase-focus);
     outline-offset: 5px;
 }
 .layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 740px; }
@@ -39,16 +39,16 @@
 .widget { width: 100%; max-width: 400px; }
 .clerkRoot, .cardBox { width: 100%; max-width: 100%; }
 .cardBox { box-shadow: none; border: 0; border-radius: 0; }
-.card { background: #f3f0e8; box-shadow: none; padding: 0; border: 0; border-radius: 0; }
+.card { background: var(--purchase-page); box-shadow: none; padding: 0; border: 0; border-radius: 0; }
 .clerkTitle { font: 400 34px/1.15 Georgia, "Times New Roman", serif; letter-spacing: -.035em; color: #17251d; }
 .clerkSubtitle { color: #536356; font-size: 12px; line-height: 1.8; }
-.socialButton { background: #faf8f2; border: 1px solid #a6ab9f; border-radius: 0; box-shadow: none; color: #17251d; min-height: 46px; }
+.socialButton { background: #faf8f2; border: 1px solid var(--purchase-control-line); border-radius: 0; box-shadow: none; color: #17251d; min-height: 46px; }
 .socialButton:hover { background: #e8e4d8; }
-.input { background: #faf8f2; color: #17251d; border: 1px solid #a6ab9f; border-radius: 0; box-shadow: none; min-height: 48px; font-size: 16px; }
-.input:focus-visible { outline: 2px solid #8b7346; outline-offset: 3px; box-shadow: none; }
+.input { background: #faf8f2; color: #17251d; border: 1px solid var(--purchase-control-line); border-radius: 0; box-shadow: none; min-height: 48px; font-size: 16px; }
+.input:focus-visible { outline: 2px solid var(--purchase-focus); outline-offset: 3px; box-shadow: none; }
 .primaryButton { min-height: 49px; border-radius: 0; background: #d4ba83; color: #141c16; box-shadow: none; font-size: 12px; letter-spacing: .04em; }
 .primaryButton:hover { background: #e2cc9f; }
-.clerkFooter { background: #f3f0e8; background-image: none; border-radius: 0; }
+.clerkFooter { background: var(--purchase-page); background-image: none; border-radius: 0; }
 .clerkLink { color: #75613b; text-underline-offset: 4px; }
 .clerkLink:hover { color: #514225; text-decoration: underline; }
 .support { width: 100%; max-width: 400px; border-top: 1px solid #c9c7b8; margin-top: 32px; padding-top: 25px; }
@@ -80,3 +80,17 @@
 @media (prefers-reduced-motion: reduce) {
     .auth *, .auth *::before, .auth *::after { transition: none !important; animation: none !important; }
 }
+
+/* Auth-only targets and focus; Clerk retains ownership of authentication flow. */
+.auth a { min-width: var(--purchase-touch); min-height: var(--purchase-touch); }
+.breadcrumb { align-items: center; }
+.breadcrumb a { display: inline-flex; align-items: center; }
+.collectionLink { padding-bottom: 0; }
+.story a:focus-visible { outline-color: var(--purchase-gold); }
+.clerkRoot :is(a, button) { min-width: var(--purchase-touch); min-height: var(--purchase-touch); }
+.clerkRoot a { display: inline-flex; align-items: center; }
+.clerkRoot :is(a, button, input):focus-visible {
+    outline: 2px solid var(--purchase-focus) !important;
+    outline-offset: 3px !important;
+}
+.clerkLink { display: inline-flex; align-items: center; }

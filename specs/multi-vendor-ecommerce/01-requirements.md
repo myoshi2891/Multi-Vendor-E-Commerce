@@ -162,3 +162,8 @@ DS-PAGE-022/024/017/010/014/018/005/004は既存tokensを使用し、独立操�
 管理者概要/注文/店舗、販売者クーポン一覧/作成、バリアント追加/編集、店舗作成の残存表示を既存seller light/dark themeへ接続する。操作は44px、入力境界/focusは3:1、通常/空/失敗/pending/retry/successを確認。店舗/支払状態と保存成功は名称を保ち意味色を併用。独立Select/theme menuはpopover面・3px角丸・影なし。seller動的行は最後の行の削除を無効化し削除後は残る行の入力へfocusを戻す。金額/集計/初期値/Action/payload/認可/URLを維持。
 
 [承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+
+## 認証画面のデザイン受け入れ（2026-10-16）
+
+サインイン/サインアップはstore限定purchase themeと共通Clerk appearanceでブランド表示を維持する。Home/collection/supportとSDKの操作は44×44px以上、明暗面で可視focusを分け、入力境界・focusは3:1以上。Clerkの認証・return destination契約は保持する。実認証送信とアカウント作成は表示検証の対象外。[認証画面設計](../../docs/design/authentication.md)。
