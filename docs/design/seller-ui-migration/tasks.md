@@ -125,3 +125,6 @@ DS-PAGE-004 出店申請。既存実装の回帰確認（新規Redなし・追�
 
 
 - [x] 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）: 店舗設定 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査最終統合 ✅ Completed (2026-10-16): seven85/85・six74/74、全体Jest/coverage・型/lint/harness・仕様/QA同期。今回の認証後実routeは環境不整合で別保留。

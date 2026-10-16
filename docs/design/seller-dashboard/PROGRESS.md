@@ -147,3 +147,8 @@ DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失�
 ### 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）
 
 店舗設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six storesettings6/6（3幅×light/dark・画像adapter/Featured/validation/pending/失敗/値保持/retry/success/refresh/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。実Cloudinary送信・実保存は今回対象外。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+## 販売者8再監査の仕様確認（2026-10-16）
+
+今回の表示改修・回帰確認は既存の6KPI、在庫整数制約、店舗所有権、注文状態、金額単位と保存契約を維持する。[機能要件](requirements.md)・[設計](design.md)の業務仕様に変更は不要。表示要件とTDD証跡は[seller UI](../seller-ui-migration/requirements.md)と[移行進捗](../design-system/PROGRESS.md)へ記録する。今回の実routeは専用DB列不足で保留、過去の受け入れ実績を保持する。

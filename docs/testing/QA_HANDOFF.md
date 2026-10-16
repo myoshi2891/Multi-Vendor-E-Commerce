@@ -1,5 +1,13 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
+## 2026-10-16 販売者8画面再監査
+
+[計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。在庫入力エラーの関連付けをTDDで修正、他画面は既存適用の回帰確認。全体実測は3280 passed / 3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。統計表を同期。
+
+補助ブラウザーseven85/85・six74/74、計159/159（部分実行は重複加算なし）。型0・lint0 errors/既存8 warnings・harness/文書リンク/diff成功。dashboard418 files/412 lcov/18 of 80 cells、セル不変。10段階コミット。
+
+**DS-SELLER-REAUDIT-ROUTES**: 既存専用DBへ読み取りで販売者/店舗の存在を確認。seller-eight-route表示48件を選択して起動したが、beforeAllの最初の店舗概要で`Store.returnWindowDays`列不存在を検出し中断（後続画面未実施）。今回8実routeの受け入れは保留。解除条件: 現行schemaと整合する専用DBで、既存Clerk販売者による3幅×light/darkの表示・axe・SDK描画を再実行すること。DB migration/seed/アカウント作成/実保存/送信/uploadは今回実施しない。過去の受け入れ済み履歴は維持。
+
 ## 2026-10-16 PR#208 Sonar New Code: following focus復元の分岐（最新）
 
 - SonarCloud PR#208 で `following/container.tsx` の未カバー条件5件（38行 `activeElement === body` と `buttonRef.current?.focus()`）。原因: jsdom は disabled 化でフォーカスを外さず、既存テストは復元経路を一度も通っていなかった。
@@ -333,7 +341,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-16実測〔注文詳細の返品オプション組み立て修正後〕 / lcov: 2026-10-16実測〔同〕 / Integration: 2026-10-15実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
+### テスト統計（Jest/lcov: 2026-10-16販売者8再監査の全体実測 / Integration: 2026-10-15実測 / E2Eフルラン: 2026-10-03実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -341,8 +349,8 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage`、PR#208 following focus回帰後）。 |
-| 全体coverage（2026-10-16実測） | Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。PR#208 following focus回帰後の全体Jest CLI集計。 |
+| Jest テスト総数 (unit/component) | **3280 passed / 3283 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16販売者8再監査の全体実測（`bun run test -- --runInBand --coverage`）。 |
+| 全体coverage（2026-10-16実測） | Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。販売者8再監査後の全体Jest CLI集計。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
@@ -351,7 +359,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 | 型エラー | **0件**（2026-10-16 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16未完了8画面後の再生成実測。 |
+| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16販売者8再監査後の再生成実測。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 

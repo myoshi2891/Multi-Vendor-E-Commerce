@@ -989,7 +989,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] 未完了8最終統合: Jest3277/3280（3 skipped）・browser72/72・型/lint/harness・仕様/QA同期。台帳68画面＝検証済み57／保留4／TODO7／実装済み0。部品248件の既存判定は保持。
 
 
-### 販売者8画面再監査（2026-10-16・対応中）
+### 販売者8画面再監査（2026-10-16）
 
 今回の補助検証と認証後実routeを別に記録する。
 
@@ -1015,3 +1015,7 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 
 - [x] 販売者8再監査 Step 8 DS-PAGE-063 店舗設定: 今回範囲の補助検証・仕様同期。[計画](priority-eight-seller-reaudit-design-system-plan.md)。過去の全画面判定は維持。
+
+
+- [x] 販売者8再監査の最終補助検証・仕様/QA同期: seven85/85・six74/74、全体Jest3280/3283（3 skipped）、型/lint/harness成功。
+- [ ] 今回8画面の認証後実route/SDK受け入れ: 専用DBのStore.returnWindowDays列不足で保留。過去の全画面判定を維持。[QA](../../docs/testing/QA_HANDOFF.md#2026-10-16-販売者8画面再監査)。

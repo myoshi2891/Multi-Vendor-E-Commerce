@@ -42,6 +42,38 @@ SellerShell/SellerPageとseller tokensを再利用し、深緑・アイボリー
 - [x] Step 6 商品登録
 - [x] Step 7 配送
 - [x] Step 8 店舗設定
-- [ ] 最終統合・仕様/QA同期
+- [x] 最終統合・仕様/QA同期
+- [ ] 今回の認証後実route/実SDK受け入れ（専用DB列不足で保留）
 
 [移行元](design-system-adoption-plan.md) / [進捗](../../docs/design/design-system/PROGRESS.md)
+
+
+## 再現コマンド
+
+- `DESIGN_SUITE=seven DESIGN_BROWSER_CHANNEL=chrome bun run test:design`
+- `DESIGN_SUITE=six DESIGN_BROWSER_CHANNEL=chrome bun run test:design`
+- `bun run test -- --runInBand --coverage`
+- `bun run lint` / `bunx tsc --noEmit` / `bun run check:playwright`
+- `bun run coverage:dashboard` / `git diff --check`
+
+実routeは既存専用DBをDATABASE_URL/DIRECT_URL/E2E_DATABASE_URLへ同値指定し、既存販売者/店舗情報のJSONをDESIGN_SELLER_ROUTEに渡す。`DESIGN_SUITE=seller-eight-route DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep 'DS-PAGE-'`で表示48件だけ選択する。prepare-seller-routeの書き込み準備は実行しない。今回beforeAllでStore.returnWindowDays列不足を検出して中断し受け入れ保留。Nextが追加したtsconfig includeだけを除去し、DBは変更していない。
+
+## 段階コミット
+
+- ce09228d 計画
+- 8c83ffcf 店舗概要
+- 21961710 商品一覧
+- c158a39b 在庫
+- caa3e34b 注文
+- e51f2134 メッセージ
+- 9bfdf58d 商品登録
+- 6ceafd91 配送
+- a2dce114 店舗設定
+- 最終統合は本コミット（Git履歴参照）。
+
+
+## 最終結果
+
+補助ブラウザーseven85/85・six74/74、計159/159（部分実行は重複加算しない）。3幅/light/dark、ナビ767px/message1000px境界、focus/44px/overflow/意味色/axe AAを確認。全体Jest3280 passed/3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。型0・lint0 errors/既存8 warnings・harness/diff/local links成功。dashboard418 files/412 lcov/18 of 80 cells、セル状態不変。
+
+今回の認証後実route/実SDK描画は専用DBのStore.returnWindowDays列不足で保留。既存販売者/店舗の読み取り後、route beforeAllで不整合を検出し中断。後続画面未実施。DB変更・seed・アカウント作成・実保存・送信・uploadなし。Nextのtsconfig副作用のみ復元。過去の受け入れ履歴と台帳件数は保持。解除条件と次着手の正本はQA_HANDOFFのDS-SELLER-REAUDIT-ROUTES。Integration/本体3-browser E2Eは今回未再実行。

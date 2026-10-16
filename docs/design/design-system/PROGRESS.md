@@ -1879,3 +1879,17 @@ Step4の共通AuthFrame/theme/appearanceをサインアップへ適用し実SDK�
 ### 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）
 
 店舗設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six storesettings6/6（3幅×light/dark・画像adapter/Featured/validation/pending/失敗/値保持/retry/success/refresh/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。実Cloudinary送信・実保存は今回対象外。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査の仕様確認（2026-10-16）
+
+SDDの[概要](../../../specs/multi-vendor-ecommerce/00-overview.md)・[アーキテクチャ](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[データモデル](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[インターフェース](../../../specs/multi-vendor-ecommerce/04-interfaces.md)・[ワークフロー](../../../specs/multi-vendor-ecommerce/05-workflows.md)を確認。今回の在庫エラー関連付けは表示属性のみのため、API/DB/認可/業務計算/payload/URLの変更不要。表示要件は01-requirements、検証方針と証跡は07-testingへ同期。seller-dashboardの業務要件・設計は維持する。
+
+
+### 販売者8再監査最終統合（2026-10-16）
+
+補助ブラウザーseven85/85・six74/74、計159/159（部分実行は重複加算しない）。3幅/light/dark、ナビ767px/message1000px境界、focus/44px/overflow/意味色/axe AAを確認。全体Jest3280 passed/3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。型0・lint0 errors/既存8 warnings・harness/diff/local links成功。dashboard418 files/412 lcov/18 of 80 cells、セル状態不変。
+
+今回の認証後実route/実SDK描画は専用DBのStore.returnWindowDays列不足で保留。既存販売者/店舗の読み取り後、route beforeAllで不整合を検出し中断。後続画面未実施。DB変更・seed・アカウント作成・実保存・送信・uploadなし。Nextのtsconfig副作用のみ復元。過去の受け入れ履歴と台帳件数は保持。解除条件と次着手の正本はQA_HANDOFFのDS-SELLER-REAUDIT-ROUTES。Integration/本体3-browser E2Eは今回未再実行。
+
+計画1・画面8・最終統合1の10コミット。TDDは在庫エラー関連付けRTL1件のRed→Green、店舗概要の追加回帰は実装前からGreenとして記録。他7画面は既存実装の回帰確認。
