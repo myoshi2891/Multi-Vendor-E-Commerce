@@ -34,7 +34,7 @@
 - [x] Step 2 閲覧履歴
 - [x] Step 3 ホーム
 - [x] Step 4 サインイン
-- [ ] Step 5 サインアップ
+- [x] Step 5 サインアップ
 - [ ] Step 6 Contact
 - [ ] Step 7 About
 - [ ] Step 8 出店申請

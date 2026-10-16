@@ -248,8 +248,10 @@ for (const width of [1440,768,390]) {
 }
 
 // Real Clerk rendering: never submit credentials or create an account here.
-for (const width of [1440, 768, 390]) {
+for (const width of [1440, 801, 800, 768, 390]) {
     test(`pending eight sign-in ${width}: brand links and Clerk controls`, async ({ page }, info) => {
+        const pageErrors: string[] = [];
+        page.on("pageerror", error => pageErrors.push(error.message));
         await page.setViewportSize({ width, height: 1000 });
         await page.goto("/sign-in?redirect_url=%2Fprofile%2Ffollowing%2F1");
         const main = page.getByRole("main");
@@ -265,6 +267,32 @@ for (const width of [1440, 768, 390]) {
         await input.fill("invalid-email");
         await expect(input).toHaveValue("invalid-email");
         await accessible(page);
+        expect(pageErrors, "uncaught authentication page errors").toEqual([]);
         await page.screenshot({ path: info.outputPath(`pending-sign-in-${width}.png`), fullPage: true });
+    });
+}
+
+for (const width of [1440, 801, 800, 768, 390]) {
+    test(`pending eight sign-up ${width}: shared theme and local input`, async ({ page }, info) => {
+        const pageErrors: string[] = [];
+        page.on("pageerror", error => pageErrors.push(error.message));
+        await page.setViewportSize({ width, height: 1000 });
+        await page.goto("/sign-up?redirect_url=%2Fprofile%2Ffollowing%2F1");
+        const main = page.getByRole("main");
+        const widget = main.locator(".cl-signUp-root");
+        await expect(widget).toBeVisible();
+        await expect(main.getByRole("heading", { name: "Begin something special." })).toHaveCSS("font-family", /Georgia/);
+        await storefrontControls(main.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link"));
+        await storefrontControls(main.getByRole("link", { name: /Explore the collection|Customer service/ }));
+        await storefrontControls(widget.locator("a,button"));
+        const email = widget.getByRole("textbox", { name: "Email address", exact: true });
+        await expect(email).toBeVisible();
+        await expectReadableBorder(email);
+        await expectReadableFocus(email);
+        await email.fill("invalid-email");
+        await expect(email).toHaveValue("invalid-email");
+        await accessible(page);
+        expect(pageErrors, "uncaught authentication page errors").toEqual([]);
+        await page.screenshot({ path: info.outputPath(`pending-sign-up-${width}.png`), fullPage: true });
     });
 }

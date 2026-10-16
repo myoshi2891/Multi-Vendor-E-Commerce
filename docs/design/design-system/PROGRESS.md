@@ -1810,3 +1810,7 @@ browser先行Redはキーボード再試行後のfocus消失3/3。無効化でbo
 ### Step 4 DS-PAGE-001 サインイン
 
 先行Red: 実Clerkサインイン3幅のHomeリンク幅28.21875pxで44px未満。AuthFrameへstore限定purchase themeを合成、Home/collection/supportとSDK操作を44px化し、入力境界・明暗focusを統一。Green: priority-public sign-in3/3、全可視SDK操作44px/focus、入力境界3:1、ローカル入力保持、axe AA/overflow、390px画像目視。auth RTL6/6で共通appearanceとredirect props契約不変を確認。型0・lint0 errors/既存8 warnings。認証送信・認証後エラー/成功はClerk管理で今回対象外。
+
+### Step 5 DS-PAGE-002 サインアップ
+
+Step4の共通AuthFrame/theme/appearanceをサインアップへ適用し実SDKで回帰受け入れ（追加の製品Redなし）。priority-public認証10/10（2画面×1440/801/800/768/390px）：リンク/SDK操作44px、可視focusと入力境界3:1、ローカル入力保持、axe AA・overflow・pageerrorなし。auth RTL6/6。PC/390px画像目視、型0・lint0 errors/既存8 warnings。SDKのemail欄はtype=emailでなくラベルで取得するようテストを訂正し、誤ったlocatorの失敗は製品Redに数えない。初回のhydrationエラーは最終検出付き10/10で再現なし。実認証送信/アカウント作成は対象外。
