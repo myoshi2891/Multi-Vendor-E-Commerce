@@ -107,3 +107,8 @@ Contactはpurchase themeとSupportForm appearance=brandを使用。パンくず�
 ### ストアフロント残存8画面・最終受け入れ（2026-10-12）
 
 今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。
+
+
+## 受け入れ未完了8 Step 6（2026-10-16）
+
+DS-PAGE-010 Contact。既存実装の回帰確認（新規Redなし・追加改修不要）。priority Contact6/6: 3幅のtokens/44px/focus/アンカーとvalidation/pending lock/失敗後入力保持/retry/receipt、axe AA。公開Next実route3/3。Contact/About/申請関連RTL計17/17。390px画像目視、型0・lint0 errors/既存8 warnings。実問い合わせ送信はせずadapterで状態確認。既存payload/validation/URL/本文/業務仕様は変更不要。 [証跡](../design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。

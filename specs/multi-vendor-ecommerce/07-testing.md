@@ -1420,3 +1420,8 @@ DS-PAGE-001: 先行Red: 実Clerkサインイン3幅のHomeリンク幅28.21875px
 ### 受け入れ未完了8 Step 5（2026-10-16）
 
 DS-PAGE-002: Step4の共通AuthFrame/theme/appearanceをサインアップへ適用し実SDKで回帰受け入れ（追加の製品Redなし）。priority-public認証10/10（2画面×1440/801/800/768/390px）：リンク/SDK操作44px、可視focusと入力境界3:1、ローカル入力保持、axe AA・overflow・pageerrorなし。auth RTL6/6。PC/390px画像目視、型0・lint0 errors/既存8 warnings。SDKのemail欄はtype=emailでなくラベルで取得するようテストを訂正し、誤ったlocatorの失敗は製品Redに数えない。初回のhydrationエラーは最終検出付き10/10で再現なし。実認証送信/アカウント作成は対象外。
+
+
+### 受け入れ未完了8 Step 6（2026-10-16）
+
+DS-PAGE-010: 既存実装の回帰確認（新規Redなし・追加改修不要）。priority Contact6/6: 3幅のtokens/44px/focus/アンカーとvalidation/pending lock/失敗後入力保持/retry/receipt、axe AA。公開Next実route3/3。Contact/About/申請関連RTL計17/17。390px画像目視、型0・lint0 errors/既存8 warnings。実問い合わせ送信はせずadapterで状態確認。既存payload/validation/URL/本文/業務仕様は変更不要。
