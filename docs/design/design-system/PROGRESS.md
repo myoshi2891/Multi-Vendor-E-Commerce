@@ -1806,3 +1806,7 @@ browser先行Redはキーボード再試行後のfocus消失3/3。無効化でbo
 ### Step 3 DS-PAGE-017 ホーム
 
 既存実装の回帰確認（新規Redなし・追加改修不要）。purchase home9/9: 3幅で商品あり/空/取得失敗/retry、共通tokens、44px、focus、motion切替とreduced-motion、axe AA。home関連RTL22/22。公開Nextのホーム実route3幅で200・tokens・全操作・axe AA・overflowを確認。390px画像目視。型0・lint0 errors/既存8 warnings。既存要件・ブランド・商品導線・アニメーションの仕様変更は不要。
+
+### Step 4 DS-PAGE-001 サインイン
+
+先行Red: 実Clerkサインイン3幅のHomeリンク幅28.21875pxで44px未満。AuthFrameへstore限定purchase themeを合成、Home/collection/supportとSDK操作を44px化し、入力境界・明暗focusを統一。Green: priority-public sign-in3/3、全可視SDK操作44px/focus、入力境界3:1、ローカル入力保持、axe AA/overflow、390px画像目視。auth RTL6/6で共通appearanceとredirect props契約不変を確認。型0・lint0 errors/既存8 warnings。認証送信・認証後エラー/成功はClerk管理で今回対象外。

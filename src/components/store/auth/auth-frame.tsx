@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import styles from "./auth.module.css";
+import purchaseTheme from "../shared/purchase-theme.module.css";
 
 const copy = {
     "sign-in": {
@@ -28,7 +29,7 @@ export default function AuthFrame({ mode, children }: Readonly<{
     const content = copy[mode];
 
     return (
-        <div className={styles.auth}>
+        <div className={`${purchaseTheme.theme} ${styles.auth}`}>
             <div className={styles.layout}>
                 <section className={styles.story} aria-labelledby="auth-title">
                     <nav className={styles.breadcrumb} aria-label="Breadcrumb">
