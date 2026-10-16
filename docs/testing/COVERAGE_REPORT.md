@@ -12,7 +12,7 @@
 | 指標 | 値 |
 |---|---|
 | Jestテスト総数（2026-10-16） | **3275 passed / 3278 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage（2026-10-15実測） | Statements88.33%（11444/12955）／Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715）。 |
+| 全体coverage | Statements88.33%（11444/12955、2026-10-15実測）／Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）（2026-10-16実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
 | テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16再生成実測（返品キューのページング後）。 |
 | Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-16実測）。 |
 | テスト総数 | **3275 unit/component passed**（3278 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |

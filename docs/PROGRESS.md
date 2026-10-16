@@ -5921,6 +5921,6 @@ seller 返品キューが店舗の全 RMA 履歴を取得・直列化してい�
 
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
-| テスト総数 | 3263 passed / 3266 total | **3275 passed / 3278 total** |
+| テスト総数 | 3262 passed / 3265 total | **3275 passed / 3278 total**（返金額レビュー対応の `returns.test.ts` +1 を含む） |
 | スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
