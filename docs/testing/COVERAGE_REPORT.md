@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-16） | **3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。未完了8画面後の全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage | Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）（2026-10-16未完了8画面後のCLI実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
+| Jestテスト総数（2026-10-16） | **3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。PR#208 following focus回帰後の全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage | Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）（2026-10-16 PR#208 following focus回帰後のCLI実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
 | テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16再生成実測（返品キューのページング後）。 |
 | Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-16実測）。 |
-| テスト総数 | **3277 unit/component passed**（3280 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
+| テスト総数 | **3279 unit/component passed**（3282 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -626,7 +626,7 @@ plan 052 で Phase 3（ゲストのストアフロント主要ページ）を追
 | 全体coverage（2026-09-30） | Statements80.97%／Branches68.02%／Functions74.24%／Lines80.79%（PR#183 対応後の全体実測）。以前の記録: Statements80.8%／Branches67.7%／Functions74.14%／Lines80.62%。全体実測、前セッションの未コミット分を含む。 |
 | テストファイル総数 | **371ファイル**（2026-10-06 dashboard実測）。 |
 | Jest スイート総数（unit/component のみ） | **299スイート**（298 passed／1 skipped、2026-10-06全体実測）。 |
-| テスト総数 | **3277 unit/component passed**（3280 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
+| テスト総数 | **2742 unit/component passed** (2745 total / 3 skipped・**257 スイート**・2026-10-04 全体実測)。以前の記録: **2726 unit/component passed** (2729 total / 3 skipped・254 スイート・2026-10-04)。Integration **222** / 17 スイート（2026-10-04 実測・以前の記録: 221・2026-10-04）。以前の記録: **2725 unit/component passed** (2728 total・2026-10-04 browse 属性チップ後)、**2709 unit/component passed** (2712 total / 3 skipped・254 スイート・2026-10-03)。 |
 | カバー済みセル | **18/80（23%）**（2026-10-06 dashboard実測、セル状態変化なし）。 |
 | lcov エントリ数 | **383**（2026-10-06全体coverage/dashboard実測）。 |
 | 型エラー | **0件**（2026-10-06実測）。 |
@@ -731,3 +731,7 @@ Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.
 ### 受け入れ未完了8画面（2026-10-16）
 
 キーボード継続操作と実SDK入力境界の回帰を補強。全体coverage/dashboardを再計測、418 files/412 lcov/18 of 80 cells。ヒートマップ状態変更なし。[QA正本](QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。
+
+### PR#208 following focus復元の回帰（2026-10-16）
+
+Sonar New Code の未カバー条件5件（`following/container.tsx` 38行）に対し `following-design.test.tsx` +2。更新前: 3277 passed / 3280 total、Statements88.39%（11492/13001）／Branches79.04%（7122/9010）。更新後: 3279 passed / 3282 total、Statements88.4%（11493/13001）／Branches79.08%（7126/9010）、Functions/Lines不変。ヒートマップ状態変更なし。P2優先5画面節の「更新前の統計」表「テスト総数」行を 2026-10-05 原文（`10f41af4`）へ復元。[QA正本](QA_HANDOFF.md#2026-10-16-pr208-sonar-new-code-following-focus復元の分岐最新)。

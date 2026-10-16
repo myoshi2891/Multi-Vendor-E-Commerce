@@ -1,6 +1,13 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-16 受け入れ未完了8画面（最新）
+## 2026-10-16 PR#208 Sonar New Code: following focus復元の分岐（最新）
+
+- SonarCloud PR#208 で `following/container.tsx` の未カバー条件5件（38行 `activeElement === body` と `buttonRef.current?.focus()`）。原因: jsdom は disabled 化でフォーカスを外さず、既存テストは復元経路を一度も通っていなかった。
+- `following-design.test.tsx` +2（body へ落ちたフォーカスの復帰／待機中に移った操作要素から奪わない）。復元行を外した変異で失敗を確認。単体 lcov で同行の未カバーは到達不能な `?.` の null 分岐1件のみ。
+- 実測: **3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。`bun run test -- --coverage`。Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。dashboard 412 lcov/18 of 80 cells、セル状態不変。型0。
+- `COVERAGE_REPORT.md` の P2優先5画面節「更新前の統計」表で後から上書きされていた「テスト総数」行を 2026-10-05 作成時（`10f41af4`）の原文へ復元（レビュー指摘）。未コミット（HEAD `f35be327`）。
+
+## 2026-10-16 受け入れ未完了8画面
 
 [計画](../../plans/layout-design/priority-eight-unaccepted-design-system-plan.md)／[証跡](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。対象022/024/017/001/002/010/005/004。段階コミットでTDD・関連仕様同期を完了。
 
@@ -334,8 +341,8 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --runInBand --coverage`、未完了8画面後）。 |
-| 全体coverage（2026-10-16実測） | Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。今回の全体Jest CLI集計。 |
+| Jest テスト総数 (unit/component) | **3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage`、PR#208 following focus回帰後）。 |
+| 全体coverage（2026-10-16実測） | Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。PR#208 following focus回帰後の全体Jest CLI集計。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |

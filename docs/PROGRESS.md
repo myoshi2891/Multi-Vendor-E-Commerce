@@ -64,7 +64,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3277 passed / 3280 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --runInBand --coverage`、未完了8画面後）。Statements88.39%（11492/13001）／Branches79.04%（7122/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage`、PR#208 following focus回帰後）。Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5951,5 +5951,28 @@ seller 返品キューが店舗の全 RMA 履歴を取得・直列化してい�
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | テスト総数 | 3275 passed / 3278 total | **3276 passed / 3279 total** |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#208 Sonar 対応（following focus 復元の分岐） (2026-10-16)
+
+#### 概要
+
+SonarCloud PR#208 の New Code 未カバー条件5件（`following/container.tsx` のフォーカス復元）を回帰テストで解消。COVERAGE_REPORT の履歴表「テスト総数」行を 2026-10-05 原値へ復元。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/component/store/following-design.test.tsx` | フォーカス復帰／非奪取の回帰テスト +2 | 未コミット |
+| `docs/testing/COVERAGE_REPORT.md` | P2優先5画面節「更新前の統計」の「テスト総数」行を原文へ復元 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3277 passed / 3280 total | **3279 passed / 3282 total** |
 | スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
