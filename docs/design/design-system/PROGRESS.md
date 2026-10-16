@@ -1789,3 +1789,8 @@ Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへco
 - PR#206 レビュー・SonarCloud 対応（同日）: 返品パネルは失敗後に明細を変えたら新しい冪等キー（メモだけなら同じキー）、成功表示は送信開始で消す。seller キューは却下理由の見出しを REJECTED のみに。成功・送信中の表示を `role="status"` の `<p>` から `<output>` に（RTL の `getByRole("status")` はそのまま通る）。seller 返品ページは認可ガードを catch の外へ。RTL +5、`DESIGN_SUITE=returns` 10/10 を再確認。
 - 観察（未対応・既存）: 未認証で `/order/[orderId]` を開くと `getOrder` の `requireUser` が throw して 500 になる（今回の変更前から同じ。`(fullscreen)` にサインイン転送の layout が無い）。
 
+
+
+## 受け入れ未完了8画面（2026-10-16）
+
+[承認済み計画](../../../plans/layout-design/priority-eight-unaccepted-design-system-plan.md)。対象DS-PAGE-022/024/017/001/002/010/005/004は今回対応中。既存台帳・過去の検証結果は保持し、今回の受け入れを以下に追記する。
