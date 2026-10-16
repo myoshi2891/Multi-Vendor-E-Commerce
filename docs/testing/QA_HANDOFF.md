@@ -15,6 +15,7 @@
 - PR#206 追加レビュー対応（同日）: seller 返品キューの手動返金の注記を RESOLVED でも出す（返金は解決後に手動で行うため・design DIRECTION-01）。`seedCommerce` のリセットで Order より先に seed ユーザーの `ReturnRequest` を消す（`orderGroupId` / `orderItemId` は返品の記録を残すため `onDelete: Restrict` のまま・design §9-4）。`seller-returns.test.tsx` +1。Jest **3260/3263**・335 スイート・127 snapshots、tsc 0。
 - PR#206 レビュー対応（返金額と相談窓口、2026-10-16・未コミット）: `resolveReturnRequest` の返金額から外すのを Canceled / Refunded だけにした（手動の `Returned` は返金を伴わないので含める。終端の再精算からは引き続き外す）。`/returns-exchange` の相談フォームは注文番号が必須なので、案内を注文済みに絞り、注文前の質問は `/contact` へ誘導。QA_HANDOFF の TDD 件数を 29 件（3228 → 3257）に訂正。`returns.test.ts` +1。Jest **3263/3266**・335 スイート・127 snapshots、tsc 0（`--no-coverage` 全体実測）。
 - PR#206 レビュー対応（seller 返品キューのサーバー側ページング、2026-10-16・未コミット）: `getStoreReturnRequests` が上限なしの `findMany` で全履歴を返し、ページが全件を直列化してクライアントで絞り込み・件数集計していたため、`{ status?, page? }` を受けて 1 ページ 20 件（`createdAt desc, id desc`・page は `normalizePageParam` でクランプ）と `groupBy` の状態別件数を返す形に変更。ページは `?status=&page=` を正規化し、範囲外は最終ページへ `redirect()`。`SellerReturns` はフィルタとページ送りを URL で駆動。もう 1 件の指摘（`ReturnRequest.orderGroup` / `ReturnRequestItem.orderItem` の削除挙動）は、`onDelete: Restrict` が design §9-4 の「返品の記録を残す」意図どおりで、削除経路（`seedCommerce` は先に RMA を削除、統合テストは TRUNCATE CASCADE、アプリに注文削除 action なし）も対応済みのため変更なし。`returns.test.ts` +4、`seller-returns.test.tsx` +5、`seller-returns-page.test.tsx` +3。Jest **3275/3278**・335 スイート・127 snapshots、tsc 0、lint 0 errors（既存 warnings 8）、`DESIGN_SUITE=returns` **12/12**、`check:playwright` pass。
+- PR#206 レビュー対応（注文詳細の返品オプション組み立て、2026-10-16・未コミット）: `buildGroupReturnOptions` が `try` の外にあり、`RETURN_WINDOW_DAYS_DEFAULT` が不正だと `resolveReturnWindowDays` の throw で `/order/[orderId]` 全体が落ちていたため、組み立てを `try` 内へ移し、失敗時は既存の再読み込み案内に倒す。`04-interfaces.md` の描画モード記述を実装に合わせて訂正（`/returns-exchange` のみ `force-dynamic`）。`settleOrderItems` の APPROVED 差し引き指摘は design §4.3（差し引き方式・2026-10-07 ユーザー選択）の変更を要するため見送り。`order-detail-page.test.tsx` +1（修正を戻して Red 確認）。Jest **3276/3279**・335 スイート・127 snapshots、tsc 0、lcov 不変。
 
 ## 2026-10-15 返品 RMA のバックエンド（plan 088 Step 0〜4、未コミット）
 
@@ -313,7 +314,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-16実測〔返品キューのページング後〕 / lcov: 2026-10-16実測〔同〕 / Integration: 2026-10-15実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
+### テスト統計（Jest: 2026-10-16実測〔注文詳細の返品オプション組み立て修正後〕 / lcov: 2026-10-16実測〔同〕 / Integration: 2026-10-15実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -321,7 +322,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3275 passed / 3278 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、seller 返品キューのサーバー側ページング後）。 |
+| Jest テスト総数 (unit/component) | **3276 passed / 3279 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、注文詳細の返品オプション組み立て修正後）。 |
 | 全体coverage（2026-10-16実測） | Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）。`coverage/lcov.info` の集計（今回の実行では json-summary が更新されないため Statements は未計測）。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |

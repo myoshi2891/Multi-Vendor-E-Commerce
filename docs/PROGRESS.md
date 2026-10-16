@@ -59,7 +59,7 @@ About・Contact・認証画面の過去の部分検証と、移行全体の完�
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3275 passed / 3278 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、seller 返品キューのサーバー側ページング後）。カバレッジ（lcov）は Branches79.08%／Functions85.13%／Lines88.94%。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3276 passed / 3279 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、注文詳細の返品オプション組み立て修正後）。カバレッジ（lcov）は Branches79.08%／Functions85.13%／Lines88.94%。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5922,5 +5922,29 @@ seller 返品キューが店舗の全 RMA 履歴を取得・直列化してい�
 | 指標 | 更新前 | 更新後 |
 |------|--------|--------|
 | テスト総数 | 3262 passed / 3265 total | **3275 passed / 3278 total**（返金額レビュー対応の `returns.test.ts` +1 を含む） |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#206 レビュー対応（注文詳細の返品オプション組み立て） (2026-10-16)
+
+#### 概要
+
+`/order/[orderId]` で `buildGroupReturnOptions` が `try` の外にあり、`RETURN_WINDOW_DAYS_DEFAULT` が不正だとページ全体が落ちていたため、組み立てを `try` 内へ移して既存の再読み込み案内に倒した。あわせて `04-interfaces.md` の `/returns-exchange` の描画モード記述（`force-dynamic`）を実装に合わせた。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/(fullscreen)/order/[orderId]/page.tsx` | `returnOptions` を `{}` で初期化し、`try` 内で組み立て | 未コミット |
+| `tests/component/store/order-detail-page.test.tsx` | 不正な返品日数設定でもページが描画される回帰テスト +1 | 未コミット |
+| `specs/multi-vendor-ecommerce/04-interfaces.md` | 公開サポートページの描画モードを区別 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3275 passed / 3278 total | **3276 passed / 3279 total** |
 | スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |

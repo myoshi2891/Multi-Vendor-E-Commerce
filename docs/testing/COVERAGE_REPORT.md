@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-16） | **3275 passed / 3278 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| Jestテスト総数（2026-10-16） | **3276 passed / 3279 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
 | 全体coverage | Statements88.33%（11444/12955、2026-10-15実測）／Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）（2026-10-16実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
 | テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16再生成実測（返品キューのページング後）。 |
 | Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-16実測）。 |
-| テスト総数 | **3275 unit/component passed**（3278 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
+| テスト総数 | **3276 unit/component passed**（3279 total／3 skipped）。Integration257／19 suites（2026-10-15実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -353,6 +353,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-16: PR#206 レビュー対応 —— 注文詳細の返品オプション組み立てを `try` 内へ移動（未コミット・HEAD `724fb177`）。`order-detail-page.test.tsx` +1。Jest3275/3278 → 3276/3279・335 suites（不変）。lcov 不変（Branches79.08%／Functions85.13%／Lines88.94%）。dashboard418 files/412 lcov/18 of 80 cells（不変）。
 
 2026-10-16: PR#206 レビュー対応 —— seller 返品キューのサーバー側ページング（未コミット・HEAD `8ec78a9a`）。`returns.test.ts` +4、`seller-returns.test.tsx` +5、`seller-returns-page.test.tsx` +3。Jest3263/3266 → 3275/3278・335 suites（不変）。lcov: Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715） → Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）。dashboard418 files/412 lcov/18 of 80 cells（不変）。
 
