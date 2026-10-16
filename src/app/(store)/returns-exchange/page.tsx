@@ -7,6 +7,8 @@ import { resolveReturnWindowDays } from "@/lib/returns-policy";
 import { createSupportTicket } from "@/queries/support";
 import styles from "./returns-exchange.module.css";
 
+// 返品日数は実行時の環境変数 RETURN_WINDOW_DAYS_DEFAULT から読むため、ビルド時の値で固定しない
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
     title: "Returns & Exchange | Luxuries for Happiness",
     description:
