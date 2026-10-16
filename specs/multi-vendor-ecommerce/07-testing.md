@@ -1466,3 +1466,8 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 ### 販売者8再監査 Step 5 DS-PAGE-056（2026-10-16）
 
 メッセージ: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual messages8/8（1440/1000/768/390px×light/dark・seller tokens/未読説明/既読失敗とretry/モバイル戻りfocus・axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 6 DS-PAGE-061（2026-10-16）
+
+商品登録: 既存実装の回帰確認（新規Redなし・追加改修不要）。six product6/6（3幅×light/dark・見出し/画像/カテゴリPortal/入力focus/overflow/axe AA）。390px dark・1440px light画像目視、関連Jest150/150と全体実行内product-details合格、型0・lint0 errors/既存8 warnings。属性と共有variantの最終suite結果は最終統合に記録。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
