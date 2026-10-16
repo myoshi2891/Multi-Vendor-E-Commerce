@@ -32,7 +32,9 @@ describe("/returns-exchange の文面（plan 088 Step 5・design §3）", () => 
 
         // Assert
         expect(
-            screen.getByText("返品期限: 商品の到着予定日から 14 日以内")
+            screen.getByText(
+                "返品期限: 標準は商品の到着予定日から 14 日以内（店舗により異なる場合があります。実際の期限は注文詳細に表示されます）"
+            )
         ).toBeInTheDocument();
         expect(screen.queryByText(/30 日/)).not.toBeInTheDocument();
     });
