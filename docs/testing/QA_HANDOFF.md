@@ -1,12 +1,22 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
+## 2026-10-16 保留3件の実環境受け入れ（最新）
+
+[計画](../../plans/layout-design/pending-three-real-route-acceptance-plan.md)／[証跡](../design/design-system/PROGRESS.md#保留3件の実環境受け入れ2026-10-16)。DS-SELLER-REAUDIT-ROUTES・DS-PAGE-022・DS-PAGE-004 を解除。台帳68画面＝検証済み59／保留2／TODO7。
+
+- **原因**: 専用DB `multivendor_e2e` が 27/28（`20261015042255_add_return_requests` のみ未適用。2026-10-15 の RMA 実装で `multivendor_dev` にだけ適用）。`bunx prisma migrate deploy` で 28/28（追加のみ・seed なし・既存の店舗6／ユーザー7／注文14は不変）。
+- **結果**: `seller-eight-route` 表示 **48/48**。`purchase-route` に実更新テスト2件を追加（`tests/browser/purchase-route-design.spec.ts` 末尾）: following の実フォロー→一覧→解除→再読込保持、apply の実Cloudinary upload→送信→完了画面→DB保存内容の照合。`--repeat-each=3` で **6/6**。事後 DB は開始時と同じ（店舗6・フォロー0）。tsc 0・lint 0 errors（既存8 warnings）・`check:playwright` 成功。Jest 変更なし（統計不変）。
+- **再実行手順**: `.env` を読み込んだうえで `DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を `localhost:5432/multivendor_e2e` に揃える（`.env` は Neon を指すため上書き必須）→ **`bunx prisma migrate status` で適用漏れが無いことを確認**（無ければ `migrate deploy`）→ `prepare-seller-route.ts` / `prepare-purchase-route.ts` → `DESIGN_SUITE=seller-eight-route …` / `DESIGN_SUITE=purchase-route DESIGN_PURCHASE_ROUTE=<json> bun run test:design -- --grep "real route: (follow|Cloudinary)"`。dev 起動で追記される `tsconfig.json` の include は戻す。
+- **Cloudinary 後片付け（未実施・要手動）**: `.env` に API secret が無く自動削除できない。cloud `dk4bomvma` の検証用アセット（public_id）: oqaswch5abegju81r9zs, rn9fmqslbovxq7tax4g5, hgimomq3k8xchasy4amh, jfuae1xuvlntcgygptci, rkqla5dldgf0sfemrvlv, oe4fru1dagb6vstafwus, qdgpbzhp9nqoo80pv9ns, kdxukhuuncfauby2fboz。加えて、テスト修正前の失敗実行3回で `default-user.jpg` のアップロードが最大3件残っている（public_id 未取得。2026-10-16 22:4x 頃の同名画像）。申請テストを再実行するたびに2件増える。
+- 未対応: Integration／本体3-browser E2E は未再実行。
+
 ## 2026-10-16 販売者8画面再監査
 
 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。在庫入力エラーの関連付けをTDDで修正、他画面は既存適用の回帰確認。全体実測は3280 passed / 3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。統計表を同期。
 
 補助ブラウザーseven85/85・six74/74、計159/159（部分実行は重複加算なし）。型0・lint0 errors/既存8 warnings・harness/文書リンク/diff成功。dashboard418 files/412 lcov/18 of 80 cells、セル不変。10段階コミット。
 
-**DS-SELLER-REAUDIT-ROUTES**: 既存専用DBへ読み取りで販売者/店舗の存在を確認。seller-eight-route表示48件を選択して起動したが、beforeAllの最初の店舗概要で`Store.returnWindowDays`列不存在を検出し中断（後続画面未実施）。今回8実routeの受け入れは保留。解除条件: 現行schemaと整合する専用DBで、既存Clerk販売者による3幅×light/darkの表示・axe・SDK描画を再実行すること。DB migration/seed/アカウント作成/実保存/送信/uploadは今回実施しない。過去の受け入れ済み履歴は維持。
+**DS-SELLER-REAUDIT-ROUTES**: 既存専用DBへ読み取りで販売者/店舗の存在を確認。seller-eight-route表示48件を選択して起動したが、beforeAllの最初の店舗概要で`Store.returnWindowDays`列不存在を検出し中断（後続画面未実施）。今回8実routeの受け入れは保留（→ 同日解除: 上の「保留3件の実環境受け入れ」）。解除条件: 現行schemaと整合する専用DBで、既存Clerk販売者による3幅×light/darkの表示・axe・SDK描画を再実行すること。DB migration/seed/アカウント作成/実保存/送信/uploadは今回実施しない。過去の受け入れ済み履歴は維持。
 
 ## 2026-10-16 PR#208 Sonar New Code: following focus復元の分岐（最新）
 
@@ -23,7 +33,7 @@
 - ブラウザー: 補助47/47（following10・history13・home9・Contact6・About3・apply6）、公開実route9/9、認証実SDK10/10（5幅×2画面）、認証後read-only3/3（各3幅）、申請guest3/3。計72/72。sign-upの5ケースは全入力の未focus時境界/focusを追加後にも5/5で再確認（重複加算なし）。viewport1440/768/390px、auth801/800px境界、discovery480pxを含む。axe AAはcontrastを除外しない。型0・lint0 errors/既存8 warnings・harness成功。
 - TDD: following送信後focus消失3幅Red→復帰修正Green。auth Home28.21875pxの3幅Red→tokens/44px/focus/入力境界修正Green。他は既存実装の回帰。sign-upの誤ったtype=email locator、準備待ち不足、sandbox EPERMは製品Redに数えない。修正前のSDK hydrationエラーは1度のみ、ページエラー検知付き最終10/10で再現なし。旧失敗実行の終了処理が停滞したため、そのPlaywrightとNextサーバーだけを終了して再実行した。
 - 実routeのDBは既存`multivendor_e2e`、顧客は既存Clerkテスト顧客。seed/DB初期化/データ追加/実送信/uploadなし。followは空、historyは既存12variant、applyは認証済第1段階。問い合わせ・申請の全送信状態はRTL/fixture。
-- 残る保留: **DS-PAGE-022**は実データあり表示/実更新未検証（解除: フォロー済み店舗のある既存テスト顧客と、専用DBへの更新を含む別受け入れ）。**DS-PAGE-004**は実Cloudinary upload/申請保存未検証（解除: SDK検証環境と送信を含む別受け入れ）。今回の読取受け入れだけで全面検証済みにしない。authの実認証送信/アカウント作成は今回対象外。046/068等の別保留を維持。
+- 残る保留（→ 同日解除: 上の「保留3件の実環境受け入れ」）: **DS-PAGE-022**は実データあり表示/実更新未検証（解除: フォロー済み店舗のある既存テスト顧客と、専用DBへの更新を含む別受け入れ）。**DS-PAGE-004**は実Cloudinary upload/申請保存未検証（解除: SDK検証環境と送信を含む別受け入れ）。今回の読取受け入れだけで全面検証済みにしない。authの実認証送信/アカウント作成は今回対象外。046/068等の別保留を維持。
 - 次着手: 上記2画面の実データ/SDK/保存の受け入れ条件が揃った場合に専用計画で実施。Integration/フル3-browser E2Eは以前の実測を保持。
 
 
