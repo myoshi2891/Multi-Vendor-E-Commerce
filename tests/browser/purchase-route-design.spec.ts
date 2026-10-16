@@ -7,6 +7,7 @@ import {
 } from "@clerk/testing/playwright";
 import AxeBuilder from "@axe-core/playwright";
 import { readFileSync } from "node:fs";
+import { PrismaClient } from "@prisma/client";
 import { expectReadableBorder, expectReadableFocus } from "./purchase-assertions";
 
 /**
@@ -16,6 +17,7 @@ import { expectReadableBorder, expectReadableFocus } from "./purchase-assertions
  * その出力 JSON を DESIGN_PURCHASE_ROUTE に渡す。クーポン適用がカートを変えるため、実行ごとに準備し直す。
  * 決済の送信は sandbox のみ（Stripe テストカード／PayPal sandbox 購入者）。対象は専用DBの注文に限る。
  * Stripe 系は DESIGN_STRIPE_READY=1、PayPal 決済は PAYPAL_SANDBOX_BUYER_EMAIL / _PASSWORD がある時だけ実行する。
+ * 末尾の following / apply 実更新テストは専用DBへ書き込み（終了時に元へ戻す）、apply は実Cloudinaryへ upload する（アセットは手動削除: QA_HANDOFF）。
  */
 
 type Prepared = {
@@ -606,4 +608,119 @@ test(`pending eight read-only ${path}`, async ({browser},info) => {
                 await page.screenshot({path:info.outputPath(`storefront-account-${path.split("/")[2]}-${width}.png`),fullPage:true});
         }
     });
+});
+
+// DS-PAGE-022 実データ・実更新: 実フォロー → 一覧表示 → 一覧から解除 → 再読込で保持。
+// 開始・終了とも未フォロー（顧客のフォロー0件）に揃え、失敗しても finally で戻して再実行可能にする。
+test("following real route: follow, list, unfollow and persist after reload", async ({browser},info) => {
+    test.setTimeout(300000);
+    const db = new PrismaClient();
+    const storeUrl = "e2e-store-b-chromium-w0";
+    const followedIds = async () =>
+        (await db.user.findUniqueOrThrow({where:{email:prepared.customerEmail},select:{following:{select:{url:true}}}})).following.map(s=>s.url);
+    try {
+        expect(await followedIds(), "顧客は未フォローから開始する").toEqual([]);
+        await withCustomer(browser, async page => {
+            await gotoRoute(page, `/store/${storeUrl}`);
+            await page.getByRole("main").locator('a[href^="/product/"]').first().click();
+            await page.waitForURL(/\/product\//);
+            const follow = page.getByRole("button", {name:"Follow boutique"});
+            await expect(follow).toBeEnabled({timeout:30000});
+            await follow.click();
+            await expect(page.getByRole("button", {name:"Following"}).first()).toHaveAttribute("aria-pressed","true");
+            await expect.poll(followedIds).toEqual([storeUrl]);
+            for (const width of WIDTHS) {
+                await page.setViewportSize({width,height:1000});
+                await gotoRoute(page, "/profile/following/1");
+                const card = page.getByRole("main").getByRole("article");
+                await expect(card).toHaveCount(1);
+                await expect(card.getByRole("link",{name:"E2E Store B"})).toBeVisible();
+                await expect(card.getByRole("button",{name:"Following"})).toHaveAttribute("aria-pressed","true");
+                await storefrontControls(page.getByRole("main").locator("a,button,summary"));
+                await accessible(page);
+                await page.screenshot({path:info.outputPath(`following-real-${width}.png`),fullPage:true});
+            }
+            const card = page.getByRole("main").getByRole("article");
+            const before = Number((await card.getByText(/followers$/).textContent())?.split(" ")[0]);
+            await card.getByRole("button",{name:"Following"}).click();
+            await expect(card.getByRole("status")).toHaveText("You unfollowed E2E Store B.");
+            await expect(card.getByRole("button",{name:"Follow"})).toHaveAttribute("aria-pressed","false");
+            await expect(card.getByText(`${before - 1} followers`)).toBeVisible();
+            await expect.poll(followedIds).toEqual([]);
+            await page.reload({waitUntil:"load"});
+            await expect(page.getByRole("heading",{name:"No followed stores yet."})).toBeVisible();
+        });
+    } finally {
+        await db.user.update({where:{email:prepared.customerEmail},data:{following:{set:[]}}});
+        await db.$disconnect();
+    }
+});
+
+// DS-PAGE-004 実Cloudinary・実保存: 4段階を入力し、ロゴ/カバーを Upload Widget から実アップロードして送信する。
+// 作成した店舗は finally で削除する。Cloudinary 資産は API secret が無いため削除せず、public_id を annotation に残す。
+test("seller apply real route: Cloudinary upload, submit and saved store", async ({browser},info) => {
+    test.setTimeout(300000);
+    const db = new PrismaClient();
+    const suffix = Date.now().toString(36);
+    const input = {
+        name:`Design Apply ${suffix}`,
+        url:`design-apply-${suffix}`,
+        email:`design-apply-${suffix}@example.com`,
+        phone:`+1555${Date.now().toString().slice(-7)}`,
+        description:"A real-route acceptance store created to verify the seller application flow.",
+    };
+    const image = "public/assets/images/default-user.jpg";
+    const consoleErrors: string[] = [];
+    try {
+        await withCustomer(browser, async page => {
+            page.on("console", m => { if (m.type()==="error") consoleErrors.push(m.text()); });
+            await gotoRoute(page, "/seller/apply");
+            await clerk.loaded({page});
+            const main = page.getByRole("main");
+            await main.getByRole("button",{name:"Next",exact:true}).click();
+            const upload = async (button: string) => {
+                const trigger = main.getByRole("button",{name:button});
+                await expect(trigger).toBeEnabled({timeout:30000});
+                await trigger.click();
+                // ウィジェットごとに iframe が増えるため、表示中の 1 枚に絞る（2 回目は 1 回目の閉じた iframe が先頭に残る）
+                const frame = page.locator('iframe[data-test="uw-iframe"]').filter({visible:true});
+                await frame.waitFor({state:"visible",timeout:30000});
+                await frame.contentFrame().locator('input[type="file"]').first().setInputFiles(image);
+                // 単一ファイルでも自動では閉じず、アップロード完了後に Done を押すまで残る
+                await frame.contentFrame().getByRole("button",{name:"Done"}).click({timeout:60000});
+                await frame.waitFor({state:"hidden",timeout:60000});
+            };
+            await upload("Upload profile image");
+            await expect(main.getByAltText("image for profile picture")).toHaveAttribute("src",/res\.cloudinary\.com/,{timeout:60000});
+            await upload("Upload cover image");
+            await expect(main.getByAltText("image for cover picture")).toHaveAttribute("src",/res\.cloudinary\.com/,{timeout:60000});
+            await main.getByRole("textbox",{name:"Store name",exact:true}).fill(input.name);
+            await main.getByRole("textbox",{name:"Store description",exact:true}).fill(input.description);
+            await main.getByRole("textbox",{name:"Store URL",exact:true}).fill(input.url);
+            await main.getByRole("textbox",{name:"Store email",exact:true}).fill(input.email);
+            await main.getByRole("textbox",{name:"Store phone",exact:true}).fill(input.phone);
+            await main.getByRole("button",{name:"Next",exact:true}).click();
+            await main.getByRole("textbox",{name:"Shipping service"}).fill("Design Courier");
+            await main.getByRole("textbox",{name:"Return policy"}).fill("Return within 30 days");
+            await main.getByRole("button",{name:"Submit",exact:true}).click();
+            await expect(main.getByRole("heading",{name:"Your store has been created!"})).toBeVisible({timeout:60000});
+            await expect(main.getByRole("alert")).toHaveCount(0);
+            for (const width of WIDTHS) {
+                await page.setViewportSize({width,height:1000});
+                await accessible(page);
+                await page.screenshot({path:info.outputPath(`apply-real-complete-${width}.png`),fullPage:true});
+            }
+        });
+        expect(consoleErrors.filter(t => /Decimal|plain objects/i.test(t)), "Server Action の戻り値エラー（plan 089）").toEqual([]);
+        const saved = await db.store.findUniqueOrThrow({where:{url:input.url},include:{user:{select:{email:true}}}});
+        expect({name:saved.name,email:saved.email,phone:saved.phone,description:saved.description,status:saved.status,owner:saved.user.email,service:saved.defaultShippingService,returnPolicy:saved.returnPolicy})
+            .toEqual({name:input.name,email:input.email,phone:input.phone,description:input.description,status:"PENDING",owner:prepared.customerEmail,service:"Design Courier",returnPolicy:"Return within 30 days"});
+        for (const url of [saved.logo, saved.cover]) {
+            expect(url).toMatch(/^https:\/\/res\.cloudinary\.com\//);
+            info.annotations.push({type:"cloudinary-asset",description:url});
+        }
+    } finally {
+        await db.store.deleteMany({where:{url:input.url}});
+        await db.$disconnect();
+    }
 });
