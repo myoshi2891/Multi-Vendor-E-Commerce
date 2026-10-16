@@ -31,3 +31,8 @@
 ### ストアフロント残存8画面・最終受け入れ（2026-10-12）
 
 今回の表示変更は実装・関連仕様同期・3幅の補助/実route確認を完了。pending/error/retry/successはadapter/RTL、実routeは読取の表示確認として区別する。実followingは空、履歴は既存商品あり、申請はguest/認証後第1段階。実更新/送信/uploadの既存保留は維持。[最終証跡](../design-system/PROGRESS.md#ストアフロント残存8画面移行記録2026-10-12)／[QA正本](../../testing/QA_HANDOFF.md#ds-storefront-eight-acceptance)。
+
+
+## 受け入れ未完了8 Step 1（2026-10-16）
+
+DS-PAGE-022 フォロー店舗。browser先行Redはキーボード再試行後のfocus消失3/3。無効化でbodyへ移った場合だけ操作元へfocusを復帰し、利用者が別要素へ移動した場合は奪わない。Green: priority following10/10（3幅＋480px・axe AA・空/失敗保持/件数/再試行/成功/URL）、RTL following5/5、関連discovery18/18（追加前）。認証後read-only1/1内3幅は既存顧客の空状態、実更新は対象外。型0・lint0 errors/既存8 warnings、390px画像目視。実データあり/実更新の既存保留は維持。要件・設計・テストを同期、overview/architecture/data-model/interfacesは既存契約不変のため変更不要。 [証跡](../design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。

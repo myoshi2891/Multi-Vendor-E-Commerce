@@ -1794,3 +1794,7 @@ Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへco
 ## 受け入れ未完了8画面（2026-10-16）
 
 [承認済み計画](../../../plans/layout-design/priority-eight-unaccepted-design-system-plan.md)。対象DS-PAGE-022/024/017/001/002/010/005/004は今回対応中。既存台帳・過去の検証結果は保持し、今回の受け入れを以下に追記する。
+
+### Step 1 DS-PAGE-022 フォロー店舗
+
+browser先行Redはキーボード再試行後のfocus消失3/3。無効化でbodyへ移った場合だけ操作元へfocusを復帰し、利用者が別要素へ移動した場合は奪わない。Green: priority following10/10（3幅＋480px・axe AA・空/失敗保持/件数/再試行/成功/URL）、RTL following5/5、関連discovery18/18（追加前）。認証後read-only1/1内3幅は既存顧客の空状態、実更新は対象外。型0・lint0 errors/既存8 warnings、390px画像目視。実データあり/実更新の既存保留は維持。要件・設計・テストを同期、overview/architecture/data-model/interfacesは既存契約不変のため変更不要。

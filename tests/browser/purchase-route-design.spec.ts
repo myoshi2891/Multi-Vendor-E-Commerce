@@ -573,12 +573,12 @@ test("P2 settings real Clerk appearance hash and inline editor without saving", 
 });
 
 // Read-only acceptance: reuse the existing customer and data; no prepare/seed/follow writes.
-test("storefront eight account discovery: authenticated read-only routes", async ({browser},info) => {
+for (const path of ["/profile/following/1", "/profile/history/1", "/seller/apply"])
+test(`pending eight read-only ${path}`, async ({browser},info) => {
     test.setTimeout(240000);
     await withCustomer(browser, async page => {
         for (const width of WIDTHS) {
             await page.setViewportSize({width,height:1000});
-            for (const path of ["/profile/following/1", "/profile/history/1", "/seller/apply"]) {
                 if (path.includes("history") && process.env.DESIGN_HISTORY_IDS) {
                     const ids: unknown = JSON.parse(readFileSync(process.env.DESIGN_HISTORY_IDS,"utf8"));
                     if (!Array.isArray(ids) || !ids.length || !ids.every(id => typeof id === "string")) throw new Error("DESIGN_HISTORY_IDS must contain existing variant IDs");
@@ -602,7 +602,6 @@ test("storefront eight account discovery: authenticated read-only routes", async
                 await storefrontControls(main.locator("a,button,summary"));
                 await accessible(page);
                 await page.screenshot({path:info.outputPath(`storefront-account-${path.split("/")[2]}-${width}.png`),fullPage:true});
-            }
         }
     });
 });

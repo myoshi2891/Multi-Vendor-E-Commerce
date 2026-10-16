@@ -55,3 +55,13 @@ it("server lookup failure provides a generic alert and reload", async () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Followed stores could not be loaded.");
     expect(screen.getByRole("link", { name: "Try again" })).toHaveAttribute("href", "/profile/following/2");
 });
+
+ it("restores keyboard focus after a failed follow request", async () => {
+    const followAction = jest.fn().mockRejectedValue(new Error("fixture"));
+    render(<FollowingContainer stores={[store]} page={1} totalPages={1} followAction={followAction} />);
+    const button = screen.getByRole("button", { name: "Following" });
+    button.focus();
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(button).toHaveFocus();
+ });

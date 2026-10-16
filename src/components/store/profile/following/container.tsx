@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { DiscoveryPagination } from "../shared/discovery";
@@ -28,9 +28,19 @@ function FollowingCard({
     const [error, setError] = useState(false);
     const [notice, setNotice] = useState("");
     const lock = useRef(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const restoreFocus = useRef(false);
+    useEffect(() => {
+        if (pending || !restoreFocus.current) return;
+        restoreFocus.current = false;
+        // Disabling the submitting button drops browser focus. Do not steal it
+        // if the customer has already moved to another control while waiting.
+        if (document.activeElement === document.body) buttonRef.current?.focus();
+    }, [pending]);
     const update = async () => {
         if (lock.current || !followAction) return;
         lock.current = true;
+        restoreFocus.current = document.activeElement === buttonRef.current;
         setPending(true);
         setError(false);
         setNotice("");
@@ -74,6 +84,7 @@ function FollowingCard({
             </div>
             <div className={styles.actions}>
                 <button
+                    ref={buttonRef}
                     type="button"
                     aria-pressed={following}
                     aria-busy={pending}
