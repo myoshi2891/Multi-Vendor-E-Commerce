@@ -32,7 +32,7 @@
 - [x] 計画保存
 - [x] Step 1 フォロー店舗
 - [x] Step 2 閲覧履歴
-- [ ] Step 3 ホーム
+- [x] Step 3 ホーム
 - [ ] Step 4 サインイン
 - [ ] Step 5 サインアップ
 - [ ] Step 6 Contact

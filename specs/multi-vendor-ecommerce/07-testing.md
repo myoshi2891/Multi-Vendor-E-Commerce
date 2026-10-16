@@ -1405,3 +1405,8 @@ DS-PAGE-022: browser先行Redはキーボード再試行後のfocus消失3/3。�
 ### 受け入れ未完了8 Step 2（2026-10-16）
 
 DS-PAGE-024: 既存実装の回帰確認（新規Redなし）。priority history13/13（3幅＋480px・axe AA・loading/error/retry/empty・比較操作・URL/back）、history/discovery RTL14/14。再試行後の保存ID不変とalert消去も回帰追加。認証後read-only1/1内3幅で既存12variantの保存IDから商品表示とページングを確認、390px画像目視。商品画像placeholderは既存テストデータ。型0・lint0 errors/既存8 warnings。取得・保存順・URL・API/DBの仕様変更は不要。
+
+
+### 受け入れ未完了8 Step 3（2026-10-16）
+
+DS-PAGE-017: 既存実装の回帰確認（新規Redなし・追加改修不要）。purchase home9/9: 3幅で商品あり/空/取得失敗/retry、共通tokens、44px、focus、motion切替とreduced-motion、axe AA。home関連RTL22/22。公開Nextのホーム実route3幅で200・tokens・全操作・axe AA・overflowを確認。390px画像目視。型0・lint0 errors/既存8 warnings。既存要件・ブランド・商品導線・アニメーションの仕様変更は不要。
