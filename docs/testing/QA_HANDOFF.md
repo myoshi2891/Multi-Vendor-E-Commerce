@@ -1,6 +1,33 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-15 購入再監査8 実ルート受け入れ（最新）
+## 2026-10-15 返品 RMA の UI（plan 088 Step 5・最新、未コミット）
+
+注文詳細の返品欄（申請・状態・取り下げ・追跡番号）、seller 返品キュー `/dashboard/seller/stores/[storeUrl]/returns`（絞り込み・承認・却下・受け取り・解決）、`/returns-exchange` の文面（日数を `RETURN_WINDOW_DAYS_DEFAULT` から描き、注文履歴へ案内、フォームは相談窓口）。[計画](../../plans/layout-design/returns-rma-ui-plan.md)／[証跡](../design/design-system/PROGRESS.md#返品-rma-の-ui2026-10-15plan-088-step-5未コミット)。
+
+- TDD: 新規 29 件（RTL 21・ユニット 8。Jest 総数 3228 → 3257 の増分と一致）のうち 28 件の Red を空の実装で確認 → Green。新規: `returns-view.test.ts` 8、`return-request-panel.test.tsx` 9、`seller-returns.test.tsx` 8、`returns-exchange-page.test.tsx` 2、`order-detail-page.test.tsx` +2。
+- 実測: Jest **3254/3257**（3 skipped）・**334 スイート**・127 snapshots、tsc 0、lint 0 errors（既存 warnings 8）。`DESIGN_SUITE=returns` **10/10**（新設・port 3135）、`DESIGN_SUITE=priority` 83/83、`returns-exchange-design.spec.ts` chromium 4/4、`check:playwright` pass。Integration はバックエンド時点（257/19）から変更なし。
+- 環境: :3000 の Docker アプリは Prisma の再生成後に Turbopack が `@prisma/client-<hash>` を解決できず全ページ 500（今回のコードとは無関係）。復旧はコンテナの再起動（`docker compose restart app`）で行う想定・未実施。E2E は port 3136 の一時 dev サーバー（`NEXT_DEV_DIST_DIR=.next/returns-check`）に `E2E_BASE_URL` で接続した。
+- 保留: 認証後の実ルート（解除: plan 088 Step 6）。観察（既存）: 未認証の `/order/[orderId]` は `requireUser` の throw で 500。
+- PR#206 レビュー対応（同日）: ロック後に冪等キーを再確認（並行した同じキーの全数申請が「数量超過」になる経路）、seller 返品ページの認可ガードを catch の外へ、失敗後に明細を変えたら新しい冪等キー（メモだけの変更は同じキー・design §2.3）、却下理由の見出しは REJECTED のみ。SonarCloud 18 件のうち 14 件を修正（props の Readonly、`role="status"` → `<output>`、sort の比較関数、`options` 既定値、`Set`、catch 引数名、拒否の再 throw）、`await` in loop 3 件は tx 内で行ロックの順序を固定するための逐次実行なので対応しない。Jest 3259/3262・335 スイート、Integration（returns-rma・order-lifecycle）37/37、`DESIGN_SUITE=returns` 10/10。
+
+---
+- PR#206 レビュー対応（RMA 解決の終端判定、同日・未コミット）: `resolveReturnRequest` が item を `Returned` にする判定で RECEIVED の RMA まで数えていたため、同じ item に RECEIVED の RMA が 2 件あると、先に解決した側で item が終端になり、後の RMA の返金額が 0 になっていた。判定を RESOLVED の数量だけに変更（在庫の差し引き `getReturnedQuantities` は RECEIVED + RESOLVED のまま）。`returns.test.ts` +1（新しい方から 2 件を解決）。Jest **3262/3265**・335 スイート・127 snapshots、tsc 0（`18733ad1` の +1 を含む全体実測。1 回目の全体実行で 2 件がフレークし、再実行で全件パス）。
+- PR#206 追加レビュー対応（同日）: seller 返品キューの手動返金の注記を RESOLVED でも出す（返金は解決後に手動で行うため・design DIRECTION-01）。`seedCommerce` のリセットで Order より先に seed ユーザーの `ReturnRequest` を消す（`orderGroupId` / `orderItemId` は返品の記録を残すため `onDelete: Restrict` のまま・design §9-4）。`seller-returns.test.tsx` +1。Jest **3260/3263**・335 スイート・127 snapshots、tsc 0。
+- PR#206 レビュー対応（返金額と相談窓口、2026-10-16・未コミット）: `resolveReturnRequest` の返金額から外すのを Canceled / Refunded だけにした（手動の `Returned` は返金を伴わないので含める。終端の再精算からは引き続き外す）。`/returns-exchange` の相談フォームは注文番号が必須なので、案内を注文済みに絞り、注文前の質問は `/contact` へ誘導。QA_HANDOFF の TDD 件数を 29 件（3228 → 3257）に訂正。`returns.test.ts` +1。Jest **3263/3266**・335 スイート・127 snapshots、tsc 0（`--no-coverage` 全体実測）。
+- PR#206 レビュー対応（seller 返品キューのサーバー側ページング、2026-10-16・未コミット）: `getStoreReturnRequests` が上限なしの `findMany` で全履歴を返し、ページが全件を直列化してクライアントで絞り込み・件数集計していたため、`{ status?, page? }` を受けて 1 ページ 20 件（`createdAt desc, id desc`・page は `normalizePageParam` でクランプ）と `groupBy` の状態別件数を返す形に変更。ページは `?status=&page=` を正規化し、範囲外は最終ページへ `redirect()`。`SellerReturns` はフィルタとページ送りを URL で駆動。もう 1 件の指摘（`ReturnRequest.orderGroup` / `ReturnRequestItem.orderItem` の削除挙動）は、`onDelete: Restrict` が design §9-4 の「返品の記録を残す」意図どおりで、削除経路（`seedCommerce` は先に RMA を削除、統合テストは TRUNCATE CASCADE、アプリに注文削除 action なし）も対応済みのため変更なし。`returns.test.ts` +4、`seller-returns.test.tsx` +5、`seller-returns-page.test.tsx` +3。Jest **3275/3278**・335 スイート・127 snapshots、tsc 0、lint 0 errors（既存 warnings 8）、`DESIGN_SUITE=returns` **12/12**、`check:playwright` pass。
+- PR#206 レビュー対応（注文詳細の返品オプション組み立て、2026-10-16・未コミット）: `buildGroupReturnOptions` が `try` の外にあり、`RETURN_WINDOW_DAYS_DEFAULT` が不正だと `resolveReturnWindowDays` の throw で `/order/[orderId]` 全体が落ちていたため、組み立てを `try` 内へ移し、失敗時は既存の再読み込み案内に倒す。`04-interfaces.md` の描画モード記述を実装に合わせて訂正（`/returns-exchange` のみ `force-dynamic`）。`settleOrderItems` の APPROVED 差し引き指摘は design §4.3（差し引き方式・2026-10-07 ユーザー選択）の変更を要するため見送り。`order-detail-page.test.tsx` +1（修正を戻して Red 確認）。Jest **3276/3279**・335 スイート・127 snapshots、tsc 0、lcov 不変。
+
+## 2026-10-15 返品 RMA のバックエンド（plan 088 Step 0〜4、未コミット）
+
+`ReturnRequest` / `ReturnRequestItem` と enum 4 つ、`Store.returnWindowDays` / `acceptsReturns` を追加（マイグレーション `20261015042255_add_return_requests`・ローカル Docker DB にのみ適用・リモート未適用）。`src/queries/returns.ts` に T1〜T8 の action と読み取り 2 本、`src/lib/returns-policy.ts`、`src/lib/notifications/rma-events.ts`（`rma.refunded` → `rma.resolved` に改名、`rma.canceled` / `rma.received` を追加）。在庫の精算は `"use server"` の外の `src/lib/order-item-settlement.ts` へ移し、`settleOrderItems` が返品済み数量（RECEIVED / RESOLVED）を差し引くようにした。[計画](../../plans/088-implement-returns-rma.md)／[設計](../design/returns-rma/design.md)。
+
+- TDD: 統合テスト 19 件を先に書き、`@/queries/returns` が無いことによる失敗で Red を確認（testcontainers は起動済み）。実装後に 19/19。ユニットは returns 38・policy / settlement 19 を追加、`order.test.ts` の tx モックに `returnRequestItem.groupBy` を追加。
+- 実測: Jest **3225/3228**（3 skipped）・**330 スイート**（329 passed／1 skipped）・127 snapshots、Integration **257/257・19 スイート**（削除系・087 系を含む全件）、tsc 0、lint 0 errors（既存 warnings 8）。
+- 残り: Step 5（注文詳細の申請導線・seller 返品キュー・`/returns-exchange` の差し替え）と Step 6（E2E・seed に Delivered 注文）。リモート DB へのマイグレーション適用はオペレーター作業。
+
+---
+
+## 2026-10-15 購入再監査8 実ルート受け入れ
 
 DS-PURCHASE-REAUDIT-EIGHT-ROUTES を解除。P1001 の原因は Docker `multivendor-postgres-dev` の停止（DB・volume は残存、migration 27/27）で、`docker compose up -d db` で復旧した。`purchase-public` **27/27**（実データ reaudit 6件 = 3幅 × light/dark を追加）、`purchase-route` **12 passed / 1 skipped**（注文確定・クーポン・Stripe テストカード決済を含む全件、skip は PayPal sandbox 購入者承認）。[計画](../../plans/layout-design/purchase-reaudit-real-route-acceptance-plan.md)／[証跡](../design/design-system/PROGRESS.md#実データ認証後実sdk受け入れ2026-10-15-解除)。
 
@@ -287,7 +314,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest: 2026-10-14実測 / lcov: 2026-10-14実測 / Integration: 2026-10-12実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
+### テスト統計（Jest: 2026-10-16実測〔注文詳細の返品オプション組み立て修正後〕 / lcov: 2026-10-16実測〔同〕 / Integration: 2026-10-15実測 / E2Eフルラン: 2026-10-03実測 / design seller: 2026-10-13補助実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -295,17 +322,17 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3168 passed / 3171 total、3 skipped、127 snapshots passed、327 スイート（326 passed／1 skipped、failed 0）**。2026-10-14全体実測（管理マスタ8）。 |
-| 全体coverage（2026-10-14実測） | Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。 |
-| Jest Integration テスト総数 | **238** / **18 スイート**（**2026-10-12 実測: 238/238 pass**・`bun run test:integration`。直前の実測は2026-10-08 plan 087 実施時。購入導線6画面移行では Integration は未実行。plan 087 で `order-lifecycle.test.ts` +10〔経路をまたぐ在庫復元 exactly-once: F-1 / F-2 / item→order / item→group / 並行、吸収状態 2、F-3、seller の復元と IDOR〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest テスト総数 (unit/component) | **3276 passed / 3279 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、注文詳細の返品オプション組み立て修正後）。 |
+| 全体coverage（2026-10-16実測） | Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）。`coverage/lcov.info` の集計（今回の実行では json-summary が更新されないため Statements は未計測）。 |
+| Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**Chromium 7/7 passed**。2026-10-07 実測（plan 084・Docker DB 接続）。OI-10 解消に伴い 6 spec の `disabledRules:["color-contrast"]` 抑制を解除済み（抑制なしで違反 0）。home（`/`）は spec 未作成（OI-9 は 2026-06-06 に解消済みで阻害要因ではない。追加は本書の「A11y-home」タスクで扱う）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-14 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-16 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **408ファイル**／lcov **405エントリ**／マトリクス18/80（23%）。2026-10-14再生成実測。 |
+| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-15再生成実測（UI 後）。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 

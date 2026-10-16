@@ -180,3 +180,31 @@ tx をモックし、各 action について次を確かめる（AAA）: 認可�
   - (4) 通知の記録が tx の中、送信が tx の外にあること。
 - plan 022 で `deliveredAt` が入ったら、`isReturnEligible` の基準時刻を置き換える（design §6）。
 - 交換を入れるときは、終端の item を再オープンせず、新しい OrderItem を作る（087 の吸収状態）。
+
+## 実施結果（2026-10-15・Step 0〜4 と文書同期。未コミット）
+
+- **範囲**: ユーザー判断でバックエンドまで。**Step 5（UI）と Step 6（E2E）は未着手**。マイグレーション `20261015042255_add_return_requests` はローカル Docker DB（`db:5432/multivendor_dev`）にのみ適用。`.env` の接続先（Neon）には適用していない（オペレーター作業）。
+- **Drift**: `order.ts` は 087 の実装で変わっていたが、`settleOrderItems` が `updateManyAndReturn` の戻り値で遷移した item を返すため、design §4.3 の差し引きはそのまま適用できた（STOP なし）。実装上の差分は design §9。
+- **Red**: `tests/integration/returns-rma.test.ts`（19 件）は `@/queries/returns` が無いことによる失敗で Red（testcontainers は起動済み・環境エラーではない）。
+- **Green**: 統合 19/19。統合全体 257/257・19 スイート（`product-deletion` / `user-deletion-webhook` を含む。Restrict による STOP なし）。
+- **ユニット**: `returns.test.ts` 38、`returns-policy.test.ts` / `order-item-settlement.test.ts` 19。`order.test.ts` の tx モックに `returnRequestItem.groupBy` を追加。Jest 3225/3228（3 skipped）・330 スイート、tsc 0、lint 0 errors（既存 warnings 8）。
+- **Done criteria**: `rma.refunded` は `src/` に 0 件。`idempotencyKey` は `String`（NOT NULL）。ERD は再生成済み（13 ページ・orphan WARNING 0）。返金 API の呼び出しは追加していない（`git diff cfbcd9a6 -- src | grep` のヒット 3 件は 087 で変わったテストの説明文「cancel/refund」）。
+- **残り（次の着手）**: Step 5 — 注文詳細の申請導線（`getReturnRequestsForOrder`・`createReturnRequest`、`useRef` のリエントランシーガード）、seller の返品キュー（`getStoreReturnRequests` と T2/T3/T6/T7）、`/returns-exchange` の日数を `resolveReturnWindowDays` から描く。Step 6 — E2E と `seed:e2e` への Delivered 注文の追加。
+
+## 実施結果 — Step 5 UI（2026-10-15・未コミット）
+
+- 詳細計画: [layout-design/returns-rma-ui-plan.md](layout-design/returns-rma-ui-plan.md)。台帳: DS-PAGE-068（新規）、DS-COMP-247 / 248（新規）、DS-PAGE-003 / 036（再対応）。
+- 注文詳細の返品欄・seller 返品キュー・`/returns-exchange` の文面を実装。RTL 35 件（Red 28 件を確認後に Green）、`DESIGN_SUITE=returns` 10/10、priority 83/83、`returns-exchange-design.spec.ts` chromium 4/4、全体 Jest 3254/3257・334 スイート、tsc 0、lint 0 errors。
+- 保留: 認証後の実ルート。**残り（次の着手）は Step 6** — `seed:e2e` に Delivered 注文を足し、`tests/e2e/returns-rma.spec.ts` で申請 → 承認 → 受け取り → 解決を通す。
+
+
+## 追補 — seller 返品キューのサーバー側ページング（2026-10-16・レビュー対応）
+
+- **問題**: `getStoreReturnRequests` が上限なしの `findMany` で店舗の全履歴を返し、ページが全件を直列化して `SellerReturns` がクライアントで絞り込み・件数集計していた。履歴の増加に比例してペイロードと DB 負荷が伸びる。
+- **対象**: `src/queries/returns.ts`（`getStoreReturnRequests`）、`src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx`、`src/components/dashboard/seller/seller-returns.tsx`、`src/lib/returns-view.ts`、fixture `tests/fixtures/returns/*`。
+- **受け入れ条件**:
+  - クエリは `{ status?, page? }` を受け、`skip`/`take`（1 ページ 20 件・`createdAt desc, id desc`）で 1 ページ分だけ返す。page はサーバー側でも `normalizePageParam` で上限クランプする。
+  - 状態別件数は `groupBy({ by: ["status"] })` で別途集計し、フィルタの件数表示に使う（全件の直列化はしない）。
+  - ページは `searchParams` の `status`（不正値は全件扱い）と `page` を正規化し、範囲外ページは正準 URL へ `redirect()` する。
+  - フィルタとページ送りは URL（`?status=&page=`）で駆動し、フィルタ変更で page を 1 に戻す。
+- **検証**: `returns.test.ts`（where / skip / take / groupBy）、`seller-returns.test.tsx`・`seller-returns-page.test.tsx`、`DESIGN_SUITE=returns bun run test:design`、tsc / lint。

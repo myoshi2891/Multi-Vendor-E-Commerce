@@ -91,6 +91,16 @@
 4) Reopening a group (e.g. `Canceled → Processing`) updates only the group; its items stay terminal. Re-shipping is handled as a new order (exchange), not by reopening.
 5) If the ordered `Size` row no longer exists (recreated by a product edit), the cancellation still completes and the restock for that item is skipped with a structured warning. Design: [`inventory-restock/design.md`](../../docs/design/inventory-restock/design.md).
 
+## Returns (RMA) Flow (plan 088)
+
+Entry points: the order detail (`/order/[orderId]`) returns section per store group, the seller queue (`/dashboard/seller/stores/[storeUrl]/returns`, sidebar "Returns"), and `/returns-exchange`, which shows the return window and links signed-in customers to their order history; its form remains a consultation channel for guests and out-of-policy cases.
+
+1) A signed-in customer opens "Request a return" on a store group in the order detail, picks quantities (up to the remaining returnable quantity) and a reason per item, and submits (`createReturnRequest`). Only `Delivered` items within the return window of a store that accepts returns are offered. The idempotency key is created when the form opens and reused on retry after a failure; inputs lock while sending. The seller receives `rma.requested`.
+2) The seller (or an admin) approves (`APPROVED`, customer gets `rma.approved`) or rejects with a required reason (`REJECTED`, `rma.rejected`) from the returns queue, which filters by status. The customer sees each request's status in the order detail, may cancel while `REQUESTED`/`APPROVED` (seller gets `rma.canceled`) and may enter a return tracking number while `APPROVED`.
+3) When the parcel arrives the seller records each item as `RESELLABLE` or `DAMAGED` (all items are required) and marks it received (`RECEIVED`, `rma.received`). Resellable quantities go back to stock immediately; damaged ones never do.
+4) The seller resolves the RMA (`RESOLVED`, `rma.resolved`), fixing the product-price refund estimate. The refund itself is issued manually in the payment provider (DIRECTION-01); its webhook updates `paymentStatus` as before. Items whose whole quantity has been returned become `Returned`.
+5) If the order is later cancelled or refunded, already-returned quantities are subtracted from the restock, so total restocked stock never exceeds the purchased quantity. Terminal states (`REJECTED`, `RESOLVED`, `CANCELED`) accept no further transitions. Design: [`returns-rma/design.md`](../../docs/design/returns-rma/design.md).
+
 ## Seller Store and Catalog Flow
 1) Apply for seller role and access the seller dashboard.
 2) Create a store and configure default shipping settings.

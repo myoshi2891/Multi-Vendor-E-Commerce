@@ -1,6 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { RETURNS_POLICY_SUMMARY } from "../../src/components/store/static/content/returns";
+import { buildReturnsPolicySummary } from "../../src/components/store/static/content/returns";
+import { resolveReturnWindowDays } from "../../src/lib/returns-policy";
+
+// ページと同じリゾルバーで日数を導く（RETURN_WINDOW_DAYS_DEFAULT、未設定なら 30 日）
+const RETURNS_POLICY_SUMMARY = buildReturnsPolicySummary(
+    resolveReturnWindowDays(null)
+);
 
 async function accessible(page: Page) {
     expect(
@@ -48,7 +54,7 @@ for (const width of [1440, 390, 768]) {
         await name.focus();
         await expect(name).toHaveCSS("outline-style", "solid");
         const submit = main.getByRole("button", {
-            name: "返品・交換を申請する",
+            name: "相談を送信する",
         });
         await submit.click();
         await expect(

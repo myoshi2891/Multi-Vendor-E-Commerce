@@ -55,6 +55,11 @@ export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
         link: "orders",
     },
     {
+        label: "Returns",
+        icon: "boxes",
+        link: "returns",
+    },
+    {
         label: "Messages",
         icon: "messages",
         link: "messages",

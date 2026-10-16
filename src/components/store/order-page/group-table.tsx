@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import OrderStatusTag from "@/components/shared/order-status";
 import { OrderStatus, type OrderGroupWithItemsType } from "@/lib/types";
 import Image from "next/image";
@@ -6,8 +7,10 @@ import styles from "../shared/commerce.module.css";
 export default function OrderGroupTable({
     group,
     deliveryInfo,
+    returns,
 }: {
     group: OrderGroupWithItemsType;
+    returns?: ReactNode;
     deliveryInfo: {
         shippingService: string;
         deliveryMinDate: string;
@@ -83,6 +86,7 @@ export default function OrderGroupTable({
             <p id={`cancel-${group.id}`} className={styles.note}>
                 Cancellation is not available here.
             </p>
+            {returns}
         </article>
     );
 }

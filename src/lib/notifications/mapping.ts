@@ -56,6 +56,7 @@ export const NOTIFICATION_MAPPING = {
         channels: ["in_app", "email"],
         category: "transactional",
     },
+    // 配線済み（plan 088）。遷移と受信者は docs/design/returns-rma/design.md §7.2
     "rma.requested": {
         recipient: "seller",
         channels: ["in_app", "email"],
@@ -71,9 +72,21 @@ export const NOTIFICATION_MAPPING = {
         channels: ["in_app", "email"],
         category: "transactional",
     },
-    "rma.refunded": {
+    // 予約時の名前から改名した。返金の実行は DIRECTION-01 の範囲なので「解決」と呼ぶ（design §7.2）
+    "rma.resolved": {
         recipient: "customer",
         channels: ["in_app", "email"],
+        category: "transactional",
+    },
+    // 取り下げ（T4）は seller へ。運営の取り消し（T8）では顧客にも送る
+    "rma.canceled": {
+        recipient: "seller",
+        channels: ["in_app"],
+        category: "transactional",
+    },
+    "rma.received": {
+        recipient: "customer",
+        channels: ["in_app"],
         category: "transactional",
     },
 } as const satisfies Record<string, NotificationRule>;

@@ -2,7 +2,7 @@ import { ABOUT_SECTIONS } from "./about";
 import { FAQ_SECTIONS } from "./faqs";
 import { LEGAL_SECTIONS } from "./legal";
 import { PRODUCT_SUPPORT_SECTIONS } from "./product-support";
-import { RETURNS_POLICY_SUMMARY } from "./returns";
+import { buildReturnsPolicySummary } from "./returns";
 import type { StaticSection } from "../static-page-layout";
 
 /**
@@ -32,7 +32,9 @@ describe("static content data", () => {
         }
     );
 
-    it("RETURNS_POLICY_SUMMARY は title/intro 文字列と非空 points を持つ", () => {
+    it("buildReturnsPolicySummary は title/intro 文字列と非空 points を持ち、日数を差し込む", () => {
+        const RETURNS_POLICY_SUMMARY = buildReturnsPolicySummary(21);
+        expect(RETURNS_POLICY_SUMMARY.points[0]).toContain("21 日以内");
         // Assert
         expect(typeof RETURNS_POLICY_SUMMARY.title).toBe("string");
         expect(RETURNS_POLICY_SUMMARY.title.length).toBeGreaterThan(0);

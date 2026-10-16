@@ -54,13 +54,13 @@ Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-12実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-16実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3148 passed / 3151 total、3 skipped、127 snapshots passed、326 スイート（325 passed／1 skipped、failed 0）**。2026-10-12 plan 089（applySeller戻り値）後の全体Jest/coverage実測（`bun run test -- --runInBand --coverage --silent`）。Integration238／18 suitesも同日再実測。 |
-| Jest Integration テスト | **238テスト / 18スイート** — 2026-10-12実測（238/238 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
+| Jestユニットテスト | **3276 passed / 3279 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage --silent`、注文詳細の返品オプション組み立て修正後）。カバレッジ（lcov）は Branches79.08%／Functions85.13%／Lines88.94%。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
 | Playwright E2E | **66 tests/browser / 30 files（3ブラウザ計 198）** — 2026-09-03 実測（`bunx playwright test --list` が `Total: 198 tests in 30 files`。plan 068 の `admin-category-tree.spec.ts` で +1 test/browser・+1 file。本 spec は **3 ブラウザで緑**を実測 —— chromium は dev / 本番ビルドいずれの起動モードでも緑〔`9034f300`〕、firefox 7.9s / webkit 12.7s は本番ビルド起動で pass。`retries=2` のまま **flaky 0**〔2026-09-03〕）。以下は 65 tests 時点までの記録: 2026-09-02 実測（`bunx playwright test --list` が `Total: 195 tests in 29 files`。plan 067 V-2 で `search-filter.spec.ts` に **+1 test/browser** —— 旧 `?subCategory=` が 308 で正準 `?category=` へ着地することの検証）。以下は 64 時点までの記録: **64 tests/browser / 29 files（3ブラウザ計 192）** — 2026-08-31 実測（`bunx playwright test --list`）。Visual は cart / checkout / browse / product の 4 スペック（`test.skip` で chromium 限定。列挙数には 3 ブラウザ分が載る）。直前は 63 tests/browser / 28 files（計 189）・2026-08-23 実測。Chromium / Firefox / WebKit |
@@ -5796,4 +5796,155 @@ SonarCloud PR#204 の Coverage on New Code 62.3% に対し、P3 で追加した 
 |------|--------|--------|
 | テスト総数 | 3151 passed / 3154 total | **3166 passed / 3169 total** |
 | スイート数 | 327（326 passed／1 skipped） | **327（326 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 返品 RMA のバックエンド（plan 088 Step 0〜4） (2026-10-15)
+
+#### 概要
+
+`plans/README.md` の次アクション 088 のうち、スキーマ・action・在庫との接続・通知の配線までを実装した。UI（Step 5）と E2E（Step 6）は次の作業。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `prisma/schema.prisma` / `prisma/migrations/20261015042255_add_return_requests/` | `ReturnRequest` / `ReturnRequestItem`、enum 4 つ、`Store.returnWindowDays` / `acceptsReturns`、数量の CHECK 制約。ローカル DB にのみ適用 | 未コミット |
+| `src/queries/returns.ts` | T1〜T8 の action と読み取り 2 本（FOR UPDATE による R-1、冪等キーによる R-2、遷移元固定の `updateMany`） | 未コミット |
+| `src/lib/order-item-settlement.ts` | `order.ts` から精算ヘルパーを移し、返品済み数量を差し引いて戻す | 未コミット |
+| `src/lib/returns-policy.ts` / `src/lib/notifications/rma-events.ts` | 返品期限の判定、RMA の通知（`rma.resolved` へ改名、`rma.canceled` / `rma.received` を追加） | 未コミット |
+| テスト | 統合 `returns-rma.test.ts` +19、ユニット +57 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3168 passed / 3171 total | **3225 passed / 3228 total** |
+| スイート数 | 327（326 passed／1 skipped） | **330（329 passed／1 skipped）** |
+| Integration | 238 / 18 スイート | **257 / 19 スイート** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### 返品 RMA の UI（plan 088 Step 5） (2026-10-15)
+
+#### 概要
+
+注文詳細の返品欄、seller の返品キュー、`/returns-exchange` の文面を実装した。認証後の実ルートは Step 6（E2E）で確認する。統計の正本は [QA_HANDOFF](./testing/QA_HANDOFF.md)、画面の証跡は[進捗ノート](./design/design-system/PROGRESS.md#返品-rma-の-ui2026-10-15plan-088-step-5未コミット)。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/store/order-page/return-request-panel.tsx` ほか | 店舗グループごとの返品欄（申請・状態・取り下げ・追跡番号）。注文詳細ページから actions を渡す | 未コミット |
+| `src/app/dashboard/seller/stores/[storeUrl]/returns/` / `seller-returns.tsx` | seller 返品キュー（絞り込み・承認・却下・受け取り・解決）、サイドバーに Returns | 未コミット |
+| `src/app/(store)/returns-exchange/page.tsx` / `content/returns.ts` | 日数を設定から描き、注文履歴へ案内。フォームは相談窓口 | 未コミット |
+| `src/lib/returns-view.ts` | 表示用のシリアライズと適格性 | 未コミット |
+| テスト | RTL +29、design suite `returns` 10 件（新設） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3225 passed / 3228 total | **3254 passed / 3257 total** |
+| スイート数 | 330（329 passed／1 skipped） | **334（333 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+
+---
+
+### PR#206 追加レビュー対応（返品 RMA） (2026-10-15)
+
+#### 概要
+
+seller 返品キューの手動返金の注記を RESOLVED でも表示し、seed のリセットが返品記録の外部キー（Restrict）で失敗しないようにした。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/components/dashboard/seller/seller-returns.tsx` | 手動返金の注記を RECEIVED / RESOLVED の両方で表示 | 未コミット |
+| `prisma/seed/seeders/commerce-seeder.ts` | Order 削除の前に seed ユーザーの `ReturnRequest` を削除（明細は Cascade） | 未コミット |
+| `tests/component/dashboard/seller-returns.test.tsx` | RESOLVED の注記テスト +1 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3259 passed / 3262 total | **3260 passed / 3263 total** |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#206 レビュー対応（RMA 解決の終端判定） (2026-10-15)
+
+#### 概要
+
+`resolveReturnRequest` で OrderItem を `Returned` にする判定が RECEIVED の RMA まで数えていたため、同じ item の未解決 RMA の返金額が 0 になる経路を塞いだ。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/returns.ts` | 終端判定を RESOLVED の数量だけで行う（在庫の差し引きは従来どおり RECEIVED + RESOLVED） | `08bef6cb` |
+| `src/queries/returns.test.ts` | 同じ item の RECEIVED 2 件を新しい方から解決する回帰テスト +1 | `7dddb26c` |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3260 passed / 3263 total | **3262 passed / 3265 total**（`18733ad1` の +1 を含む） |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#206 レビュー対応（seller 返品キューのサーバー側ページング） (2026-10-16)
+
+#### 概要
+
+seller 返品キューが店舗の全 RMA 履歴を取得・直列化していたため、1 ページ 20 件の取得と `groupBy` による状態別件数に置き換え、フィルタとページを URL で駆動するようにした。`ReturnRequest` の削除挙動の指摘は design §9-4 どおり（`onDelete: Restrict` で返品の記録を残す）で、変更なし。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/queries/returns.ts` | `getStoreReturnRequests(storeUrl, { status?, page? })` → `{ requests, counts, total, page, pageSize }` | 未コミット |
+| `src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx` | `?status=&page=` の正規化、範囲外ページの `redirect()` | 未コミット |
+| `src/components/dashboard/seller/seller-returns.tsx` | URL 駆動のフィルタ・ページ送り、件数はサーバーの `counts` から | 未コミット |
+| `src/lib/returns-view.ts` | `STORE_RETURNS_PAGE_SIZE`・`ReturnStatusCounts`・`emptyReturnStatusCounts` | 未コミット |
+| `tests/fixtures/returns/*` | 新しい props とモック `push` の URL 遷移 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3262 passed / 3265 total | **3275 passed / 3278 total**（返金額レビュー対応の `returns.test.ts` +1 を含む） |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
+| 型エラー | 0 件 | **0 件** |
+
+---
+
+### PR#206 レビュー対応（注文詳細の返品オプション組み立て） (2026-10-16)
+
+#### 概要
+
+`/order/[orderId]` で `buildGroupReturnOptions` が `try` の外にあり、`RETURN_WINDOW_DAYS_DEFAULT` が不正だとページ全体が落ちていたため、組み立てを `try` 内へ移して既存の再読み込み案内に倒した。あわせて `04-interfaces.md` の `/returns-exchange` の描画モード記述（`force-dynamic`）を実装に合わせた。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `src/app/(fullscreen)/order/[orderId]/page.tsx` | `returnOptions` を `{}` で初期化し、`try` 内で組み立て | 未コミット |
+| `tests/component/store/order-detail-page.test.tsx` | 不正な返品日数設定でもページが描画される回帰テスト +1 | 未コミット |
+| `specs/multi-vendor-ecommerce/04-interfaces.md` | 公開サポートページの描画モードを区別 | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| テスト総数 | 3275 passed / 3278 total | **3276 passed / 3279 total** |
+| スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
