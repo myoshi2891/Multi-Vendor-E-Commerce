@@ -148,3 +148,8 @@ DS-PAGE-004 出店申請。既存実装の回帰確認（新規Redなし・追�
 ### 販売者8再監査 Step 3 DS-PAGE-055（2026-10-16）
 
 在庫管理: TDD Red: 無効な入力にaria-invalid/説明関連付けがなくRTL1件失敗。Green: invalid時のみエラーIDをaria-describedbyに関連付け、再入力で解除。RTL7/7・seven residual inventory6/6（3幅×light/dark・validation/Enter/pending/error/retry/success・44px・axe AA）。390px dark画像目視。型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 4 DS-PAGE-057（2026-10-16）
+
+注文一覧: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual orders6/6（3幅×light/dark・保存失敗/値保持/retry/success・支払意味色・詳細Dialog・Escape focus復帰・44px・axe AA）。390px dark画像目視、関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
