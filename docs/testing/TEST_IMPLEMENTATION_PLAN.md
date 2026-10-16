@@ -1343,3 +1343,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-16): 受け入れ未完了8 Step 6 DS-PAGE-010 Contact。表示/状態テストと関連仕様同期。範囲・保留は[デザイン進捗](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。
 
 - ✅ Completed (2026-10-16): 受け入れ未完了8 Step 7 DS-PAGE-005 About。表示/状態テストと関連仕様同期。範囲・保留は[デザイン進捗](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。
+
+- ✅ Completed (2026-10-16): 受け入れ未完了8 Step 8 DS-PAGE-004 出店申請。表示/状態テストと関連仕様同期。範囲・保留は[デザイン進捗](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。

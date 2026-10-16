@@ -594,6 +594,8 @@ test(`pending eight read-only ${path}`, async ({browser},info) => {
                 if (path === "/seller/apply") {
                     await clerk.loaded({ page });
                     await expect(main.getByRole("link",{name:"Sign in"})).toHaveCount(0);
+                    await expect(main.getByRole("button", { name: "Previous", exact: true })).toBeDisabled();
+                    await expect(main.getByRole("button", { name: "Next", exact: true })).toBeEnabled();
                 }
                 if (path.includes("history")) {
                     if (process.env.DESIGN_HISTORY_IDS) await expect(main.locator('[data-variant="editorial"]')).toBeVisible();

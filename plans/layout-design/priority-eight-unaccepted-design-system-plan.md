@@ -37,7 +37,7 @@
 - [x] Step 5 サインアップ
 - [x] Step 6 Contact
 - [x] Step 7 About
-- [ ] Step 8 出店申請
+- [x] Step 8 出店申請
 - [ ] 最終統合・文書同期
 
 [移行元計画](design-system-adoption-plan.md) / [進捗](../../docs/design/design-system/PROGRESS.md)

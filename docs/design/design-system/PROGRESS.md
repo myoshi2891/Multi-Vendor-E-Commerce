@@ -1822,3 +1822,7 @@ Step4の共通AuthFrame/theme/appearanceをサインアップへ適用し実SDK�
 ### Step 7 DS-PAGE-005 About
 
 既存実装の回帰確認（新規Redなし・追加改修不要）。priority About3/3: tokens/44px/明暗focus/アンカー・既存本文とCTA・axe AA。公開Next実route3/3。Contact/About/申請関連RTL計17/17。390px画像目視、型0・lint0 errors/既存8 warnings。既存本文・画像・SEO/metadata・リンク先・公開Server Component仕様は変更不要。
+
+### Step 8 DS-PAGE-004 出店申請
+
+既存実装の回帰確認（新規Redなし・追加改修不要）。seven apply6/6: 3幅の4段階・入力保持・upload adapter・validation/pending/error/retry/success・説明summary/44px/focus・axe AA。認証後read-only1/1内3幅、guest3/3。Contact/About/申請関連RTL計17/17。実routeのClerk読込とPrevious無効/Next有効の準備完了を待ち、動的DOM列挙のraceを解消（製品Redではない）。PC/390px画像目視、型0・lint0 errors/既存8 warnings。実Cloudinary upload/申請保存は対象外で既存保留を維持。既存4段階・schema・payload・業務契約は変更不要。
