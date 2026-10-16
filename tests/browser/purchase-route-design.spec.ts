@@ -651,7 +651,7 @@ test("following real route: follow, list, unfollow and persist after reload", as
             await expect(page.getByRole("heading",{name:"No followed stores yet."})).toBeVisible();
         });
     } finally {
-        await db.user.update({where:{email:prepared.customerEmail},data:{following:{set:[]}}});
+        await db.user.update({where:{email:prepared.customerEmail},data:{following:{disconnect:{url:storeUrl}}}});
         await db.$disconnect();
     }
 });
