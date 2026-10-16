@@ -223,3 +223,6 @@ DS-PAGE-057: SellerOrders/SellerOrderSummary/StatusEditorを導入。取得失�
 - [x] Step 7 配送 — DS-PAGE-064: 表示移行・関連検証・仕様同期。
 
 - [x] Step 8 店舗設定 — 操作と保存状態: 表示移行・関連検証・仕様同期。
+
+
+- [x] 販売者8再監査 Step 1 DS-PAGE-058（2026-10-16）: 店舗概要 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。

@@ -1441,3 +1441,8 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 ### 受け入れ未完了8最終統合（2026-10-16）
 
 補助47/47（following10・history13・home9・Contact6・About3・apply6）、公開実route9/9、認証実SDK10/10（5幅×2画面）、認証後read-only3/3（各3幅）、申請guest3/3。計72/72。 実route/SDKとadapterを区別し、認証2画面はpageerrorを検出する。型/lint/harness・文書同期完了。統計/制約は[QA正本](../../docs/testing/QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。
+
+
+### 販売者8再監査 Step 1 DS-PAGE-058（2026-10-16）
+
+店舗概要: 既存実装の回帰確認（新規Redなし・追加改修不要）。大きな注文金額のfixture/ブラウザー回帰を追加。seven residual overview 6/6（3幅×light/dark・KPI/注文金額の面内表示・空・axe AA）、390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。

@@ -1347,3 +1347,6 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-16): 受け入れ未完了8 Step 8 DS-PAGE-004 出店申請。表示/状態テストと関連仕様同期。範囲・保留は[デザイン進捗](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。
 
 - ✅ Completed (2026-10-16): 受け入れ未完了8画面の最終統合。全体Jest/coverage・72件のブラウザー受け入れ・仕様/QA/dashboard同期。統計正本は[QA_HANDOFF](QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。
+
+
+- [x] 販売者8再監査 Step 1 DS-PAGE-058（2026-10-16）: 店舗概要 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。

@@ -987,3 +987,6 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 8 DS-PAGE-004 出店申請: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
 
 - [x] 未完了8最終統合: Jest3277/3280（3 skipped）・browser72/72・型/lint/harness・仕様/QA同期。台帳68画面＝検証済み57／保留4／TODO7／実装済み0。部品248件の既存判定は保持。
+
+
+- [x] 販売者8再監査 Step 1 DS-PAGE-058 店舗概要: 今回範囲の補助検証・仕様同期。[計画](priority-eight-seller-reaudit-design-system-plan.md)。過去の全画面判定は維持。

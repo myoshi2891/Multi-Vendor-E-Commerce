@@ -747,6 +747,12 @@ for (const width of [1440, 768, 390])
                 }),
                 "KPI must contain large monetary values"
             ).toBe(true);
+            const recentOrder = page.getByText("$9,999,999,999.99", { exact: true });
+            await expect(recentOrder).toBeVisible();
+            expect(await recentOrder.evaluate(node => {
+                const row = node.closest("li")!;
+                return row.scrollWidth <= row.clientWidth;
+            }), "recent order totals fit their panel").toBe(true);
             await sellerEvidence(page, info, "seller-large.png");
             await page.goto("/?screen=overview&empty=1");
             await page.evaluate(
