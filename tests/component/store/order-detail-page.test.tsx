@@ -163,3 +163,35 @@ test("returns: a failed return lookup keeps the order page and explains it", asy
         screen.queryByRole("button", { name: "Request a return" })
     ).not.toBeInTheDocument();
 });
+
+test("returns: an invalid return window setting keeps the order page and explains it", async () => {
+    // Arrange: 店舗の上書きが無く、既定の返品日数の設定が不正（組み立て時に throw する）
+    const previous = process.env.RETURN_WINDOW_DAYS_DEFAULT;
+    process.env.RETURN_WINDOW_DAYS_DEFAULT = "abc";
+    jest.mocked(getOrder).mockResolvedValue(deliveredOrder());
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+        // Act
+        render(
+            await OrderPage({
+                params: Promise.resolve({ orderId: "order-id" }),
+            })
+        );
+    } finally {
+        if (previous === undefined) {
+            delete process.env.RETURN_WINDOW_DAYS_DEFAULT;
+        } else {
+            process.env.RETURN_WINDOW_DAYS_DEFAULT = previous;
+        }
+    }
+    // Assert
+    expect(screen.getAllByTestId("order-total")).toHaveLength(1);
+    expect(
+        screen.getByText(
+            "Return requests could not be loaded. Reload the page to try again."
+        )
+    ).toBeInTheDocument();
+    expect(
+        screen.queryByRole("button", { name: "Request a return" })
+    ).not.toBeInTheDocument();
+});
