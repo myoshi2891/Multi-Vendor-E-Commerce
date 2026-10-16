@@ -971,3 +971,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-eight-unaccepted-design-system-plan.md)。既存台帳・履歴を保持し今回の受け入れを別記録。
 
 - [x] Step 1 DS-PAGE-022 フォロー店舗: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。
+
+- [x] Step 2 DS-PAGE-024 閲覧履歴: 実装/既存回帰・確認範囲の記録・仕様同期。全状態の実業務受け入れとは区別する。

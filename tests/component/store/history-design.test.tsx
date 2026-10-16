@@ -54,6 +54,8 @@ it("lookup failure is announced and retries without losing stored IDs", async ()
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByText("A rediscovered piece")).toBeInTheDocument();
     expect(query).toHaveBeenLastCalledWith(["v1"], 1);
+    expect(localStorage.getItem("productHistory")).toBe('["v1"]');
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 it("out of range fetches the last page and replaces the URL", async () => {
     localStorage.setItem("productHistory", '["v1"]');

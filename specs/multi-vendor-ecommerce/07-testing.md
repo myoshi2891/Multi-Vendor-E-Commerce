@@ -1400,3 +1400,8 @@ DS-PAGE-006/037/019/007/008/003/009/033。先行Redはsort境界contrast、画�
 ### 受け入れ未完了8 Step 1（2026-10-16）
 
 DS-PAGE-022: browser先行Redはキーボード再試行後のfocus消失3/3。無効化でbodyへ移った場合だけ操作元へfocusを復帰し、利用者が別要素へ移動した場合は奪わない。Green: priority following10/10（3幅＋480px・axe AA・空/失敗保持/件数/再試行/成功/URL）、RTL following5/5、関連discovery18/18（追加前）。認証後read-only1/1内3幅は既存顧客の空状態、実更新は対象外。型0・lint0 errors/既存8 warnings、390px画像目視。実データあり/実更新の既存保留は維持。要件・設計・テストを同期、overview/architecture/data-model/interfacesは既存契約不変のため変更不要。
+
+
+### 受け入れ未完了8 Step 2（2026-10-16）
+
+DS-PAGE-024: 既存実装の回帰確認（新規Redなし）。priority history13/13（3幅＋480px・axe AA・loading/error/retry/empty・比較操作・URL/back）、history/discovery RTL14/14。再試行後の保存ID不変とalert消去も回帰追加。認証後read-only1/1内3幅で既存12variantの保存IDから商品表示とページングを確認、390px画像目視。商品画像placeholderは既存テストデータ。型0・lint0 errors/既存8 warnings。取得・保存順・URL・API/DBの仕様変更は不要。

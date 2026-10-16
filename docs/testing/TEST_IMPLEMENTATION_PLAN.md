@@ -1331,3 +1331,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 全体Jest3168 passed / 3171 total（3 skipped）、327スイート（326 passed／1 skipped）、127 snapshots。Statements88.26%（10969/12428）／Branches78.63%（6785/8628）／Functions84.66%（2147/2536）／Lines88.79%（9988/11248）。dashboard408 files / 405 lcov / 18 of 80 cells。補助ブラウザーp4 104/104＋p3 73/73、認証後実ルート48/48（1440/768/390px × light/dark）。 実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。
 
 - ✅ Completed (2026-10-16): 受け入れ未完了8 Step 1 DS-PAGE-022 フォロー店舗。表示/状態テストと関連仕様同期。範囲・保留は[デザイン進捗](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。
+
+- ✅ Completed (2026-10-16): 受け入れ未完了8 Step 2 DS-PAGE-024 閲覧履歴。表示/状態テストと関連仕様同期。範囲・保留は[デザイン進捗](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。
