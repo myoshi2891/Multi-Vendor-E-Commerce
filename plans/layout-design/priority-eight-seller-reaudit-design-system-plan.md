@@ -38,7 +38,7 @@ SellerShell/SellerPageとseller tokensを再利用し、深緑・アイボリー
 - [x] Step 2 商品一覧
 - [x] Step 3 在庫
 - [x] Step 4 注文
-- [ ] Step 5 メッセージ
+- [x] Step 5 メッセージ
 - [ ] Step 6 商品登録
 - [ ] Step 7 配送
 - [ ] Step 8 店舗設定
