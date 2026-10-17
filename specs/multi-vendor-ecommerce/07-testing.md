@@ -1515,3 +1515,8 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 ### 未完了8画面 Step 5 DS-PAGE-025（2026-10-17）
 
 閲覧履歴転送: 既存aliasの単体回帰はdiscovery-regression8/8の一部（Redなし）。認証後/profile/history/1とguestのsign-in、3幅の転送先表示を検証するケースを追加。ブラウザー保存・pagingの既存仕様を維持。API/DB変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 6 DS-PAGE-051（2026-10-17）
+
+ダッシュボード入口: 既存role分岐の回帰（Redなし）。単体4/4でguest/USER→home、ADMIN→admin、SELLER→seller。実routeの4roleと転送先heading/axe/overflowのケースを追加。転送先・認証・DB仕様は変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。

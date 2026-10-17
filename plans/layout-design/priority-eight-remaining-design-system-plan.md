@@ -23,7 +23,7 @@
 - [x] Step 3 DS-PAGE-020（画面単位の実装/回帰・文書同期、実route最終結果は統合欄）
 - [x] Step 4 DS-PAGE-023（画面単位の実装/回帰・文書同期、実route最終結果は統合欄）
 - [x] Step 5 DS-PAGE-025（画面単位の実装/回帰・文書同期、実route最終結果は統合欄）
-- [ ] Step 6 DS-PAGE-051
+- [x] Step 6 DS-PAGE-051（画面単位の実装/回帰・文書同期、実route最終結果は統合欄）
 - [ ] Step 7 DS-PAGE-052
 - [ ] Step 8 DS-PAGE-013
 - [ ] 最終統合・文書同期

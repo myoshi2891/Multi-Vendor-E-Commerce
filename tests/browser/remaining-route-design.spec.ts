@@ -241,3 +241,41 @@ for (const alias of [
         await expect(page.locator("[data-profile-shell]")).toHaveCount(0);
     });
 }
+
+for (const role of ["ADMIN", "SELLER", "USER", "guest"] as const) {
+    test(`DS-PAGE-051 dashboard entry ${role}`, async ({ page }, info) => {
+        test.setTimeout(120000);
+        await setupClerkTestingToken({ page });
+        await page.goto("/");
+        if (role !== "guest")
+            await clerk.signIn({
+                page,
+                emailAddress:
+                    role === "ADMIN"
+                        ? prepared.adminEmail
+                        : role === "SELLER"
+                          ? prepared.sellerEmail
+                          : prepared.customerEmail,
+            });
+        await page.goto("/dashboard");
+        await expect(page).toHaveURL((url) =>
+            role === "ADMIN"
+                ? url.pathname === "/dashboard/admin"
+                : role === "SELLER"
+                  ? prepared.stores.some(
+                        (store) =>
+                            url.pathname ===
+                            `/dashboard/seller/stores/${store.url}`
+                    )
+                  : url.pathname === "/"
+        );
+        await expect(
+            page.getByRole("main").getByRole("heading", { level: 1 })
+        ).toBeVisible();
+        await masterAccessible(page);
+        await page.screenshot({
+            path: info.outputPath("dashboard-destination.png"),
+            fullPage: true,
+        });
+    });
+}
