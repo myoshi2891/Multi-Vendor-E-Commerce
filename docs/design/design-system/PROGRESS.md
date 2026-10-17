@@ -1,6 +1,10 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-16 保留3件の実環境受け入れ（現在地）
+## 2026-10-17 返品 RMA の実ルート受け入れ（現在地）
+
+DS-PAGE-068（seller 返品キュー）・DS-COMP-247（注文詳細の返品欄）・DS-COMP-248（SellerReturns）を検証済みへ更新。suite `returns-route` 12/12（×3 回 36/36）。[証跡](#返品-rma-の実ルート受け入れ2026-10-17)。台帳68画面＝検証済み60／保留1／TODO7／実装済み0、部品248件。
+
+## 2026-10-16 保留3件の実環境受け入れ（履歴）
 
 DS-PAGE-022（フォロー店舗）・DS-PAGE-004（出店申請）を検証済みへ更新し、販売者8再監査の実route（DS-SELLER-REAUDIT-ROUTES）を解除。[証跡](#保留3件の実環境受け入れ2026-10-16)。台帳68画面＝検証済み59／保留2／TODO7／実装済み0、部品248件。
 
@@ -165,7 +169,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
 | DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-11実ルート受け入れ） | P2 | 検証済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)／[残存6画面](#p2残存6画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)／[保留2件の解消](#p2保留2件の解消2026-10-11)。実Clerk・実Action・専用DBで未読3件の3幅表示、単件/リンク遷移/一括の既読と再読込保持を確認 |
-| DS-PAGE-068 | `/dashboard/seller/stores/[storeUrl]/returns` | 新規（2026-10-15・plan 088 Step 5） | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx>) | 実装済み・fixture 補助検証済み（3幅×light/dark・axe 0）。認証後の実ルートは保留（解除: plan 088 Step 6 の seed と E2E）。2026-10-17: 機能の往復（申請→承認→受け取り→解決→Resolved 表示）を `tests/e2e/returns-rma.spec.ts` で確認（chromium 1/1）。3幅×light/dark・axe の実ルート受け入れは未実施のため保留を維持。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-PAGE-068 | `/dashboard/seller/stores/[storeUrl]/returns` | 新規（2026-10-15・plan 088 Step 5） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx>) | 実装済み・fixture 補助検証済み（3幅×light/dark・axe 0）。認証後の実ルートは保留（解除: plan 088 Step 6 の seed と E2E）。2026-10-17: 機能の往復を `tests/e2e/returns-rma.spec.ts`（3 ブラウザ）、表示を実ルート suite `returns-route`（3幅・seller は light/dark・axe AA 0）で受け入れ。[実ルート受け入れ](#返品-rma-の実ルート受け入れ2026-10-17)[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 
 ## 部品台帳
 
@@ -423,8 +427,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-245 | P4 | 属性選択肢Client境界 | [AdminAttributeOptions](../../../src/components/dashboard/admin/admin-attribute-options.tsx) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
 
 | DS-COMP-246 | P2 | 公開editorial操作 | [storefront controls CSS](../../../src/components/store/shared/storefront-controls.module.css) | 検証済み | Contact/FAQ/Product support/Aboutのopt-inのみ。3幅のfixture/実route・44px/focus/axeと仕様同期。[証跡](#ストアフロント残存8画面移行記録2026-10-12) |
-| DS-COMP-247 | P2 | 返品 RMA（顧客） | [ReturnRequestPanel](../../../src/components/store/order-page/return-request-panel.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。2026-10-16 にフィルタとページ送りを URL（`?status=&page=`）駆動・サーバー側ページングへ変更（fixture `returns` 12/12）。認証後の実ルートは保留（解除: plan 088 Step 6）。2026-10-17: 機能の往復（申請→承認→受け取り→解決→Resolved 表示）を `tests/e2e/returns-rma.spec.ts` で確認（chromium 1/1）。3幅×light/dark・axe の実ルート受け入れは未実施のため保留を維持。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
-| DS-COMP-248 | P3 | 返品 RMA（seller） | [SellerReturns](../../../src/components/dashboard/seller/seller-returns.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。2026-10-17: 機能の往復（申請→承認→受け取り→解決→Resolved 表示）を `tests/e2e/returns-rma.spec.ts` で確認（chromium 1/1）。3幅×light/dark・axe の実ルート受け入れは未実施のため保留を維持。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-COMP-247 | P2 | 返品 RMA（顧客） | [ReturnRequestPanel](../../../src/components/store/order-page/return-request-panel.tsx) | 検証済み | 実装済み・RTL と fixture で補助検証済み。2026-10-16 にフィルタとページ送りを URL（`?status=&page=`）駆動・サーバー側ページングへ変更（fixture `returns` 12/12）。認証後の実ルートは保留（解除: plan 088 Step 6）。2026-10-17: 機能の往復を `tests/e2e/returns-rma.spec.ts`（3 ブラウザ）、表示を実ルート suite `returns-route`（3幅・seller は light/dark・axe AA 0）で受け入れ。[実ルート受け入れ](#返品-rma-の実ルート受け入れ2026-10-17)[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-COMP-248 | P3 | 返品 RMA（seller） | [SellerReturns](../../../src/components/dashboard/seller/seller-returns.tsx) | 検証済み | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。2026-10-17: 機能の往復を `tests/e2e/returns-rma.spec.ts`（3 ブラウザ）、表示を実ルート suite `returns-route`（3幅・seller は light/dark・axe AA 0）で受け入れ。[実ルート受け入れ](#返品-rma-の実ルート受け入れ2026-10-17)[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 
 ## 前セッションの確認結果
 
@@ -1899,6 +1903,19 @@ SDDの[概要](../../../specs/multi-vendor-ecommerce/00-overview.md)・[アー�
 **2026-10-16 解除（同日追補）**: 原因は専用DB `multivendor_e2e` のマイグレーション適用漏れ（27/28、`20261015042255_add_return_requests` のみ未適用。dev DB へのみ適用されていた）で、構造ずれではない。追加のみのSQLを `bunx prisma migrate deploy` で適用し（seedなし、既存の店舗6・ユーザー7・注文14件は不変）、`prepare-seller-route.ts`（冪等）後に suite `seller-eight-route` の表示 **48/48**（8画面×3幅×light/dark、axe AA・overflow・pageerror・スクショ）。[計画](../../../plans/layout-design/pending-three-real-route-acceptance-plan.md)。
 
 計画1・画面8・最終統合1の10コミット。TDDは在庫エラー関連付けRTL1件のRed→Green、店舗概要の追加回帰は実装前からGreenとして記録。他7画面は既存実装の回帰確認。
+
+## 返品 RMA の実ルート受け入れ（2026-10-17）
+
+[計画](../../../plans/layout-design/returns-real-route-acceptance-plan.md)。対象: DS-PAGE-068 / DS-COMP-247 / DS-COMP-248（2026-10-15 の Step 5 で実装・fixture 補助検証済み、認証後の実ルートは保留だった）。既存実装の回帰確認で、製品コードの変更なし（Red は創作しない）。
+
+- **準備**: `scripts/design/prepare-returns-route.ts`（新規）。専用DB `multivendor_e2e`（`migrate status` 28/28）で、既存の Clerk テスト販売者・顧客を再利用し、返品専用店舗 `design-returns-store` に Delivered 注文 1 件と 6 状態の RMA（REQUESTED / APPROVED / RECEIVED / RESOLVED / REJECTED / CANCELED）を冪等に投入する。他 suite の店舗には触れない。商品行は作らない（OrderItem はスナップショット）。
+- **suite**: `returns-route`（route・port 3136・`tests/browser/returns-route-design.spec.ts`）。読み取りのみで保存操作はしない（往復は `tests/e2e/returns-rma.spec.ts` が担保）。
+  - seller キュー 1440 / 768 / 390 × light / dark（6 件）: 200、カード 6 枚と `All (6)`、状態ごとの操作ボタン、`html.dark` の切り替え、横溢れなし、axe（WCAG 2.1 A/AA・全ページ）違反 0、pageerror 0、スクショ。
+  - seller の入力状態 × 3 幅: 却下理由欄の展開（`aria-expanded`）と受け取り状態の選択後に、横溢れなし・axe 0。
+  - 注文詳細の返品欄 × 3 幅: 見出しとカード 6 枚、キーボード（Enter）で申請フォームを開く、横溢れなし・axe（`main`）0。
+- **結果**: 12/12、`--repeat-each=2` で 24/24（計 36/36）。初回の 3 件失敗は spec のロケーター（`Reject` が `Confirm rejection` に部分一致）で、`exact: true` に修正した（製品の不具合ではない）。PC・モバイルのスクショを目視（390 の seller dark、390 の注文詳細）。右下の「N」は Next.js dev のインジケーター。
+- **関連**: `tests/e2e/returns-rma.spec.ts` は chromium / firefox / webkit で通過（3 ワーカー並列 ×2 と `--repeat-each=2` で計 9/9。初回の webkit 1 件は `make install` 直後の dev コンパイル中で、以後は再現しない）。`check:playwright`・tsc 0・lint 0 errors（既存 8 warnings）。dev 起動で追記される `tsconfig.json` の include は戻した。Jest 不変。
+- **仕様**: 04-interfaces / 05-workflows は Step 5 で同期済みで、今回は表示の検証のみのため変更不要。07-testing に suite を追記。
 
 ## 保留3件の実環境受け入れ（2026-10-16）
 

@@ -1,13 +1,24 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-17 返品 RMA の E2E（plan 088 Step 6・最新、未コミット）
+## 2026-10-17 返品 RMA の実ルート受け入れ（最新、未コミット）
+
+[計画](../../plans/layout-design/returns-real-route-acceptance-plan.md)／[証跡](../design/design-system/PROGRESS.md#返品-rma-の実ルート受け入れ2026-10-17)。DS-PAGE-068・DS-COMP-247・DS-COMP-248 を検証済みへ。台帳68画面＝検証済み60／保留1／TODO7。
+
+- **追加**: `scripts/design/prepare-returns-route.ts`（専用DB検査・既存 Clerk テスト販売者/顧客・返品専用店舗に Delivered 注文 1 件と 6 状態の RMA を冪等投入）、suite `returns-route`（port 3136）、`tests/browser/returns-route-design.spec.ts`（読み取りのみ 12 件: seller キュー 3幅×light/dark、seller 入力状態 3幅、注文詳細の返品欄 3幅。axe AA・横溢れ・pageerror・スクショ）。
+- **結果**: 12/12、`--repeat-each=2` 24/24。axe 違反 0。初回の 3 件失敗は spec のロケーター（`Reject` が `Confirm rejection` に部分一致）で `exact: true` に修正。製品コード変更なし。
+- **本体 E2E の 3 ブラウザ**: `bunx playwright install firefox webkit` 後、`returns-rma.spec.ts` は chromium / firefox / webkit で通過（3 ワーカー並列 ×2・`--repeat-each=2` で計 9/9）。初回の webkit 1 件失敗は `make install` 直後の dev コンパイル中で、以後再現しない（タイムアウトの変更はしていない）。
+- **再実行手順**: `.env` を読み込んだうえで `DATABASE_URL`/`DIRECT_URL`/`E2E_DATABASE_URL` を `localhost:5432/multivendor_e2e` に揃える → `bunx prisma migrate status`（適用漏れ無し）→ `bun scripts/design/prepare-returns-route.ts <out.json>` → `DESIGN_SUITE=returns-route DESIGN_BROWSER_CHANNEL=chrome DESIGN_RETURNS_ROUTE=<out.json> bun run test:design`。終了後に `git checkout -- tsconfig.json`。
+- 統計: Jest / Integration 不変。tsc 0・lint 0 errors（既存 8 warnings）・`check:playwright` 成功。
+- **リモート DB**: マイグレーション `20261015042255_add_return_requests` は適用済み（2026-10-17 05:35:59 UTC。`bunx prisma migrate status` で `.env` の接続先が 28/28、`_prisma_migrations` の `finished_at` 記録あり・`rolled_back_at` なし、`ReturnRequest` / `ReturnRequestItem` と `Store.returnWindowDays` / `acceptsReturns` の存在を読み取りで確認）。ユーザーが手動で `migrate deploy` を実行して適用。plan 088 の残作業はなし。
+
+## 2026-10-17 返品 RMA の E2E（plan 088 Step 6）
 
 [計画](../../plans/088-implement-returns-rma.md)。`tests/e2e/returns-rma.spec.ts`（新規・1 テスト）: 顧客が `/order/[orderId]` で申請 → seller が `/dashboard/seller/stores/[storeUrl]/returns` で承認 → 受け取り（Damaged）→ 解決 → 顧客の再読込で Resolved と返金見込み、DB で各遷移の時刻と `restockedQuantity = 0` を照合。
 
 - **計画からの逸脱**: 088 本文の「`seed:e2e` に Delivered 注文を足す」は採らない。注文の所有者は Clerk の動的ユーザーである必要があり、`seed-e2e.ts` は Clerk を触らないため。`messages.spec.ts` と同じく `beforeAll` で Prisma に直接起票する。Product / Size は作らない（OrderItem の id 列は FK の無いスナップショット。実商品は seed カテゴリの件数・在庫を前提にする他 spec を並列で汚す）。在庫の戻しは統合テスト（`returns-rma.test.ts` シナリオ 7）が担保。
 - **結果**: chromium **1/1 passed**（33.1s・Docker DB `multivendor_dev` に `DATABASE_URL`/`DIRECT_URL` を `localhost:5432` で接続、`PLAYWRIGHT_CHROME_EXECUTABLE` にシステムの Chrome）。firefox / webkit はローカルにブラウザ本体が無く launch 失敗（spec の失敗ではない・未実行）。事後 DB の `ReturnRequest` / `e2e-rma-store-*` / `e2e-rma-*` ユーザーは 0 件（cleanup 確認）。`bunx playwright test --list` **450 tests / 47 files**（+3 = 1 テスト × 3 ブラウザ、+1 file）。tsc 0・lint 0 errors（既存 8 warnings）・`check:playwright` 成功。Jest / Integration は変更なし（統計不変）。
 - **環境の注意**: 実行時、:3000 の Docker app が `/` で 500（`Cannot find module '@prisma/client-<hash>'`・コンテナ起動直後の最初のリクエストから）を返していたため、Playwright が再利用せずに `bun run build && bun run start` を走らせ、:3000 の bind 失敗で停止した。`make install`（node_modules volume の同期と `prisma generate`）で復旧。その副作用で、リポジトリの `.next` に本番ビルドの成果物が書かれている（tracked ファイルの変更なし）。
-- **保留の扱い**: DS-PAGE-068 / DS-COMP-247 / 248 の「認証後の実ルート」は、機能の往復だけを確認したので**保留のまま**（3 幅 × light/dark・axe の実ルート受け入れは未実施）。
+- **保留の扱い**: DS-PAGE-068 / DS-COMP-247 / 248 の「認証後の実ルート」は、機能の往復だけを確認したので**保留のまま**（3 幅 × light/dark・axe の実ルート受け入れは未実施）。→ 同日、上の「返品 RMA の実ルート受け入れ」で解除。firefox / webkit も同日に実行して通過。
 
 ## 2026-10-16 保留3件の実環境受け入れ
 
