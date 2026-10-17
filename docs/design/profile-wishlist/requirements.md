@@ -26,3 +26,7 @@ Wishlistの見出し・件数・状態・罫線・ページャーをprofile shel
 ## 優先8画面受け入れ（2026-10-11）
 
 最終ページではNextを非リンク・aria-disabledとし、Previousのkeyboard操作と履歴復帰でもURL/currentを一致させる。全ページャリンク44×44px・focus contrast3:1以上。既存のeditorialカード・空/失敗/pending・件数は維持。
+
+### 購入10画面再監査 Step 8（2026-10-18）
+
+DS-PAGE-033: 480px境界、current境界contrastとhover、末尾disabled、URLページング/履歴復帰、空/失敗/pendingを既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-8-ds-page-0332026-10-18)を参照。fixtureと認証後実routeの判定は分離する。

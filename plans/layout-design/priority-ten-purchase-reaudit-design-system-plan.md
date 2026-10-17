@@ -41,7 +41,7 @@
 - [x] Step 5: Checkoutのfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
 - [x] Step 6: 注文詳細のfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
 - [x] Step 7: 比較のfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
-- [ ] Step 8: Wishlist。
+- [x] Step 8: Wishlistのfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
 - [ ] Step 9: 注文一覧。
 - [ ] Step 10: 支払履歴。
 - [ ] 最終統合・文書同期。
