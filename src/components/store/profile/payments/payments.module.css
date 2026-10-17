@@ -40,6 +40,7 @@
 .payments select {
     font: inherit;
 }
+.payments [tabindex="-1"]:focus-visible,
 .payments a:focus-visible,
 .payments button:focus-visible,
 .payments input:focus-visible,

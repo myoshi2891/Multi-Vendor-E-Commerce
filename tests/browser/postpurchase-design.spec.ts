@@ -417,7 +417,7 @@ for (const screen of screens) {
 }
 
 // The initiating pager/retry disappears while results are loading.
-for (const screen of ["orders"]) {
+for (const screen of ["orders", "payment"]) {
     for (const width of [1440, 768, 390]) {
         test(`purchase ten ${screen} ${width}: keyboard recovery keeps a visible focus`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 1000 });

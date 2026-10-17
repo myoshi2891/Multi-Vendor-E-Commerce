@@ -2060,3 +2060,11 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 注文一覧: ページ変更・再試行・検索による取得で操作元のfocusが失われた場合、完了後に名前付き結果regionへfocusを戻す。成功・空・取得失敗を含む。待機中に利用者が別の操作へfocusを移動した場合は奪わない。結果regionはTab順へ追加せず、purchase-focusの可視枠を持つ。
 
 Red: browser3幅で結果regionがinactive、RTL2件失敗。Green: 注文/支払履歴RTL30/30、追加browser両画面8/8（初回版）。Refactor/最終は[統合証跡](#purchase-ten-final)に記録。金額/条件保持/Action/API/DB/認可契約は不変。関連要件/設計/tasks/進捗、SDD要件/品質/テストを同期。[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は契約不変のため変更不要。認証後実routeは今回別保留、過去判定を保持。
+
+<a id="purchase-ten-step-10"></a>
+
+### 購入10画面再監査 Step 10 DS-PAGE-030（2026-10-18）
+
+支払履歴: ページ変更・再試行・検索による取得で操作元のfocusが失われた場合、完了後に名前付き結果regionへfocusを戻す。成功・空・取得失敗を含む。待機中に利用者が別の操作へfocusを移動した場合は奪わない。結果regionはTab順へ追加せず、purchase-focusの可視枠を持つ。
+
+Red: browser3幅で結果regionがinactive、RTL2件失敗。Green: 注文/支払履歴RTL30/30、追加browser両画面8/8（初回版）。Refactor/最終は[統合証跡](#purchase-ten-final)に記録。金額/条件保持/Action/API/DB/認可契約は不変。関連要件/設計/tasks/進捗、SDD要件/品質/テストを同期。[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は契約不変のため変更不要。認証後実routeは今回別保留、過去判定を保持。

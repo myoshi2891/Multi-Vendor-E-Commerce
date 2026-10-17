@@ -3,7 +3,7 @@
 import type { PaymentTableDateFilter, PaymentTableFilter } from "@/lib/types";
 import { toNumberSafe } from "@/lib/utils";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import PaymentTableHeader from "./payment-table-header";
 import PaymentsHeading from "./payments-heading";
 import styles from "./payments.module.css";
@@ -50,9 +50,20 @@ export default function PaymentsTable({
     const [pending, setPending] = useState(false);
     const [error, setError] = useState(initialError);
     const inFlight = useRef(false);
+    const sectionRef = useRef<HTMLElement>(null);
+    const resultsRef = useRef<HTMLDivElement>(null);
+    const restoreFocus = useRef(false);
+    useEffect(() => {
+        if (pending || !restoreFocus.current) return;
+        restoreFocus.current = false;
+        // Pager/retry controls unmount while loading. Keep keyboard users at
+        // the refreshed results unless they moved to another control meanwhile.
+        if (document.activeElement === document.body) resultsRef.current?.focus();
+    }, [pending]);
     async function load(next: Criteria) {
         if (inFlight.current) return;
         inFlight.current = true;
+        restoreFocus.current = Boolean(sectionRef.current?.contains(document.activeElement));
         setCriteria(next);
         setPending(true);
         setError(false);
@@ -76,6 +87,7 @@ export default function PaymentsTable({
     );
     return (
         <section
+            ref={sectionRef}
             className={styles.payments}
             data-payments
             aria-label="Payment history"
@@ -88,7 +100,13 @@ export default function PaymentsTable({
                     void load({ filter, period, search, page: 1 })
                 }
             />
-            <div aria-busy={pending}>
+            <div
+                ref={resultsRef}
+                role="region"
+                aria-label="Payment results"
+                tabIndex={-1}
+                aria-busy={pending}
+            >
                 {pending ? (
                     <div className={styles.message} role="status">
                         <p>Loading payments…</p>

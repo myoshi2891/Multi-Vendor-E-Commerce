@@ -43,5 +43,5 @@
 - [x] Step 7: 比較のfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
 - [x] Step 8: Wishlistのfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
 - [x] Step 9: 注文一覧のfocus修正・TDD・fixture検証・仕様同期。今回の認証後実routeは保留。
-- [ ] Step 10: 支払履歴。
+- [x] Step 10: 支払履歴のfocus修正・TDD・fixture検証・仕様同期。今回の認証後実routeは保留。
 - [ ] 最終統合・文書同期。

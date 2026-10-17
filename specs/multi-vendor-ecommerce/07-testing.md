@@ -1571,3 +1571,7 @@ DS-PAGE-033 Wishlist: 480px境界、current境界contrastとhover、末尾disabl
 ### 購入10画面再監査 Step 9（2026-10-18）
 
 DS-PAGE-028: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復帰（ページ変更・再試行・失敗・空）と、待機中に移動したfocusを奪わないことをRTL/既存postpurchase suiteで検証。
+
+### 購入10画面再監査 Step 10（2026-10-18）
+
+DS-PAGE-030: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復帰（ページ変更・再試行・失敗・空）と、待機中に移動したfocusを奪わないことをRTL/既存postpurchase suiteで検証。
