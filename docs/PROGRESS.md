@@ -2,7 +2,7 @@
 
 ## 2026-10-16 販売者8画面再監査
 
-在庫入力エラーのaria-invalid/説明関連付けをTDDで修正、店舗概要に大きな注文金額の回帰を追加。他7画面は既存適用の回帰確認。全体Jest **3280 passed / 3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots**。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。dashboard418 files/412 lcov/18 of 80 cells（セル状態不変）。型0・lint0 errors/既存8 warnings・harness成功。補助ブラウザーseven85/85・six74/74、計159/159。10段階コミット。今回の認証後実routeは専用DBの列不足で保留し、過去履歴を保持。[計画](../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md)／[QA正本](testing/QA_HANDOFF.md#現在の実装状態サマリ)。
+在庫入力エラーのaria-invalid/説明関連付けをTDDで修正、店舗概要に大きな注文金額の回帰を追加。他7画面は既存適用の回帰確認。全体Jest **3280 passed / 3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots**。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。dashboard418 files/412 lcov/18 of 80 cells（セル状態不変）。型0・lint0 errors/既存8 warnings・harness成功。補助ブラウザーseven85/85・six74/74、計159/159。10段階コミット。今回の認証後実routeは当初、専用DBの列不足（`Store.returnWindowDays`）で保留したが、同日に未適用migrationを適用してDS-SELLER-REAUDIT-ROUTESを解除し、seller-eight-route 48/48で受け入れ（[保留3件の実環境受け入れ](testing/QA_HANDOFF.md#2026-10-16-保留3件の実環境受け入れ最新)）。過去履歴は保持。[計画](../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md)／[QA正本](testing/QA_HANDOFF.md#現在の実装状態サマリ)。
 
 ## 2026-10-16 受け入れ未完了8画面
 
