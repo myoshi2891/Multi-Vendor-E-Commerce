@@ -75,3 +75,7 @@
 ## 優先8画面受け入れ（2026-10-11）
 
 個別削除・全消去後は、消えない「Your selection」見出しへkeyboard focusを戻す。選択件数はpoliteに通知。最大4件・永続化・取得失敗/retry・古い取得結果の抑止は既存契約を保持。
+
+### 購入10画面再監査 Step 7（2026-10-18）
+
+DS-PAGE-009: 700px境界と局所scroll、hero44px/focus、個別削除/全削除後のfocus復帰、空/失敗/retry・4件制限を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-7-ds-page-0092026-10-18)を参照。fixtureと認証後実routeの判定は分離する。
