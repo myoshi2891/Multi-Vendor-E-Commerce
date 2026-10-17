@@ -83,3 +83,7 @@ DS-PAGE-006: sort境界・Portalのkeyboard選択、複数size/searchのURL保�
 ### 購入10画面再監査 Step 2（2026-10-18）
 
 DS-PAGE-037: 長い店舗情報・商品カード・空状態・sort Portal・850px境界・Clear filtersのURLを既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-2-ds-page-0372026-10-18)を参照。fixtureと認証後実routeの判定は分離する。
+
+### 購入10画面再監査 Step 3（2026-10-18）
+
+DS-PAGE-019: 拡大画像Dialogの初期focus/trap/Escape復帰、size/quantity/review/共有、在庫操作制約を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-3-ds-page-0192026-10-18)を参照。fixtureと認証後実routeの判定は分離する。
