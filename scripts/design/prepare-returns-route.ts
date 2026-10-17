@@ -88,29 +88,30 @@ const ensureClerkUser = async (
     return user.id;
 };
 
-/** 別 ID の既存ユーザーを書き換えないよう、Clerk ID と照合してから upsert する */
+/** 別 ID の既存ユーザーを書き換えないよう、書き込み前に Clerk ID と照合する */
 const ensureDbUser = async (
     id: string,
     email: string,
     name: string,
     role: "USER" | "SELLER"
 ): Promise<string> => {
-    const user = await prisma.user.upsert({
-        where: { email },
-        create: {
-            id,
-            email,
-            name,
-            picture: "/assets/images/default-user.jpg",
-            role,
-        },
-        update: { name, role },
-    });
-    if (user.id !== id) {
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing && existing.id !== id) {
         throw new Error(
             `DB の User.id が Clerk ID と一致しません（${email}）。`
         );
     }
+    const user = existing
+        ? await prisma.user.update({ where: { id }, data: { name, role } })
+        : await prisma.user.create({
+              data: {
+                  id,
+                  email,
+                  name,
+                  picture: "/assets/images/default-user.jpg",
+                  role,
+              },
+          });
     return user.id;
 };
 
