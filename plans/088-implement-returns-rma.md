@@ -209,7 +209,7 @@ tx をモックし、各 action について次を確かめる（AAA）: 認可�
   - フィルタとページ送りは URL（`?status=&page=`）で駆動し、フィルタ変更で page を 1 に戻す。
 - **検証**: `returns.test.ts`（where / skip / take / groupBy）、`seller-returns.test.tsx`・`seller-returns-page.test.tsx`、`DESIGN_SUITE=returns bun run test:design`、tsc / lint。
 
-## 実施結果 — Step 6 E2E（2026-10-17・未コミット）
+## 実施結果 — Step 6 E2E（2026-10-17・`1c3566f2`、文書同期 `73a46aa5` / `40715324`）
 
 - **逸脱（Step 6 の seed）**: 「`bun run seed:e2e` に Delivered 注文を足す」は採らなかった。`/order/[orderId]` は注文の所有者しか開けず、所有者はサインインできる Clerk の動的ユーザーでなければならないが、`seed-e2e.ts` は Clerk を触らない。`messages.spec.ts` の会話起票と同じく、`tests/e2e/returns-rma.spec.ts` の `beforeAll` で Prisma に直接起票した。Product / Size は作らない（OrderItem の id 列は FK の無いスナップショット。実商品は seed カテゴリの件数・在庫を前提にする他 spec を並列で汚す）。そのため受け取りは Damaged を選ぶ。在庫の戻しは統合テストのシナリオ 7 が担保している。
 - **Red 不要の理由**: 実装済みの UI と action に対する回帰 E2E の追加で、新しいロジックは無い。

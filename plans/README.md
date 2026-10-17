@@ -118,6 +118,6 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [018](018-spike-returns-rma-workflow.md) | **Spike**: 返品・交換（RMA）ワークフロー設計 | direction | P3 | — | DONE（2026-10-07・37423cb9） |
 | [087](087-implement-item-level-restock.md) | 在庫復元を item status の遷移に一本化し、経路をまたぐ二重復元を解消（012 の後続実装） | direction | P3 | 012 | DONE（2026-10-08・c8d92913〜335d8031） |
 | [089](089-fix-apply-seller-decimal-return.md) | applySeller の戻り値を `{ id }` に縮小（Decimal 列のクライアント直列化エラー） | bugfix | P2 | — | DONE（2026-10-12・985b2285〜9d3d4531） |
-| [088](088-implement-returns-rma.md) | 返品 RMA（店舗単位の申請・承認・受け取り・解決、在庫の差し引き・通知の配線）（018 の後続実装） | direction | P3 | 086, 087 | DONE（2026-10-17・a75e63df〜 / Step 6 未コミット） |
+| [088](088-implement-returns-rma.md) | 返品 RMA（店舗単位の申請・承認・受け取り・解決、在庫の差し引き・通知の配線）（018 の後続実装） | direction | P3 | 086, 087 | DONE（2026-10-17・a75e63df〜40715324） |
 
 </details>
