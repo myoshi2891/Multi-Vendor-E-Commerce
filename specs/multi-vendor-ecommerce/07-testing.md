@@ -1495,3 +1495,8 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 ## 未完了8画面 Step 1（2026-10-17）
 
 店舗一覧のクエリ/RTL7件の期待失敗を確認して実装し、Green 7/7。`seven` の `remaining stores` 6/6は通常/空/失敗・長文・4状態・3幅×light/dark・focus・44px・theme Portal・axe AAを確認。`remaining-route` のDS-PAGE-066実データ6/6も合格。Next route announcerの空alertはmain外として区別する。
+
+
+### 未完了8画面 Step 2 DS-PAGE-046（2026-10-17）
+
+オファータグ作成: 実routeの44pxテストで入力40pxのRedを確認し、既存controlsクラスを適用。RTL13/13（新規作成のpending/二重送信/失敗/入力保持/retry/成功遷移を追加）。p4 fixture6件の再確認を実施。API/DB/認可/payload/URLは変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。

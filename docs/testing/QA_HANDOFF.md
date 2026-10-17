@@ -1339,3 +1339,5 @@ Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへco
 ## 未完了8画面（2026-10-17）
 
 Step 1 DS-PAGE-066実装済み。query/RTL7/7、fixture6/6、認証後実データ6/6。次着手: 残る7対象と最終統合。部分結果を全体統計へ加算しない。[計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。
+
+未完了8 Step 2 DS-PAGE-046: 実routeの44pxテストで入力40pxのRedを確認し、既存controlsクラスを適用。RTL13/13（新規作成のpending/二重送信/失敗/入力保持/retry/成功遷移を追加）。p4 fixture6件の再確認を実施。API/DB/認可/payload/URLは変更不要。 最終実route結果・全体統計は統合時に同期。

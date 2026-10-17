@@ -1931,3 +1931,8 @@ SDDの[概要](../../../specs/multi-vendor-ecommerce/00-overview.md)・[アー�
 ## 未完了8画面 Step 1（2026-10-17）
 
 [保存計画](../../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。DS-PAGE-066: 仮実装を所有店舗一覧に置換。先行query/RTL 7/7 Red（stubとplaceholder）、Green/Refactor 7/7。`DESIGN_SUITE=seven DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep "remaining stores"` 6/6。実route `remaining-route` DS-PAGE-066 6/6（3幅×light/dark、所有2店舗・focus・axe AA・overflow）。390 light fixture画像を目視。認可はcatch外、DBは所有者select、失敗は空と区別。型0・targeted lint0・harness成功。全体チェックと台帳最終判定は統合時。00-overview/03-data-modelは既存seller管理範囲内・schema不変のため変更不要。
+
+
+### 未完了8画面 Step 2 DS-PAGE-046（2026-10-17）
+
+オファータグ作成: 実routeの44pxテストで入力40pxのRedを確認し、既存controlsクラスを適用。RTL13/13（新規作成のpending/二重送信/失敗/入力保持/retry/成功遷移を追加）。p4 fixture6件の再確認を実施。API/DB/認可/payload/URLは変更不要。 [保存計画](../../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。

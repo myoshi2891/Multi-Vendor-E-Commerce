@@ -213,3 +213,7 @@ DS-PAGE-004 出店申請。既存実装の回帰確認（新規Redなし・追�
 ## 未完了8画面 Step 1: 店舗一覧（2026-10-17）
 
 DS-PAGE-066は仮実装を置き換え、既存standalone themeとSellerPageを利用。所有店舗のlogo/name/status/管理リンク、作成導線、空・失敗・full-navigation retryを備える。3幅・light/dark・長文・全4状態・44px操作・focus・axe AAを検証する。編集/削除/検索/ページングは追加しない。
+
+## 未完了8画面 Step 2: オファータグ作成（2026-10-17）
+
+DS-PAGE-046のフォーム本体にも既存controlsクラスを適用し、入力・送信を44px以上にする。新規作成で失敗後も入力を保持し、再送成功後は一覧へ遷移する。既存のschema・保存payload・認可を維持する。

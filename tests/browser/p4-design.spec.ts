@@ -325,6 +325,9 @@ for (const entry of screens)
                     fullPage: true,
                 });
                 if (entry.screen === "newoffertag") {
+                    for (const input of await page.getByRole("form", { name: "Offer tag information" }).getByRole("textbox").all()) {
+                        expect((await input.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+                    }
                     await page.goto("/?screen=newoffertag&failure");
                     await page.evaluate(
                         (dark) =>

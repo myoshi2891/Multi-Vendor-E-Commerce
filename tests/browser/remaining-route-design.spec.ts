@@ -85,13 +85,71 @@ for (const width of [1440, 768, 390])
                     await expectTouch(link);
                     await masterFocus(link);
                 }
-                await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+                await expect(
+                    page.getByRole("main").getByRole("alert")
+                ).toHaveCount(0);
                 await masterAccessible(page);
                 await page.screenshot({
                     path: info.outputPath("stores.png"),
                     fullPage: true,
                 });
                 expect(errors).toEqual([]);
+            } finally {
+                await context.close();
+            }
+        });
+    }
+
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"] as const) {
+        test(`DS-PAGE-046 offer creation ${width} ${theme}`, async ({
+            browser,
+        }, info) => {
+            test.setTimeout(120000);
+            const context = await browser.newContext({
+                viewport: { width, height: 1000 },
+                colorScheme: theme,
+                reducedMotion: "reduce",
+            });
+            try {
+                const page = await context.newPage();
+                await setupClerkTestingToken({ page });
+                await page.goto("/");
+                await clerk.signIn({ page, emailAddress: prepared.adminEmail });
+                expect(
+                    (
+                        await page.goto("/dashboard/admin/offer-tags/new")
+                    )?.status()
+                ).toBe(200);
+                await expect(
+                    page.getByRole("heading", {
+                        level: 1,
+                        name: "Create offer tag",
+                        exact: true,
+                    })
+                ).toBeVisible();
+                const form = page.getByRole("form", {
+                    name: "Offer tag information",
+                });
+                await form
+                    .getByRole("button", {
+                        name: "Create offer tag",
+                        exact: true,
+                    })
+                    .click();
+                await expect(form.getByLabel("Offer tag name")).toHaveAttribute(
+                    "aria-invalid",
+                    "true"
+                );
+                for (const input of await form.getByRole("textbox").all()) {
+                    await expectTouch(input);
+                    await masterFocus(input);
+                }
+                await masterAccessible(page);
+                await page.screenshot({
+                    path: info.outputPath("offer-create-validation.png"),
+                    fullPage: true,
+                });
             } finally {
                 await context.close();
             }

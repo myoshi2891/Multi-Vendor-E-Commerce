@@ -1025,3 +1025,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-eight-remaining-design-system-plan.md)。既存履歴を保持し、台帳のTODO7＋保留1を対象にする。
 
 - [x] Step 1 DS-PAGE-066: 店舗一覧の実装・TDD・fixture/実route・関連仕様同期。最終全体判定は統合時。
+
+- [x] 未完了8 Step 2 DS-PAGE-046: オファータグ作成、テスト・関連仕様同期。最終実route結果は保存計画の統合欄参照。
