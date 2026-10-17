@@ -1505,3 +1505,8 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 ### 未完了8画面 Step 3 DS-PAGE-020（2026-10-17）
 
 商品URL転送: 既存実装の回帰（Redなし・追加UIなし）。単体4/4: 先頭variant、商品なし、variantなし、取得失敗。3幅の実route転送先表示/axe/overflowを受け入れ対象に追加。機能/DB/認可/URL仕様は変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 4 DS-PAGE-023（2026-10-17）
+
+フォロー店舗転送: 既存aliasの単体回帰はdiscovery-regressionで実施（既存8/8の一部、Redなし）。認証後は/profile/following/1、guestはsign-inを実routeで検証するケースを追加。転送先の既存UIを維持。機能/DB/認可仕様は変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。

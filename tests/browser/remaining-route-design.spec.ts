@@ -179,3 +179,60 @@ for (const width of [1440, 768, 390]) {
         });
     });
 }
+
+for (const alias of [
+    {
+        id: "DS-PAGE-023",
+        path: "/profile/following",
+        heading: "Stores you follow",
+    },
+]) {
+    for (const width of [1440, 768, 390]) {
+        test(`${alias.id} authenticated alias ${width}`, async ({
+            browser,
+        }, info) => {
+            test.setTimeout(120000);
+            const context = await browser.newContext({
+                viewport: { width, height: 1000 },
+                reducedMotion: "reduce",
+            });
+            try {
+                const page = await context.newPage();
+                await setupClerkTestingToken({ page });
+                await page.goto("/");
+                await clerk.signIn({
+                    page,
+                    emailAddress: prepared.customerEmail,
+                });
+                expect((await page.goto(alias.path))?.status()).toBe(200);
+                await expect(page).toHaveURL(
+                    (url) => url.pathname === `${alias.path}/1`
+                );
+                await expect(
+                    page
+                        .getByRole("main")
+                        .getByRole("heading", { level: 1, name: alias.heading })
+                ).toBeVisible();
+                await expect(
+                    page.getByRole("main").getByRole("alert")
+                ).toHaveCount(0);
+                await masterAccessible(page);
+                await page.screenshot({
+                    path: info.outputPath("account-destination.png"),
+                    fullPage: true,
+                });
+            } finally {
+                await context.close();
+            }
+        });
+    }
+    test(`${alias.id} guest requires sign in`, async ({ page }) => {
+        test.setTimeout(90000);
+        await setupClerkTestingToken({ page });
+        await page.goto(alias.path);
+        await expect(page).toHaveURL((url) =>
+            url.pathname.startsWith("/sign-in")
+        );
+        await expect(page.locator("[data-profile-shell]")).toHaveCount(0);
+    });
+}
