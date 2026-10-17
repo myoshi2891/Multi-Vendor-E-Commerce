@@ -1,5 +1,9 @@
 # 新デザインシステム適用状況・移行計画
 
+## 2026-10-17 未完了8画面の受け入れ
+
+店舗一覧の仮実装を置換、タグ作成の44px controlsを適用、転送6件を実routeで確認。最新台帳は68画面＝検証済み68、部品249件。共通基盤・部品全scopeの判定は維持する。[今回の計画](priority-eight-remaining-design-system-plan.md)／[最終証跡](../../docs/design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。以下の調査日付き集計はその時点の履歴として保持する。
+
 ## 2026-10-09 全実ルート再監査追記
 
 [監査報告](../../docs/design/design-system/full-route-reaudit-2026-10-09.md)。67定義＝本体60＋転送7。既知修正対象6画面（公開操作不足3＋属性部分移行3）、別に仮実装1。認証後39機能画面は実表示未確認で属性3を含む。以前の「42未完了」は台帳状態の集計で、旧UI残存数ではない。親theme適用済みの属性3を全面未適用とみなさず、個別UI/Portal部分移行として扱う。共通部品は242項目・未完了216で、再実装数ではない。
@@ -1039,3 +1043,6 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] 未完了8 Step 7 DS-PAGE-052: 販売者入口、テスト・関連仕様同期。最終実route結果は保存計画の統合欄参照。
 
 - [x] 未完了8 Step 8 DS-PAGE-013: FAQ転送、テスト・関連仕様同期。最終実route結果は保存計画の統合欄参照。
+
+- [x] 未完了8最終統合: 今回対象8件を検証済みへ更新。台帳68画面＝検証済み68／保留0／TODO0／実装済み0、部品249。実route39ケース＋051反復12/12、補助24/24、全体Jest3300/3303（3 skipped）、型/lint/harness・仕様/QA同期。[証跡](../../docs/design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。既存共通基盤・部品全scope・SDK全機能の判定は維持。
+- [x] DS-COMP-249 [SellerStoresList](../../src/components/dashboard/seller/seller-stores-list.tsx): 所有店舗ディレクトリ、通常/空/失敗/実retry、3幅・両テーマ・実routeを受け入れ。

@@ -244,7 +244,9 @@ for (const alias of [
 
 for (const role of ["ADMIN", "SELLER", "USER", "guest"] as const) {
     test(`DS-PAGE-051 dashboard entry ${role}`, async ({ page }, info) => {
-        test.setTimeout(120000);
+        test.setTimeout(180000);
+        const pageErrors: string[] = [];
+        page.on("pageerror", (error) => pageErrors.push(error.message));
         await setupClerkTestingToken({ page });
         await page.goto("/");
         if (role !== "guest")
@@ -257,26 +259,48 @@ for (const role of ["ADMIN", "SELLER", "USER", "guest"] as const) {
                           ? prepared.sellerEmail
                           : prepared.customerEmail,
             });
-        await page.goto("/dashboard");
-        await expect(page).toHaveURL((url) =>
-            role === "ADMIN"
-                ? url.pathname === "/dashboard/admin"
-                : role === "SELLER"
-                  ? prepared.stores.some(
-                        (store) =>
-                            url.pathname ===
-                            `/dashboard/seller/stores/${store.url}`
-                    )
-                  : url.pathname === "/"
-        );
-        await expect(
-            page.getByRole("main").getByRole("heading", { level: 1 })
-        ).toBeVisible();
-        await masterAccessible(page);
-        await page.screenshot({
-            path: info.outputPath("dashboard-destination.png"),
-            fullPage: true,
-        });
+        for (const width of [1440, 768, 390]) {
+            for (const theme of (role === "ADMIN" || role === "SELLER"
+                ? ["light", "dark"]
+                : ["light"]) as ("light" | "dark")[]) {
+                await page.setViewportSize({ width, height: 1000 });
+                await page.emulateMedia({
+                    colorScheme: theme,
+                    reducedMotion: "reduce",
+                });
+                await page.evaluate(
+                    (value) => localStorage.setItem("theme", value),
+                    theme
+                );
+                await page.goto("/dashboard");
+                await clerk.loaded({ page });
+                await page.waitForLoadState("networkidle");
+                await expect(page).toHaveURL((url) =>
+                    role === "ADMIN"
+                        ? url.pathname === "/dashboard/admin"
+                        : role === "SELLER"
+                          ? prepared.stores.some(
+                                (store) =>
+                                    url.pathname ===
+                                    `/dashboard/seller/stores/${store.url}`
+                            )
+                          : url.pathname === "/"
+                );
+                await expect(
+                    page.getByRole("main").getByRole("heading", { level: 1 })
+                ).toBeVisible();
+                if (role === "ADMIN" || role === "SELLER")
+                    await expect(page.locator("html")).toHaveClass(
+                        theme === "dark" ? /dark/ : /^(?!.*dark)/
+                    );
+                await masterAccessible(page);
+                await page.screenshot({
+                    path: info.outputPath(`dashboard-${width}-${theme}.png`),
+                    fullPage: true,
+                });
+            }
+        }
+        expect(pageErrors).toEqual([]);
     });
 }
 for (const width of [1440, 768, 390])
@@ -305,7 +329,7 @@ for (const width of [1440, 768, 390])
                 await expect(
                     page.getByRole("heading", {
                         level: 1,
-                        name: "Store overview",
+                        name: "店舗ダッシュボード",
                     })
                 ).toBeVisible();
                 await masterAccessible(page);

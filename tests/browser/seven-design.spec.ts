@@ -1014,6 +1014,10 @@ for (const width of [1440, 768, 390]) for (const theme of ["light", "dark"]) {
             expect((await new AxeBuilder({page}).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
             await page.screenshot({path:info.outputPath(`stores${state || "normal"}.png`), fullPage:true});
         }
+        await page.getByRole("link", {name:"Try again"}).click();
+        await expect(page.getByRole("heading", {level:1,name:"Your stores"})).toBeVisible();
+        await expect(page.getByRole("list", {name:"Your stores"}).getByRole("listitem")).toHaveCount(4);
+        await expect(page.getByRole("alert")).toHaveCount(0);
         const toggle = page.getByRole("button", {name:"Toggle theme"});
         await toggle.press("Enter");
         await expect(page.getByRole("menuitem", {name:"Dark", exact:true})).toBeVisible();

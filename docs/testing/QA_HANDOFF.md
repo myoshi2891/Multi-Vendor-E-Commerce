@@ -379,17 +379,17 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3280 passed / 3283 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16販売者8再監査の全体実測（`bun run test -- --runInBand --coverage`）。 |
-| 全体coverage（2026-10-16実測） | Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。販売者8再監査後の全体Jest CLI集計。 |
+| Jest テスト総数 (unit/component) | **3300 passed / 3303 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。2026-10-17未完了8の全体実測（`bun run test -- --runInBand --coverage --silent`）。 |
+| 全体coverage（2026-10-17実測） | Statements88.41%（11510/13018）／Branches79.1%（7135/9020）／Functions85.14%（2276/2673）／Lines88.96%（10472/11771）。全体Jest CLI集計。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **47 files・3 ブラウザ計 450 tests**（2026-10-17 `bunx playwright test --list`。plan 088 Step 6 の `returns-rma.spec.ts` +1 file・+1 test/browser）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**Chromium 7/7 passed**。2026-10-07 実測（plan 084・Docker DB 接続）。OI-10 解消に伴い 6 spec の `disabledRules:["color-contrast"]` 抑制を解除済み（抑制なしで違反 0）。home（`/`）は spec 未作成（OI-9 は 2026-06-06 に解消済みで阻害要因ではない。追加は本書の「A11y-home」タスクで扱う）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
-| 型エラー | **0件**（2026-10-16 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-17 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16販売者8再監査後の再生成実測。 |
+| テストファイル総数（dashboard） | **426ファイル**／lcov **414エントリ**／マトリクス18/80（23%）。2026-10-17未完了8の全体coverage/dashboard再生成実測。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 
@@ -1353,3 +1353,9 @@ Step 1 DS-PAGE-066実装済み。query/RTL7/7、fixture6/6、認証後実デー�
 未完了8 Step 7 DS-PAGE-052: 既存実装回帰（Redなし）。単体3/3: guestはDBアクセスなし、店舗0件→作成、所有店舗あり→先頭店舗。実routeの3幅×light/darkとguest/admin/customer拒否を追加。店舗0件の実データは変更せず単体で分岐を確認。既存URL/認証/DB仕様は変更不要。 最終実route結果・全体統計は統合時に同期。
 
 未完了8 Step 8 DS-PAGE-013: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirectを確認。実HTTP308と/faqsの3幅表示/axe/overflowを確認するケースを追加。公開FAQ本文・既存恒久転送仕様は変更不要。 最終実route結果・全体統計は統合時に同期。
+
+## 未完了8画面 最終統合（2026-10-17）
+
+全体Jest3300/3303（3 skipped）、340 suites、127 snapshots。coverage・dashboardは上の統計表を正本として同期。実route39ケースは初回27 passed（見出し誤期待で中断）＋修正後関連16/16。Clerk.loaded/networkidleと例外判定を加えた051の3回反復12/12、補助24/24。型0・lint0 errors/既存8 warnings・harness成功。
+
+今回8対象の必須保留なし。Clerk初回描画のhydration例外は読み込み完了待ちなしの連続遷移で1回観測、SDK待ちありの4role×3回ではpageerror0。SDKの修正完了を主張せず、例外判定を回帰に残す。実保存/削除/upload、店舗0件の実データ、SDK全機能は今回検証外（fixture/単体と区別）。次着手: DS-BASE-001と共通部品の未完了caller監査。今回の画面台帳68件の検証済みを、共有部品の完了へ波及させない。[証跡](../design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。

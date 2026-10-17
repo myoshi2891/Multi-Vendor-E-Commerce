@@ -26,4 +26,10 @@
 - [x] Step 6 DS-PAGE-051（画面単位の実装/回帰・文書同期、実route最終結果は統合欄）
 - [x] Step 7 DS-PAGE-052（画面単位の実装/回帰・文書同期、実route最終結果は統合欄）
 - [x] Step 8 DS-PAGE-013（画面単位の実装/回帰・文書同期、実route最終結果は統合欄）
-- [ ] 最終統合・文書同期
+- [x] 最終統合・文書同期
+
+## 最終結果
+
+対象8件の今回受け入れを完了。台帳68画面＝検証済み68、部品249。実route39ケースは初回27 passedと修正後関連16/16で受け入れ（重複051を含む）。Clerk描画の間欠例外は待ち条件とpageerror判定を追加して051を3回ずつ再実行、12/12。補助24/24、Jest3300/3303（3 skipped）・127 snapshots、型0・lint0 errors/既存8 warnings・harness成功。全体統計はQAを正本として同期。実保存/削除/uploadと全SDK機能は今回検証外。SDK hydrationは読み込み待ちなしの連続遷移で1回観測した事実と再確認条件を証跡に残す。
+
+[最終証跡](../../docs/design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。
