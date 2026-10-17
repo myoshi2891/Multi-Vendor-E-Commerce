@@ -1349,3 +1349,5 @@ Step 1 DS-PAGE-066実装済み。query/RTL7/7、fixture6/6、認証後実デー�
 未完了8 Step 5 DS-PAGE-025: 既存aliasの単体回帰はdiscovery-regression8/8の一部（Redなし）。認証後/profile/history/1とguestのsign-in、3幅の転送先表示を検証するケースを追加。ブラウザー保存・pagingの既存仕様を維持。API/DB変更不要。 最終実route結果・全体統計は統合時に同期。
 
 未完了8 Step 6 DS-PAGE-051: 既存role分岐の回帰（Redなし）。単体4/4でguest/USER→home、ADMIN→admin、SELLER→seller。実routeの4roleと転送先heading/axe/overflowのケースを追加。転送先・認証・DB仕様は変更不要。 最終実route結果・全体統計は統合時に同期。
+
+未完了8 Step 7 DS-PAGE-052: 既存実装回帰（Redなし）。単体3/3: guestはDBアクセスなし、店舗0件→作成、所有店舗あり→先頭店舗。実routeの3幅×light/darkとguest/admin/customer拒否を追加。店舗0件の実データは変更せず単体で分岐を確認。既存URL/認証/DB仕様は変更不要。 最終実route結果・全体統計は統合時に同期。

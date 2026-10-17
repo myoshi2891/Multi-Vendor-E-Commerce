@@ -279,3 +279,64 @@ for (const role of ["ADMIN", "SELLER", "USER", "guest"] as const) {
         });
     });
 }
+for (const width of [1440, 768, 390])
+    for (const theme of ["light", "dark"] as const) {
+        test(`DS-PAGE-052 seller entry ${width} ${theme}`, async ({
+            browser,
+        }, info) => {
+            test.setTimeout(90000);
+            const context = await browser.newContext({
+                storageState: sellerSession,
+                viewport: { width, height: 1000 },
+                colorScheme: theme,
+                reducedMotion: "reduce",
+            });
+            try {
+                const page = await context.newPage();
+                await setupClerkTestingToken({ page });
+                await page.goto("/dashboard/seller");
+                await expect(page).toHaveURL((url) =>
+                    prepared.stores.some(
+                        (store) =>
+                            url.pathname ===
+                            `/dashboard/seller/stores/${store.url}`
+                    )
+                );
+                await expect(
+                    page.getByRole("heading", {
+                        level: 1,
+                        name: "Store overview",
+                    })
+                ).toBeVisible();
+                await masterAccessible(page);
+                await page.screenshot({
+                    path: info.outputPath("seller-destination.png"),
+                    fullPage: true,
+                });
+            } finally {
+                await context.close();
+            }
+        });
+    }
+for (const role of ["guest", "ADMIN", "USER"] as const) {
+    test(`DS-PAGE-052 and DS-PAGE-066 reject ${role}`, async ({ page }) => {
+        test.setTimeout(120000);
+        await setupClerkTestingToken({ page });
+        await page.goto("/");
+        if (role !== "guest")
+            await clerk.signIn({
+                page,
+                emailAddress:
+                    role === "ADMIN"
+                        ? prepared.adminEmail
+                        : prepared.customerEmail,
+            });
+        for (const path of ["/dashboard/seller", "/dashboard/seller/stores"]) {
+            await page.goto(path);
+            await expect(page).toHaveURL((url) => url.pathname === "/");
+            await expect(
+                page.getByRole("heading", { level: 1, name: "Your stores" })
+            ).toHaveCount(0);
+        }
+    });
+}
