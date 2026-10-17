@@ -155,3 +155,27 @@ for (const width of [1440, 768, 390])
             }
         });
     }
+
+for (const width of [1440, 768, 390]) {
+    test(`DS-PAGE-020 product alias ${width}`, async ({ page }, info) => {
+        test.setTimeout(90000);
+        await page.setViewportSize({ width, height: 1000 });
+        await setupClerkTestingToken({ page });
+        const response = await page.goto(`/product/${prepared.productSlug}`);
+        expect(response?.status()).toBe(200);
+        await expect(page).toHaveURL((url) =>
+            prepared.variantSlugs.some(
+                (slug) =>
+                    url.pathname === `/product/${prepared.productSlug}/${slug}`
+            )
+        );
+        await expect(
+            page.getByRole("main").getByRole("heading", { level: 1 })
+        ).toBeVisible();
+        await masterAccessible(page);
+        await page.screenshot({
+            path: info.outputPath("product-destination.png"),
+            fullPage: true,
+        });
+    });
+}
