@@ -1373,4 +1373,4 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - [x] 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）: 店舗設定 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
 
 
-- [x] 販売者8再監査最終統合 ✅ Completed (2026-10-16): seven85/85・six74/74、全体Jest/coverage・型/lint/harness・仕様/QA同期。今回の認証後実routeは環境不整合で別保留。
+- [x] 販売者8再監査最終統合 ✅ Completed (2026-10-16): seven85/85・six74/74、全体Jest/coverage・型/lint/harness・仕様/QA同期。今回の認証後実routeは当初、専用DBの列不足で別保留としたが、同日にmigration適用でDS-SELLER-REAUDIT-ROUTESを解除し、seller-eight-route 48/48で受け入れ（[QA_HANDOFF](QA_HANDOFF.md#2026-10-16-保留3件の実環境受け入れ最新)）。
