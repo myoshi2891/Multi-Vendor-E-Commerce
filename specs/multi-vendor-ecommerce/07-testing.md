@@ -1555,3 +1555,7 @@ DS-PAGE-007 カート: 短い商品名44px、選択/数量/削除/送料、check
 ### 購入10画面再監査 Step 5（2026-10-18）
 
 DS-PAGE-008 Checkout: 住所Portalの入力保持・境界・focus復帰・pending dismiss lock、coupon失敗保持・成功後の住所選択、800px境界。既存commerce suiteの回帰38/38（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 6（2026-10-18）
+
+DS-PAGE-003 注文詳細: paid/pendingと全状態の意味色、invoice失敗と再操作、単一合計、支払初期化error/retry、明暗祖先・800px境界。既存commerce suiteの回帰38/38（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。

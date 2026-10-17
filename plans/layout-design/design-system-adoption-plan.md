@@ -1060,3 +1060,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 4 DS-PAGE-007 カート: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
 
 - [x] Step 5 DS-PAGE-008 Checkout: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 6 DS-PAGE-003 注文詳細: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
