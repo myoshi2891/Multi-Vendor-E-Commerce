@@ -18,7 +18,7 @@
 
 ## 進捗
 
-- [ ] Step 1 DS-PAGE-066
+- [x] Step 1 DS-PAGE-066（実装・画面単位検証、全体最終判定は統合時）
 - [ ] Step 2 DS-PAGE-046
 - [ ] Step 3 DS-PAGE-020
 - [ ] Step 4 DS-PAGE-023

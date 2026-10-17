@@ -1491,3 +1491,7 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 今回の認証後実route/実SDK描画は専用DBのStore.returnWindowDays列不足で保留。既存販売者/店舗の読み取り後、route beforeAllで不整合を検出し中断。後続画面未実施。DB変更・seed・アカウント作成・実保存・送信・uploadなし。Nextのtsconfig副作用のみ復元。過去の受け入れ履歴と台帳件数は保持。解除条件と次着手の正本はQA_HANDOFFのDS-SELLER-REAUDIT-ROUTES。Integration/本体3-browser E2Eは今回未再実行。
 
 **2026-10-16 解除（同日追補）**: 原因は専用DB `multivendor_e2e` のマイグレーション適用漏れ（27/28、`20261015042255_add_return_requests` のみ未適用。dev DB へのみ適用されていた）で、構造ずれではない。追加のみのSQLを `bunx prisma migrate deploy` で適用し（seedなし、既存の店舗6・ユーザー7・注文14件は不変）、`prepare-seller-route.ts`（冪等）後に suite `seller-eight-route` の表示 **48/48**（8画面×3幅×light/dark、axe AA・overflow・pageerror・スクショ）。[計画](../../plans/layout-design/pending-three-real-route-acceptance-plan.md)。
+
+## 未完了8画面 Step 1（2026-10-17）
+
+店舗一覧のクエリ/RTL7件の期待失敗を確認して実装し、Green 7/7。`seven` の `remaining stores` 6/6は通常/空/失敗・長文・4状態・3幅×light/dark・focus・44px・theme Portal・axe AAを確認。`remaining-route` のDS-PAGE-066実データ6/6も合格。Next route announcerの空alertはmain外として区別する。

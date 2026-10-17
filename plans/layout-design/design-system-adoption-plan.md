@@ -1019,3 +1019,9 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] 販売者8再監査の最終補助検証・仕様/QA同期: seven85/85・six74/74、全体Jest3280/3283（3 skipped）、型/lint/harness成功。
 - [ ] 今回8画面の認証後実route/SDK受け入れ: 専用DBのStore.returnWindowDays列不足で保留。過去の全画面判定を維持。[QA](../../docs/testing/QA_HANDOFF.md#2026-10-16-販売者8画面再監査)。
+
+### 未完了8画面（2026-10-17）
+
+[保存計画](priority-eight-remaining-design-system-plan.md)。既存履歴を保持し、台帳のTODO7＋保留1を対象にする。
+
+- [x] Step 1 DS-PAGE-066: 店舗一覧の実装・TDD・fixture/実route・関連仕様同期。最終全体判定は統合時。

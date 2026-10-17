@@ -1927,3 +1927,7 @@ SDDの[概要](../../../specs/multi-vendor-ecommerce/00-overview.md)・[アー�
 - 安定性: 追加2件を `--repeat-each=3` で **6/6**。事後 DB は店舗6・フォロー0（開始時と同じ）。初回は Widget が `Done` 押下まで閉じない／2回目は先頭の閉じた iframe を掴む、のテスト側操作不足で失敗し修正（製品不具合なし）。
 - tsc 0・lint 0 errors（既存8 warnings）・`check:playwright` 成功。Jest 変更なし（統計不変）。Integration/本体3-browser E2E は未再実行。
 - 後片付け残: Cloudinary の検証用アセットは API secret が無く自動削除不可。一覧は [QA_HANDOFF](../../testing/QA_HANDOFF.md#2026-10-16-保留3件の実環境受け入れ最新)。
+
+## 未完了8画面 Step 1（2026-10-17）
+
+[保存計画](../../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。DS-PAGE-066: 仮実装を所有店舗一覧に置換。先行query/RTL 7/7 Red（stubとplaceholder）、Green/Refactor 7/7。`DESIGN_SUITE=seven DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep "remaining stores"` 6/6。実route `remaining-route` DS-PAGE-066 6/6（3幅×light/dark、所有2店舗・focus・axe AA・overflow）。390 light fixture画像を目視。認可はcatch外、DBは所有者select、失敗は空と区別。型0・targeted lint0・harness成功。全体チェックと台帳最終判定は統合時。00-overview/03-data-modelは既存seller管理範囲内・schema不変のため変更不要。
