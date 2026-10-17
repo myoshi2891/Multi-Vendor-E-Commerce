@@ -1386,3 +1386,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-18): 購入10画面再監査 Step 3 DS-PAGE-019 商品詳細、既存purchase回帰82/82・関連RTL173/173・仕様同期。全体統計ではない。
 
 - ✅ Completed (2026-10-18): 購入10画面再監査 Step 4 DS-PAGE-007 カート、既存purchase回帰82/82・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 5 DS-PAGE-008 Checkout、既存commerce回帰38/38・関連RTL173/173・仕様同期。全体統計ではない。

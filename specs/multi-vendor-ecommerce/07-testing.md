@@ -1551,3 +1551,7 @@ DS-PAGE-019 商品詳細: 拡大画像Dialogの初期focus/trap/Escape復帰、s
 ### 購入10画面再監査 Step 4（2026-10-18）
 
 DS-PAGE-007 カート: 短い商品名44px、選択/数量/削除/送料、checkout失敗後のbag保持、sync失敗とretry。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 5（2026-10-18）
+
+DS-PAGE-008 Checkout: 住所Portalの入力保持・境界・focus復帰・pending dismiss lock、coupon失敗保持・成功後の住所選択、800px境界。既存commerce suiteの回帰38/38（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。

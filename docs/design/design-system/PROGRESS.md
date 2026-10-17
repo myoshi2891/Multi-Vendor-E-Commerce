@@ -2012,3 +2012,9 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 [保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。既存実装の回帰確認（新規Red・製品変更なし）。短い商品名44px、選択/数量/削除/送料、checkout失敗後のbag保持、sync失敗とretryを確認。`DESIGN_SUITE=purchase DESIGN_BROWSER_CHANNEL=chrome bun run test:design` **82/82**。1440/768/390px・該当境界幅、axe AA・keyboard/focus・overflow、390px画像目視。関連RTLは購入10画面の共有回帰 **173/173**、`bunx tsc --noEmit`成功、lint 0 errors/既存8 warnings。
 
 [関連要件](../cart/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
+
+### 購入10画面再監査 Step 5 DS-PAGE-008（2026-10-18）
+
+[保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。既存実装の回帰確認（新規Red・製品変更なし）。住所Portalの入力保持・境界・focus復帰・pending dismiss lock、coupon失敗保持・成功後の住所選択、800px境界を確認。`DESIGN_SUITE=commerce DESIGN_BROWSER_CHANNEL=chrome bun run test:design` **38/38**。1440/768/390px・該当境界幅、axe AA・keyboard/focus・overflow、390px画像目視。関連RTLは購入10画面の共有回帰 **173/173**、`bunx tsc --noEmit`成功、lint 0 errors/既存8 warnings。
+
+[関連要件](../checkout/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
