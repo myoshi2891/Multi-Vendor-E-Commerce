@@ -1567,3 +1567,7 @@ DS-PAGE-009 比較: 700px境界と局所scroll、hero44px/focus、個別削除/�
 ### 購入10画面再監査 Step 8（2026-10-18）
 
 DS-PAGE-033 Wishlist: 480px境界、current境界contrastとhover、末尾disabled、URLページング/履歴復帰、空/失敗/pending。既存priority suiteの回帰23/23（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 9（2026-10-18）
+
+DS-PAGE-028: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復帰（ページ変更・再試行・失敗・空）と、待機中に移動したfocusを奪わないことをRTL/既存postpurchase suiteで検証。

@@ -4,7 +4,7 @@ import type { OrderTableDateFilter, OrderTableFilter } from "@/lib/types";
 import { toNumberSafe } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import OrderTableHeader from "./order-table-header";
 import OrdersHeading from "./orders-heading";
 import styles from "./orders.module.css";
@@ -54,9 +54,20 @@ export default function OrdersTable({
     const [pending, setPending] = useState(false);
     const [error, setError] = useState(initialError);
     const inFlight = useRef(false);
+    const sectionRef = useRef<HTMLElement>(null);
+    const resultsRef = useRef<HTMLDivElement>(null);
+    const restoreFocus = useRef(false);
+    useEffect(() => {
+        if (pending || !restoreFocus.current) return;
+        restoreFocus.current = false;
+        // Pager/retry controls unmount while loading. Keep keyboard users at
+        // the refreshed results unless they moved to another control meanwhile.
+        if (document.activeElement === document.body) resultsRef.current?.focus();
+    }, [pending]);
     async function load(next: Criteria) {
         if (inFlight.current) return;
         inFlight.current = true;
+        restoreFocus.current = Boolean(sectionRef.current?.contains(document.activeElement));
         setCriteria(next);
         setPending(true);
         setError(false);
@@ -80,6 +91,7 @@ export default function OrdersTable({
     );
     return (
         <section
+            ref={sectionRef}
             className={styles.orders}
             data-orders
             aria-label="Order history"
@@ -92,7 +104,13 @@ export default function OrdersTable({
                     void load({ filter, period, search, page: 1 })
                 }
             />
-            <div aria-busy={pending}>
+            <div
+                ref={resultsRef}
+                role="region"
+                aria-label="Order results"
+                tabIndex={-1}
+                aria-busy={pending}
+            >
                 {pending ? (
                     <div className={styles.message} role="status">
                         <p>Loading orders…</p>

@@ -40,6 +40,7 @@
 .orders select {
     font: inherit;
 }
+.orders [tabindex="-1"]:focus-visible,
 .orders a:focus-visible,
 .orders button:focus-visible,
 .orders input:focus-visible,

@@ -175,3 +175,7 @@ DS-PAGE-022/024/017/010/014/018/005/004は既存tokensを使用し、独立操�
 ## Seller stores directory (2026-10-17)
 
 `/dashboard/seller/stores` lists only the authenticated seller’s stores, with logo, name, status and management links. A standalone branded light/dark workspace provides a create-store link, an explicit empty state and generic load-failure feedback with a full-navigation retry. It adds no edit, delete, search or paging controls.
+
+### 購入10画面再監査 Step 9（2026-10-18）
+
+ページ変更・再試行・検索による取得で操作元のfocusが失われた場合、完了後に名前付き結果regionへfocusを戻す。成功・空・取得失敗を含む。待機中に利用者が別の操作へfocusを移動した場合は奪わない。結果regionはTab順へ追加せず、purchase-focusの可視枠を持つ。

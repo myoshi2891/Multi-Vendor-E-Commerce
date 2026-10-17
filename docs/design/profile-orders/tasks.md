@@ -13,3 +13,12 @@
 
 [保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。- [x] Step 1: 先行Red、Green/Refactor、補助表示検証・既存操作回帰・文書同期。
 - [ ] 認証後実ルートの今回の変更受け入れ（既存ログイン状態が必要）。
+
+## 購入10画面再監査 Step 9（2026-10-18）
+
+- [x] キーボードページ変更/再試行のfocus消失を先行RTL/browserで再現し修正。
+- [x] 成功/空/失敗とfocusを奪わないRTL、3幅とfocus contrastのbrowser回帰。
+- [x] 要件・設計・SDD・計画・進捗を同期。
+- [ ] 今回の認証後実route受け入れ。専用DB不在の解除条件はQA正本を参照。
+
+[保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)／[統合証跡](../design-system/PROGRESS.md#purchase-ten-final)。

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { expectReadableFocus } from "./purchase-assertions";
 import AxeBuilder from "@axe-core/playwright";
 
 test("messages route loading follows shared tokens", async ({ page }) => {
@@ -413,4 +414,54 @@ for (const screen of screens) {
             await accessible(page);
         });
     }
+}
+
+// The initiating pager/retry disappears while results are loading.
+for (const screen of ["orders"]) {
+    for (const width of [1440, 768, 390]) {
+        test(`purchase ten ${screen} ${width}: keyboard recovery keeps a visible focus`, async ({ page }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.goto(`/?screen=${screen}`);
+            const next = page.getByRole("button", { name: "Next page", exact: true });
+            await next.focus();
+            await next.press("Enter");
+            const results = page.locator(screen === "orders" ? "[data-orders] > [aria-busy]" : "[data-payments] > [aria-busy]");
+            await expect(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+            await expect(results).toBeFocused();
+            await expectReadableFocus(results);
+            await accessible(page);
+            await page.screenshot({ path: info.outputPath(`purchase-ten-${screen}-${width}.png`), fullPage: true });
+            await page.goto(`/?screen=${screen}&state=error`);
+            const retry = page.getByRole("button", { name: "Try again", exact: true });
+            await retry.focus();
+            await retry.press("Enter");
+            await expect(page.getByRole("alert")).toHaveCount(0);
+            await expect(results).toBeFocused();
+            await accessible(page);
+            await page.goto(`/?screen=${screen}&state=retry`);
+            await page.getByRole("button", { name: "Next page", exact: true }).focus();
+            await page.keyboard.press("Enter");
+            await expect(page.getByRole("alert")).toBeVisible();
+            await expect(results).toBeFocused();
+            await expectReadableFocus(results);
+            await page.getByRole("button", { name: "Try again", exact: true }).focus();
+            await page.keyboard.press("Enter");
+            await expect(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+            await expect(results).toBeFocused();
+        });
+    }
+    test(`purchase ten ${screen}: recovery does not steal focus`, async ({ page }) => {
+        await page.clock.install();
+        await page.goto(`/?screen=${screen}&state=pending`);
+        const next = page.getByRole("button", { name: "Next page", exact: true });
+        await next.focus();
+        await next.press("Enter");
+        const support = page.getByRole("link", { name: "Need a hand? →" });
+        await support.focus();
+        await expect(support).toBeFocused();
+        // Resolve the fixture's pending timer without a one-minute wall-clock wait.
+        await page.clock.fastForward(61000);
+        await expect(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
+        await expect(support).toBeFocused();
+    });
 }

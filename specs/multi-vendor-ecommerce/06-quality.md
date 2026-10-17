@@ -196,3 +196,7 @@ DS-PAGE-022/024/017/010/014/018/005/004は既存tokensを使用し、独立操�
 8画面×1440/768/390px×light/darkで、44px操作領域、painted surfaceに対するfocus/入力境界contrast3:1、AA文字、長文/局所scroll/overflow、keyboard/Portal/Escape復帰、reduced-motionを検証する。売上chartは通貨tickをSVG内へ収め、tooltipにpopover tokensを使用。補助fixtureの成功は認証後実route/SDK受け入れと区別する。
 
 [承認済み計画](../../plans/layout-design/priority-eight-p3-residual-design-system-plan.md) / [証跡](../../docs/design/design-system/PROGRESS.md#p3残存8画面移行記録2026-10-13)。
+
+### 購入10画面再監査 Step 9（2026-10-18）
+
+注文/支払履歴の非同期取得でfocusを失った場合は結果regionへ復帰。待機中の利用者のfocus移動を尊重する。可視枠にpurchase-focusを使用し、背景に対し3:1以上のcontrastを確認する。

@@ -1989,11 +1989,15 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 
 再実行: dedicated DBの3変数を一致させて `bun scripts/design/prepare-remaining-route.ts /tmp/remaining-route.json`。`DESIGN_REMAINING_ROUTE=/tmp/remaining-route.json DESIGN_SUITE=remaining-route DESIGN_BROWSER_CHANNEL=chrome bun run test:design`。各fixtureはseven/p4の既存suiteを使用。ログは `/tmp/remaining-*.log`（ローカル一時証跡）。
 
+<a id="purchase-ten-step-1"></a>
+
 ### 購入10画面再監査 Step 1 DS-PAGE-006（2026-10-18）
 
 [保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。既存実装の回帰確認（新規Red・製品変更なし）。sort境界・Portalのkeyboard選択、複数size/searchのURL保持、ページャ44pxとcurrent、filterと商品操作を確認。`DESIGN_SUITE=purchase DESIGN_BROWSER_CHANNEL=chrome bun run test:design` **82/82**。1440/768/390px・該当境界幅、axe AA・keyboard/focus・overflow、390px画像目視。関連RTLは購入10画面の共有回帰 **173/173**、`bunx tsc --noEmit`成功、lint 0 errors/既存8 warnings。
 
 [関連要件](../purchase-residual/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
+
+<a id="purchase-ten-step-2"></a>
 
 ### 購入10画面再監査 Step 2 DS-PAGE-037（2026-10-18）
 
@@ -2001,11 +2005,15 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 
 [関連要件](../purchase-residual/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
 
+<a id="purchase-ten-step-3"></a>
+
 ### 購入10画面再監査 Step 3 DS-PAGE-019（2026-10-18）
 
 [保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。既存実装の回帰確認（新規Red・製品変更なし）。拡大画像Dialogの初期focus/trap/Escape復帰、size/quantity/review/共有、在庫操作制約を確認。`DESIGN_SUITE=purchase DESIGN_BROWSER_CHANNEL=chrome bun run test:design` **82/82**。1440/768/390px・該当境界幅、axe AA・keyboard/focus・overflow、390px画像目視。関連RTLは購入10画面の共有回帰 **173/173**、`bunx tsc --noEmit`成功、lint 0 errors/既存8 warnings。
 
 [関連要件](../purchase-residual/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
+
+<a id="purchase-ten-step-4"></a>
 
 ### 購入10画面再監査 Step 4 DS-PAGE-007（2026-10-18）
 
@@ -2013,11 +2021,15 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 
 [関連要件](../cart/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
 
+<a id="purchase-ten-step-5"></a>
+
 ### 購入10画面再監査 Step 5 DS-PAGE-008（2026-10-18）
 
 [保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。既存実装の回帰確認（新規Red・製品変更なし）。住所Portalの入力保持・境界・focus復帰・pending dismiss lock、coupon失敗保持・成功後の住所選択、800px境界を確認。`DESIGN_SUITE=commerce DESIGN_BROWSER_CHANNEL=chrome bun run test:design` **38/38**。1440/768/390px・該当境界幅、axe AA・keyboard/focus・overflow、390px画像目視。関連RTLは購入10画面の共有回帰 **173/173**、`bunx tsc --noEmit`成功、lint 0 errors/既存8 warnings。
 
 [関連要件](../checkout/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
+
+<a id="purchase-ten-step-6"></a>
 
 ### 購入10画面再監査 Step 6 DS-PAGE-003（2026-10-18）
 
@@ -2025,14 +2037,26 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 
 [関連要件](../order-detail/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
 
+<a id="purchase-ten-step-7"></a>
+
 ### 購入10画面再監査 Step 7 DS-PAGE-009（2026-10-18）
 
 [保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。既存実装の回帰確認（新規Red・製品変更なし）。700px境界と局所scroll、hero44px/focus、個別削除/全削除後のfocus復帰、空/失敗/retry・4件制限を確認。`DESIGN_SUITE=priority DESIGN_BROWSER_CHANNEL=chrome bun run test:design`（priorityは`--grep "compare|wishlist|account shell"`） **23/23**。1440/768/390px・該当境界幅、axe AA・keyboard/focus・overflow、390px画像目視。関連RTLは購入10画面の共有回帰 **173/173**、`bunx tsc --noEmit`成功、lint 0 errors/既存8 warnings。
 
 [関連要件](../compare/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
 
+<a id="purchase-ten-step-8"></a>
+
 ### 購入10画面再監査 Step 8 DS-PAGE-033（2026-10-18）
 
 [保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。既存実装の回帰確認（新規Red・製品変更なし）。480px境界、current境界contrastとhover、末尾disabled、URLページング/履歴復帰、空/失敗/pendingを確認。`DESIGN_SUITE=priority DESIGN_BROWSER_CHANNEL=chrome bun run test:design`（priorityは`--grep "compare|wishlist|account shell"`） **23/23**。1440/768/390px・該当境界幅、axe AA・keyboard/focus・overflow、390px画像目視。関連RTLは購入10画面の共有回帰 **173/173**、`bunx tsc --noEmit`成功、lint 0 errors/既存8 warnings。
 
 [関連要件](../profile-wishlist/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。
+
+<a id="purchase-ten-step-9"></a>
+
+### 購入10画面再監査 Step 9 DS-PAGE-028（2026-10-18）
+
+注文一覧: ページ変更・再試行・検索による取得で操作元のfocusが失われた場合、完了後に名前付き結果regionへfocusを戻す。成功・空・取得失敗を含む。待機中に利用者が別の操作へfocusを移動した場合は奪わない。結果regionはTab順へ追加せず、purchase-focusの可視枠を持つ。
+
+Red: browser3幅で結果regionがinactive、RTL2件失敗。Green: 注文/支払履歴RTL30/30、追加browser両画面8/8（初回版）。Refactor/最終は[統合証跡](#purchase-ten-final)に記録。金額/条件保持/Action/API/DB/認可契約は不変。関連要件/設計/tasks/進捗、SDD要件/品質/テストを同期。[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は契約不変のため変更不要。認証後実routeは今回別保留、過去判定を保持。
