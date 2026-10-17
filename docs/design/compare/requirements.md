@@ -78,4 +78,4 @@
 
 ### 購入10画面再監査 Step 7（2026-10-18）
 
-DS-PAGE-009: 700px境界と局所scroll、hero44px/focus、個別削除/全削除後のfocus復帰、空/失敗/retry・4件制限を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-7-ds-page-0092026-10-18)を参照。fixtureと認証後実routeの判定は分離する。
+DS-PAGE-009: 700px境界と局所scroll、hero44px/focus、個別削除/全削除後のfocus復帰、空/失敗/retry・4件制限を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-7)を参照。fixtureと認証後実routeの判定は分離する。

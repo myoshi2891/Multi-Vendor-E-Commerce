@@ -1575,3 +1575,7 @@ DS-PAGE-028: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復�
 ### 購入10画面再監査 Step 10（2026-10-18）
 
 DS-PAGE-030: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復帰（ページ変更・再試行・失敗・空）と、待機中に移動したfocusを奪わないことをRTL/既存postpurchase suiteで検証。
+
+### 購入10画面最終統合（2026-10-18）
+
+全体Jest 3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）。fixture176/176・公開実route8/8、型0・lint0 errors/既存8 warnings・harness成功。新規RTL10件、browser8件。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。今回認証後実routeは専用DB不在で保留。[証跡](../../docs/design/design-system/PROGRESS.md#purchase-ten-final)。

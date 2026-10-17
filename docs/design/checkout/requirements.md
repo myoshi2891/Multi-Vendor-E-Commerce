@@ -27,4 +27,4 @@
 
 ### 購入10画面再監査 Step 5（2026-10-18）
 
-DS-PAGE-008: 住所Portalの入力保持・境界・focus復帰・pending dismiss lock、coupon失敗保持・成功後の住所選択、800px境界を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-5-ds-page-0082026-10-18)を参照。fixtureと認証後実routeの判定は分離する。
+DS-PAGE-008: 住所Portalの入力保持・境界・focus復帰・pending dismiss lock、coupon失敗保持・成功後の住所選択、800px境界を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-5)を参照。fixtureと認証後実routeの判定は分離する。

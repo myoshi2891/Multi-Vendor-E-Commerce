@@ -27,4 +27,4 @@
 
 ### 購入10画面再監査 Step 6（2026-10-18）
 
-DS-PAGE-003: paid/pendingと全状態の意味色、invoice失敗と再操作、単一合計、支払初期化error/retry、明暗祖先・800px境界を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-6-ds-page-0032026-10-18)を参照。fixtureと認証後実routeの判定は分離する。
+DS-PAGE-003: paid/pendingと全状態の意味色、invoice失敗と再操作、単一合計、支払初期化error/retry、明暗祖先・800px境界を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-6)を参照。fixtureと認証後実routeの判定は分離する。

@@ -32,4 +32,4 @@ breadcrumbは44×44px以上とし、在庫切れ面・画像面・hover・暗い
 
 ### 購入10画面再監査 Step 4（2026-10-18）
 
-DS-PAGE-007: 短い商品名44px、選択/数量/削除/送料、checkout失敗後のbag保持、sync失敗とretryを既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-4-ds-page-0072026-10-18)を参照。fixtureと認証後実routeの判定は分離する。
+DS-PAGE-007: 短い商品名44px、選択/数量/削除/送料、checkout失敗後のbag保持、sync失敗とretryを既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-4)を参照。fixtureと認証後実routeの判定は分離する。

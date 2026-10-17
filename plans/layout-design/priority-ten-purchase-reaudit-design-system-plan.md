@@ -44,4 +44,13 @@
 - [x] Step 8: Wishlistのfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
 - [x] Step 9: 注文一覧のfocus修正・TDD・fixture検証・仕様同期。今回の認証後実routeは保留。
 - [x] Step 10: 支払履歴のfocus修正・TDD・fixture検証・仕様同期。今回の認証後実routeは保留。
-- [ ] 最終統合・文書同期。
+- [x] 最終統合・文書同期（実測集計は以下）。
+- [ ] 今回10画面の実データ/認証後実route/SDK受け入れ。専用DB不在、解除条件はQA正本。
+
+## 最終結果
+
+既存8画面は追加改修不要、注文一覧・支払履歴は先行Red→Greenでfocus消失を修正。fixture176/176（purchase82・commerce38・priority23・postpurchase33）、公開実route8/8、追加後RTL30/30。型成功、lint0 errors/既存8 warnings、harness成功。今回の認証後実routeは専用DB P1001で保留、過去の台帳判定を維持。
+
+[詳細証跡](../../docs/design/design-system/PROGRESS.md#purchase-ten-final)／[保留条件](../../docs/testing/QA_HANDOFF.md#ds-purchase-ten-routes)。
+
+全体最終実測: `bun run test -- --runInBand --coverage --silent` **3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。dashboard426 files/414 lcov/18 of 80 cells（不変）。Integration/フル3-browser E2Eは未再実行。新規ローカル文書リンク116件は最終追記後も整合確認済み。

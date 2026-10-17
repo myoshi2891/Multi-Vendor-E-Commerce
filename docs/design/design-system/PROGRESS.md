@@ -2068,3 +2068,19 @@ Red: browser3幅で結果regionがinactive、RTL2件失敗。Green: 注文/支�
 支払履歴: ページ変更・再試行・検索による取得で操作元のfocusが失われた場合、完了後に名前付き結果regionへfocusを戻す。成功・空・取得失敗を含む。待機中に利用者が別の操作へfocusを移動した場合は奪わない。結果regionはTab順へ追加せず、purchase-focusの可視枠を持つ。
 
 Red: browser3幅で結果regionがinactive、RTL2件失敗。Green: 注文/支払履歴RTL30/30、追加browser両画面8/8（初回版）。Refactor/最終は[統合証跡](#purchase-ten-final)に記録。金額/条件保持/Action/API/DB/認可契約は不変。関連要件/設計/tasks/進捗、SDD要件/品質/テストを同期。[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は契約不変のため変更不要。認証後実routeは今回別保留、過去判定を保持。
+
+<a id="purchase-ten-final"></a>
+
+## 購入導線10画面再監査 最終統合（2026-10-18）
+
+[計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。前半8画面は既存実装の回帰確認（新規Redなし）。注文一覧・支払履歴に名前付き結果regionとpurchase-focusの可視枠を適用し、非同期取得後のfocus消失を修正。待機中に別操作へ移動したfocusは奪わない。API/DB/認可/金額/在庫/決済契約は不変。
+
+- TDD Red: `DESIGN_SUITE=postpurchase DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep 'purchase ten.*keyboard recovery'`で6/6が期待どおりfocus inactiveで失敗。RTL先行4 failed/2 passed。環境listen EPERM・同suite起動中のport競合・誤ったgrepのNo testsはRedに含めない。
+- Green/Refactor: 新規browser8/8、拡張後`DESIGN_SUITE=postpurchase DESIGN_BROWSER_CHANNEL=chrome bun run test:design` **33/33**。成功/失敗/retry、focus contrast3:1、待機中のfocus移動を検証。RTL **30/30**（空/失敗追加後）。既存購入関連RTL **173/173**も実行済み（追加前の部分回帰）。
+- fixture最終: purchase **82/82**、commerce **38/38**、priority **23/23**（`--grep 'compare|wishlist|account shell'`）、postpurchase **33/33**、計 **176/176**。1440/768/390px、該当480/700/800/850px、通常/空/長文/pending/error/retry/success・axe AA・keyboard/focus・overflow。10画面390px、注文/支払履歴1440pxも画像目視。成果物は各suiteの`info.outputPath`に保存し再実行時は置換される。
+- 実Next公開: `DESIGN_SUITE=purchase-public DESIGN_BROWSER_CHANNEL=chrome bun run test:design -- --grep '(/cart|/compare) .*public route|guest'` **8/8**（cart/compare各3幅、checkout/wishlistの未認証戻り先）。DB fallbackを商品あり表示の成功に数えない。
+- `bunx tsc --noEmit`成功、`bun run lint` 0 errors/既存8 warnings、`bun run check:playwright`成功。Next起動のtsconfig include副作用のみ復元。
+- 今回の専用DB/認証後実route/SDKはP1001と稼働Dockerコンテナーなしにより保留。[解除条件・次着手の正本](../../testing/QA_HANDOFF.md#ds-purchase-ten-routes)。DB変更・seed・新規アカウント・購入/決済/外部送信なし。既存68画面/249部品と他scope/過去検証履歴を保持し、今回範囲を全業務受け入れと扱わない。
+- 関連requirements/design/tasks・SDD要件/品質/testing・計画・QA/テスト実装計画を同期。overview/architecture/data-model/interfacesは表示とfocusのみで契約不変のため変更不要。
+
+全体最終実測: `bun run test -- --runInBand --coverage --silent` **3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。dashboard426 files/414 lcov/18 of 80 cells（不変）。Integration/フル3-browser E2Eは未再実行。新規ローカル文書リンク116件は最終追記後も整合確認済み。

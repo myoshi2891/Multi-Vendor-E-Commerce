@@ -1070,3 +1070,6 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] Step 9 DS-PAGE-028 注文一覧: キーボードfocus復帰のTDD修正・fixture検証・仕様同期。今回認証後実routeは保留。
 
 - [x] Step 10 DS-PAGE-030 支払履歴: キーボードfocus復帰のTDD修正・fixture検証・仕様同期。今回認証後実routeは保留。
+
+- [x] 購入10画面のfixture最終統合176/176・公開実route8/8・仕様/進捗同期。追加修正2画面、既存回帰8画面。[証跡](../../docs/design/design-system/PROGRESS.md#purchase-ten-final)。
+- [ ] 今回の実データ/認証後実route/SDK受け入れ。専用DB不在の解除条件は[QA正本](../../docs/testing/QA_HANDOFF.md#ds-purchase-ten-routes)。既存68画面/249部品の台帳判定は維持。
