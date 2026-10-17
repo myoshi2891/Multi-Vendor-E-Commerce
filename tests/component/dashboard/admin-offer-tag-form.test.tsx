@@ -58,3 +58,48 @@ it("invalid new input does not call the save action", async () => {
     );
     expect(save).not.toHaveBeenCalled();
 });
+
+it("creates a new offer tag once, preserves its draft on failure, then navigates on success", async () => {
+    let reject!: (error: Error) => void;
+    const save = jest
+        .fn()
+        .mockImplementationOnce(
+            () =>
+                new Promise((_, fail) => {
+                    reject = fail;
+                })
+        )
+        .mockResolvedValueOnce(offerTags[0]);
+    render(<OfferTagForm saveAction={save} />);
+    fireEvent.change(screen.getByLabelText("Offer tag name"), {
+        target: { value: "Seasonal collection" },
+    });
+    fireEvent.change(screen.getByLabelText("Offer tag url"), {
+        target: { value: "seasonal-collection" },
+    });
+    const form = screen.getByRole("form", { name: "Offer tag information" });
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(screen.getByLabelText("Offer tag name")).toBeDisabled();
+    reject(new Error("private details"));
+    await screen.findByRole("alert");
+    expect(screen.getByRole("alert")).not.toHaveTextContent("private details");
+    expect(screen.getByLabelText("Offer tag name")).toHaveValue(
+        "Seasonal collection"
+    );
+    expect(screen.getByLabelText("Offer tag url")).toHaveValue(
+        "seasonal-collection"
+    );
+    fireEvent.submit(form);
+    await screen.findByText("Changes saved.");
+    expect(save).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+            id: "new-offer",
+            name: "Seasonal collection",
+            url: "seasonal-collection",
+        })
+    );
+    expect(mockPush).toHaveBeenCalledWith("/dashboard/admin/offer-tags");
+    expect(mockRefresh).not.toHaveBeenCalled();
+});

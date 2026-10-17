@@ -1374,3 +1374,7 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 
 
 - [x] 販売者8再監査最終統合 ✅ Completed (2026-10-16): seven85/85・six74/74、全体Jest/coverage・型/lint/harness・仕様/QA同期。今回の認証後実routeは当初、専用DBの列不足で別保留としたが、同日にmigration適用でDS-SELLER-REAUDIT-ROUTESを解除し、seller-eight-route 48/48で受け入れ（[QA_HANDOFF](QA_HANDOFF.md#2026-10-16-保留3件の実環境受け入れ最新)）。
+
+## 未完了8画面（2026-10-17）
+
+✅ Completed (2026-10-17): Step 1〜8と最終統合。店舗一覧TDD、タグ44pxのbrowser Red→Green、転送6件の回帰・実route39ケース、補助24/24、Clerk待ちあり051反復12/12、全体Jest3300/3303・型/lint/harness・仕様/QA同期。[証跡](../design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。即時TODOはQA_HANDOFFのみ。

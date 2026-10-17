@@ -23,7 +23,9 @@
   - `test-helpers.ts`: common utilities (mock auth, DB spies, console spies).
   - `test-scenarios.ts`: reusable scenario data (relative date-based).
   - `test-config.ts`: shared constants (IDs, URLs, error messages).
-- 3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）。2026-10-16 PR#208 following focus回帰後の全体Jest/coverage実測。Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。dashboard418 files/412 lcov/18 of 80 cells。
+- 3300 passed / 3303 total、3 skipped、127 snapshots passed、340 suites（339 passed／1 skipped）。2026-10-17未完了8全体実測（`bun run test -- --runInBand --coverage --silent`）。Statements88.41%（11510/13018）／Branches79.1%（7135/9020）／Functions85.14%（2276/2673）／Lines88.96%（10472/11771）。dashboard426 files/414 lcov/18 of 80 cells。
+- Earlier measurement: 3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）。2026-10-16 PR#208 following focus回帰後の全体Jest/coverage実測。Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。dashboard418 files/412 lcov/18 of 80 cells。
+- Returns RMA E2E (plan 088 Step 6, 2026-10-17): `tests/e2e/returns-rma.spec.ts` (one test) drives the customer request on `/order/[orderId]` → seller approve / receive (Damaged) / resolve on `/dashboard/seller/stores/[storeUrl]/returns` → the customer sees Resolved, then checks the transition timestamps in the DB. The Delivered order is created in `beforeAll` through Prisma (the owner must be a dynamic Clerk user, so `seed:e2e` cannot provide it). Chromium 1/1 passed on the first run; after installing the Playwright Firefox and WebKit builds, all three browsers passed (9/9 across parallel and `--repeat-each=2` runs). The display acceptance of the authenticated returns screens uses the design suite `returns-route` (`tests/browser/returns-route-design.spec.ts`, prepared by `scripts/design/prepare-returns-route.ts` on the dedicated DB): 12 read-only cases covering the seller queue at 1440/768/390px in light and dark, the seller input states, and the order-detail returns panel, with no horizontal overflow, zero axe WCAG A/AA violations and no page errors (12/12, then 24/24 with `--repeat-each=2`). `bunx playwright test --list`: 450 tests in 47 files. Jest and integration counts are unchanged.
 - Earlier measurement (2026-10-16, return options): 3276 passed / 3279 total across 335 suites (334 passed, one skipped suite, 3 skipped tests), measured on 2026-10-16 with `bun run test -- --coverage --silent` after moving the order-detail return-option build inside its fallback (+1 `tests/component/store/order-detail-page.test.tsx`). All 127 snapshots passed. Coverage (lcov): branches 79.08%, functions 85.13%, lines 88.94%. Dashboard 418 test files/412 lcov/18 of 80 cells. Design suite `returns` 12/12.
 - Earlier measurement (2026-10-16, refund scope): 3263 passed / 3266 total across 335 suites, measured with `bun run test -- --no-coverage --silent` after limiting the RMA refund-amount exclusion to Canceled / Refunded order items (+1 `src/queries/returns.test.ts`).
 - Earlier measurement (2026-10-15, PR #206 review): 3260 passed / 3263 total across 335 suites (334 passed, one skipped suite, 3 skipped tests), measured on 2026-10-15 after the PR #206 review fixes (+1 `seller-returns.test.tsx` manual-refund note on RESOLVED, +1 `src/queries/returns.test.ts` idempotency recheck after locking, +1 return panel key reset, +1 seller rejection label, +2 new `tests/component/dashboard/seller-returns-page.test.tsx`) with `bun run test -- --coverage --silent`. Coverage: statements88.33%, branches78.99%, functions85.04%, lines88.88%. Dashboard418 test files/412 lcov/18 of 80 cells.
@@ -1490,3 +1492,46 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 今回の認証後実route/実SDK描画は専用DBのStore.returnWindowDays列不足で保留。既存販売者/店舗の読み取り後、route beforeAllで不整合を検出し中断。後続画面未実施。DB変更・seed・アカウント作成・実保存・送信・uploadなし。Nextのtsconfig副作用のみ復元。過去の受け入れ履歴と台帳件数は保持。解除条件と次着手の正本はQA_HANDOFFのDS-SELLER-REAUDIT-ROUTES。Integration/本体3-browser E2Eは今回未再実行。
 
 **2026-10-16 解除（同日追補）**: 原因は専用DB `multivendor_e2e` のマイグレーション適用漏れ（27/28、`20261015042255_add_return_requests` のみ未適用。dev DB へのみ適用されていた）で、構造ずれではない。追加のみのSQLを `bunx prisma migrate deploy` で適用し（seedなし、既存の店舗6・ユーザー7・注文14件は不変）、`prepare-seller-route.ts`（冪等）後に suite `seller-eight-route` の表示 **48/48**（8画面×3幅×light/dark、axe AA・overflow・pageerror・スクショ）。[計画](../../plans/layout-design/pending-three-real-route-acceptance-plan.md)。
+
+## 未完了8画面 Step 1（2026-10-17）
+
+店舗一覧のクエリ/RTL7件の期待失敗を確認して実装し、Green 7/7。`seven` の `remaining stores` 6/6は通常/空/失敗・長文・4状態・3幅×light/dark・focus・44px・theme Portal・axe AAを確認。`remaining-route` のDS-PAGE-066実データ6/6も合格。Next route announcerの空alertはmain外として区別する。
+
+
+### 未完了8画面 Step 2 DS-PAGE-046（2026-10-17）
+
+オファータグ作成: 実routeの44pxテストで入力40pxのRedを確認し、既存controlsクラスを適用。RTL13/13（新規作成のpending/二重送信/失敗/入力保持/retry/成功遷移を追加）。p4 fixture6件の再確認を実施。API/DB/認可/payload/URLは変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 3 DS-PAGE-020（2026-10-17）
+
+商品URL転送: 既存実装の回帰（Redなし・追加UIなし）。単体4/4: 先頭variant、商品なし、variantなし、取得失敗。3幅の実route転送先表示/axe/overflowを受け入れ対象に追加。機能/DB/認可/URL仕様は変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 4 DS-PAGE-023（2026-10-17）
+
+フォロー店舗転送: 既存aliasの単体回帰はdiscovery-regressionで実施（既存8/8の一部、Redなし）。認証後は/profile/following/1、guestはsign-inを実routeで検証するケースを追加。転送先の既存UIを維持。機能/DB/認可仕様は変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 5 DS-PAGE-025（2026-10-17）
+
+閲覧履歴転送: 既存aliasの単体回帰はdiscovery-regression8/8の一部（Redなし）。認証後/profile/history/1とguestのsign-in、3幅の転送先表示を検証するケースを追加。ブラウザー保存・pagingの既存仕様を維持。API/DB変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 6 DS-PAGE-051（2026-10-17）
+
+ダッシュボード入口: 既存role分岐の回帰（Redなし）。単体4/4でguest/USER→home、ADMIN→admin、SELLER→seller。実routeの4roleと転送先heading/axe/overflowのケースを追加。転送先・認証・DB仕様は変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 7 DS-PAGE-052（2026-10-17）
+
+販売者入口: 既存実装回帰（Redなし）。単体3/3: guestはDBアクセスなし、店舗0件→作成、所有店舗あり→先頭店舗。実routeの3幅×light/darkとguest/admin/customer拒否を追加。店舗0件の実データは変更せず単体で分岐を確認。既存URL/認証/DB仕様は変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 8 DS-PAGE-013（2026-10-17）
+
+FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirectを確認。実HTTP308と/faqsの3幅表示/axe/overflowを確認するケースを追加。公開FAQ本文・既存恒久転送仕様は変更不要。 [保存計画](../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+## 未完了8画面 最終統合（2026-10-17）
+
+実route39ケースは初回27 passed＋見出し誤期待修正後の関連16/16で受け入れ。051は3幅とdashboard light/darkを確認し、Clerk.loaded/networkidle＋pageerror判定で4ロールを3回ずつ反復12/12。補助はseven6/6（実retryを含む）、p4作成6/6・一覧/編集12/12。全体Jest3300/3303（3 skipped）・340 suites・127 snapshots、型0・lint0 errors/既存8 warnings・harness成功。共有部品やSDK全機能の完了とは区別する。[証跡](../../docs/design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。

@@ -36,6 +36,13 @@ const sellerRouteProd =
     process.env.DESIGN_SELLER_ROUTE_SERVER?.trim() === "prod";
 
 const DESIGN_SUITES = {
+    "remaining-route": {
+        testMatch: "remaining-route-design.spec.ts",
+        port: 3137,
+        kind: "route",
+        command: "NEXT_DEV_DIST_DIR=.next/remaining-route bun run dev -- --webpack --port 3137",
+        timeout: 180000,
+    },
     "admin-master-route": {
         testMatch: "admin-master-route-design.spec.ts",
         port: 3134,
@@ -70,6 +77,15 @@ const DESIGN_SUITES = {
         kind: "route",
         command:
             "NEXT_DEV_DIST_DIR=.next/purchase-route bun run dev -- --webpack --port 3132",
+        timeout: 180000,
+    },
+    // DB は呼び出し側の DATABASE_URL 等（scripts/design/prepare-returns-route.ts で検査済みの専用DB）を使う
+    "returns-route": {
+        testMatch: "returns-route-design.spec.ts",
+        port: 3136,
+        kind: "route",
+        command:
+            "NEXT_DEV_DIST_DIR=.next/returns-route bun run dev -- --webpack --port 3136",
         timeout: 180000,
     },
     returns: {

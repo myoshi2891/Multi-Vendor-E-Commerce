@@ -173,3 +173,9 @@ DS-PAGE-004 出店申請。既存実装の回帰確認（新規Redなし・追�
 ### 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）
 
 店舗設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six storesettings6/6（3幅×light/dark・画像adapter/Featured/validation/pending/失敗/値保持/retry/success/refresh/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。実Cloudinary送信・実保存は今回対象外。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+## 未完了8画面・店舗一覧（2026-10-17）
+
+DS-PAGE-066は店舗作成と同じstandalone header/mainとSellerPageを使い、既存seller themeのlight/dark変数を継承する。カードはauto-fit grid、最小幅をコンテナー内へ収め、長文を折り返す。状態は文字でも明示する。query facadeで所有者条件と最小projectionを適用し、認可失敗は伝播、取得失敗だけを汎用alertに変換する。retryはRSCの失敗結果を再利用しないfull navigation。新規店舗ディレクトリ以外の共有callerの移行判定は変更しない。
+
+タグフォームは既存controlsを本体に適用して入力/送信の44pxを保証する。転送6件のための表示部品は追加しない。

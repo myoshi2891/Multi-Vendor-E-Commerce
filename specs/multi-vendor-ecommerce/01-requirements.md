@@ -171,3 +171,7 @@ DS-PAGE-022/024/017/010/014/018/005/004は既存tokensを使用し、独立操�
 ## 販売者在庫の入力エラー（2026-10-16）
 
 在庫数・過小在庫しきい値の整数入力が不正な場合、入力欄のaria-invalidとaria-describedbyでエラー文を関連付ける。再入力で古いエラー関連付けを解除する。確定値への復元・失敗値の再送・保存状態・整数制約・更新契約は維持する。
+
+## Seller stores directory (2026-10-17)
+
+`/dashboard/seller/stores` lists only the authenticated seller’s stores, with logo, name, status and management links. A standalone branded light/dark workspace provides a create-store link, an explicit empty state and generic load-failure feedback with a full-navigation retry. It adds no edit, delete, search or paging controls.

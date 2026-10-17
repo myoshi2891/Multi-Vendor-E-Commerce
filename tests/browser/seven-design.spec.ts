@@ -988,3 +988,40 @@ for (const width of [1440,768,390]) {
         await page.screenshot({path:info.outputPath(`storefront-apply-${width}.png`),fullPage:true});
     });
 }
+
+
+// Remaining-eight Step 1: production list, with deterministic lookup states.
+for (const width of [1440, 768, 390]) for (const theme of ["light", "dark"]) {
+    test(`remaining stores ${width} ${theme}`, async ({ page }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        for (const state of ["", "&empty", "&error"]) {
+            await page.goto("/?screen=stores-list" + state);
+            await page.evaluate(dark => document.documentElement.classList.toggle("dark", dark), theme === "dark");
+            await expect(page.getByRole("heading", {level:1, name:"Your stores"})).toBeVisible();
+            await expect(page.getByRole("heading", {level:1})).toHaveCSS("font-family", /Georgia/);
+            if (!state) {
+                await expect(page.getByRole("list", {name:"Your stores"}).getByRole("listitem")).toHaveCount(4);
+                for (const status of ["Active", "Pending", "Disabled", "Banned"]) await expect(page.getByText(status, {exact:true})).toBeVisible();
+            } else if (state === "&empty") await expect(page.getByText("No stores yet")).toBeVisible();
+            else await expect(page.getByRole("alert")).toContainText("Unable to load your stores");
+            for (const link of await page.getByRole("main").getByRole("link").all()) {
+                expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+                await link.focus();
+                await expect(link).toBeFocused();
+                await expect(link).toHaveCSS("outline-style", "solid");
+            }
+            expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+            expect((await new AxeBuilder({page}).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze()).violations).toEqual([]);
+            await page.screenshot({path:info.outputPath(`stores${state || "normal"}.png`), fullPage:true});
+        }
+        await page.getByRole("link", {name:"Try again"}).click();
+        await expect(page.getByRole("heading", {level:1,name:"Your stores"})).toBeVisible();
+        await expect(page.getByRole("list", {name:"Your stores"}).getByRole("listitem")).toHaveCount(4);
+        await expect(page.getByRole("alert")).toHaveCount(0);
+        const toggle = page.getByRole("button", {name:"Toggle theme"});
+        await toggle.press("Enter");
+        await expect(page.getByRole("menuitem", {name:"Dark", exact:true})).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(toggle).toBeFocused();
+    });
+}
