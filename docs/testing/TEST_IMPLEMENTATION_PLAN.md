@@ -1380,3 +1380,5 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 ✅ Completed (2026-10-17): Step 1〜8と最終統合。店舗一覧TDD、タグ44pxのbrowser Red→Green、転送6件の回帰・実route39ケース、補助24/24、Clerk待ちあり051反復12/12、全体Jest3300/3303・型/lint/harness・仕様/QA同期。[証跡](../design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。即時TODOはQA_HANDOFFのみ。
 
 - ✅ Completed (2026-10-18): 購入10画面再監査 Step 1 DS-PAGE-006 商品一覧、既存purchase回帰82/82・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 2 DS-PAGE-037 店舗詳細、既存purchase回帰82/82・関連RTL173/173・仕様同期。全体統計ではない。

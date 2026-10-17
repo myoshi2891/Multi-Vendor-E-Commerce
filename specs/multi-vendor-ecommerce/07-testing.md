@@ -1539,3 +1539,7 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 ### 購入10画面再監査 Step 1（2026-10-18）
 
 DS-PAGE-006 商品一覧: sort境界・Portalのkeyboard選択、複数size/searchのURL保持、ページャ44pxとcurrent、filterと商品操作。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 2（2026-10-18）
+
+DS-PAGE-037 店舗詳細: 長い店舗情報・商品カード・空状態・sort Portal・850px境界・Clear filtersのURL。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。

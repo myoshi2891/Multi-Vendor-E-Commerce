@@ -1052,3 +1052,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 [保存計画](priority-ten-purchase-reaudit-design-system-plan.md)。既存68画面/249部品の判定・履歴を保持し、今回の回帰/修正/実route受け入れを分離する。
 
 - [x] Step 1 DS-PAGE-006 商品一覧: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 2 DS-PAGE-037 店舗詳細: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。

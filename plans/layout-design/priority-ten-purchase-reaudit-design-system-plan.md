@@ -35,7 +35,7 @@
 
 - [x] 計画保存。
 - [x] Step 1: 商品一覧のfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
-- [ ] Step 2: 店舗詳細。
+- [x] Step 2: 店舗詳細のfixture回帰・文書同期。今回の認証後実routeは最終欄で別判定。
 - [ ] Step 3: 商品詳細。
 - [ ] Step 4: カート。
 - [ ] Step 5: Checkout。
