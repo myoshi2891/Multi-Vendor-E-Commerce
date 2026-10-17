@@ -1988,3 +1988,9 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 - 仕様: 01要件・02構成・04interface・05workflow・07testing、seller migration requirements/design/tasks、QA/coverage/計画を同期。00-overviewは既存seller管理範囲、03-data-modelはschema不変、06-qualityは既存品質基準の適用で変更不要。段階コミットは計画＋画面別8＋最終統合。
 
 再実行: dedicated DBの3変数を一致させて `bun scripts/design/prepare-remaining-route.ts /tmp/remaining-route.json`。`DESIGN_REMAINING_ROUTE=/tmp/remaining-route.json DESIGN_SUITE=remaining-route DESIGN_BROWSER_CHANNEL=chrome bun run test:design`。各fixtureはseven/p4の既存suiteを使用。ログは `/tmp/remaining-*.log`（ローカル一時証跡）。
+
+### 購入10画面再監査 Step 1 DS-PAGE-006（2026-10-18）
+
+[保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)。既存実装の回帰確認（新規Red・製品変更なし）。sort境界・Portalのkeyboard選択、複数size/searchのURL保持、ページャ44pxとcurrent、filterと商品操作を確認。`DESIGN_SUITE=purchase DESIGN_BROWSER_CHANNEL=chrome bun run test:design` **82/82**。1440/768/390px・該当境界幅、axe AA・keyboard/focus・overflow、390px画像目視。関連RTLは購入10画面の共有回帰 **173/173**、`bunx tsc --noEmit`成功、lint 0 errors/既存8 warnings。
+
+[関連要件](../purchase-residual/requirements.md)を確認し機能要件・表示設計の変更不要。SDDの[overview](../../../specs/multi-vendor-ecommerce/00-overview.md)・[requirements](../../../specs/multi-vendor-ecommerce/01-requirements.md)・[architecture](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[data model](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[interfaces](../../../specs/multi-vendor-ecommerce/04-interfaces.md)は既存契約を保持するため変更不要。今回の専用DB実route/SDKは別記録し、過去の検証済み判定を維持。

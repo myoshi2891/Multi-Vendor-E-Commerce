@@ -75,3 +75,7 @@ heroのパンくずと継続探索linkは44×44px以上。700px境界でも折�
 ### 再監査 Step 8 DS-PAGE-033 Wishlist（2026-10-14）
 
 現在ページのaccent境界はhover/focusでも3:1以上の可読性を保つ。非currentのhover・44px・URL/current・既定カードと保存variantの契約を維持する。
+
+### 購入10画面再監査 Step 1（2026-10-18）
+
+DS-PAGE-006: sort境界・Portalのkeyboard選択、複数size/searchのURL保持、ページャ44pxとcurrent、filterと商品操作を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#購入10画面再監査-step-1-ds-page-0062026-10-18)を参照。fixtureと認証後実routeの判定は分離する。

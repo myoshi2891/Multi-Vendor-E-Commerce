@@ -1535,3 +1535,7 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 ## 未完了8画面 最終統合（2026-10-17）
 
 実route39ケースは初回27 passed＋見出し誤期待修正後の関連16/16で受け入れ。051は3幅とdashboard light/darkを確認し、Clerk.loaded/networkidle＋pageerror判定で4ロールを3回ずつ反復12/12。補助はseven6/6（実retryを含む）、p4作成6/6・一覧/編集12/12。全体Jest3300/3303（3 skipped）・340 suites・127 snapshots、型0・lint0 errors/既存8 warnings・harness成功。共有部品やSDK全機能の完了とは区別する。[証跡](../../docs/design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。
+
+### 購入10画面再監査 Step 1（2026-10-18）
+
+DS-PAGE-006 商品一覧: sort境界・Portalのkeyboard選択、複数size/searchのURL保持、ページャ44pxとcurrent、filterと商品操作。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。

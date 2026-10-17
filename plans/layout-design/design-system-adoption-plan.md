@@ -1046,3 +1046,9 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] 未完了8最終統合: 今回対象8件を検証済みへ更新。台帳68画面＝検証済み68／保留0／TODO0／実装済み0、部品249。実route39ケース＋051反復12/12、補助24/24、全体Jest3300/3303（3 skipped）、型/lint/harness・仕様/QA同期。[証跡](../../docs/design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。既存共通基盤・部品全scope・SDK全機能の判定は維持。
 - [x] DS-COMP-249 [SellerStoresList](../../src/components/dashboard/seller/seller-stores-list.tsx): 所有店舗ディレクトリ、通常/空/失敗/実retry、3幅・両テーマ・実routeを受け入れ。
+
+### 購入導線優先10画面再監査（2026-10-18）
+
+[保存計画](priority-ten-purchase-reaudit-design-system-plan.md)。既存68画面/249部品の判定・履歴を保持し、今回の回帰/修正/実route受け入れを分離する。
+
+- [x] Step 1 DS-PAGE-006 商品一覧: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
