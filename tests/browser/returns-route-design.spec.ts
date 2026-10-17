@@ -158,6 +158,8 @@ for (const width of WIDTHS)
                             name: "Resolve return",
                         })
                     ).toBeVisible();
+                    // カードが無くてもボタン 0 件で通ってしまうため、先に存在を確かめる
+                    await expect(sellerCard(page, "RESOLVED")).toHaveCount(1);
                     await expect(
                         sellerCard(page, "RESOLVED").getByRole("button")
                     ).toHaveCount(0);
