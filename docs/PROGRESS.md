@@ -6014,4 +6014,4 @@ SonarCloud PR#208 の New Code 未カバー条件5件（`following/container.tsx
 | Jest / Integration | 3280/3283・335 suites / 257 | 不変 |
 | 型エラー | 0 件 | **0 件** |
 
-chromium 1/1 passed。firefox / webkit はローカルにブラウザが無く未実行。
+chromium 1/1 passed。その後 `bunx playwright install firefox webkit` を行い、chromium / firefox / webkit の 3 ブラウザで通過（3 ワーカー並列 ×2・`--repeat-each=2` で計 9/9）。認証後実ルートのデザイン検証 `DESIGN_SUITE=returns-route` は 12/12（`--repeat-each=2` 24/24）。
