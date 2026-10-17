@@ -215,4 +215,5 @@ tx をモックし、各 action について次を確かめる（AAA）: 認可�
 - **Red 不要の理由**: 実装済みの UI と action に対する回帰 E2E の追加で、新しいロジックは無い。
 - **結果**: chromium 1/1 passed（Docker DB `multivendor_dev`・システムの Chrome）。firefox / webkit はローカルにブラウザ本体が無く未実行。cleanup 後の孤児は 0 件。`--list` 450 tests / 47 files。tsc 0・lint 0 errors・`check:playwright` 成功。
 - **Done criteria の実測（2026-10-17）**: `rma.refunded` 0 件、`idempotencyKey String`、ERD は `a75e63df` でスキーマと同じコミット、返金 API の grep ヒット 3 件は 087 のテスト説明文のみ。
-- **残り（オペレーター作業）**: マイグレーション `20261015042255_add_return_requests` のリモート DB への適用。DS-PAGE-068 / DS-COMP-247 / 248 の表示・axe を含む実ルート受け入れは design-system 台帳で保留のまま。
+- **リモート DB（2026-10-17 確認）**: マイグレーション `20261015042255_add_return_requests` は適用済み（2026-10-17 05:35:59 UTC。`bunx prisma migrate status` で `.env` の接続先が 28/28、`_prisma_migrations` の `finished_at` 記録あり・`rolled_back_at` なし、`ReturnRequest` / `ReturnRequestItem` と `Store.returnWindowDays` / `acceptsReturns` の存在を読み取りで確認）。ユーザーが手動で `migrate deploy` を実行して適用。残作業なし。
+- **追記（2026-10-17・同日）**: firefox / webkit を導入して本 spec が 3 ブラウザで通過（計 9/9）。DS-PAGE-068 / DS-COMP-247 / 248 は実ルート suite `returns-route` で表示・axe を受け入れて検証済みへ（[計画](layout-design/returns-real-route-acceptance-plan.md)）。
