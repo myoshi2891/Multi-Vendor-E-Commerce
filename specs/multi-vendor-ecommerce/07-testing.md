@@ -1441,3 +1441,52 @@ DS-PAGE-004: 既存実装の回帰確認（新規Redなし・追加改修不要�
 ### 受け入れ未完了8最終統合（2026-10-16）
 
 補助47/47（following10・history13・home9・Contact6・About3・apply6）、公開実route9/9、認証実SDK10/10（5幅×2画面）、認証後read-only3/3（各3幅）、申請guest3/3。計72/72。 実route/SDKとadapterを区別し、認証2画面はpageerrorを検出する。型/lint/harness・文書同期完了。統計/制約は[QA正本](../../docs/testing/QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。
+
+
+### 販売者8再監査 Step 1 DS-PAGE-058（2026-10-16）
+
+店舗概要: 既存実装の回帰確認（新規Redなし・追加改修不要）。大きな注文金額のfixture/ブラウザー回帰を追加。seven residual overview 6/6（3幅×light/dark・KPI/注文金額の面内表示・空・axe AA）、390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 2 DS-PAGE-062（2026-10-16）
+
+商品一覧: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual products 6/6（3幅×light/dark・44px・削除確認・作成Dialog・Escape focus復帰・axe AA）、390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 3 DS-PAGE-055（2026-10-16）
+
+在庫管理: TDD Red: 無効な入力にaria-invalid/説明関連付けがなくRTL1件失敗。Green: invalid時のみエラーIDをaria-describedbyに関連付け、再入力で解除。RTL7/7・seven residual inventory6/6（3幅×light/dark・validation/Enter/pending/error/retry/success・44px・axe AA）。390px dark画像目視。型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 4 DS-PAGE-057（2026-10-16）
+
+注文一覧: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual orders6/6（3幅×light/dark・保存失敗/値保持/retry/success・支払意味色・詳細Dialog・Escape focus復帰・44px・axe AA）。390px dark画像目視、関連Jest150/150、型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 5 DS-PAGE-056（2026-10-16）
+
+メッセージ: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual messages8/8（1440/1000/768/390px×light/dark・seller tokens/未読説明/既読失敗とretry/モバイル戻りfocus・axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 6 DS-PAGE-061（2026-10-16）
+
+商品登録: 既存実装の回帰確認（新規Redなし・追加改修不要）。six product6/6（3幅×light/dark・見出し/画像/カテゴリPortal/入力focus/overflow/axe AA）。390px dark・1440px light画像目視、関連Jest150/150と全体実行内product-details合格、型0・lint0 errors/既存8 warnings。属性と共有variantの最終suite結果は最終統合に記録。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 7 DS-PAGE-064（2026-10-16）
+
+配送設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six shipping6/6（3幅×light/dark・国検索/12.5ドル初期値/Portal/pending/失敗/retry/success/閉じるlock/Escape focus復帰/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）
+
+店舗設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six storesettings6/6（3幅×light/dark・画像adapter/Featured/validation/pending/失敗/値保持/retry/success/refresh/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。実Cloudinary送信・実保存は今回対象外。 [計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。補助検証と認証後実routeを区別する。
+
+
+### 販売者8再監査最終統合（2026-10-16）
+
+補助ブラウザーseven85/85・six74/74、計159/159（部分実行は重複加算しない）。3幅/light/dark、ナビ767px/message1000px境界、focus/44px/overflow/意味色/axe AAを確認。全体Jest3280 passed/3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。型0・lint0 errors/既存8 warnings・harness/diff/local links成功。dashboard418 files/412 lcov/18 of 80 cells、セル状態不変。
+
+今回の認証後実route/実SDK描画は専用DBのStore.returnWindowDays列不足で保留。既存販売者/店舗の読み取り後、route beforeAllで不整合を検出し中断。後続画面未実施。DB変更・seed・アカウント作成・実保存・送信・uploadなし。Nextのtsconfig副作用のみ復元。過去の受け入れ履歴と台帳件数は保持。解除条件と次着手の正本はQA_HANDOFFのDS-SELLER-REAUDIT-ROUTES。Integration/本体3-browser E2Eは今回未再実行。
+
+**2026-10-16 解除（同日追補）**: 原因は専用DB `multivendor_e2e` のマイグレーション適用漏れ（27/28、`20261015042255_add_return_requests` のみ未適用。dev DB へのみ適用されていた）で、構造ずれではない。追加のみのSQLを `bunx prisma migrate deploy` で適用し（seedなし、既存の店舗6・ユーザー7・注文14件は不変）、`prepare-seller-route.ts`（冪等）後に suite `seller-eight-route` の表示 **48/48**（8画面×3幅×light/dark、axe AA・overflow・pageerror・スクショ）。[計画](../../plans/layout-design/pending-three-real-route-acceptance-plan.md)。

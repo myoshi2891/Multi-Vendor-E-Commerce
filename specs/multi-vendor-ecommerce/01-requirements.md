@@ -167,3 +167,7 @@ DS-PAGE-022/024/017/010/014/018/005/004は既存tokensを使用し、独立操�
 ## 認証画面のデザイン受け入れ（2026-10-16）
 
 サインイン/サインアップはstore限定purchase themeと共通Clerk appearanceでブランド表示を維持する。Home/collection/supportとSDKの操作は44×44px以上、明暗面で可視focusを分け、入力境界・focusは3:1以上。Clerkの認証・return destination契約は保持する。実認証送信とアカウント作成は表示検証の対象外。[認証画面設計](../../docs/design/authentication.md)。
+
+## 販売者在庫の入力エラー（2026-10-16）
+
+在庫数・過小在庫しきい値の整数入力が不正な場合、入力欄のaria-invalidとaria-describedbyでエラー文を関連付ける。再入力で古いエラー関連付けを解除する。確定値への復元・失敗値の再送・保存状態・整数制約・更新契約は維持する。

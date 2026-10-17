@@ -1,6 +1,6 @@
 # Coverage Report — Field Survey
 
-> **生成日**: 2026-05-21（**最終更新**: 2026-10-14）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
+> **生成日**: 2026-05-21（**最終更新**: 2026-10-16）/ **対応する成果物**: [`docs/coverage-dashboard.html`](../coverage-dashboard.html) ([生成元](../../scripts/coverage-dashboard/))
 > **再生成コマンド**: `bun run coverage:dashboard`
 
 このレポートは、テストカバレッジダッシュボード初回生成 (2026-05-21) 時点での **現状サマリ・優先アクション・実装記録** を一覧化したものです。ダッシュボード HTML は視覚的な探索用、本ファイルは **読み返し・PR レビュー・スプリントプランニング用** の整理ドキュメントとして使い分けてください。
@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-16） | **3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。PR#208 following focus回帰後の全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage | Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）（2026-10-16 PR#208 following focus回帰後のCLI実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
-| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16再生成実測（返品キューのページング後）。 |
+| Jestテスト総数（2026-10-16） | **3280 passed / 3283 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。販売者8再監査後の全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage | Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）（販売者8再監査後のCLI実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
+| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16販売者8再監査後の再生成実測。 |
 | Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-16実測）。 |
-| テスト総数 | **3279 unit/component passed**（3282 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
+| テスト総数 | **3280 unit/component passed**（3283 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -99,6 +99,11 @@
 ---
 
 ## 3. Next Actions (カバレッジ観点の戦略台帳)
+
+### 販売者8再監査（2026-10-16・完了済み）
+
+在庫入力のエラー関連付けをRTL/browserで補強し、店舗概要に大きな注文金額の表示回帰を追加。新カテゴリ/新セルの追加ではなく既存dashbd/pagesの品質維持を目的とする。[計画](../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。実routeの環境制約は[QA](QA_HANDOFF.md#2026-10-16-販売者8画面再監査)を正本とする。
+
 
 **販売者優先8画面残存移行（2026-10-10、実装・補助検証済み）**: 寸法・意味色・Portal・未読識別の受け入れを追加。分類の列は増えず、生成matrixの全80セル状態は変更前と同一。実認証後の受け入れをfixture成功と区別する。[QA解除条件](QA_HANDOFF.md#ds-seller-eight-browser)。
 

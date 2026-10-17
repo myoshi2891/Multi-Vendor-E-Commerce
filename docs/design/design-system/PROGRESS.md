@@ -1,6 +1,10 @@
 # デザインシステム移行 — 進捗ノート
 
-## 2026-10-16 受け入れ未完了8画面（現在地）
+## 2026-10-16 保留3件の実環境受け入れ（現在地）
+
+DS-PAGE-022（フォロー店舗）・DS-PAGE-004（出店申請）を検証済みへ更新し、販売者8再監査の実route（DS-SELLER-REAUDIT-ROUTES）を解除。[証跡](#保留3件の実環境受け入れ2026-10-16)。台帳68画面＝検証済み59／保留2／TODO7／実装済み0、部品248件。
+
+## 2026-10-16 受け入れ未完了8画面（履歴）
 
 実装・TDD/回帰・今回の受け入れ・仕様同期を完了。001/002/005/010/017/024を検証済みへ更新。022/004は実データ/SDK/保存を別保留として維持。[証跡](#受け入れ未完了8画面2026-10-16)。台帳68画面＝検証済み57／保留4／TODO7／実装済み0、部品248件。共通基盤・他callerの既存判定は保持。
 
@@ -97,7 +101,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-001 | `/sign-in` | 本体適用（2026-10-16受け入れ） | 周辺部品を監査 | 検証済み | [src/app/(auth)/sign-in/[[...sign-in]]/page.tsx](<../../../src/app/(auth)/sign-in/[[...sign-in]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-002 | `/sign-up` | 本体適用（2026-10-16受け入れ） | 周辺部品を監査 | 検証済み | [src/app/(auth)/sign-up/[[...sign-up]]/page.tsx](<../../../src/app/(auth)/sign-up/[[...sign-up]]/page.tsx>) | [前セッションの確認](#前セッションの確認結果) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-003 | `/order/[orderId]` | 本体適用・検証保留 | P1 | 検証済み | [src/app/(fullscreen)/order/[orderId]/page.tsx](<../../../src/app/(fullscreen)/order/[orderId]/page.tsx>) | [checkout-order移行記録](#checkout-order移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11)、[決済/印刷](#残り保留の解消2026-10-11)／[返品 RMA の UI（2026-10-15）](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
-| DS-PAGE-004 | `/seller/apply` | 本体適用・検証保留 | P3 | 保留 | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) ／[今回の読取・補助検証と残保留](#受け入れ未完了8画面2026-10-16) |
+| DS-PAGE-004 | `/seller/apply` | 本体適用（2026-10-16受け入れ） | P3 | 検証済み | [src/app/(fullscreen)/seller/apply/page.tsx](<../../../src/app/(fullscreen)/seller/apply/page.tsx>) | [優先7画面移行記録](#優先7画面移行記録) ／[今回の読取・補助検証と残保留](#受け入れ未完了8画面2026-10-16) ／[実データ・実更新/実upload受け入れ](#保留3件の実環境受け入れ2026-10-16) |
 | DS-PAGE-005 | `/about` | 本体適用（2026-10-16受け入れ） | 周辺部品を監査 | 検証済み | [src/app/(store)/about/page.tsx](<../../../src/app/(store)/about/page.tsx>) | [前セッションの確認](#前セッションの確認結果) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-006 | `/browse` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/browse/page.tsx](<../../../src/app/(store)/browse/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、補助/RTL済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-007 | `/cart` | 本体適用（2026-10-01移行） | P1 | 検証済み | [src/app/(store)/cart/page.tsx](<../../../src/app/(store)/cart/page.tsx>) | [cart移行記録](#cart移行記録)、[今回8画面](#購入優先8画面受け入れ移行記録) |
@@ -115,7 +119,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-019 | `/product/[productSlug]/[variantSlug]` | 本体適用・周辺確認 | 周辺部品を監査 | 検証済み | [src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/[variantSlug]/page.tsx>) | [購入導線6画面](#購入導線優先6画面移行記録)、操作/ページング補助検証済み、専用DB実route受け入れ済み、[今回8画面](#購入優先8画面受け入れ移行記録)、[実route受け入れ](#保留分の実ルート受け入れ2026-10-11) |
 | DS-PAGE-020 | `/product/[productSlug]` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/product/[productSlug]/page.tsx](<../../../src/app/(store)/product/[productSlug]/page.tsx>) | 未実施 |
 | DS-PAGE-021 | `/profile/addresses` | 本体適用（2026-10-03移行） | P2 | 検証済み | [src/app/(store)/profile/addresses/page.tsx](<../../../src/app/(store)/profile/addresses/page.tsx>) | [addresses実施記録](#profile-addresses移行記録) ／[購入後6画面の今回の証跡](#購入後p2-6画面移行記録)（補助検証済み・実ルート保留） |
-| DS-PAGE-022 | `/profile/following/[page]` | 本体適用・検証保留 | P2 | 保留 | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) ／[今回の読取・補助検証と残保留](#受け入れ未完了8画面2026-10-16) |
+| DS-PAGE-022 | `/profile/following/[page]` | 本体適用（2026-10-16受け入れ） | P2 | 検証済み | [src/app/(store)/profile/following/[page]/page.tsx](<../../../src/app/(store)/profile/following/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) ／[今回の読取・補助検証と残保留](#受け入れ未完了8画面2026-10-16) ／[実データ・実更新/実upload受け入れ](#保留3件の実環境受け入れ2026-10-16) |
 | DS-PAGE-023 | `/profile/following` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/following/page.tsx](<../../../src/app/(store)/profile/following/page.tsx>) | aliasのRTL回帰済み。認証後実ルートは[P2記録](#p2優先5画面移行記録)の保留を継続 |
 | DS-PAGE-024 | `/profile/history/[page]` | 本体適用（2026-10-16受け入れ） | P2 | 検証済み | [src/app/(store)/profile/history/[page]/page.tsx](<../../../src/app/(store)/profile/history/[page]/page.tsx>) | [P2実施記録](#p2優先5画面移行記録) ／[未完了8画面の今回の受け入れ](#受け入れ未完了8画面2026-10-16)。実認証送信など対象外範囲は証跡参照。 |
 | DS-PAGE-025 | `/profile/history` | 転送専用 | 回帰検証 | TODO | [src/app/(store)/profile/history/page.tsx](<../../../src/app/(store)/profile/history/page.tsx>) | aliasのRTL回帰済み。認証後実ルートは[P2記録](#p2優先5画面移行記録)の保留を継続 |
@@ -1839,3 +1843,70 @@ Step4の共通AuthFrame/theme/appearanceをサインアップへ適用し実SDK�
 追加回帰: sign-up全入力（username/email/password）の未focus時境界とfocusを5幅で再確認、5/5。ブラウザー72件のうち同じ5ケースの検証を補強したため重複加算しない。最終lint/tscはこのテスト変更後に再実行して成功。
 
 文書最終検証: 追加/変更行のローカルリンク72件に欠落0、DS-PAGE68/DS-COMP248の重複0。dashboard80セルのdata-statusは変更前と同一。git diff --check成功。段階コミットは[保存計画](../../../plans/layout-design/priority-eight-unaccepted-design-system-plan.md#段階コミット)に記録。
+
+
+### 販売者8再監査 Step 1 DS-PAGE-058（2026-10-16）
+
+店舗概要: 既存実装の回帰確認（新規Redなし・追加改修不要）。大きな注文金額のfixture/ブラウザー回帰を追加。seven residual overview 6/6（3幅×light/dark・KPI/注文金額の面内表示・空・axe AA）、390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 2 DS-PAGE-062（2026-10-16）
+
+商品一覧: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual products 6/6（3幅×light/dark・44px・削除確認・作成Dialog・Escape focus復帰・axe AA）、390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 3 DS-PAGE-055（2026-10-16）
+
+在庫管理: TDD Red: 無効な入力にaria-invalid/説明関連付けがなくRTL1件失敗。Green: invalid時のみエラーIDをaria-describedbyに関連付け、再入力で解除。RTL7/7・seven residual inventory6/6（3幅×light/dark・validation/Enter/pending/error/retry/success・44px・axe AA）。390px dark画像目視。型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 4 DS-PAGE-057（2026-10-16）
+
+注文一覧: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual orders6/6（3幅×light/dark・保存失敗/値保持/retry/success・支払意味色・詳細Dialog・Escape focus復帰・44px・axe AA）。390px dark画像目視、関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 5 DS-PAGE-056（2026-10-16）
+
+メッセージ: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual messages8/8（1440/1000/768/390px×light/dark・seller tokens/未読説明/既読失敗とretry/モバイル戻りfocus・axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 6 DS-PAGE-061（2026-10-16）
+
+商品登録: 既存実装の回帰確認（新規Redなし・追加改修不要）。six product6/6（3幅×light/dark・見出し/画像/カテゴリPortal/入力focus/overflow/axe AA）。390px dark・1440px light画像目視、関連Jest150/150と全体実行内product-details合格、型0・lint0 errors/既存8 warnings。属性と共有variantの最終suite結果は最終統合に記録。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 7 DS-PAGE-064（2026-10-16）
+
+配送設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six shipping6/6（3幅×light/dark・国検索/12.5ドル初期値/Portal/pending/失敗/retry/success/閉じるlock/Escape focus復帰/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）
+
+店舗設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six storesettings6/6（3幅×light/dark・画像adapter/Featured/validation/pending/失敗/値保持/retry/success/refresh/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。実Cloudinary送信・実保存は今回対象外。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査の仕様確認（2026-10-16）
+
+SDDの[概要](../../../specs/multi-vendor-ecommerce/00-overview.md)・[アーキテクチャ](../../../specs/multi-vendor-ecommerce/02-architecture.md)・[データモデル](../../../specs/multi-vendor-ecommerce/03-data-model.md)・[インターフェース](../../../specs/multi-vendor-ecommerce/04-interfaces.md)・[ワークフロー](../../../specs/multi-vendor-ecommerce/05-workflows.md)を確認。今回の在庫エラー関連付けは表示属性のみのため、API/DB/認可/業務計算/payload/URLの変更不要。表示要件は01-requirements、検証方針と証跡は07-testingへ同期。seller-dashboardの業務要件・設計は維持する。
+
+
+### 販売者8再監査最終統合（2026-10-16）
+
+補助ブラウザーseven85/85・six74/74、計159/159（部分実行は重複加算しない）。3幅/light/dark、ナビ767px/message1000px境界、focus/44px/overflow/意味色/axe AAを確認。全体Jest3280 passed/3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。型0・lint0 errors/既存8 warnings・harness/diff/local links成功。dashboard418 files/412 lcov/18 of 80 cells、セル状態不変。
+
+今回の認証後実route/実SDK描画は専用DBのStore.returnWindowDays列不足で保留。既存販売者/店舗の読み取り後、route beforeAllで不整合を検出し中断。後続画面未実施。DB変更・seed・アカウント作成・実保存・送信・uploadなし。Nextのtsconfig副作用のみ復元。過去の受け入れ履歴と台帳件数は保持。解除条件と次着手の正本はQA_HANDOFFのDS-SELLER-REAUDIT-ROUTES。Integration/本体3-browser E2Eは今回未再実行。
+
+**2026-10-16 解除（同日追補）**: 原因は専用DB `multivendor_e2e` のマイグレーション適用漏れ（27/28、`20261015042255_add_return_requests` のみ未適用。dev DB へのみ適用されていた）で、構造ずれではない。追加のみのSQLを `bunx prisma migrate deploy` で適用し（seedなし、既存の店舗6・ユーザー7・注文14件は不変）、`prepare-seller-route.ts`（冪等）後に suite `seller-eight-route` の表示 **48/48**（8画面×3幅×light/dark、axe AA・overflow・pageerror・スクショ）。[計画](../../../plans/layout-design/pending-three-real-route-acceptance-plan.md)。
+
+計画1・画面8・最終統合1の10コミット。TDDは在庫エラー関連付けRTL1件のRed→Green、店舗概要の追加回帰は実装前からGreenとして記録。他7画面は既存実装の回帰確認。
+
+## 保留3件の実環境受け入れ（2026-10-16）
+
+[計画](../../../plans/layout-design/pending-three-real-route-acceptance-plan.md)。環境: 専用DB `multivendor_e2e`（`migrate deploy` で28/28、seedなし）、Clerk dev の既存 `+clerk_test` 販売者/顧客、`DESIGN_BROWSER_CHANNEL=chrome`。
+
+- **販売者8画面（DS-SELLER-REAUDIT-ROUTES）**: 停止原因はマイグレーション適用漏れ（27/28）。適用後 `seller-eight-route` 表示 **48/48**（5.3m）。既存データ件数は適用前後で不変。
+- **DS-PAGE-022 フォロー店舗**: `purchase-route` に実更新テストを追加。商品詳細の `Follow boutique` で実フォロー → `/profile/following/1` にカード1件（3幅・axe AA・overflow・スクショ）→ 一覧から解除で件数−1・`You unfollowed …`・DB 反映 → 再読込で空状態を保持。開始/終了とも未フォロー（`finally` で復元）。
+- **DS-PAGE-004 出店申請**: 同 suite に追加。Upload Widget へ実ファイルを渡してロゴ/カバーを実Cloudinaryへ upload（`res.cloudinary.com` のURLをプレビューとDBで確認）→ 4段階入力 → 送信 → 完了画面（3幅・axe AA）。DB の名前/メール/電話/説明/配送/返品ポリシー/所有者/`PENDING` が入力どおり。Decimal の console エラー0（plan 089 回帰）。作成店舗は `finally` で削除。
+- 安定性: 追加2件を `--repeat-each=3` で **6/6**。事後 DB は店舗6・フォロー0（開始時と同じ）。初回は Widget が `Done` 押下まで閉じない／2回目は先頭の閉じた iframe を掴む、のテスト側操作不足で失敗し修正（製品不具合なし）。
+- tsc 0・lint 0 errors（既存8 warnings）・`check:playwright` 成功。Jest 変更なし（統計不変）。Integration/本体3-browser E2E は未再実行。
+- 後片付け残: Cloudinary の検証用アセットは API secret が無く自動削除不可。一覧は [QA_HANDOFF](../../testing/QA_HANDOFF.md#2026-10-16-保留3件の実環境受け入れ最新)。

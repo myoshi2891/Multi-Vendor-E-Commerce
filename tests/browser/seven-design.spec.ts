@@ -747,6 +747,12 @@ for (const width of [1440, 768, 390])
                 }),
                 "KPI must contain large monetary values"
             ).toBe(true);
+            const recentOrder = page.getByText("$9,999,999,999.99", { exact: true });
+            await expect(recentOrder).toBeVisible();
+            expect(await recentOrder.evaluate(node => {
+                const row = node.closest("li")!;
+                return row.scrollWidth <= row.clientWidth;
+            }), "recent order totals fit their panel").toBe(true);
             await sellerEvidence(page, info, "seller-large.png");
             await page.goto("/?screen=overview&empty=1");
             await page.evaluate(
@@ -833,7 +839,13 @@ for (const width of [1440, 768, 390])
             await touchControl(
                 editor.getByRole("button", { name: "保存", exact: true })
             );
-            await editor.getByRole("spinbutton").fill("7");
+            const field = editor.getByRole("spinbutton");
+            await field.fill("");
+            await editor.getByRole("button", { name: "保存", exact: true }).click();
+            await expect(field).toHaveAttribute("aria-invalid", "true");
+            await expect(field).toHaveAccessibleDescription("0〜1,000,000の整数を入力してください。");
+            await field.fill("7");
+            await expect(field).not.toHaveAttribute("aria-invalid", "true");
             await page.keyboard.press("Enter");
             await expect(
                 editor.getByRole("button", { name: "保存中…" })

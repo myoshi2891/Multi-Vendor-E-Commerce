@@ -67,6 +67,8 @@ export default function StockNumberEditor({
                     </label>
                     <Input
                         id={id}
+                        aria-invalid={feedback === "invalid" || undefined}
+                        aria-describedby={feedback === "invalid" ? `${id}-error` : undefined}
                         type="number"
                         min={0}
                         max={1000000}
@@ -97,7 +99,7 @@ export default function StockNumberEditor({
                 </Button>
             </div>
             {feedback === "invalid" && (
-                <p role="alert" className={styles.alert}>
+                <p id={`${id}-error`} role="alert" className={styles.alert}>
                     0〜1,000,000の整数を入力してください。
                 </p>
             )}

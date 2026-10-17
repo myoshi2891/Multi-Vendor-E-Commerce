@@ -173,3 +173,16 @@ it("keeps the stock editor mounted when the refreshed threshold changes", () => 
     expect(before).toBeInTheDocument();
     expect(screen.getByRole("table")).toHaveTextContent("在庫あり");
 });
+
+it("associates invalid stock feedback with the input and clears it when editing", async () => {
+    const user = userEvent.setup();
+    render(<ModalProvider><SellerInventory rows={[]} threshold={5} storeUrl="example" updateStockAction={jest.fn()} updateThresholdAction={jest.fn()} /></ModalProvider>);
+    const field = screen.getByRole("spinbutton", { name: "過小在庫しきい値" });
+    await user.clear(field);
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(field).toHaveAccessibleDescription("0〜1,000,000の整数を入力してください。");
+    await user.type(field, "7");
+    expect(field).not.toHaveAttribute("aria-invalid", "true");
+    expect(field).not.toHaveAccessibleDescription();
+});

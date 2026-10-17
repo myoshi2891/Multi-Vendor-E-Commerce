@@ -293,7 +293,11 @@ createRoot(document.getElementById("root")!).render(
                                       { label: "Mar", revenue: 20 },
                                   ]
                         }
-                        recentOrders={[]}
+                        recentOrders={
+                            new URLSearchParams(location.search).has("large")
+                                ? [{ id: "order-large", updatedAt: new Date("2026-10-16T00:00:00Z"), total: 9999999999.99 }] as unknown as ComponentProps<typeof StoreOverview>["recentOrders"]
+                                : []
+                        }
                         topProducts={
                             [
                                 {

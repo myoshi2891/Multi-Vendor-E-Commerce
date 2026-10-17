@@ -169,3 +169,43 @@ DS-PAGE-065 店舗作成: 独立headerのworkspaceリンクを44pxとhoverへ接
 ## 受け入れ未完了8 Step 8（2026-10-16）
 
 DS-PAGE-004 出店申請。既存実装の回帰確認（新規Redなし・追加改修不要）。seven apply6/6: 3幅の4段階・入力保持・upload adapter・validation/pending/error/retry/success・説明summary/44px/focus・axe AA。認証後read-only1/1内3幅、guest3/3。Contact/About/申請関連RTL計17/17。実routeのClerk読込とPrevious無効/Next有効の準備完了を待ち、動的DOM列挙のraceを解消（製品Redではない）。PC/390px画像目視、型0・lint0 errors/既存8 warnings。実Cloudinary upload/申請保存は対象外で既存保留を維持。既存4段階・schema・payload・業務契約は変更不要。 [証跡](../design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。
+
+
+### 販売者8再監査 Step 1 DS-PAGE-058（2026-10-16）
+
+店舗概要: 既存実装の回帰確認（新規Redなし・追加改修不要）。大きな注文金額のfixture/ブラウザー回帰を追加。seven residual overview 6/6（3幅×light/dark・KPI/注文金額の面内表示・空・axe AA）、390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 2 DS-PAGE-062（2026-10-16）
+
+商品一覧: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual products 6/6（3幅×light/dark・44px・削除確認・作成Dialog・Escape focus復帰・axe AA）、390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 3 DS-PAGE-055（2026-10-16）
+
+在庫管理: TDD Red: 無効な入力にaria-invalid/説明関連付けがなくRTL1件失敗。Green: invalid時のみエラーIDをaria-describedbyに関連付け、再入力で解除。RTL7/7・seven residual inventory6/6（3幅×light/dark・validation/Enter/pending/error/retry/success・44px・axe AA）。390px dark画像目視。型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 4 DS-PAGE-057（2026-10-16）
+
+注文一覧: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual orders6/6（3幅×light/dark・保存失敗/値保持/retry/success・支払意味色・詳細Dialog・Escape focus復帰・44px・axe AA）。390px dark画像目視、関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 5 DS-PAGE-056（2026-10-16）
+
+メッセージ: 既存実装の回帰確認（新規Redなし・追加改修不要）。seven residual messages8/8（1440/1000/768/390px×light/dark・seller tokens/未読説明/既読失敗とretry/モバイル戻りfocus・axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 6 DS-PAGE-061（2026-10-16）
+
+商品登録: 既存実装の回帰確認（新規Redなし・追加改修不要）。six product6/6（3幅×light/dark・見出し/画像/カテゴリPortal/入力focus/overflow/axe AA）。390px dark・1440px light画像目視、関連Jest150/150と全体実行内product-details合格、型0・lint0 errors/既存8 warnings。属性と共有variantの最終suite結果は最終統合に記録。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 7 DS-PAGE-064（2026-10-16）
+
+配送設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six shipping6/6（3幅×light/dark・国検索/12.5ドル初期値/Portal/pending/失敗/retry/success/閉じるlock/Escape focus復帰/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。
+
+
+### 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）
+
+店舗設定: 既存実装の回帰確認（新規Redなし・追加改修不要）。six storesettings6/6（3幅×light/dark・画像adapter/Featured/validation/pending/失敗/値保持/retry/success/refresh/axe AA）。390px dark画像目視。関連Jest150/150、型0・lint0 errors/既存8 warnings。実Cloudinary送信・実保存は今回対象外。 [保存計画](../../../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)。既存台帳・認証後実業務の過去履歴を維持。API/DB/認可/計算/payload/URLは変更不要。

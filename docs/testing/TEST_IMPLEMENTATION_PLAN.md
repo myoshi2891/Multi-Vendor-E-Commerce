@@ -1347,3 +1347,30 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 - ✅ Completed (2026-10-16): 受け入れ未完了8 Step 8 DS-PAGE-004 出店申請。表示/状態テストと関連仕様同期。範囲・保留は[デザイン進捗](../design/design-system/PROGRESS.md#受け入れ未完了8画面2026-10-16)。
 
 - ✅ Completed (2026-10-16): 受け入れ未完了8画面の最終統合。全体Jest/coverage・72件のブラウザー受け入れ・仕様/QA/dashboard同期。統計正本は[QA_HANDOFF](QA_HANDOFF.md#2026-10-16-受け入れ未完了8画面最新)。
+
+
+- [x] 販売者8再監査 Step 1 DS-PAGE-058（2026-10-16）: 店舗概要 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 2 DS-PAGE-062（2026-10-16）: 商品一覧 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 3 DS-PAGE-055（2026-10-16）: 在庫管理 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 4 DS-PAGE-057（2026-10-16）: 注文一覧 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 5 DS-PAGE-056（2026-10-16）: メッセージ ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 6 DS-PAGE-061（2026-10-16）: 商品登録 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 7 DS-PAGE-064（2026-10-16）: 配送設定 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査 Step 8 DS-PAGE-063（2026-10-16）: 店舗設定 ✅ Completed (2026-10-16)。詳細は販売者8再監査計画・design-system PROGRESS参照。
+
+
+- [x] 販売者8再監査最終統合 ✅ Completed (2026-10-16): seven85/85・six74/74、全体Jest/coverage・型/lint/harness・仕様/QA同期。今回の認証後実routeは当初、専用DBの列不足で別保留としたが、同日にmigration適用でDS-SELLER-REAUDIT-ROUTESを解除し、seller-eight-route 48/48で受け入れ（[QA_HANDOFF](QA_HANDOFF.md#2026-10-16-保留3件の実環境受け入れ最新)）。
