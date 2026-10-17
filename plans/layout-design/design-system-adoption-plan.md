@@ -1037,3 +1037,5 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 - [x] 未完了8 Step 6 DS-PAGE-051: ダッシュボード入口、テスト・関連仕様同期。最終実route結果は保存計画の統合欄参照。
 
 - [x] 未完了8 Step 7 DS-PAGE-052: 販売者入口、テスト・関連仕様同期。最終実route結果は保存計画の統合欄参照。
+
+- [x] 未完了8 Step 8 DS-PAGE-013: FAQ転送、テスト・関連仕様同期。最終実route結果は保存計画の統合欄参照。

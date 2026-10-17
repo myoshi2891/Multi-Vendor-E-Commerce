@@ -1961,3 +1961,8 @@ SDDの[概要](../../../specs/multi-vendor-ecommerce/00-overview.md)・[アー�
 ### 未完了8画面 Step 7 DS-PAGE-052（2026-10-17）
 
 販売者入口: 既存実装回帰（Redなし）。単体3/3: guestはDBアクセスなし、店舗0件→作成、所有店舗あり→先頭店舗。実routeの3幅×light/darkとguest/admin/customer拒否を追加。店舗0件の実データは変更せず単体で分岐を確認。既存URL/認証/DB仕様は変更不要。 [保存計画](../../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。
+
+
+### 未完了8画面 Step 8 DS-PAGE-013（2026-10-17）
+
+FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirectを確認。実HTTP308と/faqsの3幅表示/axe/overflowを確認するケースを追加。公開FAQ本文・既存恒久転送仕様は変更不要。 [保存計画](../../../plans/layout-design/priority-eight-remaining-design-system-plan.md)。全体の最終判定は統合時。

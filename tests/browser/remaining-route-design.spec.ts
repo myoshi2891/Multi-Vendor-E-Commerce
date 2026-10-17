@@ -340,3 +340,26 @@ for (const role of ["guest", "ADMIN", "USER"] as const) {
         }
     });
 }
+for (const width of [1440, 768, 390]) {
+    test(`DS-PAGE-013 permanent FAQ alias ${width}`, async ({ page }, info) => {
+        test.setTimeout(90000);
+        await setupClerkTestingToken({ page });
+        await page.setViewportSize({ width, height: 1000 });
+        const redirect = await page.request.get("/faq", { maxRedirects: 0 });
+        expect(redirect.status()).toBe(308);
+        expect(
+            new URL(redirect.headers().location, "http://localhost:3137")
+                .pathname
+        ).toBe("/faqs");
+        expect((await page.goto("/faq"))?.status()).toBe(200);
+        await expect(page).toHaveURL((url) => url.pathname === "/faqs");
+        await expect(
+            page.getByRole("main").getByRole("heading", { level: 1 })
+        ).toBeVisible();
+        await masterAccessible(page);
+        await page.screenshot({
+            path: info.outputPath("faq-destination.png"),
+            fullPage: true,
+        });
+    });
+}

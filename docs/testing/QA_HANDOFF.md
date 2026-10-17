@@ -1351,3 +1351,5 @@ Step 1 DS-PAGE-066実装済み。query/RTL7/7、fixture6/6、認証後実デー�
 未完了8 Step 6 DS-PAGE-051: 既存role分岐の回帰（Redなし）。単体4/4でguest/USER→home、ADMIN→admin、SELLER→seller。実routeの4roleと転送先heading/axe/overflowのケースを追加。転送先・認証・DB仕様は変更不要。 最終実route結果・全体統計は統合時に同期。
 
 未完了8 Step 7 DS-PAGE-052: 既存実装回帰（Redなし）。単体3/3: guestはDBアクセスなし、店舗0件→作成、所有店舗あり→先頭店舗。実routeの3幅×light/darkとguest/admin/customer拒否を追加。店舗0件の実データは変更せず単体で分岐を確認。既存URL/認証/DB仕様は変更不要。 最終実route結果・全体統計は統合時に同期。
+
+未完了8 Step 8 DS-PAGE-013: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirectを確認。実HTTP308と/faqsの3幅表示/axe/overflowを確認するケースを追加。公開FAQ本文・既存恒久転送仕様は変更不要。 最終実route結果・全体統計は統合時に同期。
