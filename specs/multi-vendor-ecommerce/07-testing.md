@@ -1547,3 +1547,7 @@ DS-PAGE-037 店舗詳細: 長い店舗情報・商品カード・空状態・sor
 ### 購入10画面再監査 Step 3（2026-10-18）
 
 DS-PAGE-019 商品詳細: 拡大画像Dialogの初期focus/trap/Escape復帰、size/quantity/review/共有、在庫操作制約。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 4（2026-10-18）
+
+DS-PAGE-007 カート: 短い商品名44px、選択/数量/削除/送料、checkout失敗後のbag保持、sync失敗とretry。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
