@@ -690,10 +690,17 @@ test("seller apply real route: Cloudinary upload, submit and saved store", async
                 await frame.contentFrame().getByRole("button",{name:"Done"}).click({timeout:60000});
                 await frame.waitFor({state:"hidden",timeout:60000});
             };
+            // 後続の送信・DB検証が失敗しても手動削除できるよう、src が確定した時点で annotation に残す
+            const recordAsset = async (alt: string) => {
+                const preview = main.getByAltText(alt);
+                await expect(preview).toHaveAttribute("src",/res\.cloudinary\.com/,{timeout:60000});
+                const src = await preview.getAttribute("src");
+                if (src) info.annotations.push({type:"cloudinary-asset",description:src});
+            };
             await upload("Upload profile image");
-            await expect(main.getByAltText("image for profile picture")).toHaveAttribute("src",/res\.cloudinary\.com/,{timeout:60000});
+            await recordAsset("image for profile picture");
             await upload("Upload cover image");
-            await expect(main.getByAltText("image for cover picture")).toHaveAttribute("src",/res\.cloudinary\.com/,{timeout:60000});
+            await recordAsset("image for cover picture");
             await main.getByRole("textbox",{name:"Store name",exact:true}).fill(input.name);
             await main.getByRole("textbox",{name:"Store description",exact:true}).fill(input.description);
             await main.getByRole("textbox",{name:"Store URL",exact:true}).fill(input.url);
@@ -717,7 +724,6 @@ test("seller apply real route: Cloudinary upload, submit and saved store", async
             .toEqual({name:input.name,email:input.email,phone:input.phone,description:input.description,status:"PENDING",owner:prepared.customerEmail,service:"Design Courier",returnPolicy:"Return within 30 days"});
         for (const url of [saved.logo, saved.cover]) {
             expect(url).toMatch(/^https:\/\/res\.cloudinary\.com\//);
-            info.annotations.push({type:"cloudinary-asset",description:url});
         }
     } finally {
         await db.store.deleteMany({where:{url:input.url}});
