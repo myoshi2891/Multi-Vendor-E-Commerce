@@ -128,3 +128,10 @@ DS-PAGE-004 出店申請。既存実装の回帰確認（新規Redなし・追�
 
 
 - [x] 販売者8再監査最終統合 ✅ Completed (2026-10-16): seven85/85・six74/74、全体Jest/coverage・型/lint/harness・仕様/QA同期。今回の認証後実routeは環境不整合で別保留。
+
+## 未完了8画面（2026-10-17）
+
+- [x] DS-PAGE-066: 所有店舗一覧・空/失敗/実retry・TDD・3幅light/dark・実route・関連仕様同期。
+- [x] DS-PAGE-046: 入力40pxのRed→44px controls、フォーム状態回帰・実route・関連仕様同期。
+- [x] 既存転送6件: 分岐回帰と転送先のデザイン受け入れ。追加UIなし。
+- [x] 全体検証と台帳/QA同期。[証跡](../design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。

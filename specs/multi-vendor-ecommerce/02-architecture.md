@@ -104,3 +104,7 @@ TDDのRed/Green/Refactorと各画面の証跡は[進捗](../../docs/design/desig
 seller.module.cssのtouch/radius/意味色とopt-in controlsを共有し、独立Select/Menu/Dialog Portalにもthemeを明示する。AttributeFieldsの任意design="seller"はENUM/BOOLEAN Portalへ伝播し、既定callerの表示を保持する。Server Actionsは型付きPropsを継続し、Clientからruntime importを追加しない。
 
 [計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。
+
+## Seller stores directory (2026-10-17)
+
+The server page calls `getSellerStores` through the queries facade. `requireSeller` runs outside the lookup catch; the query scopes by the authenticated user ID and selects id/name/url/logo/status, ordered by creation time then ID. The serializable result distinguishes an empty success from a generic lookup failure. No client component imports a server action at runtime.

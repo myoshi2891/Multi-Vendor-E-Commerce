@@ -11,17 +11,17 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-16） | **3280 passed / 3283 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。販売者8再監査後の全体実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage | Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）（販売者8再監査後のCLI実測、[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)）。 |
-| テストファイル総数（dashboard） | **418ファイル**／lcov **412エントリ**／マトリクス18/80（23%）。2026-10-16販売者8再監査後の再生成実測。 |
-| Jest スイート総数（unit/component） | **335スイート**（334 passed／1 skipped、2026-10-16実測）。 |
-| テスト総数 | **3280 unit/component passed**（3283 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
+| Jestテスト総数（2026-10-17） | **3300 passed / 3303 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage | Statements88.41%（11510/13018）／Branches79.1%（7135/9020）／Functions85.14%（2276/2673）／Lines88.96%（10472/11771）（2026-10-17全体CLI実測）。 |
+| テストファイル総数（dashboard） | **426ファイル**／lcov **414エントリ**／マトリクス18/80（23%）。2026-10-17未完了8の全体coverage/dashboard再生成実測。 |
+| Jest スイート総数（unit/component） | **340スイート**（339 passed／1 skipped、2026-10-17実測）。 |
+| テスト総数 | **3300 unit/component passed**（3303 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **412**（2026-10-15全体coverage/dashboard実測）。 |
+| lcov エントリ数 | **414**（2026-10-17全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
-| 型エラー | **0件**（2026-10-16 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
+| 型エラー | **0件**（2026-10-17 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
 **所感**: ユニット & インテグレーションは中核ドメイン（queries, store-ui）で堅実に整備されている。**横展開（カテゴリ軸）は pages 列に着地済み** — 売上直結フロー（cart / checkout / browse / 商品詳細）の Visual / a11y は 2026-08-09 の plan 052 までに実装・green 化され、初期の盲点は解消した。残る盲点は **Performance（全列 0%）** と、Visual / a11y の **pages 以外の列**（store / dashbd 等のコンポーネント単位）。
 
@@ -358,6 +358,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-17: plan 088 Step 6 —— 返品 RMA の往復 E2E `tests/e2e/returns-rma.spec.ts` を追加（未コミット・HEAD `50e3f46d`）。Playwright `--list` 447 tests / 46 files（2026-10-03）→ **450 tests / 47 files**（+1 test × 3 ブラウザ）。chromium 1/1 passed、firefox / webkit はローカルのブラウザ未導入で未実行。注文は `seed:e2e` ではなく spec の `beforeAll` で起票（Clerk の動的ユーザーが所有者のため）。Jest / Integration / lcov は不変。
 
 2026-10-16: PR#206 レビュー対応 —— 注文詳細の返品オプション組み立てを `try` 内へ移動（未コミット・HEAD `724fb177`）。`order-detail-page.test.tsx` +1。Jest3275/3278 → 3276/3279・335 suites（不変）。lcov 不変（Branches79.08%／Functions85.13%／Lines88.94%）。dashboard418 files/412 lcov/18 of 80 cells（不変）。
 
@@ -740,3 +742,7 @@ Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.
 ### PR#208 following focus復元の回帰（2026-10-16）
 
 Sonar New Code の未カバー条件5件（`following/container.tsx` 38行）に対し `following-design.test.tsx` +2。更新前: 3277 passed / 3280 total、Statements88.39%（11492/13001）／Branches79.04%（7122/9010）。更新後: 3279 passed / 3282 total、Statements88.4%（11493/13001）／Branches79.08%（7126/9010）、Functions/Lines不変。ヒートマップ状態変更なし。P2優先5画面節の「更新前の統計」表「テスト総数」行を 2026-10-05 原文（`10f41af4`）へ復元。[QA正本](QA_HANDOFF.md#2026-10-16-pr208-sonar-new-code-following-focus復元の分岐最新)。
+
+## 未完了8画面（2026-10-17）
+
+店舗一覧の仮実装を機能化し、販売者の所有者条件・認可失敗の副作用なし・表示用projection・取得失敗と空状態の区別を追加。タグ新規作成のdraft/retry/navigationと転送入口の回帰を補完した。全体3300/3303（3 skipped）、340 suites、127 snapshots。Statements88.41%／Branches79.1%／Functions85.14%／Lines88.96%。dashboard426 files/414 lcov/18 of 80 cellsでセル状態は不変。Integration/E2Eの以前の実測は維持する。即時TODOはQA_HANDOFFのみ。

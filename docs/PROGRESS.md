@@ -1,5 +1,9 @@
 # PROGRESS.md
 
+## 未完了8画面のデザイン受け入れ（2026-10-17）
+
+店舗一覧を実装、タグ作成の44px操作を修正、転送6件を検証。画面台帳68件は検証済み、部品249件は別管理。Jest3300/3303（3 skipped）・127 snapshots、実route39ケース＋051反復12/12、補助24/24、型/lint/harness成功。[計画](../plans/layout-design/priority-eight-remaining-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。
+
 ## 2026-10-16 販売者8画面再監査
 
 在庫入力エラーのaria-invalid/説明関連付けをTDDで修正、店舗概要に大きな注文金額の回帰を追加。他7画面は既存適用の回帰確認。全体Jest **3280 passed / 3283 total（3 skipped）、335 suites（334 passed/1 skipped）、127 snapshots**。Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。dashboard418 files/412 lcov/18 of 80 cells（セル状態不変）。型0・lint0 errors/既存8 warnings・harness成功。補助ブラウザーseven85/85・six74/74、計159/159。10段階コミット。今回の認証後実routeは当初、専用DBの列不足（`Store.returnWindowDays`）で保留したが、同日に未適用migrationを適用してDS-SELLER-REAUDIT-ROUTESを解除し、seller-eight-route 48/48で受け入れ（[保留3件の実環境受け入れ](testing/QA_HANDOFF.md#2026-10-16-保留3件の実環境受け入れ最新)）。過去履歴は保持。[計画](../plans/layout-design/priority-eight-seller-reaudit-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md)／[QA正本](testing/QA_HANDOFF.md#現在の実装状態サマリ)。
@@ -63,12 +67,12 @@ Statements88.23%（10956/12417）／Branches78.47%（6741/8590）／Functions84.
 
 About・Contact・認証画面の過去の部分検証と、移行全体の完了は区別する。次の着手は共通トークン・基本操作・ヘッダー展開・モーダルのP1基盤。今回の文書整備では全体テスト統計を変更しない。
 
-## 現在の状態（Jestは2026-10-16実測、その他は各記載日付）
+## 現在の状態（Jestは2026-10-17実測、その他は各記載日付）
 
 ### テスト統計
 | 指標 | 値 |
 |------|----|
-| Jestユニットテスト | **3279 passed / 3282 total、3 skipped、127 snapshots passed、335 スイート（334 passed／1 skipped、failed 0）**。2026-10-16全体実測（`bun run test -- --coverage`、PR#208 following focus回帰後）。Statements88.4%（11493/13001）／Branches79.08%（7126/9010）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
+| Jestユニットテスト | **3300 passed / 3303 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。2026-10-17全体実測（`bun run test -- --runInBand --coverage --silent`）。Statements88.41%（11510/13018）／Branches79.1%（7135/9020）／Functions85.14%（2276/2673）／Lines88.96%（10472/11771）。正本は[QA_HANDOFF](./testing/QA_HANDOFF.md)。 |
 | Jest Integration テスト | **257テスト / 19スイート** — 2026-10-15実測（257/257 pass）。過去の実測履歴は[QA_HANDOFF](./testing/QA_HANDOFF.md)を参照。 |
 | Jestスナップショット | 127（`tests/component/ui/` — B1 MVP 40 + B1+ Sprint 1 +26 + B1+ Sprint 2 +27 + B1+ Sprint 3 +19 + B1+ Sprint 4 +15） |
 | 型エラー | 0件 |
@@ -5980,3 +5984,27 @@ SonarCloud PR#208 の New Code 未カバー条件5件（`following/container.tsx
 | テスト総数 | 3277 passed / 3280 total | **3279 passed / 3282 total** |
 | スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### 返品 RMA の E2E（plan 088 Step 6） (2026-10-17)
+
+#### 概要
+
+顧客の申請 → seller の承認・受け取り・解決 → 顧客画面の Resolved 表示を、認証後の実ルートで通す E2E を追加した。注文は `seed:e2e` ではなく spec の `beforeAll` で起票する（所有者が Clerk の動的ユーザーのため）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/returns-rma.spec.ts` | 新規。2 コンテキスト（顧客・seller）で RMA の 4 遷移を通し、DB で時刻と `restockedQuantity` を照合。cleanup は RMA → 注文 → 住所 → 店舗 → ユーザーの順（`onDelete: Restrict` のため） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E（`--list`） | 447 tests / 46 files（2026-10-03） | **450 tests / 47 files** |
+| Jest / Integration | 3280/3283・335 suites / 257 | 不変 |
+| 型エラー | 0 件 | **0 件** |
+
+chromium 1/1 passed。firefox / webkit はローカルにブラウザが無く未実行。

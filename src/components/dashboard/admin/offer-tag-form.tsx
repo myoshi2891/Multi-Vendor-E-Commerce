@@ -50,7 +50,7 @@ export default function OfferTagForm({
         );
     }
     return (
-        <section className={styles.panel}>
+        <section className={`${styles.panel} ${styles.controls}`}>
             <h2 className="text-xl">Offer tag information</h2>
             <Form {...form}>
                 <form

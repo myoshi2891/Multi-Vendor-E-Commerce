@@ -1,3 +1,4 @@
+import SellerStoresList from "@/components/dashboard/seller/seller-stores-list";
 import SellerMessagesContainer from "@/components/dashboard/seller/seller-messages-container";
 import type {
     SellerConversation,
@@ -231,7 +232,9 @@ const applyAction: typeof applySeller = async () => {
 };
 const screen = new URLSearchParams(location.search).get("screen");
 createRoot(document.getElementById("root")!).render(
-    screen === "apply" ? (
+    screen === "stores-list" || location.pathname === "/dashboard/seller/stores" ? (
+        <SellerStoresList result={new URLSearchParams(location.search).has("error") ? {ok:false} : {ok:true, stores:new URLSearchParams(location.search).has("empty") ? [] : (["ACTIVE", "PENDING", "DISABLED", "BANNED"] as const).map((status, i) => ({id:String(i), name:i === 0 ? "An exceptionally long atelier name ".repeat(8) : `Atelier ${i}`, url:`atelier-${i}`, logo:"/assets/images/default-user.jpg", status}))}} />
+    ) : screen === "apply" ? (
         <div className={applicationStyles.page}>
             <Apply applySellerAction={applyAction} />
         </div>

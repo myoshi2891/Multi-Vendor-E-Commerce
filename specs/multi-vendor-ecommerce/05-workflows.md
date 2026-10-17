@@ -236,3 +236,7 @@ New-store users complete validated profile/contact/logo/cover fields in the stan
 数量・注文状態・配送・店舗設定は既存validation→pending lock→successまたは値保持/error→retryを維持する。商品keyword削除は名前付きbuttonでEnter操作でき、残るkeywordと価格を保持する。未読表示はmarkRead成功後にのみ消え、失敗時は残る。Dialog終了はEscapeとtriggerへのfocus復帰を維持する。
 
 [計画](../../plans/layout-design/priority-eight-seller-residual-design-system-plan.md)／[証跡](../../docs/design/design-system/PROGRESS.md#販売者優先8画面残存移行記録)。
+
+## Seller stores directory (2026-10-17)
+
+The seller opens `/dashboard/seller/stores`, sees owned stores and follows a management link or the create-store link. No stores produces a distinct onboarding state. A lookup failure exposes a generic alert and a full-navigation retry of the same URL. Existing `/dashboard` role routing and `/dashboard/seller` first-store/create routing remain unchanged.

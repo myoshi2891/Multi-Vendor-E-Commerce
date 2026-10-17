@@ -361,3 +361,7 @@ AttributeFieldsと内部属性選択には任意design?: "seller"を追加する
 ### Tracking page display boundary (2026-10-11)
 
 The public `trackOrder({ orderId, email })` query facade keeps its existing return/error contract. The tracking page injects a Server Action into `TrackOrderForm`; that action returns only id, order/payment statuses and group id, shipping service/delivery range, store name/url and selected item fields. `TrackingDisplayData` derives these fields from the query return type. Unused monetary Decimal values and internal group identifiers are omitted at this presentation boundary; missing responses remain null and lookup errors propagate to the existing generic retry feedback. No new public API or schema.
+
+## Seller stores directory (2026-10-17)
+
+`/dashboard/seller/stores` is a seller-only directory rather than a placeholder. The Server Component calls `getSellerStores(): Promise<SellerStoresResult>` from `src/queries/seller-stores.ts`. Success is `{ ok: true, stores: SellerStoreSummary[] }`; lookup failure is `{ ok: false }`. A summary contains only `id`, `name`, `url`, `logo`, `status`. The query accepts no caller-supplied user ID. Authorization failures propagate instead of becoming an empty list or generic lookup failure. No HTTP API or DB schema is added.
