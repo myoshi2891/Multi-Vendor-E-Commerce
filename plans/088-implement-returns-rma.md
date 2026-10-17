@@ -153,15 +153,15 @@ tx をモックし、各 action について次を確かめる（AAA）: 認可�
 
 ## Done criteria
 
-- [ ] 統合テスト「他人の OrderItem に対する RMA 申請が拒否され、副作用が無い」（IDOR 3 階層）が green
-- [ ] 統合テスト: 店舗のスコープ、自分では承認できない、R-1 の並行、R-2 の冪等性、在庫の差し引き（+3 ちょうど）が green
-- [ ] `grep -rnF "rma.refunded" src/` が 0 件（`rma.resolved` に改名済み）
-- [ ] `grep -n "idempotencyKey" prisma/schema.prisma` が `String`（`?` なし）
-- [ ] `bun run erd:generate` を実行し、`docs/architecture/data-model.drawio` が同じコミットに含まれている
-- [ ] `bunx tsc --noEmit` 0 エラー、`bun run lint` 0 エラー、`bun run test` 全件 pass
-- [ ] 返金 API（`stripe.refunds` / PayPal の refund）を呼ぶコードが追加されていない（`git diff cfbcd9a6 -- src | grep -i "refunds\.create\|/refund"` が 0 件）
-- [ ] テスト統計の同期ドキュメントが実測値で更新されている
-- [ ] `plans/README.md` の 088 の行を更新した
+- [x] 統合テスト「他人の OrderItem に対する RMA 申請が拒否され、副作用が無い」（IDOR 3 階層）が green
+- [x] 統合テスト: 店舗のスコープ、自分では承認できない、R-1 の並行、R-2 の冪等性、在庫の差し引き（+3 ちょうど）が green
+- [x] `grep -rnF "rma.refunded" src/` が 0 件（`rma.resolved` に改名済み）
+- [x] `grep -n "idempotencyKey" prisma/schema.prisma` が `String`（`?` なし）
+- [x] `bun run erd:generate` を実行し、`docs/architecture/data-model.drawio` が同じコミットに含まれている
+- [x] `bunx tsc --noEmit` 0 エラー、`bun run lint` 0 エラー、`bun run test` 全件 pass
+- [x] 返金 API（`stripe.refunds` / PayPal の refund）を呼ぶコードが追加されていない（`git diff cfbcd9a6 -- src | grep -i "refunds\.create\|/refund"` が 0 件）
+- [x] テスト統計の同期ドキュメントが実測値で更新されている
+- [x] `plans/README.md` の 088 の行を更新した
 
 ## STOP conditions
 
@@ -208,3 +208,11 @@ tx をモックし、各 action について次を確かめる（AAA）: 認可�
   - ページは `searchParams` の `status`（不正値は全件扱い）と `page` を正規化し、範囲外ページは正準 URL へ `redirect()` する。
   - フィルタとページ送りは URL（`?status=&page=`）で駆動し、フィルタ変更で page を 1 に戻す。
 - **検証**: `returns.test.ts`（where / skip / take / groupBy）、`seller-returns.test.tsx`・`seller-returns-page.test.tsx`、`DESIGN_SUITE=returns bun run test:design`、tsc / lint。
+
+## 実施結果 — Step 6 E2E（2026-10-17・未コミット）
+
+- **逸脱（Step 6 の seed）**: 「`bun run seed:e2e` に Delivered 注文を足す」は採らなかった。`/order/[orderId]` は注文の所有者しか開けず、所有者はサインインできる Clerk の動的ユーザーでなければならないが、`seed-e2e.ts` は Clerk を触らない。`messages.spec.ts` の会話起票と同じく、`tests/e2e/returns-rma.spec.ts` の `beforeAll` で Prisma に直接起票した。Product / Size は作らない（OrderItem の id 列は FK の無いスナップショット。実商品は seed カテゴリの件数・在庫を前提にする他 spec を並列で汚す）。そのため受け取りは Damaged を選ぶ。在庫の戻しは統合テストのシナリオ 7 が担保している。
+- **Red 不要の理由**: 実装済みの UI と action に対する回帰 E2E の追加で、新しいロジックは無い。
+- **結果**: chromium 1/1 passed（Docker DB `multivendor_dev`・システムの Chrome）。firefox / webkit はローカルにブラウザ本体が無く未実行。cleanup 後の孤児は 0 件。`--list` 450 tests / 47 files。tsc 0・lint 0 errors・`check:playwright` 成功。
+- **Done criteria の実測（2026-10-17）**: `rma.refunded` 0 件、`idempotencyKey String`、ERD は `a75e63df` でスキーマと同じコミット、返金 API の grep ヒット 3 件は 087 のテスト説明文のみ。
+- **残り（オペレーター作業）**: マイグレーション `20261015042255_add_return_requests` のリモート DB への適用。DS-PAGE-068 / DS-COMP-247 / 248 の表示・axe を含む実ルート受け入れは design-system 台帳で保留のまま。
