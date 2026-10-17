@@ -186,6 +186,11 @@ for (const alias of [
         path: "/profile/following",
         heading: "Stores you follow",
     },
+    {
+        id: "DS-PAGE-025",
+        path: "/profile/history",
+        heading: "Your product view history",
+    },
 ]) {
     for (const width of [1440, 768, 390]) {
         test(`${alias.id} authenticated alias ${width}`, async ({
