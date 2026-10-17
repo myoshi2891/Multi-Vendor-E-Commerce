@@ -72,6 +72,15 @@ const DESIGN_SUITES = {
             "NEXT_DEV_DIST_DIR=.next/purchase-route bun run dev -- --webpack --port 3132",
         timeout: 180000,
     },
+    // DB は呼び出し側の DATABASE_URL 等（scripts/design/prepare-returns-route.ts で検査済みの専用DB）を使う
+    "returns-route": {
+        testMatch: "returns-route-design.spec.ts",
+        port: 3136,
+        kind: "route",
+        command:
+            "NEXT_DEV_DIST_DIR=.next/returns-route bun run dev -- --webpack --port 3136",
+        timeout: 180000,
+    },
     returns: {
         testMatch: "returns-design.spec.ts",
         port: 3135,
