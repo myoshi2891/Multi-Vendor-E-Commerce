@@ -5980,3 +5980,27 @@ SonarCloud PR#208 の New Code 未カバー条件5件（`following/container.tsx
 | テスト総数 | 3277 passed / 3280 total | **3279 passed / 3282 total** |
 | スイート数 | 335（334 passed／1 skipped） | **335（334 passed／1 skipped）** |
 | 型エラー | 0 件 | **0 件** |
+
+---
+
+### 返品 RMA の E2E（plan 088 Step 6） (2026-10-17)
+
+#### 概要
+
+顧客の申請 → seller の承認・受け取り・解決 → 顧客画面の Resolved 表示を、認証後の実ルートで通す E2E を追加した。注文は `seed:e2e` ではなく spec の `beforeAll` で起票する（所有者が Clerk の動的ユーザーのため）。
+
+#### 実施内容
+
+| 対象 | 変更内容 | コミット |
+|------|---------|---------|
+| `tests/e2e/returns-rma.spec.ts` | 新規。2 コンテキスト（顧客・seller）で RMA の 4 遷移を通し、DB で時刻と `restockedQuantity` を照合。cleanup は RMA → 注文 → 住所 → 店舗 → ユーザーの順（`onDelete: Restrict` のため） | 未コミット |
+
+#### テスト統計（更新）
+
+| 指標 | 更新前 | 更新後 |
+|------|--------|--------|
+| Playwright E2E（`--list`） | 447 tests / 46 files（2026-10-03） | **450 tests / 47 files** |
+| Jest / Integration | 3280/3283・335 suites / 257 | 不変 |
+| 型エラー | 0 件 | **0 件** |
+
+chromium 1/1 passed。firefox / webkit はローカルにブラウザが無く未実行。

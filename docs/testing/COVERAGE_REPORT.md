@@ -359,6 +359,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 
 ## 7. 履歴
 
+2026-10-17: plan 088 Step 6 —— 返品 RMA の往復 E2E `tests/e2e/returns-rma.spec.ts` を追加（未コミット・HEAD `50e3f46d`）。Playwright `--list` 447 tests / 46 files（2026-10-03）→ **450 tests / 47 files**（+1 test × 3 ブラウザ）。chromium 1/1 passed、firefox / webkit はローカルのブラウザ未導入で未実行。注文は `seed:e2e` ではなく spec の `beforeAll` で起票（Clerk の動的ユーザーが所有者のため）。Jest / Integration / lcov は不変。
+
 2026-10-16: PR#206 レビュー対応 —— 注文詳細の返品オプション組み立てを `try` 内へ移動（未コミット・HEAD `724fb177`）。`order-detail-page.test.tsx` +1。Jest3275/3278 → 3276/3279・335 suites（不変）。lcov 不変（Branches79.08%／Functions85.13%／Lines88.94%）。dashboard418 files/412 lcov/18 of 80 cells（不変）。
 
 2026-10-16: PR#206 レビュー対応 —— seller 返品キューのサーバー側ページング（未コミット・HEAD `8ec78a9a`）。`returns.test.ts` +4、`seller-returns.test.tsx` +5、`seller-returns-page.test.tsx` +3。Jest3263/3266 → 3275/3278・335 suites（不変）。lcov: Branches78.99%（7083/8966）／Functions85.04%（2264/2662）／Lines88.88%（10413/11715） → Branches79.08%（7117/9000）／Functions85.13%（2272/2669）／Lines88.94%（10447/11746）。dashboard418 files/412 lcov/18 of 80 cells（不変）。

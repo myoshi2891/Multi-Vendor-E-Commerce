@@ -165,7 +165,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-065 | `/dashboard/seller/stores/new` | 本体適用（2026-10-13実ルート受け入れ） | P3 | 検証済み | [src/app/dashboard/seller/stores/new/page.tsx](<../../../src/app/dashboard/seller/stores/new/page.tsx>) | [優先6画面移行記録](#優先6画面移行記録)／[実ルート証跡](#認証後実route受け入れ2026-10-13) |
 | DS-PAGE-066 | `/dashboard/seller/stores` | 仮実装 | P3・機能課題別枠 | TODO | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 未実施 |
 | DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-11実ルート受け入れ） | P2 | 検証済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)／[残存6画面](#p2残存6画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)／[保留2件の解消](#p2保留2件の解消2026-10-11)。実Clerk・実Action・専用DBで未読3件の3幅表示、単件/リンク遷移/一括の既読と再読込保持を確認 |
-| DS-PAGE-068 | `/dashboard/seller/stores/[storeUrl]/returns` | 新規（2026-10-15・plan 088 Step 5） | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx>) | 実装済み・fixture 補助検証済み（3幅×light/dark・axe 0）。認証後の実ルートは保留（解除: plan 088 Step 6 の seed と E2E）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-PAGE-068 | `/dashboard/seller/stores/[storeUrl]/returns` | 新規（2026-10-15・plan 088 Step 5） | P3 | 保留 | [src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx>) | 実装済み・fixture 補助検証済み（3幅×light/dark・axe 0）。認証後の実ルートは保留（解除: plan 088 Step 6 の seed と E2E）。2026-10-17: 機能の往復（申請→承認→受け取り→解決→Resolved 表示）を `tests/e2e/returns-rma.spec.ts` で確認（chromium 1/1）。3幅×light/dark・axe の実ルート受け入れは未実施のため保留を維持。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 
 ## 部品台帳
 
@@ -423,8 +423,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-245 | P4 | 属性選択肢Client境界 | [AdminAttributeOptions](../../../src/components/dashboard/admin/admin-attribute-options.tsx) | 保留 | 補助検証済み・認証後保留。[証跡](#監査指摘6画面移行記録) |
 
 | DS-COMP-246 | P2 | 公開editorial操作 | [storefront controls CSS](../../../src/components/store/shared/storefront-controls.module.css) | 検証済み | Contact/FAQ/Product support/Aboutのopt-inのみ。3幅のfixture/実route・44px/focus/axeと仕様同期。[証跡](#ストアフロント残存8画面移行記録2026-10-12) |
-| DS-COMP-247 | P2 | 返品 RMA（顧客） | [ReturnRequestPanel](../../../src/components/store/order-page/return-request-panel.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。2026-10-16 にフィルタとページ送りを URL（`?status=&page=`）駆動・サーバー側ページングへ変更（fixture `returns` 12/12）。認証後の実ルートは保留（解除: plan 088 Step 6）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
-| DS-COMP-248 | P3 | 返品 RMA（seller） | [SellerReturns](../../../src/components/dashboard/seller/seller-returns.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-COMP-247 | P2 | 返品 RMA（顧客） | [ReturnRequestPanel](../../../src/components/store/order-page/return-request-panel.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。2026-10-16 にフィルタとページ送りを URL（`?status=&page=`）駆動・サーバー側ページングへ変更（fixture `returns` 12/12）。認証後の実ルートは保留（解除: plan 088 Step 6）。2026-10-17: 機能の往復（申請→承認→受け取り→解決→Resolved 表示）を `tests/e2e/returns-rma.spec.ts` で確認（chromium 1/1）。3幅×light/dark・axe の実ルート受け入れは未実施のため保留を維持。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-COMP-248 | P3 | 返品 RMA（seller） | [SellerReturns](../../../src/components/dashboard/seller/seller-returns.tsx) | 保留 | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。2026-10-17: 機能の往復（申請→承認→受け取り→解決→Resolved 表示）を `tests/e2e/returns-rma.spec.ts` で確認（chromium 1/1）。3幅×light/dark・axe の実ルート受け入れは未実施のため保留を維持。[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 
 ## 前セッションの確認結果
 

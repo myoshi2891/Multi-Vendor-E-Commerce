@@ -1,6 +1,15 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
-## 2026-10-16 保留3件の実環境受け入れ（最新）
+## 2026-10-17 返品 RMA の E2E（plan 088 Step 6・最新、未コミット）
+
+[計画](../../plans/088-implement-returns-rma.md)。`tests/e2e/returns-rma.spec.ts`（新規・1 テスト）: 顧客が `/order/[orderId]` で申請 → seller が `/dashboard/seller/stores/[storeUrl]/returns` で承認 → 受け取り（Damaged）→ 解決 → 顧客の再読込で Resolved と返金見込み、DB で各遷移の時刻と `restockedQuantity = 0` を照合。
+
+- **計画からの逸脱**: 088 本文の「`seed:e2e` に Delivered 注文を足す」は採らない。注文の所有者は Clerk の動的ユーザーである必要があり、`seed-e2e.ts` は Clerk を触らないため。`messages.spec.ts` と同じく `beforeAll` で Prisma に直接起票する。Product / Size は作らない（OrderItem の id 列は FK の無いスナップショット。実商品は seed カテゴリの件数・在庫を前提にする他 spec を並列で汚す）。在庫の戻しは統合テスト（`returns-rma.test.ts` シナリオ 7）が担保。
+- **結果**: chromium **1/1 passed**（33.1s・Docker DB `multivendor_dev` に `DATABASE_URL`/`DIRECT_URL` を `localhost:5432` で接続、`PLAYWRIGHT_CHROME_EXECUTABLE` にシステムの Chrome）。firefox / webkit はローカルにブラウザ本体が無く launch 失敗（spec の失敗ではない・未実行）。事後 DB の `ReturnRequest` / `e2e-rma-store-*` / `e2e-rma-*` ユーザーは 0 件（cleanup 確認）。`bunx playwright test --list` **450 tests / 47 files**（+3 = 1 テスト × 3 ブラウザ、+1 file）。tsc 0・lint 0 errors（既存 8 warnings）・`check:playwright` 成功。Jest / Integration は変更なし（統計不変）。
+- **環境の注意**: 実行時、:3000 の Docker app が `/` で 500（`Cannot find module '@prisma/client-<hash>'`・コンテナ起動直後の最初のリクエストから）を返していたため、Playwright が再利用せずに `bun run build && bun run start` を走らせ、:3000 の bind 失敗で停止した。`make install`（node_modules volume の同期と `prisma generate`）で復旧。その副作用で、リポジトリの `.next` に本番ビルドの成果物が書かれている（tracked ファイルの変更なし）。
+- **保留の扱い**: DS-PAGE-068 / DS-COMP-247 / 248 の「認証後の実ルート」は、機能の往復だけを確認したので**保留のまま**（3 幅 × light/dark・axe の実ルート受け入れは未実施）。
+
+## 2026-10-16 保留3件の実環境受け入れ
 
 [計画](../../plans/layout-design/pending-three-real-route-acceptance-plan.md)／[証跡](../design/design-system/PROGRESS.md#保留3件の実環境受け入れ2026-10-16)。DS-SELLER-REAUDIT-ROUTES・DS-PAGE-022・DS-PAGE-004 を解除。台帳68画面＝検証済み59／保留2／TODO7。
 
@@ -44,7 +53,7 @@
 - TDD: 新規 29 件（RTL 21・ユニット 8。Jest 総数 3228 → 3257 の増分と一致）のうち 28 件の Red を空の実装で確認 → Green。新規: `returns-view.test.ts` 8、`return-request-panel.test.tsx` 9、`seller-returns.test.tsx` 8、`returns-exchange-page.test.tsx` 2、`order-detail-page.test.tsx` +2。
 - 実測: Jest **3254/3257**（3 skipped）・**334 スイート**・127 snapshots、tsc 0、lint 0 errors（既存 warnings 8）。`DESIGN_SUITE=returns` **10/10**（新設・port 3135）、`DESIGN_SUITE=priority` 83/83、`returns-exchange-design.spec.ts` chromium 4/4、`check:playwright` pass。Integration はバックエンド時点（257/19）から変更なし。
 - 環境: :3000 の Docker アプリは Prisma の再生成後に Turbopack が `@prisma/client-<hash>` を解決できず全ページ 500（今回のコードとは無関係）。復旧はコンテナの再起動（`docker compose restart app`）で行う想定・未実施。E2E は port 3136 の一時 dev サーバー（`NEXT_DEV_DIST_DIR=.next/returns-check`）に `E2E_BASE_URL` で接続した。
-- 保留: 認証後の実ルート（解除: plan 088 Step 6）。観察（既存）: 未認証の `/order/[orderId]` は `requireUser` の throw で 500。
+- 保留: 認証後の実ルート（解除: plan 088 Step 6）。→ 2026-10-17 に機能の往復を E2E で確認（chromium）。表示・axe の実ルート受け入れは未実施。観察（既存）: 未認証の `/order/[orderId]` は `requireUser` の throw で 500。
 - PR#206 レビュー対応（同日）: ロック後に冪等キーを再確認（並行した同じキーの全数申請が「数量超過」になる経路）、seller 返品ページの認可ガードを catch の外へ、失敗後に明細を変えたら新しい冪等キー（メモだけの変更は同じキー・design §2.3）、却下理由の見出しは REJECTED のみ。SonarCloud 18 件のうち 14 件を修正（props の Readonly、`role="status"` → `<output>`、sort の比較関数、`options` 既定値、`Set`、catch 引数名、拒否の再 throw）、`await` in loop 3 件は tx 内で行ロックの順序を固定するための逐次実行なので対応しない。Jest 3259/3262・335 スイート、Integration（returns-rma・order-lifecycle）37/37、`DESIGN_SUITE=returns` 10/10。
 
 ---
@@ -351,7 +360,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest/lcov: 2026-10-16販売者8再監査の全体実測 / Integration: 2026-10-15実測 / E2Eフルラン: 2026-10-03実測）
+### テスト統計（Jest/lcov: 2026-10-16販売者8再監査の全体実測 / Integration: 2026-10-15実測 / E2E件数: 2026-10-17 `--list` / E2Eフルラン: 2026-10-03実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -363,7 +372,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 | 全体coverage（2026-10-16実測） | Statements88.4%（11493/13001）／Branches79.09%（7130/9014）／Functions85.13%（2273/2670）／Lines88.94%（10455/11754）。販売者8再監査後の全体Jest CLI集計。 |
 | Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
-| Playwright E2E（全プロジェクト集計） | **46 files・3 ブラウザ計 447 tests**（2026-10-03 `bunx playwright test --list`）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Playwright E2E（全プロジェクト集計） | **47 files・3 ブラウザ計 450 tests**（2026-10-17 `bunx playwright test --list`。plan 088 Step 6 の `returns-rma.spec.ts` +1 file・+1 test/browser）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright a11y | **7 スペック**（sign-in / seller-apply / checkout / profile / **browse / product / cart**）・**Chromium 7/7 passed**。2026-10-07 実測（plan 084・Docker DB 接続）。OI-10 解消に伴い 6 spec の `disabledRules:["color-contrast"]` 抑制を解除済み（抑制なしで違反 0）。home（`/`）は spec 未作成（OI-9 は 2026-06-06 に解消済みで阻害要因ではない。追加は本書の「A11y-home」タスクで扱う）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | 型エラー | **0件**（2026-10-16 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
