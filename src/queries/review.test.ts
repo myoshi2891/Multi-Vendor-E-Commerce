@@ -622,7 +622,10 @@ describe("reportReview", () => {
     it("Clerk ユーザーにメールアドレスが無ければ通報を記録しない", async () => {
         (currentUser as jest.Mock).mockResolvedValue({ ...USER, emailAddresses: [] });
 
-        await expect(reportReview(input)).rejects.toThrow(/^User email not found in Clerk\.$/);
+        await expect(reportReview(input)).resolves.toEqual({
+            ok: false,
+            error: "User email not found in Clerk.",
+        });
         expect(mockDb.$transaction).not.toHaveBeenCalled();
     });
 
@@ -633,7 +636,11 @@ describe("reportReview", () => {
             status: ReviewStatus.PUBLISHED,
         });
 
-        await expect(reportReview(input)).rejects.toThrow("You cannot report your own review.");
+        // 業務エラーは throw せず結果で返す（本番の Server Action は throw の文言を伏せるため）
+        await expect(reportReview(input)).resolves.toEqual({
+            ok: false,
+            error: "You cannot report your own review.",
+        });
         expect(mockDb.reviewReport.createMany).not.toHaveBeenCalled();
     });
 
@@ -642,7 +649,10 @@ describe("reportReview", () => {
         async (status) => {
             mockDb.review.findUnique.mockResolvedValue({ userId: "author-001", status });
 
-            await expect(reportReview(input)).rejects.toThrow("Review not found.");
+            await expect(reportReview(input)).resolves.toEqual({
+            ok: false,
+            error: "Review not found.",
+        });
             expect(mockDb.reviewReport.createMany).not.toHaveBeenCalled();
         }
     );
@@ -650,7 +660,10 @@ describe("reportReview", () => {
     it("存在しないレビューは見つからない扱い", async () => {
         mockDb.review.findUnique.mockResolvedValue(null);
 
-        await expect(reportReview(input)).rejects.toThrow("Review not found.");
+        await expect(reportReview(input)).resolves.toEqual({
+            ok: false,
+            error: "Review not found.",
+        });
     });
 
     it("事後審査で未解決の通報が閾値に達したら FLAGGED にする", async () => {
@@ -665,7 +678,7 @@ describe("reportReview", () => {
             where: { id: "review-001" },
             data: { status: ReviewStatus.FLAGGED },
         });
-        expect(result).toEqual({ status: ReviewStatus.FLAGGED });
+        expect(result).toEqual({ ok: true, status: ReviewStatus.FLAGGED });
         // PUBLISHED → FLAGGED は公開集合の中の遷移なので集計は変わらない
         expect(mockDb.product.update).not.toHaveBeenCalled();
     });
@@ -676,7 +689,7 @@ describe("reportReview", () => {
         const result = await reportReview(input);
 
         expect(mockDb.review.update).not.toHaveBeenCalled();
-        expect(result).toEqual({ status: ReviewStatus.PUBLISHED });
+        expect(result).toEqual({ ok: true, status: ReviewStatus.PUBLISHED });
     });
 
     it("無審査モードでは通報を記録するだけで FLAGGED にしない", async () => {

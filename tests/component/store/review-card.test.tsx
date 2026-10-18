@@ -90,10 +90,10 @@ describe("ReviewCard — 通報（plan 092）", () => {
     });
 
     it("理由とメモを送り、送信中は二重に送れず、成功したらフォームを閉じる", async () => {
-        let resolve!: (value: { status: "PUBLISHED" }) => void;
+        let resolve!: (value: { ok: true; status: "PUBLISHED" }) => void;
         const onReport = jest.fn(
             () =>
-                new Promise<{ status: "PUBLISHED" }>((r) => {
+                new Promise<{ ok: true; status: "PUBLISHED" }>((r) => {
                     resolve = r;
                 })
         );
@@ -119,7 +119,7 @@ describe("ReviewCard — 通報（plan 092）", () => {
         expect(submit).toBeDisabled();
         expect(screen.getByLabelText("Reason")).toBeDisabled();
 
-        resolve({ status: "PUBLISHED" });
+        resolve({ ok: true, status: "PUBLISHED" });
 
         expect(
             await screen.findByText(/Thanks for letting us know/)
@@ -132,7 +132,9 @@ describe("ReviewCard — 通報（plan 092）", () => {
     });
 
     it("メモが空なら note を送らない", async () => {
-        const onReport = jest.fn().mockResolvedValue({ status: "PUBLISHED" });
+        const onReport = jest
+            .fn()
+            .mockResolvedValue({ ok: true, status: "PUBLISHED" });
         render(<ReviewCard review={makeReview()} onReport={onReport} />);
         openForm();
 
@@ -167,11 +169,14 @@ describe("ReviewCard — 通報（plan 092）", () => {
         expect(screen.getByLabelText("Reason")).toHaveValue("OFFENSIVE");
     });
 
-    it("サーバーの例外が Unauthenticated. でも文言照合でサインイン案内に変えない", async () => {
+    it("想定外の例外は文言を出さず固定メッセージにし、再送できる（Unauthenticated. でもサインイン案内に変えない）", async () => {
+        const consoleError = jest
+            .spyOn(console, "error")
+            .mockImplementation(() => {});
         const onReport = jest
             .fn()
             .mockRejectedValueOnce(new Error("Unauthenticated."))
-            .mockResolvedValueOnce({ status: "PUBLISHED" });
+            .mockResolvedValueOnce({ ok: true, status: "PUBLISHED" });
         render(<ReviewCard review={makeReview()} onReport={onReport} />);
         openForm();
         fireEvent.change(screen.getByLabelText("Reason"), {
@@ -181,8 +186,10 @@ describe("ReviewCard — 通報（plan 092）", () => {
         fireEvent.click(screen.getByRole("button", { name: "Submit report" }));
 
         expect(await screen.findByRole("alert")).toHaveTextContent(
-            "Unauthenticated."
+            "Could not send the report. Please try again."
         );
+        expect(consoleError).toHaveBeenCalled();
+        consoleError.mockRestore();
         expect(screen.getByLabelText("Reason")).toHaveValue("OFFENSIVE");
         expect(
             screen.getByRole("button", { name: "Submit report" })
@@ -194,10 +201,11 @@ describe("ReviewCard — 通報（plan 092）", () => {
         ).toBeInTheDocument();
     });
 
-    it("それ以外の失敗はサーバーのメッセージを表示する", async () => {
-        const onReport = jest
-            .fn()
-            .mockRejectedValue(new Error("You cannot report your own review."));
+    it("業務エラーは戻り値のメッセージを表示する", async () => {
+        const onReport = jest.fn().mockResolvedValue({
+            ok: false,
+            error: "You cannot report your own review.",
+        });
         render(<ReviewCard review={makeReview()} onReport={onReport} />);
         openForm();
         fireEvent.change(screen.getByLabelText("Reason"), {

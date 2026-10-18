@@ -15,14 +15,13 @@ const REASONS = Object.keys(
 const isReportReason = (value: string): value is ReviewReportReason =>
     (REASONS as string[]).includes(value);
 
-const errorMessage = (error: unknown): string =>
-    error instanceof Error && error.message
-        ? error.message
-        : "Could not send the report. Please try again.";
+// 想定外の例外の文言は表示しない（本番の Server Action は文言を伏せる）
+const FALLBACK_ERROR = "Could not send the report. Please try again.";
 
 /**
  * レビューの通報（plan 092・DS-COMP-072）。理由は必須、メモは任意。
  * 送信中は入力とボタンをロックし、`useRef` で連打による二重送信を防ぐ。
+ * 業務エラーは戻り値の `error` を表示し、想定外の例外は固定文言にする。
  * 失敗時は入力を残して再送できる。成功後は導線ごと閉じる（サーバー側でも同じ人の通報は冪等）。
  */
 export default function ReportReview({
@@ -56,15 +55,25 @@ export default function ReportReview({
         setError(null);
         try {
             const trimmed = note.trim();
-            await onReport({
+            const result = await onReport({
                 reviewId,
                 reason,
                 ...(trimmed ? { note: trimmed } : {}),
             });
+            if (!result.ok) {
+                setError(result.error);
+                return;
+            }
             setDone(true);
             setOpen(false);
         } catch (caught: unknown) {
-            setError(errorMessage(caught));
+            if (caught instanceof Error) {
+                console.error("[ReportReview:submit] Failed to report review", {
+                    error: caught.message,
+                    stack: caught.stack,
+                });
+            }
+            setError(FALLBACK_ERROR);
         } finally {
             pending.current = false;
             setBusy(false);

@@ -21,6 +21,7 @@ import {
     resolveReviewPolicy,
     shouldFlag,
     statusAfterAuthorWrite,
+    type ReportReviewResult,
     type ReviewPolicy,
 } from "@/lib/review-moderation";
 import { normalizePageParam } from "@/lib/utils";
@@ -328,11 +329,11 @@ export const upsertReview = async (
  *   PUBLISHED → FLAGGED に遷移させる（design review-governance §4）。同じ人の二重通報は冪等。
  * @access Authenticated user（自分のレビューは通報できない）
  * @param input - `{ reviewId, reason, note? }`（`ReportReviewSchema`）
- * @returns `{ status }` — 通報後のレビューの状態
+ * @returns `{ ok: true, status }`（通報後のレビューの状態）、または業務エラーの `{ ok: false, error }`
  */
 export const reportReview = async (
     input: unknown
-): Promise<{ status: ReviewStatus }> => {
+): Promise<ReportReviewResult> => {
     // 認可ガードは try の外（認可エラーを汎用メッセージで上書きしない）
     const user = await requireUser();
 
@@ -368,14 +369,16 @@ export const reportReview = async (
                 skipDuplicates: true,
             });
 
-            if (target.status !== ReviewStatus.PUBLISHED) return { status: target.status };
+            if (target.status !== ReviewStatus.PUBLISHED) {
+                return { ok: true, status: target.status };
+            }
 
             const policy = await loadReviewPolicy(tx);
             const unresolved = await tx.reviewReport.count({
                 where: { reviewId, resolvedAt: null },
             });
             if (!shouldFlag(policy.mode, unresolved, policy.flagThreshold)) {
-                return { status: target.status };
+                return { ok: true, status: target.status };
             }
 
             // PUBLISHED → FLAGGED は公開集合の中の遷移なので集計は変わらない
@@ -383,9 +386,11 @@ export const reportReview = async (
                 where: { id: reviewId },
                 data: { status: ReviewStatus.FLAGGED },
             });
-            return { status: ReviewStatus.FLAGGED };
+            return { ok: true, status: ReviewStatus.FLAGGED };
         });
     } catch (error: unknown) {
+        // 業務エラー（自分のレビュー・非公開）は結果で返す。本番では throw の文言が伏せられるため
+        if (error instanceof ReviewActionError) return { ok: false, error: error.message };
         return rethrow("reportReview", "Failed to report review.", error);
     }
 };

@@ -152,12 +152,20 @@ export const MODERATION_ACTION_LABELS: Readonly<
     remove: "Remove",
 };
 
+/**
+ * `reportReview` の結果。業務エラーは throw せず `ok: false` で返す
+ * （本番の Server Action は throw した文言をクライアントへ伏せるため）。
+ */
+export type ReportReviewResult =
+    | { ok: true; status: ReviewStatus }
+    | { ok: false; error: string };
+
 /** 店頭のレビューカードから通報する Server Action（`reportReview`）の形。 */
 export type ReportReviewAction = (input: {
     reviewId: string;
     reason: ReviewReportReason;
     note?: string;
-}) => Promise<{ status: ReviewStatus }>;
+}) => Promise<ReportReviewResult>;
 
 /** admin の審査キューから呼ぶ Server Action（`moderateReview`）の形。 */
 export type ModerateReviewAction = (input: {
