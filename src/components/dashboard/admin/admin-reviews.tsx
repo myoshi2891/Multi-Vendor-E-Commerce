@@ -294,7 +294,11 @@ export default function AdminReviews({
                 </select>
             </div>
             {reviews.length === 0 ? (
-                <p className={styles.panel}>No reviews need attention.</p>
+                <p className={styles.panel}>
+                    {status
+                        ? `No ${REVIEW_STATUS_LABELS[status].toLowerCase()} reviews.`
+                        : "No reviews need attention."}
+                </p>
             ) : (
                 <div className="grid gap-4">
                     {reviews.map((review) => (

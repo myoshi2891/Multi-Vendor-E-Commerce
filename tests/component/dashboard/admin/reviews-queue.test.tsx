@@ -91,6 +91,14 @@ describe("AdminReviews — 一覧（plan 092・DS-COMP-250）", () => {
         ).toBeInTheDocument();
     });
 
+    it("状態で絞り込んで空のときは、その状態の案内を出す", () => {
+        renderQueue([], undefined, { status: "REMOVED" });
+        expect(screen.getByText("No removed reviews.")).toBeInTheDocument();
+        expect(
+            screen.queryByText("No reviews need attention.")
+        ).not.toBeInTheDocument();
+    });
+
     it("過去の却下・削除の理由を出す", () => {
         renderQueue([
             item("r1", "REMOVED", { moderationReason: "Hate speech" }),
