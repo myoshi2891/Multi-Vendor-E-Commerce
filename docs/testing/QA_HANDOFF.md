@@ -1,5 +1,17 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
+## 2026-10-18 plan 092 レビュー ガバナンスの実装
+
+[plan 092](../../plans/092-implement-review-governance.md)／[設計](../design/review-governance/design.md)／[UI 計画](../../plans/layout-design/review-governance-ui-plan.md)。購入者バッジ（書き込み時スナップショット）、`ModerationPolicy` で切り替えるモデレーション、通報（`ReviewReport`）、商品と店舗の評価集計（Product → Store の行ロック・公開集合のみ）、rating の 3 層検証（Zod・サーバー側 parse・DB CHECK）、admin 審査キュー `/dashboard/admin/reviews`。マイグレーション 2 本はローカル DB のみ適用。Jest +150（345 スイート）、Integration +5（262）、fixture suite `review-governance` 12/12、回帰 `purchase` 82/82・`postpurchase` 35/35。
+
+**Open issue REVIEW-GOV-ROLLOUT**: マイグレーション `review_governance` / `review_moderation_reason` のリモート DB 適用はオペレーター作業（`safe-migration` → `migrate deploy`。適用前に `Review_rating_range` の違反 0 件を確認）。admin 審査キューとサインイン済みの通報の実ルート確認は、専用 DB とテスト用 ADMIN が無いため保留（DS-PURCHASE-TEN-ROUTES と同じ環境制約）。seed が集計を更新しない件は DEFERRED（REVIEW-SEED-AGGREGATES）。
+
+**次着手**: plans/README の soft 順序で spike 022（セラーパフォーマンス。design §5.2 の Store 集計を入力に使う）。
+
+## 2026-10-18 plan 091 レビュー投稿者 PII 露出の修正
+
+[plan 091](../../plans/091-fix-review-user-pii-exposure.md)。spike 019 の Step 1 で発見（019 の STOP 条件により先行対応）。公開経路 `getProductPageData` / `getProductFilteredReviews` が `include: { user: true }` で投稿者の `email` / `role` を返していたため、`select: { name: true, picture: true }` に絞った。`ReviewWithImageType.user` も `Pick<User, "name" | "picture">` に変更。Red→Green で `product.test.ts` に構造検証を +2 件。型0・lint0 errors/既存8 warnings。**次着手**: plan 092 で実装済み（下の節）。
+
 <a id="ds-purchase-ten-routes"></a>
 
 ## 2026-10-18 購入導線10画面再監査
@@ -382,7 +394,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest/lcov: 2026-10-18購入10画面の全体実測 / Integration: 2026-10-15実測 / E2E件数: 2026-10-17 `--list` / E2Eフルラン: 2026-10-03実測）
+### テスト統計（Jest/lcov: 2026-10-18 plan 092 後の全体実測 / Integration: 2026-10-18実測 / E2E件数: 2026-10-17 `--list` / E2Eフルラン: 2026-10-03実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -390,9 +402,9 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。2026-10-18購入10画面の全体実測（`bun run test -- --runInBand --coverage --silent`）。 |
-| 全体coverage（2026-10-18実測） | Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。全体Jest CLI集計。 |
-| Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest テスト総数 (unit/component) | **3462 passed / 3465 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。2026-10-18 plan 092 後の全体実測（`bun run test -- --runInBand --coverage --silent`）。 |
+| 全体coverage（2026-10-18実測） | Statements88.83%（11810/13295）／Branches79.6%（7331/9209）／Functions85.64%（2332/2723）／Lines89.4%（10745/12019）。全体Jest CLI集計（plan 092 後）。 |
+| Jest Integration テスト総数 | **262** / **19 スイート**（**2026-10-18 実測: 262/262 pass**・`bun run test:integration`。plan 092 で `review-aggregation.test.ts` +5〔店舗集計・同店舗の並行投稿・購入者バッジ・REMOVED の除外・CHECK 制約〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **47 files・3 ブラウザ計 450 tests**（2026-10-17 `bunx playwright test --list`。plan 088 Step 6 の `returns-rma.spec.ts` +1 file・+1 test/browser）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |

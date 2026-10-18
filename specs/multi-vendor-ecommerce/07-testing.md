@@ -1579,3 +1579,12 @@ DS-PAGE-030: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復�
 ### 購入10画面最終統合（2026-10-18）
 
 全体Jest 3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）。fixture176/176・公開実route8/8、型0・lint0 errors/既存8 warnings・harness成功。新規RTL10件、browser8件。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。今回認証後実routeは専用DB不在で保留。[証跡](../../docs/design/design-system/PROGRESS.md#purchase-ten-final)。
+
+### plan 091 レビュー投稿者 PII 露出の修正（2026-10-18）
+
+全体Jest 3312 passed / 3315 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）。Statements88.5%（11524/13021）／Branches79.24%（7158/9033）／Functions85.2%（2280/2676）／Lines89.04%（10484/11774）。`src/queries/product.test.ts` に公開レビュー経路（`getProductPageData` / `getProductFilteredReviews`）の投稿者 select 構造検証 +2 件。型0・lint0 errors/既存8 warnings。[plan 091](../../plans/091-fix-review-user-pii-exposure.md)。
+
+### plan 092 レビュー ガバナンス（2026-10-18）
+
+全体Jest 3462 passed / 3465 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11810/13295）／Branches79.6%（7331/9209）／Functions85.64%（2332/2723）／Lines89.4%（10745/12019）。Integration 262 / 19 スイート（`review-aggregation.test.ts` +5）。新規: `src/lib/review-moderation.test.ts`（状態機械・ポリシー・UI 用の操作）、`tests/component/store/review-card.test.tsx`、`tests/component/dashboard/admin/reviews-queue.test.tsx` / `reviews-page.test.tsx`、`src/components/store/profile/reviews/review-history-card.test.tsx`。`review.test.ts` は集計の `aggregate` 化と Store 集計・通報・モデレーション（IDOR 3 階層）に合わせて改訂。fixture suite `review-governance` 12/12。[plan 092](../../plans/092-implement-review-governance.md)。
+

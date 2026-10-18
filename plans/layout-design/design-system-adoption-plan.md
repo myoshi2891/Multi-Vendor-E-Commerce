@@ -139,6 +139,7 @@
 | `/dashboard/admin/offer-tags/new` | 本体適用・検証保留（2026-10-06） | P4 | [src/app/dashboard/admin/offer-tags/new/page.tsx](<../../src/app/dashboard/admin/offer-tags/new/page.tsx>) |
 | `/dashboard/admin/offer-tags` | 本体適用・検証保留（2026-10-06） | P4 | [src/app/dashboard/admin/offer-tags/page.tsx](<../../src/app/dashboard/admin/offer-tags/page.tsx>) |
 | `/dashboard/admin/orders` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/admin/orders/page.tsx](<../../src/app/dashboard/admin/orders/page.tsx>) |
+| `/dashboard/admin/reviews` | 新規・本体適用・検証保留（2026-10-18・plan 092。DS-PAGE-069） | P3 | [src/app/dashboard/admin/reviews/page.tsx](<../../src/app/dashboard/admin/reviews/page.tsx>) |
 | `/dashboard/admin` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/admin/page.tsx](<../../src/app/dashboard/admin/page.tsx>) |
 | `/dashboard/admin/stores` | 本体適用・検証保留（2026-10-05） | P3 | [src/app/dashboard/admin/stores/page.tsx](<../../src/app/dashboard/admin/stores/page.tsx>) |
 | `/dashboard` | 転送専用 | 回帰検証 | [src/app/dashboard/page.tsx](<../../src/app/dashboard/page.tsx>) |

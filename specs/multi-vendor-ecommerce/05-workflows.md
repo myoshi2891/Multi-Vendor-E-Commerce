@@ -28,7 +28,7 @@
 2) The information panel shows product and variant names, rating and review count, price, color variants, sizes, SKU copy, seller link, share controls, and a link to the description. An invalid stored rating falls back to the weighted average of review buckets. Hovering a color variant previews its images; following it opens that variant URL. Selecting a size writes its ID to the `size` query parameter, updates the displayed discounted price and stock, and enables quantity selection. Out-of-stock sizes are disabled.
 3) The purchase panel shows the destination, shipping service, estimated dates, and a fee breakdown when shipping details exist. The fee summary uses `computeShippingTotal` for the selected quantity and weight; complimentary shipping hides the fee breakdown. Returns and privacy links lead to their respective pages.
 4) `Buy now` and `Add to bag` remain disabled until a valid in-stock size is selected and the remaining stock permits another item. When all sizes are sold out, the panel says so. Remaining quantity is calculated from current selected-size stock minus the matching quantity already in the cart. `Add to bag` adds to the local cart with a success toast; `Buy now` adds and navigates to `/cart`.
-5) Below the purchase area, the page renders the sanitized description; structured category attributes under **Specifications** and legacy specs under **Other specifications** when present; same-category related products; review statistics, filters, sorting, pagination, and review form; questions when present; seller card; and up to five products from that store. Empty optional sections are omitted. Recommendation cards link to variant pages and use representative or branded placeholder imagery when gallery images are unavailable.
+5) Below the purchase area, the page renders the sanitized description; structured category attributes under **Specifications** and legacy specs under **Other specifications** when present; same-category related products; review statistics, filters, sorting, pagination, and review form (only published or flagged reviews are listed and counted; verified purchasers get a badge; signed-in shoppers can report a review with a reason and optional details — plan 092); questions when present; seller card; and up to five products from that store. Empty optional sections are omitted. Recommendation cards link to variant pages and use representative or branded placeholder imagery when gallery images are unavailable.
 
 ## Browse Collection Flow
 1) `/browse` presents a dark collection hero, result count, filter sidebar, sort control, and an editorial product grid. On narrow screens the filter controls open through a disclosure button (`aria-expanded`); the grid adapts from two to four columns across breakpoints. Zero results show an explicit empty state.
@@ -136,6 +136,15 @@ Entry points: the order detail (`/order/[orderId]`) returns section per store gr
    - Toggle `isActive` per coupon to immediately deactivate without changing dates.
    - Delete any coupon regardless of store ownership.
    - Create new coupons via `upsertCouponAsAdmin()` (P2002 → Japanese error message).
+6) Moderate reviews (`/dashboard/admin/reviews`, plan 092):
+   - The queue defaults to Pending review + Flagged (oldest first, 20 per page); the status
+     filter and page live in the URL. Out-of-range pages redirect to the last page.
+   - Each card shows product, author name/email, verified-purchase badge, open report count,
+     rating, text, and any prior moderation note. Only transitions allowed for the current
+     status are offered: Approve / Reject (pending), Keep published / Remove (flagged),
+     Remove (published). Reject and Remove require a reason shown to the author.
+   - Approve / Remove recompute product and store ratings; Keep published and Remove close
+     open reports.
 
 ## Auth and Role Sync
 1) User signs up or updates profile in Clerk (e.g. via the `/profile/settings` page,
@@ -178,7 +187,7 @@ The branded cart shows persisted items after synchronization, preserves local it
 1. Authenticate and open `/profile/reviews`; render server-provided own reviews or the empty collection link without a second mount request.
 2. Choose View all/1–5 stars, select a period, or submit text search with Search/Enter. New conditions reset page 1; paging retains applied conditions. Unsubmitted draft is not applied by rating/period changes; empty submission clears search, Remove all filters clears every condition.
 3. Lookup locks controls and shows status/skeleton without stale cards. Generic failure keeps conditions for Try again; success renders review cards and page metadata.
-4. Read masked author/avatar, fractional rating, variant/color/size/quantity/text/photos and update date. Page-local conditions reset on reload. This history view does not post/edit/delete a review or purchase a product.
+4. Read masked author/avatar, fractional rating, variant/color/size/quantity/text/photos and update date. Non-published reviews show their moderation state (pending / under review / not published / removed) and, when rejected or removed, the reason (plan 092). Page-local conditions reset on reload. This history view does not post/edit/delete a review or purchase a product.
 
 ## Profile message presentation flow
 

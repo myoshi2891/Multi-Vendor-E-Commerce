@@ -44,7 +44,20 @@
 - Coupon: store coupon usable in carts and order groups.
 - PaymentDetails: payment record tied to an order and user
   (`Decimal(12,2)` for amount).
-- Review and ReviewImage: customer reviews for products.
+- Review and ReviewImage: customer reviews for products. Review carries a moderation
+  `status` (`ReviewStatus`: PENDING_REVIEW / PUBLISHED / FLAGGED / REJECTED / REMOVED,
+  default PUBLISHED), a write-time `isVerifiedPurchase` snapshot, and `moderationReason` /
+  `moderatedAt` (plan 092). `rating` is 1–5 in 0.5 steps, enforced by the DB CHECK
+  `Review_rating_range` and by `ReviewRatingSchema`. Only PUBLISHED / FLAGGED reviews are
+  public and counted in `Product.rating` / `numReviews` and `Store.averageRating` /
+  `numReviews` (Store is the review-weighted mean). `likes` is unused (deferred).
+  Design: [`docs/design/review-governance/design.md`](../../docs/design/review-governance/design.md).
+- ReviewReport: one report per (review, reporter) (`@@unique`), with `reason`
+  (`ReviewReportReason`), optional `note`, and `resolvedAt`. Unresolved reports from distinct
+  reporters count toward the FLAGGED threshold.
+- ModerationPolicy: one row per `ModerationSubject` (REVIEW; LISTING reserved for spike 016)
+  with `mode` (NONE / POST / PRE), `requireVerifiedPurchase`, and `flagThreshold`. A missing row
+  falls back to code defaults (POST / false / 3), so behavior changes need no code change.
 - Category, SubCategory, CategorySlugAlias, OfferTag: taxonomy and merchandising labels.
   Category is an N-level tree (plan 066 / ADR-006 Phase A): a self-relation `parentId`
   (`onDelete: Restrict`) plus a materialized `path` (e.g. `electronics/camera`, no trailing

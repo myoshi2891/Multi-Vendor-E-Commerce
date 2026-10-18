@@ -69,6 +69,21 @@ Dashboard:
 - Mutations on user-owned resources verify ownership before writing.
   Example: review module uses conditional `update`/`create` with ownership
   check instead of `upsert` to prevent IDOR via client-supplied IDs.
+- Review governance (plan 092, `src/queries/review.ts`):
+  `upsertReview(productId, review)` validates input server-side (`UpsertReviewSchema`),
+  snapshots `isVerifiedPurchase` (paid, non-canceled/refunded order item), applies
+  `ModerationPolicy`, and recomputes Product and Store ratings in one transaction after
+  locking Product → Store rows (`FOR UPDATE`).
+  `reportReview({reviewId, reason, note?})` (USER; not own review; public reviews only;
+  idempotent per reporter) may move PUBLISHED → FLAGGED in POST mode.
+  `moderateReview({reviewId, action: approve|reject|remove|restore, reason?})` (ADMIN;
+  reason required for reject/remove) follows the transition table in
+  `src/lib/review-moderation.ts` and resolves open reports on restore/remove.
+  `getReviewModerationQueue({status?, page?})` (ADMIN) returns 20 per page, oldest first,
+  defaulting to PENDING_REVIEW + FLAGGED. Public review reads (`getProductPageData`,
+  `getProductFilteredReviews`, `getRatingStatistics`, `/api/index-products`) wrap their
+  `where` with `publicReviewWhere()` (`src/lib/review-visibility.ts`) and select only the
+  author's `name` / `picture` (plan 091).
 - Because `"use server"` files may only export `async` functions, helpers shared between
   query modules live in `src/lib/`: `payment-status.ts` (`isSettledPaymentStatus`,
   `SETTLED_PAYMENT_STATUSES` — the SSOT for irreversible payment states) and
@@ -279,7 +294,7 @@ SupportForm receives `submitAction: typeof createSupportTicket` from each Server
 
 ### Profile review display contract
 
-`getUserReviewsForDisplay(filter = "", period = "", search = "", page = 1)` returns `{reviews, totalPages}`. Review fields: id, rating, review, variant, color, size, quantity, updatedAt (ISO), user `{name,picture}`, images `{id,url,alt}[]`. Exclude private user fields and internal relations/timestamps. Delegate to the existing authenticated user-scoped query: ratings 1–5, four createdAt periods, case-insensitive review-text search, 10 items/page, updatedAt descending. UI Search/Enter replaces delayed search; empty search/full reset work explicitly. No order/product/store search or mutation is added. [Contract](../../docs/design/profile-reviews/requirements.md).
+`getUserReviewsForDisplay(filter = "", period = "", search = "", page = 1)` returns `{reviews, totalPages}`. Review fields: id, rating, review, variant, color, size, quantity, updatedAt (ISO), user `{name,picture}`, images `{id,url,alt}[]`, status, moderationReason (own reviews only; plan 092). Exclude private user fields and internal relations/timestamps. Delegate to the existing authenticated user-scoped query: ratings 1–5, four createdAt periods, case-insensitive review-text search, 10 items/page, updatedAt descending. UI Search/Enter replaces delayed search; empty search/full reset work explicitly. No order/product/store search or mutation is added. [Contract](../../docs/design/profile-reviews/requirements.md).
 
 ### Profile message display contract
 

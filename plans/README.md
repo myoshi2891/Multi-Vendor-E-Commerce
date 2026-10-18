@@ -26,22 +26,23 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 |------|-------|----------|----------|------------|--------|
 | [016](016-spike-seller-onboarding-catalog-approval.md) | **Spike**: 出品審査ワークフロー（商品公開制御）設計 | direction | P3 | — | TODO |
 | [017](017-spike-recommendation-foundation.md) | **Spike**: ルールベース・レコメンド基盤 v1 設計 | direction | P3 | — | TODO |
-| [019](019-spike-review-ugc-governance.md) | **Spike**: レビュー・UGC 品質ガバナンス設計 | direction | P3 | — | TODO |
 | [020](020-spike-promotion-engine.md) | **Spike**: プロモーション・キャンペーンエンジン設計 | direction | P3 | — | TODO |
 | [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | — | TODO |
+| [092](092-implement-review-governance.md) | レビューの購入検証・モデレーション・通報・店舗評価集計（019 の後続実装） | direction | P3 | 091 | IN PROGRESS（2026-10-18・実装・検証済み・未コミット / リモート DB 適用待ち） |
 | [085](085-implement-public-endpoint-rate-limit.md) | 公開エンドポイントのレート制限（cookie = アプリ内 / 検索 = Vercel WAF・ADR-009） | security | P3 | 025 | IN PROGRESS（2026-10-07・アプリ側完了 541d4b58〜265f8ee2 / WAF 待ち） |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
 | [086](086-implement-notification-foundation.md) | 通知基盤（Outbox + sweeper）と店舗単位の発送通知（021 の後続実装・Resend 導入はユーザー承認後） | direction | P3 | 021 | IN PROGRESS（2026-10-07・e83ead3d〜3aa15cf0 / Resend 承認待ち） |
 
 - **085**: アプリ側（cookie limiter）は実装・検証済み。**Vercel WAF ルール（Step 6）はオペレーター作業待ち**。
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
+- **092**: Step 0〜8 は実装・検証済み（ローカル DB と testcontainers）。**マイグレーション 2 本（`review_governance` / `review_moderation_reason`）のリモート DB 適用はオペレーター作業**（`safe-migration` → `migrate deploy`。適用前に CHECK 違反 0 件を確認）。admin 審査キューの認証後の実ルート確認は専用 DB とテスト用 ADMIN が要るため保留。
 - **086**: Step 1〜8・10 は実装・検証済み（stub プロバイダで in-app 通知と送信まで動く）。**Step 9（`resend` SDK の追加）はユーザー判断で見送り**。cron のスケジュール設定とリモート DB への適用はオペレーター作業。設計は [`notification-foundation/design.md`](../docs/design/notification-foundation/design.md) と ADR-010（Proposed）。
-- Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（018 まで完了）（020・016・017 は独立）。
+- Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（019 まで完了。019 の後続実装は 092、設計は [`review-governance/design.md`](../docs/design/review-governance/design.md)）（020・016・017 は独立）。
 
 ## 完了済みのプラン
 
 <details>
-<summary>DONE（74 件）— 実行記録はアーカイブと各プラン本文</summary>
+<summary>DONE（76 件）— 実行記録はアーカイブと各プラン本文</summary>
 
 | Plan | Title | Category | Priority | Depends on | Status |
 |------|-------|----------|----------|------------|--------|
@@ -119,5 +120,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [087](087-implement-item-level-restock.md) | 在庫復元を item status の遷移に一本化し、経路をまたぐ二重復元を解消（012 の後続実装） | direction | P3 | 012 | DONE（2026-10-08・c8d92913〜335d8031） |
 | [089](089-fix-apply-seller-decimal-return.md) | applySeller の戻り値を `{ id }` に縮小（Decimal 列のクライアント直列化エラー） | bugfix | P2 | — | DONE（2026-10-12・985b2285〜9d3d4531） |
 | [088](088-implement-returns-rma.md) | 返品 RMA（店舗単位の申請・承認・受け取り・解決、在庫の差し引き・通知の配線）（018 の後続実装） | direction | P3 | 086, 087 | DONE（2026-10-17・a75e63df〜40715324） |
+| [019](019-spike-review-ugc-governance.md) | **Spike**: レビュー・UGC 品質ガバナンス設計（後続 092・Step 1 で P1 を発見し 091 で先行修正） | direction | P3 | — | DONE（2026-10-18・未コミット） |
+| [091](091-fix-review-user-pii-exposure.md) | 公開レビュー経路が投稿者の email / role を返さないようにする（019 の Step 1 で発見） | security | P1 | — | DONE（2026-10-18・未コミット） |
 
 </details>

@@ -1,5 +1,17 @@
 # PROGRESS.md
 
+## 2026-10-18 plan 092 レビュー ガバナンスの実装
+
+購入者バッジ・モデレーション（`ModerationPolicy` で無審査 / 事後 / 事前を切り替え）・通報・商品と店舗の評価集計・rating の 3 層検証・admin 審査キューを実装。全体Jest **3462 passed / 3465 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。Statements88.83%（11810/13295）／Branches79.6%（7331/9209）／Functions85.64%（2332/2723）／Lines89.4%（10745/12019）。Integration 262/19、fixture `review-governance` 12/12、型0・lint0 errors/既存8 warnings。マイグレーション 2 本のリモート適用と認証後の実ルート確認は保留。
+
+[plan 092](../plans/092-implement-review-governance.md)／[設計](design/review-governance/design.md)／[UI 証跡](design/design-system/PROGRESS.md)／[統計の正本](testing/QA_HANDOFF.md#現在の実装状態サマリ)。
+
+## 2026-10-18 plan 091 レビュー投稿者 PII 露出の修正
+
+spike 019 の棚卸しで、公開レビュー経路が投稿者の `email` / `role` を返していたことを発見し、先に修正した。`getProductPageData` / `getProductFilteredReviews` の `user` を `select: { name: true, picture: true }` に絞り、`ReviewWithImageType.user` を `Pick<User, "name" | "picture">` に変更。TDD（Red→Green）で `product.test.ts` +2。全体Jest **3312 passed / 3315 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。Statements88.5%（11524/13021）／Branches79.24%（7158/9033）／Functions85.2%（2280/2676）／Lines89.04%（10484/11774）。型0・lint0 errors/既存8 warnings。dashboard426 files/416 lcov/18 of 80 cells（不変）。
+
+[plan 091](../plans/091-fix-review-user-pii-exposure.md)／[統計の正本](testing/QA_HANDOFF.md#現在の実装状態サマリ)。spike 019 は設計まで完了（[design](design/review-governance/design.md)・後続実装 [plan 092](../plans/092-implement-review-governance.md)）。
+
 ## 2026-10-18 購入導線10画面再監査
 
 既存8画面の回帰と注文/支払履歴2画面のfocus復帰をTDDで修正。全体Jest **3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。fixture176/176、公開実route8/8、型0・lint0 errors/既存8 warnings・harness成功。dashboard426 files/414 lcov/18 of 80 cells（不変）。認証後実routeは今回専用DB不在で保留、過去68画面の判定を維持。

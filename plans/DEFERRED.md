@@ -8,6 +8,20 @@
 
 Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates for a future round or `execute`/added plans:
 
+- **REVIEW-LIKES（2026-10-18 起票 / plan 092 で先送り）** `Review.likes` は読み書きする経路が無い
+  死にフィールド。helpful 投票（per-user の `ReviewVote`・unique `[userId, reviewId]`）と
+  「参考になった順」のソートは要件が無いため初期スコープ外とし、列の削除（破壊的マイグレーション）も
+  混ぜなかった。導入するなら `ReviewVote` 追加 → `likes` を集計列として再定義、要らなければ列を削除。
+  根拠: [`review-governance/design.md`](../docs/design/review-governance/design.md) §7。
+- **REVIEW-BADGE-REFUND（2026-10-18 起票 / plan 092 で先送り）** 購入者バッジは投稿時の
+  スナップショットで、後から返金されても外れない。必要になったら RMA の `Refunded` 遷移から
+  再判定を呼ぶ（design §2.1 / §8）。却下・削除の通知（通知基盤 086 の種別追加）も同節で先送り。
+- **REVIEW-SEED-AGGREGATES（2026-10-18 発見 / plan 092 Step 0）** `prisma/seed/seeders/review-seeder.ts`
+  はレビューを直接書き、`Product.rating` / `numReviews` と `Store` の集計を更新しない
+  （ローカル DB で 154 レビューに対し `SUM(Product.numReviews)=15`・36 商品が不一致）。
+  plan 092 のマイグレーションの backfill で既存データは揃うが、seed を再実行すると再びずれる。
+  seed の末尾で同じ再計算 SQL を流すのが最小修正。
+
 - **CORRECTNESS-06（新規・2026-08-11 起票 / plan 048 の実行中に実測）**
   `src/components/store/cards/store-card.tsx:30-31` の
   `if (!user.isSignedIn) router.push('/sign-in')` に **`return` が無い**。加えて Clerk の

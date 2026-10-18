@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-18） | **3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage | Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）（2026-10-18全体CLI実測）。 |
-| テストファイル総数（dashboard） | **426ファイル**／lcov **414エントリ**／マトリクス18/80（23%）。2026-10-18全体coverage/dashboard再生成実測。 |
-| Jest スイート総数（unit/component） | **340スイート**（339 passed／1 skipped、2026-10-18実測）。 |
-| テスト総数 | **3310 unit/component passed**（3313 total／3 skipped）。Integration257／19 suites（2026-10-15実測を維持）。 |
+| Jestテスト総数（2026-10-18） | **3462 passed / 3465 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage | Statements88.83%（11810/13295）／Branches79.6%（7331/9209）／Functions85.64%（2332/2723）／Lines89.4%（10745/12019）（2026-10-18 plan 092 後の全体CLI実測）。 |
+| テストファイル総数（dashboard） | **432ファイル**／lcov **420エントリ**／マトリクス18/80（23%）。2026-10-18全体coverage/dashboard再生成実測。 |
+| Jest スイート総数（unit/component） | **345スイート**（344 passed／1 skipped、2026-10-18実測）。 |
+| テスト総数 | **3462 unit/component passed**（3465 total／3 skipped）。Integration262／19 suites（2026-10-18実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -358,6 +358,10 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-18: plan 092 レビュー ガバナンス。Jest 3462 passed / 3465 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11810/13295）／Branches79.6%（7331/9209）／Functions85.64%（2332/2723）／Lines89.4%（10745/12019）。Integration 262/19（+5）。dashboard432 files/420 lcov/18 of 80 cells、セル状態不変。fixture `review-governance` 12/12。
+
+2026-10-18: plan 091 レビュー投稿者 PII 露出の修正。公開レビュー経路の `user` を `select: { name, picture }` に絞り、`product.test.ts` に構造検証 +2。Jest 3312 passed / 3315 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）。Statements88.5%（11524/13021）／Branches79.24%（7158/9033）／Functions85.2%（2280/2676）／Lines89.04%（10484/11774）。dashboard426 files/416 lcov/18 of 80 cells、セル状態不変。
 
 2026-10-18: 購入10画面再監査。8画面は既存回帰、注文/支払履歴はfocus復帰をTDD修正。Jest 3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。dashboard426 files/414 lcov/18 of 80 cells、セル状態不変。fixture176/176・公開実route8/8。今回認証後実routeは専用DB不在で保留、[QA正本](QA_HANDOFF.md#ds-purchase-ten-routes)。
 
