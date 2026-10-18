@@ -11,15 +11,15 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-18） | **3462 passed / 3465 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage | Statements88.83%（11810/13295）／Branches79.6%（7331/9209）／Functions85.64%（2332/2723）／Lines89.4%（10745/12019）（2026-10-18 plan 092 後の全体CLI実測）。 |
+| Jestテスト総数（2026-10-18） | **3464 passed / 3467 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage | Statements88.83%（11817/13302）／Branches79.62%（7337/9215）／Functions85.64%（2332/2723）／Lines89.41%（10753/12026）（2026-10-18 plan 092 レビュー指摘対応後の全体CLI実測）。 |
 | テストファイル総数（dashboard） | **432ファイル**／lcov **420エントリ**／マトリクス18/80（23%）。2026-10-18全体coverage/dashboard再生成実測。 |
 | Jest スイート総数（unit/component） | **345スイート**（344 passed／1 skipped、2026-10-18実測）。 |
-| テスト総数 | **3462 unit/component passed**（3465 total／3 skipped）。Integration262／19 suites（2026-10-18実測）。 |
+| テスト総数 | **3464 unit/component passed**（3467 total／3 skipped）。Integration262／19 suites（2026-10-18実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
-| lcov エントリ数 | **414**（2026-10-18全体coverage/dashboard実測）。 |
+| lcov エントリ数 | **420**（2026-10-18全体coverage/dashboard実測）。 |
 | 未採用カテゴリ（テストが 1 件も存在しないもの） | **Performance のみ**。Visual / Snapshot（4 spec）と a11y（7 spec）は**採用済み・実行され passed している** — a11y は sign-in / seller-apply / checkout / profile に加え、2026-08-09 の plan 052 で **browse / 商品詳細 / cart** を追加（全 spec が chromium 限定ゲートのため firefox / webkit 分は設計上 skip）。マトリクスの `◐` は「pages 列のみ着手済み」という**列の広がり**を表すもので、「未実施」の意味ではない |
 | 型エラー | **0件**（2026-10-17 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 
@@ -358,6 +358,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-18: plan 092 レビュー指摘対応。admin 審査キューは digest 付き（本番で伏せられた）例外を既定文言に畳む／通報は `useUser()` で送信前にサインインを判定し、Server Action の `"Unauthenticated."` 文言照合を廃止／`upsertReview` は Product → Store → Review の順で自分のレビュー行を `FOR UPDATE` してから状態を読む（並行通報の FLAGGED 上書き防止）。Jest +2（`reviews-queue.test.tsx` digest +1、`review-card.test.tsx` 未サインイン判定を 2 件へ分割 +1、`review.test.ts` のロック順検証を 3 本へ更新）。Jest 3464 passed / 3467 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11817/13302）／Branches79.62%（7337/9215）／Functions85.64%（2332/2723）／Lines89.41%（10753/12026）。Integration `review-aggregation` 12/12、fixture `review-governance` 12/12。dashboard432 files/420 lcov/18 of 80 cells、セル状態不変。
 
 2026-10-18: plan 092 レビュー ガバナンス。Jest 3462 passed / 3465 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11810/13295）／Branches79.6%（7331/9209）／Functions85.64%（2332/2723）／Lines89.4%（10745/12019）。Integration 262/19（+5）。dashboard432 files/420 lcov/18 of 80 cells、セル状態不変。fixture `review-governance` 12/12。
 

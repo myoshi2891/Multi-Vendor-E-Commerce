@@ -1588,3 +1588,6 @@ DS-PAGE-030: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復�
 
 全体Jest 3462 passed / 3465 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11810/13295）／Branches79.6%（7331/9209）／Functions85.64%（2332/2723）／Lines89.4%（10745/12019）。Integration 262 / 19 スイート（`review-aggregation.test.ts` +5）。新規: `src/lib/review-moderation.test.ts`（状態機械・ポリシー・UI 用の操作）、`tests/component/store/review-card.test.tsx`、`tests/component/dashboard/admin/reviews-queue.test.tsx` / `reviews-page.test.tsx`、`src/components/store/profile/reviews/review-history-card.test.tsx`。`review.test.ts` は集計の `aggregate` 化と Store 集計・通報・モデレーション（IDOR 3 階層）に合わせて改訂。fixture suite `review-governance` 12/12。[plan 092](../../plans/092-implement-review-governance.md)。
 
+### plan 092 レビュー指摘対応（2026-10-18）
+
+全体Jest 3464 passed / 3467 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11817/13302）／Branches79.62%（7337/9215）／Functions85.64%（2332/2723）／Lines89.41%（10753/12026）。Jest +2（`reviews-queue.test.tsx` digest +1、`review-card.test.tsx` 未サインイン判定を 2 件へ分割 +1、`review.test.ts` のロック順検証を 3 本へ更新）。Integration `review-aggregation` 12/12。
