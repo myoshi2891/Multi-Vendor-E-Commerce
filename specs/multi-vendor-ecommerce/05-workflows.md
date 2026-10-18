@@ -187,7 +187,7 @@ The branded cart shows persisted items after synchronization, preserves local it
 1. Authenticate and open `/profile/reviews`; render server-provided own reviews or the empty collection link without a second mount request.
 2. Choose View all/1–5 stars, select a period, or submit text search with Search/Enter. New conditions reset page 1; paging retains applied conditions. Unsubmitted draft is not applied by rating/period changes; empty submission clears search, Remove all filters clears every condition.
 3. Lookup locks controls and shows status/skeleton without stale cards. Generic failure keeps conditions for Try again; success renders review cards and page metadata.
-4. Read masked author/avatar, fractional rating, variant/color/size/quantity/text/photos and update date. Non-published reviews show their moderation state (pending / under review / not published / removed) and, when rejected or removed, the reason (plan 092). Page-local conditions reset on reload. This history view does not post/edit/delete a review or purchase a product.
+4. Read masked author/avatar, fractional rating, variant/color/size/quantity/text/photos and update date. Reviews whose status is not `PUBLISHED` show their moderation state (pending / under review / not published / removed) and, when rejected or removed, the reason (plan 092). `FLAGGED` ("under review") reviews remain publicly visible on the product page. Page-local conditions reset on reload. This history view does not post/edit/delete a review or purchase a product.
 
 ## Profile message presentation flow
 
