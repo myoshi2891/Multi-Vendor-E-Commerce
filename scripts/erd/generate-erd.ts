@@ -443,11 +443,15 @@ const PAGES: PageDef[] = [
         fill: "#E0F7FA",
         stroke: "#00838F",
         detail: "full",
-        models: ["User", "Review", "ReviewImage", "Wishlist"],
+        models: ["User", "Review", "ReviewImage", "ReviewReport", "ModerationPolicy", "Wishlist"],
         cells: {
             User: [0, 0],
             Review: [1, 1],
             ReviewImage: [1, 2],
+            // 通報は User と Review の両方を参照するので、その間の列に置く
+            ReviewReport: [0, 2],
+            // リレーションを持たない設定テーブル（plan 092）
+            ModerationPolicy: [2, 2],
             Wishlist: [2, 0],
         },
     },

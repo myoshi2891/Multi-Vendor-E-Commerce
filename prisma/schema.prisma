@@ -36,6 +36,7 @@ model User {
   supportTickets    SupportTicket[]   @relation("SupportTicketToUser")
   notifications     Notification[]    @relation("NotificationToUser")
   returnRequests    ReturnRequest[]   @relation("ReturnRequestToUser")
+  reviewReports     ReviewReport[]    @relation("ReviewReportToUser")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -538,17 +539,36 @@ model FreeShippingCountry {
   @@index([countryId])
 }
 
+/// レビューのモデレーション状態。公開集合は PUBLISHED / FLAGGED（設計: docs/design/review-governance/design.md §3）。
+enum ReviewStatus {
+  PENDING_REVIEW
+  PUBLISHED
+  FLAGGED
+  REJECTED
+  REMOVED
+}
+
 model Review {
   id       String @id @default(uuid())
   variant  String
   review   String
+  /// 1〜5 の 0.5 刻み。DB の CHECK 制約 "Review_rating_range" でも強制する（design §6.2）。
   rating   Float
   color    String
   size     String
   quantity String
+  /// 未使用（helpful 投票は未実装・design review-governance §7）
   likes    Int    @default(0)
 
-  images ReviewImage[] @relation("ReviewToReviewImage")
+  status             ReviewStatus @default(PUBLISHED)
+  /// 投稿時点で支払い済み・未取消の明細を持っていたか（書き込み時スナップショット・design §2.1）
+  isVerifiedPurchase Boolean      @default(false)
+  /// 却下・削除の理由（ADMIN が入力。投稿者本人にだけ見せる）
+  moderationReason   String?      @db.VarChar(500)
+  moderatedAt        DateTime?
+
+  images  ReviewImage[]  @relation("ReviewToReviewImage")
+  reports ReviewReport[] @relation("ReviewReportToReview")
 
   userId String
   user   User   @relation("ReviewToUser", fields: [userId], references: [id])
@@ -562,6 +582,60 @@ model Review {
   @@unique([userId, productId])
   @@index([userId])
   @@index([productId])
+  @@index([productId, status])
+}
+
+enum ReviewReportReason {
+  SPAM
+  OFFENSIVE
+  OFF_TOPIC
+  FAKE
+  OTHER
+}
+
+/// レビューの通報。閾値は「異なる通報者の数」で数えるため (reviewId, reporterId) を unique にする（design §4.1）。
+model ReviewReport {
+  id String @id @default(uuid())
+
+  reviewId String
+  review   Review @relation("ReviewReportToReview", fields: [reviewId], references: [id], onDelete: Cascade)
+
+  reporterId String
+  reporter   User   @relation("ReviewReportToUser", fields: [reporterId], references: [id], onDelete: Cascade)
+
+  reason     ReviewReportReason
+  note       String?            @db.VarChar(500)
+  /// FLAGGED → PUBLISHED / REMOVED の判断時に埋める。未解決の通報だけが閾値に数えられる。
+  resolvedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@unique([reviewId, reporterId])
+  @@index([reviewId, resolvedAt])
+  @@index([reporterId])
+}
+
+enum ModerationSubject {
+  REVIEW
+  LISTING
+}
+
+enum ModerationMode {
+  NONE
+  POST
+  PRE
+}
+
+/// 対象ごとのモデレーション方針（1 対象 1 行）。行が無ければコードの既定値で動く（design §3.3）。
+/// LISTING は spike 016（商品公開審査）が使う予約値。
+model ModerationPolicy {
+  subject                 ModerationSubject @id
+  mode                    ModerationMode    @default(POST)
+  /// REVIEW のみ意味を持つ。true なら未購入者の投稿を拒否する。
+  requireVerifiedPurchase Boolean           @default(false)
+  /// FLAGGED へ自動遷移させる未解決通報の件数（異なる通報者の数）
+  flagThreshold           Int               @default(3)
+  updatedAt               DateTime          @updatedAt
 }
 
 model ReviewImage {
