@@ -1,9 +1,10 @@
 "use client";
 
 import type { PaymentTableDateFilter, PaymentTableFilter } from "@/lib/types";
+import { useResultsFocusRestore } from "@/hooks/use-results-focus-restore";
 import { toNumberSafe } from "@/lib/utils";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import PaymentTableHeader from "./payment-table-header";
 import PaymentsHeading from "./payments-heading";
 import styles from "./payments.module.css";
@@ -50,20 +51,12 @@ export default function PaymentsTable({
     const [pending, setPending] = useState(false);
     const [error, setError] = useState(initialError);
     const inFlight = useRef(false);
-    const sectionRef = useRef<HTMLElement>(null);
-    const resultsRef = useRef<HTMLDivElement>(null);
-    const restoreFocus = useRef(false);
-    useEffect(() => {
-        if (pending || !restoreFocus.current) return;
-        restoreFocus.current = false;
-        // Pager/retry controls unmount while loading. Keep keyboard users at
-        // the refreshed results unless they moved to another control meanwhile.
-        if (document.activeElement === document.body) resultsRef.current?.focus();
-    }, [pending]);
+    const { sectionRef, resultsRef, markFocus } =
+        useResultsFocusRestore(pending);
     async function load(next: Criteria) {
         if (inFlight.current) return;
         inFlight.current = true;
-        restoreFocus.current = Boolean(sectionRef.current?.contains(document.activeElement));
+        markFocus();
         setCriteria(next);
         setPending(true);
         setError(false);
