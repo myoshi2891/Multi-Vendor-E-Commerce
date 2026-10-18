@@ -1,5 +1,9 @@
 # PROGRESS.md
 
+## 2026-10-18 plan 092 レビュー指摘対応（通報者の User 同期・理由表示・空状態）
+
+`reportReview` は tx の前に通報者の User 行を作る（`upsertReview` と共通の `ensureDbUser` へ抽出。Webhook 同期漏れで `ReviewReport.reporterId` が FK 違反になるのを防ぐ）／レビュー履歴は却下・削除のときだけ理由を出す（FLAGGED では出さない）／審査キューは状態で絞り込んだ空表示をその状態の文言にする。Jest +4（`review.test.ts` +2、`review-history-card.test.tsx` +1、`reviews-queue.test.tsx` +1）。全体Jest 3470 passed / 3473 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11821/13306）／Branches79.64%（7346/9224）／Functions85.64%（2333/2724）／Lines89.41%（10757/12030）。型0・lint0 errors/既存8 warnings。[統計の正本](testing/QA_HANDOFF.md#現在の実装状態サマリ)。
+
 ## 2026-10-18 plan 092 レビュー指摘対応（REJECTED 再投稿の審査メタデータ）
 
 `upsertReview` は REJECTED からの再投稿で `moderationReason` / `moderatedAt` を消す（前回の却下理由を審査キューに持ち越さない。他の状態では残す）。`review.test.ts` +2。全体Jest 3466 passed / 3469 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11817/13302）／Branches79.63%（7343/9221）／Functions85.64%（2332/2723）／Lines89.41%（10753/12026）。型0。[統計の正本](testing/QA_HANDOFF.md#現在の実装状態サマリ)。
