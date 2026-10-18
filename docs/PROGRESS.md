@@ -1,5 +1,9 @@
 # PROGRESS.md
 
+## 2026-10-19 plan 092 レビュー指摘対応（評価分布の合算・通報の Result 返却）
+
+`getRatingStatistics` は 4 と 4.5 のように同じバケットへ寄る評価の件数を上書きせず合算する（従来は後の行で上書きして分布が欠けていた）／`reportReview` は業務エラー（自分のレビュー・非公開・Clerk のメール欠落）を throw せず `{ ok: false, error }` で返し、通報 UI は戻り値の文言を表示、想定外の例外は固定文言にする（本番の Server Action は throw の文言を伏せるため）／plan 092 のロールアウト注記に 3 本目のマイグレーション `moderation_policy_updated_at_default` を追加。Jest +1（`product.test.ts` +1。`review.test.ts` / `review-card.test.tsx` は既存テストを新しい戻り値へ書き換え）。全体Jest 3472 passed / 3475 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.84%（11827/13312）／Branches79.64%（7348/9226）／Functions85.64%（2332/2723）／Lines89.41%（10762/12036）。型エラー 0。デザイン検証 `review-governance` 12/12。未コミット。
+
 ## 2026-10-18 plan 092 レビュー指摘対応（seed の評価集計・ModerationPolicy.updatedAt）
 
 追加対応（seed の評価集計・ModerationPolicy.updatedAt の DB 既定値）: `seedReviews` は同じ tx の末尾で migration の backfill と同じ SQL で Product → Store の評価集計を再計算する（REVIEW-SEED-AGGREGATES 解消。seed 再実行でずれない）。`ModerationPolicy.updatedAt` に `@default(now())` を追加し、マイグレーション `20261018120000_moderation_policy_updated_at_default`（`SET DEFAULT CURRENT_TIMESTAMP`・ローカル未適用）で raw SQL の INSERT でも値が入るようにした。ERD は差分なし。`review-seeder.test.ts` +1。全体Jest 3471 passed / 3474 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。lcov 不変（seed は収集対象外）。型0。 [統計の正本](testing/QA_HANDOFF.md#現在の実装状態サマリ)。

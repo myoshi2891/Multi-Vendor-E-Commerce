@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-18） | **3471 passed / 3474 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
-| 全体coverage | Statements88.83%（11821/13306）／Branches79.64%（7346/9224）／Functions85.64%（2333/2724）／Lines89.41%（10757/12030）（2026-10-18 plan 092 レビュー指摘対応（通報者の User 同期）後の全体CLI実測）。 |
-| テストファイル総数（dashboard） | **432ファイル**／lcov **420エントリ**／マトリクス18/80（23%）。2026-10-18全体coverage/dashboard再生成実測。 |
+| Jestテスト総数（2026-10-19） | **3472 passed / 3475 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| 全体coverage | Statements88.84%（11827/13312）／Branches79.64%（7348/9226）／Functions85.64%（2332/2723）／Lines89.41%（10762/12036）（2026-10-19 plan 092 レビュー指摘対応（評価分布の合算・通報の Result 返却）後の全体CLI実測）。 |
+| テストファイル総数（dashboard） | **432ファイル**／lcov **420エントリ**／マトリクス18/80（23%）。2026-10-19全体coverage/dashboard再生成実測。 |
 | Jest スイート総数（unit/component） | **345スイート**（344 passed／1 skipped、2026-10-18実測）。 |
-| テスト総数 | **3471 unit/component passed**（3474 total／3 skipped）。Integration262／19 suites（2026-10-18実測）。 |
+| テスト総数 | **3472 unit/component passed**（3475 total／3 skipped）（2026-10-19実測）。Integration262／19 suites（2026-10-18実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -358,6 +358,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-19: plan 092 レビュー指摘対応（評価分布の合算・通報の Result 返却）。`getRatingStatistics` は 4 と 4.5 のように同じバケットへ寄る評価の件数を上書きせず合算する（従来は後の行で上書きして分布が欠けていた）／`reportReview` は業務エラー（自分のレビュー・非公開・Clerk のメール欠落）を throw せず `{ ok: false, error }` で返し、通報 UI は戻り値の文言を表示、想定外の例外は固定文言にする（本番の Server Action は throw の文言を伏せるため）／plan 092 のロールアウト注記に 3 本目のマイグレーション `moderation_policy_updated_at_default` を追加。Jest +1（`product.test.ts` +1。`review.test.ts` / `review-card.test.tsx` は既存テストを新しい戻り値へ書き換え）。Jest 3471/3474 → 全体Jest 3472 passed / 3475 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.84%（11827/13312）／Branches79.64%（7348/9226）／Functions85.64%（2332/2723）／Lines89.41%（10762/12036）。型エラー 0。デザイン検証 `review-governance` 12/12。未コミット。
 
 2026-10-18: plan 092 レビュー指摘対応（seed の評価集計・ModerationPolicy.updatedAt の DB 既定値）。`review-seeder.test.ts` +1。Jest 3470/3473 → 3471 passed / 3474 total、3 skipped、127 snapshots passed、345 スイート。Statements88.83%（11821/13306）／Branches79.64%（7346/9224）／Functions85.64%（2333/2724）／Lines89.41%（10757/12030）で不変（seed は収集対象外）。dashboard432 files/420 lcov/18 of 80 cells、セル状態不変。
 
