@@ -2037,6 +2037,25 @@ describe("getRatingStatistics", () => {
         // 4.5 は 4 のバケットに入る（0.5 刻みの評価を Math.floor で 1〜5 に寄せる）
         expect(result.ratingStatistics[3].numReviews).toBe(2);
     });
+
+    it("同じバケットに寄る評価（4 と 4.5）の件数は上書きせず合算する", async () => {
+        // Arrange
+        mockDb.review.groupBy.mockResolvedValue([
+            { rating: 4, _count: { rating: 3 } },
+            { rating: 4.5, _count: { rating: 2 } },
+        ]);
+        mockDb.review.count.mockResolvedValue(0);
+
+        // Act
+        const result = await getRatingStatistics("product-123");
+
+        // Assert
+        expect(result.ratingStatistics[3]).toEqual({
+            rating: 4,
+            numReviews: 5,
+            percentage: 100,
+        });
+    });
 });
 
 // ==================================================

@@ -1849,7 +1849,8 @@ export const getRatingStatistics = async (productId: string) => {
     ratingStats.forEach((stat) => {
         let rating = Math.floor(stat.rating);
         if (rating >= 1 && rating <= 5) {
-            ratingCounts[rating - 1] = stat._count.rating;
+            // 4 と 4.5 は同じバケットに寄るので、上書きせず合算する
+            ratingCounts[rating - 1] += stat._count.rating;
         }
     });
 
