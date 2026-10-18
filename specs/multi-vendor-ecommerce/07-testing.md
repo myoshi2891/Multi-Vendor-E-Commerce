@@ -1591,3 +1591,5 @@ DS-PAGE-030: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復�
 ### plan 092 レビュー指摘対応（2026-10-18）
 
 全体Jest 3464 passed / 3467 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11817/13302）／Branches79.62%（7337/9215）／Functions85.64%（2332/2723）／Lines89.41%（10753/12026）。Jest +2（`reviews-queue.test.tsx` digest +1、`review-card.test.tsx` 未サインイン判定を 2 件へ分割 +1、`review.test.ts` のロック順検証を 3 本へ更新）。Integration `review-aggregation` 12/12。
+
+追加対応（REJECTED 再投稿）: `upsertReview` は REJECTED からの再投稿で `moderationReason` / `moderatedAt` を消す（前回の却下理由を審査キューに持ち越さない。他の状態では残す）。`review.test.ts` +2。全体Jest 3466 passed / 3469 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11817/13302）／Branches79.63%（7343/9221）／Functions85.64%（2332/2723）／Lines89.41%（10753/12026）。
