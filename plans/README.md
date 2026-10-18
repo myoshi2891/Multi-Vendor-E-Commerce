@@ -35,7 +35,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 
 - **085**: アプリ側（cookie limiter）は実装・検証済み。**Vercel WAF ルール（Step 6）はオペレーター作業待ち**。
 - **068**: 可逆な範囲は実装・検証済み。**不可逆な Phase C（Step 5–7）はオペレーター承認待ち**。
-- **092**: Step 0〜8 は実装・検証済み（ローカル DB と testcontainers）。**マイグレーション 2 本（`review_governance` / `review_moderation_reason`）のリモート DB 適用はオペレーター作業**（`safe-migration` → `migrate deploy`。適用前に CHECK 違反 0 件を確認）。admin 審査キューの認証後の実ルート確認は専用 DB とテスト用 ADMIN が要るため保留。
+- **092**: Step 0〜8 は実装・検証済み（ローカル DB と testcontainers）。**マイグレーション 3 本（`review_governance` / `review_moderation_reason` / `moderation_policy_updated_at_default`）のリモート DB 適用はオペレーター作業**（3 本すべての適用を確認してから完了とする）（`safe-migration` → `migrate deploy`。適用前に CHECK 違反 0 件を確認）。admin 審査キューの認証後の実ルート確認は専用 DB とテスト用 ADMIN が要るため保留。
 - **086**: Step 1〜8・10 は実装・検証済み（stub プロバイダで in-app 通知と送信まで動く）。**Step 9（`resend` SDK の追加）はユーザー判断で見送り**。cron のスケジュール設定とリモート DB への適用はオペレーター作業。設計は [`notification-foundation/design.md`](../docs/design/notification-foundation/design.md) と ADR-010（Proposed）。
 - Round 2/3 の spike（015–022）の soft 順序: 013 → 014 → 015 / 021 → 018 → 019 → 022（019 まで完了。019 の後続実装は 092、設計は [`review-governance/design.md`](../docs/design/review-governance/design.md)）（020・016・017 は独立）。
 
