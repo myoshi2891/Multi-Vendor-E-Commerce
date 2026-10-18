@@ -56,4 +56,17 @@ describe("ReviewHistoryCard — モデレーション状態", () => {
             screen.getByText("Reason: Mentions another shop")
         ).toBeInTheDocument();
     });
+
+    // 削除から復帰した後に再通報されると、過去の理由が残ったまま FLAGGED になる
+    it("FLAGGED では過去の理由を出さない", () => {
+        render(
+            <ReviewHistoryCard
+                review={entry({
+                    status: "FLAGGED",
+                    moderationReason: "Mentions another shop",
+                })}
+            />
+        );
+        expect(screen.queryByText(/^Reason:/)).not.toBeInTheDocument();
+    });
 });
