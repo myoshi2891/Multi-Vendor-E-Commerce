@@ -31,8 +31,6 @@ const makeReview = (
     likes: 0,
     status: "PUBLISHED",
     isVerifiedPurchase: false,
-    moderationReason: null,
-    moderatedAt: null,
     createdAt: new Date("2026-10-01T00:00:00Z"),
     updatedAt: new Date("2026-10-01T00:00:00Z"),
     images: [],

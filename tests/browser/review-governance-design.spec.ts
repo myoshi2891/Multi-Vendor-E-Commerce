@@ -92,12 +92,14 @@ for (const width of [1440, 768, 390]) {
             page,
         }, info) => {
             await page.setViewportSize({ width, height: 900 });
+            const applyTheme = () =>
+                page.evaluate(
+                    (dark) =>
+                        document.documentElement.classList.toggle("dark", dark),
+                    theme === "dark"
+                );
             await page.goto("/?screen=admin&scenario=fail");
-            await page.evaluate(
-                (dark) =>
-                    document.documentElement.classList.toggle("dark", dark),
-                theme === "dark"
-            );
+            await applyTheme();
             await expect(
                 page.getByRole("heading", { level: 1, name: "Reviews" })
             ).toHaveCSS("font-family", /Georgia/);
@@ -146,6 +148,10 @@ for (const width of [1440, 768, 390]) {
 
             // 絞り込み: 削除済みは操作なしで理由を出す
             await page.getByLabel("Filter by status").selectOption("REMOVED");
+            // 絞り込みはページ遷移（再読み込み）なので、読み込み後にテーマを付け直す
+            await page.waitForURL(/status=REMOVED/);
+            await page.waitForLoadState("load");
+            await applyTheme();
             await expect(page.getByRole("article")).toHaveCount(1);
             const removed = page.getByRole("article");
             await expect(

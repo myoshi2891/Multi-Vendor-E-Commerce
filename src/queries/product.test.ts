@@ -1999,9 +1999,14 @@ describe("getProductPageData", () => {
         await getProductPageData("lux-noir", "black");
 
         const args = mockDb.product.findUnique.mock.calls[0][0];
-        expect(args.include.reviews.include.user).toEqual({
+        expect(args.include.reviews.select.user).toEqual({
             select: { name: true, picture: true },
         });
+        expect(args.include.reviews.select.images).toBe(true);
+        // 審査の理由・日時は投稿者本人にだけ見せる列なので公開ペイロードに載せない（plan 092）
+        expect(args.include.reviews.select).not.toHaveProperty("moderationReason");
+        expect(args.include.reviews.select).not.toHaveProperty("moderatedAt");
+        expect(args.include.reviews.include).toBeUndefined();
         // 公開集合だけを出す（plan 092）
         expect(args.include.reviews.where).toEqual({
             status: { in: ["PUBLISHED", "FLAGGED"] },
@@ -2069,9 +2074,14 @@ describe("getProductFilteredReviews", () => {
         await getProductFilteredReviews("product-123", {}, undefined);
 
         const args = mockDb.review.findMany.mock.calls[0][0];
-        expect(args.include.user).toEqual({
+        expect(args.select.user).toEqual({
             select: { name: true, picture: true },
         });
+        expect(args.select.images).toBe(true);
+        // 審査の理由・日時は公開しない（plan 092）
+        expect(args.select).not.toHaveProperty("moderationReason");
+        expect(args.select).not.toHaveProperty("moderatedAt");
+        expect(args.include).toBeUndefined();
     });
 
     it("評価・画像フィルタを合成したうえで公開集合に限定する（plan 092）", async () => {
