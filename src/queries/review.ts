@@ -24,6 +24,7 @@ import {
     type ReviewPolicy,
 } from "@/lib/review-moderation";
 import { normalizePageParam } from "@/lib/utils";
+import type { User } from "@clerk/nextjs/server";
 
 /**
  * 利用者へそのまま返してよい業務エラー（`attribute.ts` と同じ方式）。catch 側はこれだけを
@@ -125,6 +126,42 @@ const lockProductAndStore = async (
 };
 
 /**
+ * Webhook 同期が漏れていた場合に備え、認証ユーザーの User 行をオンデマンドで作る。既存行は書き換えない。
+ *
+ * `db.$transaction` の**外側**で呼ぶこと（行ロックによる直列化では守られない）。同一ユーザーの
+ * 二重送信（連打）は 2 本がそのまま同時に到達しうるため、この 1 文自体がレース安全である必要がある。
+ *
+ * `upsert` は使えない。実測（testcontainers PostgreSQL・同時 2 本 × 15 回）:
+ *   - `update: {}` … Prisma は空の update を `ON CONFLICT DO UPDATE SET` へ
+ *     組み立てられず **read → insert の 2 往復に退化**する。30 本中 14 本が
+ *     `id` の P2002 で落ちた（CI の review-aggregation シナリオ 6 の実失敗原因）。
+ *   - `update` を埋めて native `ON CONFLICT ("id")` にしても、conflict target は
+ *     id 一本なので `email @unique` の衝突は素通りし、30 本中 4 本が P2002 で落ちた。
+ *
+ * `createMany` + `skipDuplicates` は `ON CONFLICT DO NOTHING`（target 無し
+ * ＝ 全 unique 制約が対象）になり、上記どちらの衝突も握り潰す。実測 0/30。
+ * 戻り値（作成件数）は参照しない —— 「作った」か「既に居た」かは呼び出し側に
+ * とって等価だからで、これは `update: {}` が表していた意図そのものである。
+ */
+const ensureDbUser = async (user: User): Promise<void> => {
+    const email = user.emailAddresses[0]?.emailAddress;
+    if (!email) return fail("User email not found in Clerk.");
+
+    await db.user.createMany({
+        data: [
+            {
+                id: user.id,
+                name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || "User",
+                email,
+                picture: user.imageUrl || "",
+                role: "USER",
+            },
+        ],
+        skipDuplicates: true,
+    });
+};
+
+/**
  * 購入者の判定: 本人の支払い済み注文に、この商品の取り消されていない明細があること。
  * `Delivered` までは要求しない（明細の状態は seller の手動更新で、止まったままのことが多い。design §2.1）。
  */
@@ -165,39 +202,8 @@ export const upsertReview = async (
     const input = parsed.data
 
 	try {
-        // ローカル環境等の事情で Webhook 同期が漏れていた場合に備え、DB上に User レコードを
-        // オンデマンドで自動作成（フォールバック）。既存行は一切書き換えない。
-        //
-        // ここは `db.$transaction`（下の集計ブロック）の**外側**にあり、行ロックによる
-        // 直列化では守られない。同一ユーザーの二重送信（連打）は 2 本がそのまま同時に
-        // 到達しうるため、この 1 文自体がレース安全である必要がある。
-        //
-        // `upsert` は使えない。実測（testcontainers PostgreSQL・同時 2 本 × 15 回）:
-        //   - `update: {}` … Prisma は空の update を `ON CONFLICT DO UPDATE SET` へ
-        //     組み立てられず **read → insert の 2 往復に退化**する。30 本中 14 本が
-        //     `id` の P2002 で落ちた（CI の review-aggregation シナリオ 6 の実失敗原因）。
-        //   - `update` を埋めて native `ON CONFLICT ("id")` にしても、conflict target は
-        //     id 一本なので `email @unique` の衝突は素通りし、30 本中 4 本が P2002 で落ちた。
-        //
-        // `createMany` + `skipDuplicates` は `ON CONFLICT DO NOTHING`（target 無し
-        // ＝ 全 unique 制約が対象）になり、上記どちらの衝突も握り潰す。実測 0/30。
-        // 戻り値（作成件数）は参照しない —— 「作った」か「既に居た」かは呼び出し側に
-        // とって等価だからで、これは `update: {}` が表していた意図そのものである。
-        const email = user.emailAddresses[0]?.emailAddress
-        if (!email) throw new Error('User email not found in Clerk.')
-
-        await db.user.createMany({
-            data: [
-                {
-                    id: user.id,
-                    name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
-                    email: email,
-                    picture: user.imageUrl || '',
-                    role: 'USER',
-                },
-            ],
-            skipDuplicates: true,
-        })
+        // Review.userId の FK を満たすため、集計ブロックの tx より前に User 行を用意する
+        await ensureDbUser(user)
 
         if (!productId) throw new Error('Product ID is required.')
 
@@ -335,6 +341,9 @@ export const reportReview = async (
     const { reviewId, reason, note } = parsed.data;
 
     try {
+        // ReviewReport.reporterId の FK を満たすため、tx の前に通報者の User 行を用意する
+        await ensureDbUser(user);
+
         return await db.$transaction(async (tx) => {
             // Review 行だけをロックする（Product / Store は取らない — 集計を変えないため）。
             // ロックを取る経路はすべて Product → Store → Review の順の部分列なので、待ちの輪はできない。

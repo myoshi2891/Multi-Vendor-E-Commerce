@@ -599,6 +599,33 @@ describe("reportReview", () => {
         });
     });
 
+    it("通報者の User 行が無くても FK 違反にならないよう、tx の前に作成する", async () => {
+        await reportReview(input);
+
+        expect(mockDb.user.createMany).toHaveBeenCalledWith({
+            data: [
+                {
+                    id: TEST_CONFIG.DEFAULT_USER_ID,
+                    name: "John Doe",
+                    email: "user@example.com",
+                    picture: "https://example.com/avatar.jpg",
+                    role: "USER",
+                },
+            ],
+            skipDuplicates: true,
+        });
+        expect(mockDb.user.createMany.mock.invocationCallOrder[0]).toBeLessThan(
+            mockDb.$transaction.mock.invocationCallOrder[0]
+        );
+    });
+
+    it("Clerk ユーザーにメールアドレスが無ければ通報を記録しない", async () => {
+        (currentUser as jest.Mock).mockResolvedValue({ ...USER, emailAddresses: [] });
+
+        await expect(reportReview(input)).rejects.toThrow(/^User email not found in Clerk\.$/);
+        expect(mockDb.$transaction).not.toHaveBeenCalled();
+    });
+
     // (c) 拒否時は副作用なし
     it("自分のレビューは通報できない", async () => {
         mockDb.review.findUnique.mockResolvedValue({
