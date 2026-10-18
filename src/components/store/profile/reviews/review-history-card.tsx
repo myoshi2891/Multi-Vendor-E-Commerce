@@ -1,6 +1,15 @@
 import Image from "next/image";
+import type { ReviewStatus } from "@prisma/client";
 import type { ReviewHistoryEntry } from "./reviews-container";
 import styles from "./reviews.module.css";
+
+/** 公開されていない（または審査中の）レビューだけ、本人に状態を伝える（plan 092・DS-COMP-251） */
+const MODERATION_NOTICE: Readonly<Partial<Record<ReviewStatus, string>>> = {
+    PENDING_REVIEW: "Pending review — not visible to shoppers yet",
+    FLAGGED: "Under review — still visible while our team checks it",
+    REJECTED: "Not published",
+    REMOVED: "Removed",
+};
 
 export default function ReviewHistoryCard({
     review,
@@ -47,6 +56,12 @@ export default function ReviewHistoryCard({
                 </div>
                 <p className={styles.rating}>{review.rating} out of 5 stars</p>
             </div>
+            {MODERATION_NOTICE[review.status] && (
+                <div className={styles.moderation} data-review-state={review.status}>
+                    <p>{MODERATION_NOTICE[review.status]}</p>
+                    {review.moderationReason && <p>Reason: {review.moderationReason}</p>}
+                </div>
+            )}
             <p className={styles.reviewText}>{review.review}</p>
             <dl className={styles.details}>
                 <div>

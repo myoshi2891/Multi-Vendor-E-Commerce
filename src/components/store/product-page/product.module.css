@@ -256,6 +256,18 @@
 .reviewCard > div:last-child { min-width: 0; flex: 1; }
 .reviewCard p { color: var(--purchase-ink); font-size: 12px; line-height: 1.7; }
 .reviewFormWrap { margin-top: 35px; }
+/* plan 092: 購入者バッジと通報（DS-COMP-072） */
+.verifiedBadge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 8px; border: 1px solid var(--purchase-success); background: var(--purchase-success-surface); color: var(--purchase-success); font-size: 11px; letter-spacing: .04em; }
+.reportReview { margin-top: 12px; display: grid; gap: 8px; justify-items: start; }
+.reportToggle { min-height: var(--purchase-touch); padding: 0 4px; color: var(--purchase-muted); font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.reportToggle:hover { color: var(--purchase-link); }
+.reportForm { display: grid; gap: 6px; width: 100%; padding: 12px; border: 1px solid var(--purchase-line); background: var(--purchase-page); color: var(--purchase-ink); font-size: 12px; }
+.reportForm :is(select, textarea) { width: 100%; min-height: var(--purchase-touch); padding: 6px 9px; border: 1px solid var(--purchase-control-line); background: var(--purchase-input); color: var(--purchase-ink); }
+.reportForm :is(select, textarea):focus-visible, .reportToggle:focus-visible, .reportSubmit:focus-visible { outline: 2px solid var(--purchase-focus); outline-offset: 2px; }
+.reportSubmit { min-height: var(--purchase-touch); padding: 0 16px; background: var(--purchase-ink); color: var(--purchase-on-dark); font-size: 11px; }
+.reportSubmit:disabled, .reportForm :is(select, textarea):disabled { opacity: .6; cursor: not-allowed; }
+.reportError { padding: 8px 10px; border: 1px solid var(--purchase-danger); background: var(--purchase-danger-surface); color: var(--purchase-danger); font-size: 12px; }
+.reportFeedback { margin-top: 12px; color: var(--purchase-success); font-size: 12px; }
 .reviewForm { color: var(--purchase-ink); composes: theme from "../shared/purchase-theme.module.css"; padding: clamp(22px, 3vw, 38px); background: var(--purchase-panel); }
 .reviewFormTitle { color: var(--purchase-ink); font: 400 30px/1.2 Georgia, 'Times New Roman', serif; }
 .reviewForm :global(textarea), .reviewForm :global(input), .reviewForm :global(select) { border: 1px solid var(--purchase-line); border-radius: 0; background: var(--purchase-input); }

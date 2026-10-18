@@ -522,6 +522,19 @@
     color: hsl(var(--destructive));
 }
 
+/* レビューの状態（plan 092・DS-COMP-250）。色の規則は paymentState と同じ */
+.paymentState[data-review-state="PUBLISHED"] {
+    color: var(--brand-success);
+}
+.paymentState[data-review-state="PENDING_REVIEW"],
+.paymentState[data-review-state="FLAGGED"] {
+    color: hsl(var(--warning));
+}
+.paymentState[data-review-state="REJECTED"],
+.paymentState[data-review-state="REMOVED"] {
+    color: hsl(var(--destructive));
+}
+
 .editor :global([role="tablist"]) {
     height: auto;
     min-height: var(--seller-touch);

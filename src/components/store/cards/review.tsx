@@ -1,6 +1,8 @@
 'use client'
 import ColorWheel from '@/components/shared/color-wheel'
 import { ReviewWithImageType } from '@/lib/types'
+import type { ReportReviewAction } from '@/lib/review-moderation'
+import ReportReview from '../product-page/reviews/report-review'
 import Image from 'next/image'
 import ReactStars from 'react-rating-stars-component'
 import styles from '../product-page/product.module.css'
@@ -8,9 +10,12 @@ import styles from '../product-page/product.module.css'
 export default function ReviewCard({
     review,
     editorial = false,
+    onReport,
 }: {
     review: ReviewWithImageType
     editorial?: boolean
+    /** 渡されたときだけ通報の導線を出す（Server Component から Server Action を受け取る・plan 092） */
+    onReport?: ReportReviewAction
 }) {
     const { user, images } = review
     const colors = review.color
@@ -60,6 +65,9 @@ export default function ReviewCard({
                             {review.quantity} PC
                         </div>
                     </div>
+                    {review.isVerifiedPurchase && (
+                        <span className={styles.verifiedBadge}>Verified purchase</span>
+                    )}
                     <p className="text-sm">{review.review}</p>
                     {images.length > 0 && (
                         <div className="flex flex-wrap gap-2">
@@ -81,6 +89,7 @@ export default function ReviewCard({
                         </div>
                     )}
                 </div>
+                {onReport && <ReportReview reviewId={review.id} onReport={onReport} />}
             </div>
         </div>
     )

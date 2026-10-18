@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReviewStatus } from "@prisma/client";
 import type { ReviewDateFilter, ReviewFilter } from "@/lib/types";
 import Link from "next/link";
 import { useRef, useState } from "react";
@@ -19,6 +20,9 @@ export interface ReviewHistoryEntry {
     updatedAt: Date | string;
     user: { name: string; picture: string };
     images: { id: string; url: string; alt: string }[];
+    /** モデレーション状態。本人の履歴にだけ非公開の理由を見せる（plan 092） */
+    status: ReviewStatus;
+    moderationReason: string | null;
 }
 type Result = { reviews: ReviewHistoryEntry[]; totalPages: number };
 type Criteria = {
