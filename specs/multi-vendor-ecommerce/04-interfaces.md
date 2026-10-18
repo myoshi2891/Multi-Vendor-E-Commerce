@@ -75,7 +75,9 @@ Dashboard:
   `ModerationPolicy`, and recomputes Product and Store ratings in one transaction after
   locking Product → Store rows (`FOR UPDATE`).
   `reportReview({reviewId, reason, note?})` (USER; not own review; public reviews only;
-  idempotent per reporter) may move PUBLISHED → FLAGGED in POST mode.
+  idempotent per reporter) may move PUBLISHED → FLAGGED in POST mode. Returns
+  `{ok: true, status}`; expected business errors (own review, not public) are returned as
+  `{ok: false, error}` instead of thrown, because production Server Actions mask thrown messages.
   `moderateReview({reviewId, action: approve|reject|remove|restore, reason?})` (ADMIN;
   reason required for reject/remove) follows the transition table in
   `src/lib/review-moderation.ts` and resolves open reports on restore/remove.
