@@ -16,7 +16,7 @@ import type { SeedMaps } from "../types";
  * **トランザクション内のクエリ数を件数に比例させない。** 対話的トランザクションの既定
  * タイムアウトは 5 秒で、1 件ずつ `create` すると「クエリ数 × DB 往復時間」がそれを超える
  * （Neon ap-southeast-1 へ日本から接続すると 186 クエリで P2028 になった）。レビュー id を
- * ここで採番して画像の `reviewId` を先に決め、削除 1 + `createMany` 2 の定数回で書く。
+ * ここで採番して画像の `reviewId` を先に決め、削除 1 + `createMany` 2 + 集計再計算 2 の定数回で書く。
  *
  * @param maps - Lookup maps containing `users` (maps user email to userId) and `products` (maps product slug to productId)
  *
@@ -74,6 +74,33 @@ export async function seedReviews(
     if (images.length > 0) {
       await tx.reviewImage.createMany({ data: images });
     }
+
+    // レビューを直接書くので評価集計を再計算する（REVIEW-SEED-AGGREGATES）。
+    // 20261018062043_review_governance の backfill と同じ SQL（公開集合からの純粋な再計算で冪等）。
+    await tx.$executeRaw`
+      UPDATE "Product" p
+      SET "rating"     = COALESCE(agg.avg, 0),
+          "numReviews" = COALESCE(agg.cnt, 0)
+      FROM (
+          SELECT pr.id AS product_id, AVG(r."rating") AS avg, COUNT(r.id)::int AS cnt
+          FROM "Product" pr
+          LEFT JOIN "Review" r ON r."productId" = pr.id AND r."status" IN ('PUBLISHED', 'FLAGGED')
+          GROUP BY pr.id
+      ) agg
+      WHERE p.id = agg.product_id`;
+    // Store の平均はレビュー単位の平均（商品平均の平均ではない・design §5.2）
+    await tx.$executeRaw`
+      UPDATE "Store" s
+      SET "averageRating" = COALESCE(agg.avg, 0),
+          "numReviews"    = COALESCE(agg.cnt, 0)
+      FROM (
+          SELECT st.id AS store_id, AVG(r."rating") AS avg, COUNT(r.id)::int AS cnt
+          FROM "Store" st
+          LEFT JOIN "Product" pr ON pr."storeId" = st.id
+          LEFT JOIN "Review" r ON r."productId" = pr.id AND r."status" IN ('PUBLISHED', 'FLAGGED')
+          GROUP BY st.id
+      ) agg
+      WHERE s.id = agg.store_id`;
   });
 
   if (missingProductSlugs.length > 0) {
