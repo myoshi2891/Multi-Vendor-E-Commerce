@@ -243,9 +243,12 @@ export type CartProductType = {
     isFreeShipping: boolean;
 };
 
-export type ReviewWithImageType = Review & {
+export type ReviewWithImageType = Omit<
+    Review,
+    "moderationReason" | "moderatedAt"
+> & {
     images: ReviewImage[];
-    // 公開経路は投稿者の表示列だけを返す（plan 091）
+    // 公開経路は投稿者の表示列だけを返し、審査の理由・日時は返さない（plan 091 / 092）
     user: Pick<User, "name" | "picture">;
 };
 

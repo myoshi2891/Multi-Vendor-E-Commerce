@@ -6,7 +6,7 @@ import {
     resolveCategoryNode,
 } from "@/lib/category-tree";
 import { buildPrefixTsQuery } from "@/lib/search-query";
-import { publicReviewWhere } from "@/lib/review-visibility";
+import { publicReviewSelect, publicReviewWhere } from "@/lib/review-visibility";
 import { productDerivedColumnsUpdateSql } from "@/lib/product-derived-columns";
 import {
     parseProductFilters,
@@ -1629,11 +1629,8 @@ export const retrieveProductDetails = async (
             reviews: {
                 // 公開集合（PUBLISHED / FLAGGED）だけを出す（plan 092）
                 where: publicReviewWhere(),
-                include: {
-                    images: true,
-                    // 公開ページなので投稿者は表示列だけ（email / role を RSC ペイロードに載せない・plan 091）
-                    user: { select: { name: true, picture: true } },
-                },
+                // 公開ページなので投稿者の表示列と公開してよい列だけ（plan 091 / 092）
+                select: publicReviewSelect,
                 take: 4,
             },
             freeShipping: {
@@ -2058,11 +2055,8 @@ export const getProductFilteredReviews = async (
     const reviews = await db.review.findMany({
         // 公開集合だけ（plan 092）。フィルタの合成後に包むので status は上書きされない
         where: publicReviewWhere(reviewFilter),
-        include: {
-            images: true,
-            // 認証なしで呼べる Server Action なので投稿者は表示列だけ返す（plan 091）
-            user: { select: { name: true, picture: true } },
-        },
+        // 認証なしで呼べる Server Action なので公開してよい列だけ返す（plan 091 / 092）
+        select: publicReviewSelect,
         orderBy: sortOption,
         skip, // Skip records for pagination
         take, // Take records for pagination

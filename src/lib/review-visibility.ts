@@ -23,3 +23,26 @@ export const publicReviewWhere = (
     ...where,
     status: { in: [...PUBLIC_REVIEW_STATUSES] },
 });
+
+/**
+ * 公開経路で返すレビューの列。`moderationReason` / `moderatedAt` は投稿者本人にだけ見せる列なので含めない
+ * （plan 092）。投稿者は表示列だけ（email / role を載せない・plan 091）。
+ */
+export const publicReviewSelect = {
+    id: true,
+    variant: true,
+    review: true,
+    rating: true,
+    color: true,
+    size: true,
+    quantity: true,
+    likes: true,
+    status: true,
+    isVerifiedPurchase: true,
+    userId: true,
+    productId: true,
+    createdAt: true,
+    updatedAt: true,
+    images: true,
+    user: { select: { name: true, picture: true } },
+} satisfies Prisma.ReviewSelect;
