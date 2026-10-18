@@ -16,11 +16,12 @@ Tracked in [`audit/VETTED_FINDINGS.md`](audit/VETTED_FINDINGS.md); candidates fo
 - **REVIEW-BADGE-REFUND（2026-10-18 起票 / plan 092 で先送り）** 購入者バッジは投稿時の
   スナップショットで、後から返金されても外れない。必要になったら RMA の `Refunded` 遷移から
   再判定を呼ぶ（design §2.1 / §8）。却下・削除の通知（通知基盤 086 の種別追加）も同節で先送り。
-- **REVIEW-SEED-AGGREGATES（2026-10-18 発見 / plan 092 Step 0）** `prisma/seed/seeders/review-seeder.ts`
+- ~~**REVIEW-SEED-AGGREGATES（2026-10-18 発見 / plan 092 Step 0）** `prisma/seed/seeders/review-seeder.ts`
   はレビューを直接書き、`Product.rating` / `numReviews` と `Store` の集計を更新しない
   （ローカル DB で 154 レビューに対し `SUM(Product.numReviews)=15`・36 商品が不一致）。
-  plan 092 のマイグレーションの backfill で既存データは揃うが、seed を再実行すると再びずれる。
-  seed の末尾で同じ再計算 SQL を流すのが最小修正。
+  plan 092 のマイグレーションの backfill で既存データは揃うが、seed を再実行すると再びずれる。~~
+  → **2026-10-18 解消**。seed のトランザクション末尾で migration の backfill と同じ再計算 SQL
+  （Product → Store）を流す。`review-seeder.test.ts` が呼び出し順と公開集合の条件を固定。
 
 - **CORRECTNESS-06（新規・2026-08-11 起票 / plan 048 の実行中に実測）**
   `src/components/store/cards/store-card.tsx:30-31` の

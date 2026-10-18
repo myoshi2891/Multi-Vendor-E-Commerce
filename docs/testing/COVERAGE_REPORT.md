@@ -11,11 +11,11 @@
 
 | 指標 | 値 |
 |---|---|
-| Jestテスト総数（2026-10-18） | **3470 passed / 3473 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
+| Jestテスト総数（2026-10-18） | **3471 passed / 3474 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。[QA正本](./QA_HANDOFF.md#現在の実装状態サマリ)。 |
 | 全体coverage | Statements88.83%（11821/13306）／Branches79.64%（7346/9224）／Functions85.64%（2333/2724）／Lines89.41%（10757/12030）（2026-10-18 plan 092 レビュー指摘対応（通報者の User 同期）後の全体CLI実測）。 |
 | テストファイル総数（dashboard） | **432ファイル**／lcov **420エントリ**／マトリクス18/80（23%）。2026-10-18全体coverage/dashboard再生成実測。 |
 | Jest スイート総数（unit/component） | **345スイート**（344 passed／1 skipped、2026-10-18実測）。 |
-| テスト総数 | **3470 unit/component passed**（3473 total／3 skipped）。Integration262／19 suites（2026-10-18実測）。 |
+| テスト総数 | **3471 unit/component passed**（3474 total／3 skipped）。Integration262／19 suites（2026-10-18実測）。 |
 | Jest スナップショット | **127** — 2026-05-28 時点（**B1+ 全完了** で 112 → 127 / 累計 49 プリミティブカバー） |
 | マトリクスセル数 | **80** (8 カテゴリ × 10 ドメイン) |
 | カバー済みセル | **18/80（23%）**（2026-10-15 dashboard実測、セル状態変化なし）。 |
@@ -358,6 +358,8 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 ---
 
 ## 7. 履歴
+
+2026-10-18: plan 092 レビュー指摘対応（seed の評価集計・ModerationPolicy.updatedAt の DB 既定値）。`review-seeder.test.ts` +1。Jest 3470/3473 → 3471 passed / 3474 total、3 skipped、127 snapshots passed、345 スイート。Statements88.83%（11821/13306）／Branches79.64%（7346/9224）／Functions85.64%（2333/2724）／Lines89.41%（10757/12030）で不変（seed は収集対象外）。dashboard432 files/420 lcov/18 of 80 cells、セル状態不変。
 
 2026-10-18: plan 092 レビュー指摘対応（通報者の User 同期・理由表示・空状態）。`reportReview` は tx の前に通報者の User 行を作る（`upsertReview` と共通の `ensureDbUser` へ抽出。Webhook 同期漏れで `ReviewReport.reporterId` が FK 違反になるのを防ぐ）／レビュー履歴は却下・削除のときだけ理由を出す（FLAGGED では出さない）／審査キューは状態で絞り込んだ空表示をその状態の文言にする。Jest +4（`review.test.ts` +2、`review-history-card.test.tsx` +1、`reviews-queue.test.tsx` +1）。Jest 3470 passed / 3473 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.83%（11821/13306）／Branches79.64%（7346/9224）／Functions85.64%（2333/2724）／Lines89.41%（10757/12030）。dashboard432 files/420 lcov/18 of 80 cells、セル状態不変。
 
