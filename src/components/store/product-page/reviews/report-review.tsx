@@ -1,5 +1,6 @@
 "use client";
 import { useId, useRef, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { ReviewReportReason } from "@prisma/client";
 import {
     REVIEW_REPORT_REASON_LABELS,
@@ -14,15 +15,10 @@ const REASONS = Object.keys(
 const isReportReason = (value: string): value is ReviewReportReason =>
     (REASONS as string[]).includes(value);
 
-/** 未認証はサーバーの文言をそのまま見せず、次に取るべき行動を示す */
-const errorMessage = (error: unknown): string => {
-    if (!(error instanceof Error) || !error.message) {
-        return "Could not send the report. Please try again.";
-    }
-    if (error.message === "Unauthenticated.")
-        return "Sign in to report reviews.";
-    return error.message;
-};
+const errorMessage = (error: unknown): string =>
+    error instanceof Error && error.message
+        ? error.message
+        : "Could not send the report. Please try again.";
 
 /**
  * レビューの通報（plan 092・DS-COMP-072）。理由は必須、メモは任意。
@@ -34,6 +30,7 @@ export default function ReportReview({
     onReport,
 }: Readonly<{ reviewId: string; onReport: ReportReviewAction }>) {
     const id = useId();
+    const { isLoaded, isSignedIn } = useUser();
     const pending = useRef(false);
     const [open, setOpen] = useState(false);
     const [busy, setBusy] = useState(false);
@@ -44,6 +41,12 @@ export default function ReportReview({
 
     const submit = async () => {
         if (pending.current) return;
+        // 未認証は送信前に判定する。本番の Server Action は例外の文言を伏せるため、
+        // サーバーの "Unauthenticated." を照合しても一致しない
+        if (isLoaded && !isSignedIn) {
+            setError("Sign in to report reviews.");
+            return;
+        }
         if (!isReportReason(reason)) {
             setError("Choose a reason for your report.");
             return;

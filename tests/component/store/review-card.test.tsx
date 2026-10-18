@@ -7,6 +7,15 @@ import type { ReviewWithImageType } from "@/lib/types";
 jest.mock("react-rating-stars-component", () => () => null);
 jest.mock("@/components/shared/color-wheel", () => () => null);
 
+// 通報前のサインイン判定（Server Action の例外文言には頼らない）
+let signedIn = true;
+jest.mock("@clerk/nextjs", () => ({
+    useUser: () => ({ isLoaded: true, isSignedIn: signedIn }),
+}));
+beforeEach(() => {
+    signedIn = true;
+});
+
 const makeReview = (
     overrides: Partial<ReviewWithImageType> = {}
 ): ReviewWithImageType => ({
@@ -140,7 +149,25 @@ describe("ReviewCard — 通報（plan 092）", () => {
         );
     });
 
-    it("未認証ならサインインを促し、入力を残したまま再送できる", async () => {
+    it("未サインインなら送信せずサインインを促し、入力を残す", async () => {
+        signedIn = false;
+        const onReport = jest.fn();
+        render(<ReviewCard review={makeReview()} onReport={onReport} />);
+        openForm();
+        fireEvent.change(screen.getByLabelText("Reason"), {
+            target: { value: "OFFENSIVE" },
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: "Submit report" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "Sign in to report reviews."
+        );
+        expect(onReport).not.toHaveBeenCalled();
+        expect(screen.getByLabelText("Reason")).toHaveValue("OFFENSIVE");
+    });
+
+    it("サーバーの例外が Unauthenticated. でも文言照合でサインイン案内に変えない", async () => {
         const onReport = jest
             .fn()
             .mockRejectedValueOnce(new Error("Unauthenticated."))
@@ -154,7 +181,7 @@ describe("ReviewCard — 通報（plan 092）", () => {
         fireEvent.click(screen.getByRole("button", { name: "Submit report" }));
 
         expect(await screen.findByRole("alert")).toHaveTextContent(
-            "Sign in to report reviews."
+            "Unauthenticated."
         );
         expect(screen.getByLabelText("Reason")).toHaveValue("OFFENSIVE");
         expect(
