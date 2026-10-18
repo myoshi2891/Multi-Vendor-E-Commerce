@@ -361,7 +361,7 @@ bun run coverage:dashboard   # docs/coverage-dashboard.html を再生成
 
 2026-10-18: 購入10画面再監査。8画面は既存回帰、注文/支払履歴はfocus復帰をTDD修正。Jest 3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。dashboard426 files/414 lcov/18 of 80 cells、セル状態不変。fixture176/176・公開実route8/8。今回認証後実routeは専用DB不在で保留、[QA正本](QA_HANDOFF.md#ds-purchase-ten-routes)。
 
-2026-10-17: plan 088 Step 6 —— 返品 RMA の往復 E2E `tests/e2e/returns-rma.spec.ts` を追加（未コミット・HEAD `50e3f46d`）。Playwright `--list` 447 tests / 46 files（2026-10-03）→ **450 tests / 47 files**（+1 test × 3 ブラウザ）。chromium 1/1 passed。その後 firefox / webkit を導入し 3 ブラウザで通過（`--repeat-each=2` で計 9/9）。注文は `seed:e2e` ではなく spec の `beforeAll` で起票（Clerk の動的ユーザーが所有者のため）。Jest / Integration / lcov は不変。
+2026-10-17: plan 088 Step 6 —— 返品 RMA の往復 E2E `tests/e2e/returns-rma.spec.ts` を追加（未コミット・HEAD `50e3f46d`）。Playwright `--list` 447 tests / 46 files（2026-10-03）→ **450 tests / 47 files**（+1 test × 3 ブラウザ）。chromium 1/1 passed。その後 firefox / webkit を導入し 3 ブラウザで通過（通常実行 3/3、`--repeat-each=2` で 6/6、計 9/9）。注文は `seed:e2e` ではなく spec の `beforeAll` で起票（Clerk の動的ユーザーが所有者のため）。Jest / Integration / lcov は不変。
 
 2026-10-16: PR#206 レビュー対応 —— 注文詳細の返品オプション組み立てを `try` 内へ移動（未コミット・HEAD `724fb177`）。`order-detail-page.test.tsx` +1。Jest3275/3278 → 3276/3279・335 suites（不変）。lcov 不変（Branches79.08%／Functions85.13%／Lines88.94%）。dashboard418 files/412 lcov/18 of 80 cells（不変）。
 
