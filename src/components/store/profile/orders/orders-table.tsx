@@ -1,11 +1,10 @@
 "use client";
 
 import type { OrderTableDateFilter, OrderTableFilter } from "@/lib/types";
-import { useResultsFocusRestore } from "@/hooks/use-results-focus-restore";
+import { useHistoryResults } from "@/hooks/use-history-results";
 import { toNumberSafe } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
 import OrderTableHeader from "./order-table-header";
 import OrdersHeading from "./orders-heading";
 import styles from "./orders.module.css";
@@ -19,12 +18,6 @@ export interface OrderHistoryEntry {
     groups: { _count: { items: number }; items: { image: string }[] }[];
 }
 type Result = { orders: OrderHistoryEntry[]; totalPages: number };
-type Criteria = {
-    filter: OrderTableFilter;
-    period: OrderTableDateFilter;
-    search: string;
-    page: number;
-};
 export type FetchOrdersAction = (
     filter: OrderTableFilter,
     period: OrderTableDateFilter,
@@ -45,40 +38,13 @@ export default function OrdersTable({
     fetchOrdersAction: FetchOrdersAction;
     initialError?: boolean;
 }) {
-    const [data, setData] = useState<Result>({ orders, totalPages });
-    const [criteria, setCriteria] = useState<Criteria>({
-        filter: prev_filter,
-        period: "",
-        search: "",
-        page: 1,
-    });
-    const [pending, setPending] = useState(false);
-    const [error, setError] = useState(initialError);
-    const inFlight = useRef(false);
-    const { sectionRef, resultsRef, markFocus } =
-        useResultsFocusRestore(pending);
-    async function load(next: Criteria) {
-        if (inFlight.current) return;
-        inFlight.current = true;
-        markFocus();
-        setCriteria(next);
-        setPending(true);
-        setError(false);
-        try {
-            const result = await fetchOrdersAction(
-                next.filter,
-                next.period,
-                next.search,
-                next.page
-            );
-            setData(result);
-        } catch {
-            setError(true);
-        } finally {
-            inFlight.current = false;
-            setPending(false);
-        }
-    }
+    const { data, criteria, pending, error, load, sectionRef, resultsRef } =
+        useHistoryResults({
+            initialData: { orders, totalPages },
+            initialFilter: prev_filter,
+            initialError,
+            fetchPage: fetchOrdersAction,
+        });
     const hasConditions = Boolean(
         criteria.filter || criteria.period || criteria.search
     );

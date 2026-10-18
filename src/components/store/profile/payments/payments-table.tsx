@@ -1,10 +1,9 @@
 "use client";
 
 import type { PaymentTableDateFilter, PaymentTableFilter } from "@/lib/types";
-import { useResultsFocusRestore } from "@/hooks/use-results-focus-restore";
+import { useHistoryResults } from "@/hooks/use-history-results";
 import { toNumberSafe } from "@/lib/utils";
 import Link from "next/link";
-import { useRef, useState } from "react";
 import PaymentTableHeader from "./payment-table-header";
 import PaymentsHeading from "./payments-heading";
 import styles from "./payments.module.css";
@@ -19,12 +18,6 @@ export interface PaymentHistoryEntry {
     updatedAt: Date | string;
 }
 type Result = { payments: PaymentHistoryEntry[]; totalPages: number };
-type Criteria = {
-    filter: PaymentTableFilter;
-    period: PaymentTableDateFilter;
-    search: string;
-    page: number;
-};
 export type FetchPaymentsAction = (
     filter: PaymentTableFilter,
     period: PaymentTableDateFilter,
@@ -41,40 +34,13 @@ export default function PaymentsTable({
     fetchPaymentsAction: FetchPaymentsAction;
     initialError?: boolean;
 }) {
-    const [data, setData] = useState<Result>({ payments, totalPages });
-    const [criteria, setCriteria] = useState<Criteria>({
-        filter: "",
-        period: "",
-        search: "",
-        page: 1,
-    });
-    const [pending, setPending] = useState(false);
-    const [error, setError] = useState(initialError);
-    const inFlight = useRef(false);
-    const { sectionRef, resultsRef, markFocus } =
-        useResultsFocusRestore(pending);
-    async function load(next: Criteria) {
-        if (inFlight.current) return;
-        inFlight.current = true;
-        markFocus();
-        setCriteria(next);
-        setPending(true);
-        setError(false);
-        try {
-            const result = await fetchPaymentsAction(
-                next.filter,
-                next.period,
-                next.search,
-                next.page
-            );
-            setData(result);
-        } catch {
-            setError(true);
-        } finally {
-            inFlight.current = false;
-            setPending(false);
-        }
-    }
+    const { data, criteria, pending, error, load, sectionRef, resultsRef } =
+        useHistoryResults({
+            initialData: { payments, totalPages },
+            initialFilter: "",
+            initialError,
+            fetchPage: fetchPaymentsAction,
+        });
     const hasConditions = Boolean(
         criteria.filter || criteria.period || criteria.search
     );
