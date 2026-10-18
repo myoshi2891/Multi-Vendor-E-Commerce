@@ -464,4 +464,19 @@ for (const screen of ["orders", "payment"]) {
         await expect(page.getByText("Page 2 of 3", { exact: true })).toBeVisible();
         await expect(support).toBeFocused();
     });
+    // The searchbox stays mounted but is disabled while results are loading.
+    test(`purchase ten ${screen}: search submit recovers focus from the disabled searchbox`, async ({ page }) => {
+        await page.clock.install();
+        await page.goto(`/?screen=${screen}&state=pending`);
+        const label = screen === "orders" ? "Order" : "Payment";
+        const search = page.getByRole("searchbox", { name: `Search ${label.toLowerCase()}s` });
+        await search.focus();
+        await search.press("Enter");
+        await expect(search).toBeDisabled();
+        await page.clock.fastForward(61000);
+        await expect(search).toBeEnabled();
+        const results = page.getByRole("region", { name: `${label} results` });
+        await expect(results).toBeFocused();
+        await expectReadableFocus(results);
+    });
 }
