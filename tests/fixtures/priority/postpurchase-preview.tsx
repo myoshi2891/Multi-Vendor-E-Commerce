@@ -78,6 +78,9 @@ const reviews: ReviewHistoryEntry[] = [
         updatedAt: "2026-10-01T00:00:00Z",
         user: { name: "Mina Mori", picture: image },
         images: [{ id: "photo-one", url: image, alt: "Scarf detail" }],
+        // 既存の postpurchase 検証の見た目を変えないよう公開中にする（状態表示は review-governance suite で見る）
+        status: "PUBLISHED",
+        moderationReason: null,
     },
 ];
 const conversations = [

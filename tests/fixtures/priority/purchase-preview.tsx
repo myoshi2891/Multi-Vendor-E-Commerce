@@ -168,7 +168,7 @@ function App({ storeCollection, homeSelection }: { storeCollection: React.ReactN
                             }}
                         />
                         {new URLSearchParams(location.search).has("review-form") && <>
-                            <ReviewCard editorial review={{ id: "review", productId: "product", userId: "user", createdAt: new Date(), updatedAt: new Date(), rating: 4.5, likes: 0, review: "A thoughtful piece ".repeat(30), variant: "Ivory", size: "M", quantity: "1", color: "ivory", images: [], user: createMockUser({ picture: "/assets/images/default-user.jpg" }) }} />
+                            <ReviewCard editorial review={{ id: "review", productId: "product", userId: "user", createdAt: new Date(), updatedAt: new Date(), rating: 4.5, likes: 0, status: "PUBLISHED", isVerifiedPurchase: true, moderationReason: null, moderatedAt: null, review: "A thoughtful piece ".repeat(30), variant: "Ivory", size: "M", quantity: "1", color: "ivory", images: [], user: createMockUser({ picture: "/assets/images/default-user.jpg" }) }} />
                             <ReviewDetails productId="product" variantsInfo={[{ ...products[0].variants[0], variantImage: "/assets/brand/star.svg", variantUrl: "/product/considered-piece/ivory", colors: [{ name: "ivory" }] }]} reviews={reviews} setReviews={setReviews} />
                         </>}
                         <ReviewsSort sort={reviewSort} setSort={setReviewSort} />
