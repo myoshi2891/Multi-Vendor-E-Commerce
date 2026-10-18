@@ -34,7 +34,7 @@ async function act<T>(value: T, failure: string): Promise<T> {
 }
 
 const reportAction: ReportReviewAction = () =>
-    act({ status: "PUBLISHED" as const }, "Unauthenticated.");
+    act({ status: "PUBLISHED" as const }, "Failed to report review.");
 const moderateAction: ModerateReviewAction = ({ reviewId }) =>
     act(
         { id: reviewId, status: "PUBLISHED" as const },

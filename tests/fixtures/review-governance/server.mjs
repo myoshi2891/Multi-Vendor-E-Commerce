@@ -9,6 +9,8 @@ await startFixtureServer({
     port: 3138,
     title: "Review governance design fixture",
     mocks: {
+        // 通報はサインイン済みの前提で描く（未サインインの案内は Jest で固定）
+        "@clerk/nextjs": `export function useUser(){return {isLoaded:true,isSignedIn:true}}`,
         "next/navigation": `export function useRouter(){return {push(h){location.assign(h)},replace(h){location.replace(h)},refresh(){window.refreshed=(window.refreshed??0)+1}}} export function usePathname(){return location.pathname} export function useSearchParams(){return new URLSearchParams(location.search)}`,
     },
     loader: { ".jpg": "dataurl", ".png": "dataurl", ".svg": "dataurl" },

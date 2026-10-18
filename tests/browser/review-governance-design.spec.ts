@@ -69,10 +69,10 @@ for (const width of [1440, 768, 390]) {
             fullPage: true,
         });
 
-        // 1 回目は未認証で失敗 → サインインを促し、入力は残る
+        // 1 回目はサーバー側で失敗 → メッセージを出し、入力は残る
         await submit.click();
         await expect(page.getByRole("alert")).toHaveText(
-            "Sign in to report reviews."
+            "Failed to report review."
         );
         await expect(reason).toHaveValue("SPAM");
         await expectNoOverflowAndAxe(page);
