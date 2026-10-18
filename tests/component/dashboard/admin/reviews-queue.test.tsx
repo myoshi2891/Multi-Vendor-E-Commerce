@@ -198,6 +198,22 @@ describe("AdminReviews — 状態ごとの操作", () => {
         expect(screen.getByRole("button", { name: "Approve" })).toBeEnabled();
         expect(refresh).not.toHaveBeenCalled();
     });
+
+    it("digest 付きの例外は Next.js が伏せた文言なので既定のメッセージを出す", async () => {
+        const user = userEvent.setup();
+        const masked = Object.assign(
+            new Error("An error occurred in the Server Components render."),
+            { digest: "1234567890" }
+        );
+        const moderateAction = jest.fn().mockRejectedValue(masked);
+        renderQueue([item("r1", "PENDING_REVIEW")], moderateAction);
+
+        await user.click(screen.getByRole("button", { name: "Approve" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(
+            "Could not update the review. Please try again."
+        );
+    });
 });
 
 describe("AdminReviews — 絞り込みとページ", () => {

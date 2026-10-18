@@ -28,10 +28,13 @@ const formatDate = (iso: string): string =>
         timeZone: "UTC",
     });
 
-const errorMessage = (error: unknown): string =>
-    error instanceof Error && error.message
-        ? error.message
-        : "Could not update the review. Please try again.";
+/** digest 付きは Next.js がサーバーの例外を伏せた汎用文言なので、そのまま見せない */
+const errorMessage = (error: unknown): string => {
+    const fallback = "Could not update the review. Please try again.";
+    if (!(error instanceof Error) || !error.message) return fallback;
+    if ("digest" in error && error.digest) return fallback;
+    return error.message;
+};
 
 /** レビュー 1 件。状態ごとに遷移表で許された操作だけを出す（design review-governance §3.2） */
 function ReviewQueueCard({
