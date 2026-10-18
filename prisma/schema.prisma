@@ -635,7 +635,7 @@ model ModerationPolicy {
   requireVerifiedPurchase Boolean           @default(false)
   /// FLAGGED へ自動遷移させる未解決通報の件数（異なる通報者の数）
   flagThreshold           Int               @default(3)
-  updatedAt               DateTime          @updatedAt
+  updatedAt               DateTime          @default(now()) @updatedAt
 }
 
 model ReviewImage {
