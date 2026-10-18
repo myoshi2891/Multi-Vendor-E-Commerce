@@ -336,6 +336,33 @@ describe("upsertReview", () => {
             expect(mockDb.review.update.mock.calls[0][0].data.status).toBe(ReviewStatus.FLAGGED);
         });
 
+        it("REJECTED のレビューを再投稿すると、前回の却下理由と審査日時を消す", async () => {
+            mockDb.review.findFirst.mockResolvedValue({
+                id: "existing-review-001",
+                status: ReviewStatus.REJECTED,
+            });
+
+            await upsertReview("product-001", createMockReview());
+
+            const data = mockDb.review.update.mock.calls[0][0].data;
+            expect(data.status).toBe(ReviewStatus.PUBLISHED);
+            expect(data.moderationReason).toBeNull();
+            expect(data.moderatedAt).toBeNull();
+        });
+
+        it("REJECTED 以外の編集では審査メタデータに触れない", async () => {
+            mockDb.review.findFirst.mockResolvedValue({
+                id: "existing-review-001",
+                status: ReviewStatus.FLAGGED,
+            });
+
+            await upsertReview("product-001", createMockReview());
+
+            const data = mockDb.review.update.mock.calls[0][0].data;
+            expect(data).not.toHaveProperty("moderationReason");
+            expect(data).not.toHaveProperty("moderatedAt");
+        });
+
         it("REMOVED のレビューは編集を拒否し、集計もしない", async () => {
             mockDb.review.findFirst.mockResolvedValue({
                 id: "existing-review-001",

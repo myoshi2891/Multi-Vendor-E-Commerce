@@ -253,6 +253,12 @@ export const upsertReview = async (
                 color: input.color,
                 status,
                 isVerifiedPurchase,
+                // 却下後の再投稿は新しい審査対象なので、前回の却下理由を審査キューに持ち越さない。
+                // それ以外の状態では運営の判断記録を残す（キー自体を渡さない）
+                ...(existingReview?.status === ReviewStatus.REJECTED && {
+                    moderationReason: null,
+                    moderatedAt: null,
+                }),
             }
             const details = existingReview
                 ? await tx.review.update({
