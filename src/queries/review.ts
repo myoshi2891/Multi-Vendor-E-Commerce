@@ -225,7 +225,14 @@ export const upsertReview = async (
                 throw new Error('Only verified purchasers can review this product.')
             }
 
-            // check for existing review
+            // 自分のレビュー行も Product → Store → Review の順でロックしてから状態を読む。
+            // ロックしないと並行する reportReview の PUBLISHED → FLAGGED を見落とし、
+            // 古い状態から計算した status で FLAGGED を上書きしてしまう（行が無ければ何も取らない）
+            await tx.$queryRaw`
+                SELECT "id" FROM "Review"
+                WHERE "productId" = ${productId} AND "userId" = ${user.id}
+                FOR UPDATE
+            `
             const existingReview = await tx.review.findFirst({
                 where: {
                     productId,

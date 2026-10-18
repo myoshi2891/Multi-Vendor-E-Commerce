@@ -449,11 +449,11 @@ describe("upsertReview", () => {
             expect(mockDb.store.update).not.toHaveBeenCalled();
         });
 
-        it("Product → Store の順に行ロックを取り、どちらもレビュー書き込みより先", async () => {
+        it("Product → Store → Review の順に行ロックを取り、どれもレビュー書き込みより先", async () => {
             await upsertReview("product-001", createMockReview());
 
-            expect(mockDb.$queryRaw).toHaveBeenCalledTimes(2);
-            const [productLock, storeLock] = mockDb.$queryRaw.mock.calls;
+            expect(mockDb.$queryRaw).toHaveBeenCalledTimes(3);
+            const [productLock, storeLock, reviewLock] = mockDb.$queryRaw.mock.calls;
             expect(sqlOf(productLock)).toContain('FROM "Product"');
             expect(sqlOf(productLock)).toContain("FOR UPDATE");
             expect(sqlOf(storeLock)).toContain('FROM "Store"');
@@ -467,6 +467,13 @@ describe("upsertReview", () => {
             const order = mockDb.$queryRaw.mock.invocationCallOrder;
             expect(order[0]).toBeLessThan(order[1]);
             expect(order[1]).toBeLessThan(mockDb.review.create.mock.invocationCallOrder[0]);
+
+            // 自分のレビュー行は状態を読む前にロックする（並行通報の FLAGGED を見落とさない）
+            expect(sqlOf(reviewLock)).toContain('FROM "Review"');
+            expect(sqlOf(reviewLock)).toContain("FOR UPDATE");
+            expect(reviewLock.slice(1)).toEqual(["product-001", USER.id]);
+            expect(order[1]).toBeLessThan(order[2]);
+            expect(order[2]).toBeLessThan(mockDb.review.findFirst.mock.invocationCallOrder[0]);
         });
     });
 
