@@ -1986,4 +1986,85 @@ describe("getProductPageData", () => {
         expect(cookieStore.get).toHaveBeenCalledWith("userCountry");
         expect(result?.store).toEqual(expect.objectContaining({ returnPolicy: "14 days" }));
     });
+
+    // 公開ページの RSC ペイロードに投稿者の email / role を載せない（plan 091）
+    it("レビュー投稿者は name / picture のみを select すること", async () => {
+        const { cookies } = require("next/headers");
+        mockDb.review.groupBy.mockResolvedValue([]);
+        mockDb.review.count.mockResolvedValue(0);
+        (cookies as jest.Mock).mockImplementation(() =>
+            Promise.resolve({ get: jest.fn().mockReturnValue(undefined) })
+        );
+
+        await getProductPageData("lux-noir", "black");
+
+        const args = mockDb.product.findUnique.mock.calls[0][0];
+        expect(args.include.reviews.include.user).toEqual({
+            select: { name: true, picture: true },
+        });
+        // 公開集合だけを出す（plan 092）
+        expect(args.include.reviews.where).toEqual({
+            status: { in: ["PUBLISHED", "FLAGGED"] },
+        });
+    });
+});
+
+// ==================================================
+// getRatingStatistics
+// ==================================================
+describe("getRatingStatistics", () => {
+    // 分布と件数を Product.rating と同じ母集団（公開集合）で数える（plan 092）
+    it("groupBy と画像付き件数の両方を公開集合に限定する", async () => {
+        mockDb.review.groupBy.mockResolvedValue([
+            { rating: 4.5, _count: { rating: 2 } },
+            { rating: 2, _count: { rating: 1 } },
+        ]);
+        mockDb.review.count.mockResolvedValue(1);
+
+        const result = await getRatingStatistics("product-123");
+
+        const publicStatus = { in: ["PUBLISHED", "FLAGGED"] };
+        expect(mockDb.review.groupBy.mock.calls[0][0].where).toEqual({
+            productId: "product-123",
+            status: publicStatus,
+        });
+        expect(mockDb.review.count.mock.calls[0][0].where).toEqual({
+            productId: "product-123",
+            images: { some: {} },
+            status: publicStatus,
+        });
+        expect(result.totalReviews).toBe(3);
+        // 4.5 は 4 のバケットに入る（0.5 刻みの評価を Math.floor で 1〜5 に寄せる）
+        expect(result.ratingStatistics[3].numReviews).toBe(2);
+    });
+});
+
+// ==================================================
+// getProductFilteredReviews
+// ==================================================
+describe("getProductFilteredReviews", () => {
+    // 認証なしの Server Action なので、返却する投稿者情報は表示に使う列だけに絞る（plan 091）
+    it("レビュー投稿者は name / picture のみを select すること", async () => {
+        mockDb.review.findMany.mockResolvedValue([]);
+
+        await getProductFilteredReviews("product-123", {}, undefined);
+
+        const args = mockDb.review.findMany.mock.calls[0][0];
+        expect(args.include.user).toEqual({
+            select: { name: true, picture: true },
+        });
+    });
+
+    it("評価・画像フィルタを合成したうえで公開集合に限定する（plan 092）", async () => {
+        mockDb.review.findMany.mockResolvedValue([]);
+
+        await getProductFilteredReviews("product-123", { rating: 4, hasImages: true }, undefined);
+
+        expect(mockDb.review.findMany.mock.calls[0][0].where).toEqual({
+            productId: "product-123",
+            rating: { in: [4, 4.5] },
+            images: { some: {} },
+            status: { in: ["PUBLISHED", "FLAGGED"] },
+        });
+    });
 });

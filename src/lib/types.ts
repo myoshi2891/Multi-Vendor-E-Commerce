@@ -245,7 +245,8 @@ export type CartProductType = {
 
 export type ReviewWithImageType = Review & {
     images: ReviewImage[];
-    user: User;
+    // 公開経路は投稿者の表示列だけを返す（plan 091）
+    user: Pick<User, "name" | "picture">;
 };
 
 // Define a local SortOrder type

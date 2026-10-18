@@ -511,6 +511,9 @@ export const getUserReviewsForDisplay = async (
                 url: image.url,
                 alt: image.alt,
             })),
+            // 本人の履歴なので、非公開になった理由まで見せる（plan 092・DS-COMP-251）
+            status: review.status,
+            moderationReason: review.moderationReason,
         })),
     };
 };

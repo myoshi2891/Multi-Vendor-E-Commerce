@@ -147,6 +147,30 @@ describe("GET /api/index-products - フォールバック contains 検索", () =
     });
 });
 
+describe("GET /api/index-products - 公開レビューのみ（plan 092）", () => {
+    const reviewsWhereOf = (call: unknown[]): unknown =>
+        (call[0] as { include: { reviews: { where: unknown } } }).include.reviews.where;
+
+    it("全文検索・フォールバックの両方で、レビューを公開集合に限定する", async () => {
+        mockProductFindMany
+            .mockRejectedValueOnce(new Error("Fulltext search failed"))
+            .mockResolvedValueOnce([]);
+        mockProductCount
+            .mockRejectedValueOnce(new Error("Fulltext count failed"))
+            .mockResolvedValueOnce(0);
+        jest.spyOn(console, "warn").mockImplementation(() => {});
+
+        await GET(createGetRequest(new URLSearchParams({ search: "Laptop" })));
+
+        expect(mockProductFindMany).toHaveBeenCalledTimes(2);
+        for (const call of mockProductFindMany.mock.calls) {
+            expect(reviewsWhereOf(call)).toEqual({
+                status: { in: ["PUBLISHED", "FLAGGED"] },
+            });
+        }
+    });
+});
+
 describe("GET /api/index-products - ページネーション正規化", () => {
     const mockSuccessfulSearch = () => {
         mockProductFindMany.mockResolvedValueOnce([]);

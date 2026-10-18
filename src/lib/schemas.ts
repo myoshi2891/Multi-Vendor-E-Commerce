@@ -4,6 +4,7 @@ import {
     ReturnItemCondition,
     ReturnReasonCode,
     ReturnRequestStatus,
+    ReviewReportReason,
     ShippingFeeMethod,
 } from "@prisma/client";
 import { OrderStatus, PaymentStatus } from "@/lib/types";
@@ -454,9 +455,20 @@ export const ShippingRateFormSchema = z.object({
         .min(1, "Return policy must be at least 1 character long."),
 });
 
+/**
+ * レビューの評価値。UI の星は 0.5 刻みなので「1〜5 の 0.5 刻み」とする。
+ * DB の CHECK 制約 "Review_rating_range" と同じ範囲（design review-governance §6.2）。
+ * `z.number()` は NaN を、`max` は Infinity を拒否する。
+ */
+export const ReviewRatingSchema = z
+    .number()
+    .min(1, "Rating must be at least 1.")
+    .max(5, "Rating must be at most 5.")
+    .multipleOf(0.5, "Rating must be in 0.5 steps.");
+
 export const AddReviewSchema = z.object({
     variantName: z.string().min(1, "Variant name is required"),
-    rating: z.number().min(1, "Rating must be at least 1."),
+    rating: ReviewRatingSchema,
     size: z.string().min(1, "Size is required"),
     review: z
         .string()
@@ -468,6 +480,51 @@ export const AddReviewSchema = z.object({
         .max(3, "You can upload a maximum of 3 images for the review."),
     color: z.string({ required_error: "Color is required" }),
 });
+
+/**
+ * `upsertReview` の入口検証（`ReviewDetailsType` の形）。フォームの resolver だけでは
+ * Server Action を直接呼ぶ経路を防げないため、サーバー側でも同じ制約を課す（plan 092）。
+ * `id` はクライアント生成値で、サーバーは信頼しない（参照しない）。
+ */
+export const UpsertReviewSchema = z.object({
+    id: z.string().optional(),
+    review: z
+        .string()
+        .min(10, "Review is required and must be at least 10 characters long."),
+    rating: ReviewRatingSchema,
+    images: z
+        .object({ url: z.string().min(1) })
+        .array()
+        .max(3, "You can upload a maximum of 3 images for the review."),
+    size: z.string().min(1, "Size is required"),
+    quantity: z.string(),
+    variant: z.string().min(1, "Variant name is required"),
+    color: z.string(),
+});
+
+export const ReportReviewSchema = z.object({
+    reviewId: z.string().min(1),
+    reason: z.nativeEnum(ReviewReportReason),
+    note: z.string().trim().max(500).optional(),
+});
+
+/** 遷移の正否は状態機械（`review.ts`）が判定する。ここは入力の形と理由の必須だけを見る。 */
+export const ModerateReviewSchema = z
+    .object({
+        reviewId: z.string().min(1),
+        action: z.enum(["approve", "reject", "remove", "restore"]),
+        reason: z.string().trim().max(500).optional(),
+    })
+    .superRefine((value, ctx) => {
+        const needsReason = value.action === "reject" || value.action === "remove";
+        if (needsReason && !value.reason) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["reason"],
+                message: "A reason is required to reject or remove a review.",
+            });
+        }
+    });
 
 export const ShippingAddressSchema = z.object({
     countryId: z

@@ -29,6 +29,10 @@ it("projects minimal display data and preserves query conditions and owner scope
             userId: "private-id",
             productId: "private-product",
             likes: 12,
+            status: "REJECTED",
+            isVerifiedPurchase: true,
+            moderationReason: "Mentions another shop",
+            moderatedAt: new Date(),
             createdAt: new Date(),
             user: {
                 name: "Mina",
@@ -62,6 +66,9 @@ it("projects minimal display data and preserves query conditions and owner scope
                 updatedAt: "2026-10-01T00:00:00.000Z",
                 user: { name: "Mina", picture: "avatar" },
                 images: [{ id: "photo", url: "photo-url", alt: "Photo" }],
+                // 本人の履歴なので状態と理由は渡す（plan 092）。moderatedAt 等の内部列は渡さない
+                status: "REJECTED",
+                moderationReason: "Mentions another shop",
             },
         ],
     });

@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { normalizePageParam, normalizePositiveIntParam } from "@/lib/utils";
+import { publicReviewWhere } from "@/lib/review-visibility";
 import { NextResponse } from "next/server";
 
 /**
@@ -247,6 +248,8 @@ export async function GET(req: Request) {
                             take: 1,
                         },
                         reviews: {
+                            // 公開集合だけ（plan 092）
+                            where: publicReviewWhere(),
                             take: 5,
                             orderBy: {
                                 createdAt: "desc",
@@ -366,6 +369,8 @@ export async function GET(req: Request) {
                             take: 1,
                         },
                         reviews: {
+                            // 公開集合だけ（plan 092）
+                            where: publicReviewWhere(),
                             take: 5,
                             orderBy: {
                                 createdAt: "desc",

@@ -6,6 +6,7 @@ import {
     resolveCategoryNode,
 } from "@/lib/category-tree";
 import { buildPrefixTsQuery } from "@/lib/search-query";
+import { publicReviewWhere } from "@/lib/review-visibility";
 import { productDerivedColumnsUpdateSql } from "@/lib/product-derived-columns";
 import {
     parseProductFilters,
@@ -1626,9 +1627,12 @@ export const retrieveProductDetails = async (
             specs: true,
             questions: true,
             reviews: {
+                // 公開集合（PUBLISHED / FLAGGED）だけを出す（plan 092）
+                where: publicReviewWhere(),
                 include: {
                     images: true,
-                    user: true,
+                    // 公開ページなので投稿者は表示列だけ（email / role を RSC ペイロードに載せない・plan 091）
+                    user: { select: { name: true, picture: true } },
                 },
                 take: 4,
             },
@@ -1826,9 +1830,10 @@ const checkIfUserFollowingStore = async (
 };
 
 export const getRatingStatistics = async (productId: string) => {
+    // 分布と件数は Product.rating（公開集合の平均）と同じ母集団で数える（plan 092）
     const ratingStats = await db.review.groupBy({
         by: ["rating"],
-        where: { productId },
+        where: publicReviewWhere({ productId }),
         _count: {
             rating: true,
         },
@@ -1855,10 +1860,10 @@ export const getRatingStatistics = async (productId: string) => {
             percentage: totalReviews > 0 ? (count / totalReviews) * 100 : 0,
         })),
         reviewsWithImagesCount: await db.review.count({
-            where: {
+            where: publicReviewWhere({
                 productId,
                 images: { some: {} },
-            },
+            }),
         }),
         totalReviews,
     };
@@ -2017,7 +2022,7 @@ export const getProductFilteredReviews = async (
     page: number = 1,
     pageSize: number = 4
 ) => {
-    const reviewFilter: any = {
+    const reviewFilter: Prisma.ReviewWhereInput = {
         productId,
     };
 
@@ -2050,10 +2055,12 @@ export const getProductFilteredReviews = async (
 
     // Fetch reviews from the database
     const reviews = await db.review.findMany({
-        where: reviewFilter,
+        // 公開集合だけ（plan 092）。フィルタの合成後に包むので status は上書きされない
+        where: publicReviewWhere(reviewFilter),
         include: {
             images: true,
-            user: true,
+            // 認証なしで呼べる Server Action なので投稿者は表示列だけ返す（plan 091）
+            user: { select: { name: true, picture: true } },
         },
         orderBy: sortOption,
         skip, // Skip records for pagination

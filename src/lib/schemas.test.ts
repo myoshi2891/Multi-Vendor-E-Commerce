@@ -7,6 +7,10 @@ import {
     CouponFormSchema,
     AdminCouponFormSchema,
     AddReviewSchema,
+    ReviewRatingSchema,
+    UpsertReviewSchema,
+    ReportReviewSchema,
+    ModerateReviewSchema,
     ShippingAddressSchema,
 } from "./schemas";
 
@@ -598,6 +602,108 @@ describe("AddReviewSchema", () => {
             images: [],
         });
         expect(result.success).toBe(true);
+    });
+
+    it("ratingが5を超える場合エラー", () => {
+        const result = AddReviewSchema.safeParse({ ...validData, rating: 5.5 });
+        expect(result.success).toBe(false);
+    });
+});
+
+// ==================================================
+// ReviewRatingSchema（1〜5 の 0.5 刻み・plan 092）
+// ==================================================
+describe("ReviewRatingSchema", () => {
+    it.each([1, 1.5, 3, 4.5, 5])("%p は許可される", (rating) => {
+        expect(ReviewRatingSchema.safeParse(rating).success).toBe(true);
+    });
+
+    it.each([0, 0.5, 5.5, 2.25, -1, Number.NaN, Number.POSITIVE_INFINITY])(
+        "%p は拒否される",
+        (rating) => {
+            expect(ReviewRatingSchema.safeParse(rating).success).toBe(false);
+        }
+    );
+});
+
+// ==================================================
+// UpsertReviewSchema（Server Action の入口検証・plan 092）
+// ==================================================
+describe("UpsertReviewSchema", () => {
+    const validInput = {
+        id: "client-generated-id",
+        review: "This is a great product, highly recommend it!",
+        rating: 4.5,
+        images: [{ url: "https://example.com/review.jpg" }],
+        size: "M",
+        quantity: "1",
+        variant: "Black",
+        color: "Black",
+    };
+
+    it("有効な入力でパースが成功する", () => {
+        expect(UpsertReviewSchema.safeParse(validInput).success).toBe(true);
+    });
+
+    it("範囲外の rating は拒否される", () => {
+        expect(UpsertReviewSchema.safeParse({ ...validInput, rating: 6 }).success).toBe(false);
+    });
+
+    it("review が10文字未満は拒否される", () => {
+        expect(UpsertReviewSchema.safeParse({ ...validInput, review: "Short" }).success).toBe(false);
+    });
+
+    it("画像が3枚を超える場合は拒否される", () => {
+        const images = Array.from({ length: 4 }, (_, i) => ({ url: `img${i}.jpg` }));
+        expect(UpsertReviewSchema.safeParse({ ...validInput, images }).success).toBe(false);
+    });
+});
+
+// ==================================================
+// ReportReviewSchema / ModerateReviewSchema（plan 092）
+// ==================================================
+describe("ReportReviewSchema", () => {
+    it("理由とメモ付きの通報を受け付ける", () => {
+        const result = ReportReviewSchema.safeParse({
+            reviewId: "review-1",
+            reason: "SPAM",
+            note: "広告リンクが含まれている",
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it("未定義の理由は拒否される", () => {
+        const result = ReportReviewSchema.safeParse({ reviewId: "review-1", reason: "BORING" });
+        expect(result.success).toBe(false);
+    });
+
+    it("500文字を超えるメモは拒否される", () => {
+        const result = ReportReviewSchema.safeParse({
+            reviewId: "review-1",
+            reason: "OTHER",
+            note: "a".repeat(501),
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe("ModerateReviewSchema", () => {
+    it.each(["approve", "restore"] as const)("%s は理由なしで受け付ける", (action) => {
+        expect(ModerateReviewSchema.safeParse({ reviewId: "review-1", action }).success).toBe(true);
+    });
+
+    it.each(["reject", "remove"] as const)("%s は理由が必須", (action) => {
+        expect(ModerateReviewSchema.safeParse({ reviewId: "review-1", action }).success).toBe(false);
+        expect(
+            ModerateReviewSchema.safeParse({ reviewId: "review-1", action, reason: "   " }).success
+        ).toBe(false);
+        expect(
+            ModerateReviewSchema.safeParse({ reviewId: "review-1", action, reason: "誹謗中傷" }).success
+        ).toBe(true);
+    });
+
+    it("未定義の操作は拒否される", () => {
+        expect(ModerateReviewSchema.safeParse({ reviewId: "review-1", action: "delete" }).success).toBe(false);
     });
 });
 
