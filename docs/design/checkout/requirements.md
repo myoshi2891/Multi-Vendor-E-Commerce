@@ -24,3 +24,7 @@
 ## P1・P2優先8画面受け入れ（2026-10-11）
 
 クーポンと住所Portalの入力境界は周囲の明るい面に対し3:1以上のcontrastを持つ。focus/入力保持/pending dismiss lock/Escape復帰を維持。境界はpurchase-control-lineを使用し、区切り線と入力invalidの意味色は独立する。[計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。
+
+### 購入10画面再監査 Step 5（2026-10-18）
+
+DS-PAGE-008: 住所Portalの入力保持・境界・focus復帰・pending dismiss lock、coupon失敗保持・成功後の住所選択、800px境界を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-5)を参照。fixtureと認証後実routeの判定は分離する。

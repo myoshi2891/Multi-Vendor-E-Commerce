@@ -1,5 +1,12 @@
 # PROGRESS.md
 
+## 2026-10-18 購入導線10画面再監査
+
+既存8画面の回帰と注文/支払履歴2画面のfocus復帰をTDDで修正。全体Jest **3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。fixture176/176、公開実route8/8、型0・lint0 errors/既存8 warnings・harness成功。dashboard426 files/414 lcov/18 of 80 cells（不変）。認証後実routeは今回専用DB不在で保留、過去68画面の判定を維持。
+
+[計画](../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#purchase-ten-final)／[統計・保留の正本](testing/QA_HANDOFF.md#ds-purchase-ten-routes)。
+
+
 ## 未完了8画面のデザイン受け入れ（2026-10-17）
 
 店舗一覧を実装、タグ作成の44px操作を修正、転送6件を検証。画面台帳68件は検証済み、部品249件は別管理。Jest3300/3303（3 skipped）・127 snapshots、実route39ケース＋051反復12/12、補助24/24、型/lint/harness成功。[計画](../plans/layout-design/priority-eight-remaining-design-system-plan.md)／[証跡](design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。
@@ -6007,4 +6014,4 @@ SonarCloud PR#208 の New Code 未カバー条件5件（`following/container.tsx
 | Jest / Integration | 3280/3283・335 suites / 257 | 不変 |
 | 型エラー | 0 件 | **0 件** |
 
-chromium 1/1 passed。firefox / webkit はローカルにブラウザが無く未実行。
+chromium 1/1 passed。その後 `bunx playwright install firefox webkit` を行い、chromium / firefox / webkit の 3 ブラウザで通過（3 ワーカー並列 ×2・`--repeat-each=2` で計 9/9）。認証後実ルートのデザイン検証 `DESIGN_SUITE=returns-route` は 12/12（`--repeat-each=2` 24/24）。

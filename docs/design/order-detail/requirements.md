@@ -24,3 +24,7 @@
 ## 優先8画面受け入れ（2026-10-11）
 
 パンくず導線は44×44px以上、keyboard focusは3:1以上。請求書生成失敗は暗いhero上の可読danger色とalertで通知し、Export/Printを再操作できる。生成中の二重操作防止、PDF内容、支払条件と単一合計を保持。
+
+### 購入10画面再監査 Step 6（2026-10-18）
+
+DS-PAGE-003: paid/pendingと全状態の意味色、invoice失敗と再操作、単一合計、支払初期化error/retry、明暗祖先・800px境界を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-6)を参照。fixtureと認証後実routeの判定は分離する。

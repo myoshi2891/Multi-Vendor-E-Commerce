@@ -249,3 +249,43 @@ describe("server and loading boundary regression", () => {
         ).toHaveAttribute("aria-busy", "true");
     });
 });
+
+
+describe("purchase ten keyboard recovery", () => {
+    it.each([false, true])("focuses refreshed results after a removed control (retry=%s)", async (initialError) => {
+        let resolveRequest!: (value: typeof result) => void;
+        const fetchAction = jest.fn().mockImplementation(() => new Promise<typeof result>(resolve => { resolveRequest = resolve; }));
+        const { user } = setup({ initialError, fetchOrdersAction: fetchAction });
+        const control = screen.getByRole("button", { name: initialError ? "Try again" : "Next page" });
+        control.focus();
+        await user.keyboard("{Enter}");
+        await act(async () => resolveRequest(result));
+        await waitFor(() => expect(screen.getByRole("region", { name: "Order results" })).toHaveFocus());
+    });
+    it("preserves focus moved to another control during a request", async () => {
+        let resolveRequest!: (value: typeof result) => void;
+        const fetchAction = jest.fn().mockImplementation(() => new Promise<typeof result>(resolve => { resolveRequest = resolve; }));
+        const { user } = setup({ fetchOrdersAction: fetchAction });
+        screen.getByRole("button", { name: "Next page" }).focus();
+        await user.keyboard("{Enter}");
+        const support = screen.getByRole("link", { name: "Need a hand? →" });
+        support.focus();
+        await act(async () => resolveRequest(result));
+        expect(support).toHaveFocus();
+    });
+});
+
+
+it.each(["empty", "error"])("purchase ten keeps focus at %s results", async (outcome) => {
+    let settle!: () => void;
+    const fetchAction = jest.fn().mockImplementation(() => new Promise<typeof result>((resolve, reject) => {
+        settle = () => outcome === "error" ? reject(new Error("private detail")) : resolve({ orders: [], totalPages: 0 });
+    }));
+    const { user } = setup({ fetchOrdersAction: fetchAction });
+    screen.getByRole("button", { name: "Next page" }).focus();
+    await user.keyboard("{Enter}");
+    await act(async () => settle());
+    expect(screen.getByRole("region", { name: "Order results" })).toHaveFocus();
+    if (outcome === "error") expect(screen.getByRole("alert")).toBeVisible();
+    else expect(screen.getByRole("heading", { name: "No orders yet" })).toBeVisible();
+});

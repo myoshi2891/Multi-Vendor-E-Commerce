@@ -29,3 +29,7 @@
 ## P1・P2優先8画面受け入れ（2026-10-11）
 
 breadcrumbは44×44px以上とし、在庫切れ面・画像面・hover・暗い罫線・補助文字を共通purchase tokensへ接続する。在庫切れの文言と数量増加disabledを保持し、カート保存/送料/選択の業務仕様は変更しない。[計画](../../../plans/layout-design/priority-eight-purchase-acceptance-design-system-plan.md)。
+
+### 購入10画面再監査 Step 4（2026-10-18）
+
+DS-PAGE-007: 短い商品名44px、選択/数量/削除/送料、checkout失敗後のbag保持、sync失敗とretryを既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-4)を参照。fixtureと認証後実routeの判定は分離する。

@@ -1535,3 +1535,47 @@ FAQ転送: 既存実装の回帰（Redなし）。単体1/1でpermanentRedirect�
 ## 未完了8画面 最終統合（2026-10-17）
 
 実route39ケースは初回27 passed＋見出し誤期待修正後の関連16/16で受け入れ。051は3幅とdashboard light/darkを確認し、Clerk.loaded/networkidle＋pageerror判定で4ロールを3回ずつ反復12/12。補助はseven6/6（実retryを含む）、p4作成6/6・一覧/編集12/12。全体Jest3300/3303（3 skipped）・340 suites・127 snapshots、型0・lint0 errors/既存8 warnings・harness成功。共有部品やSDK全機能の完了とは区別する。[証跡](../../docs/design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。
+
+### 購入10画面再監査 Step 1（2026-10-18）
+
+DS-PAGE-006 商品一覧: sort境界・Portalのkeyboard選択、複数size/searchのURL保持、ページャ44pxとcurrent、filterと商品操作。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 2（2026-10-18）
+
+DS-PAGE-037 店舗詳細: 長い店舗情報・商品カード・空状態・sort Portal・850px境界・Clear filtersのURL。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 3（2026-10-18）
+
+DS-PAGE-019 商品詳細: 拡大画像Dialogの初期focus/trap/Escape復帰、size/quantity/review/共有、在庫操作制約。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 4（2026-10-18）
+
+DS-PAGE-007 カート: 短い商品名44px、選択/数量/削除/送料、checkout失敗後のbag保持、sync失敗とretry。既存purchase suiteの回帰82/82（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 5（2026-10-18）
+
+DS-PAGE-008 Checkout: 住所Portalの入力保持・境界・focus復帰・pending dismiss lock、coupon失敗保持・成功後の住所選択、800px境界。既存commerce suiteの回帰38/38（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 6（2026-10-18）
+
+DS-PAGE-003 注文詳細: paid/pendingと全状態の意味色、invoice失敗と再操作、単一合計、支払初期化error/retry、明暗祖先・800px境界。既存commerce suiteの回帰38/38（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 7（2026-10-18）
+
+DS-PAGE-009 比較: 700px境界と局所scroll、hero44px/focus、個別削除/全削除後のfocus復帰、空/失敗/retry・4件制限。既存priority suiteの回帰23/23（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 8（2026-10-18）
+
+DS-PAGE-033 Wishlist: 480px境界、current境界contrastとhover、末尾disabled、URLページング/履歴復帰、空/失敗/pending。既存priority suiteの回帰23/23（新規Redなし）。1440/768/390pxと該当境界幅・axe AA・focus・overflow。実routeの今回受け入れは[保存計画](../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)で区別する。
+
+### 購入10画面再監査 Step 9（2026-10-18）
+
+DS-PAGE-028: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復帰（ページ変更・再試行・失敗・空）と、待機中に移動したfocusを奪わないことをRTL/既存postpurchase suiteで検証。
+
+### 購入10画面再監査 Step 10（2026-10-18）
+
+DS-PAGE-030: 先行browser3幅/RTL2件のfocus失敗を記録。結果への復帰（ページ変更・再試行・失敗・空）と、待機中に移動したfocusを奪わないことをRTL/既存postpurchase suiteで検証。
+
+### 購入10画面最終統合（2026-10-18）
+
+全体Jest 3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）。fixture176/176・公開実route8/8、型0・lint0 errors/既存8 warnings・harness成功。新規RTL10件、browser8件。Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。今回認証後実routeは専用DB不在で保留。[証跡](../../docs/design/design-system/PROGRESS.md#purchase-ten-final)。

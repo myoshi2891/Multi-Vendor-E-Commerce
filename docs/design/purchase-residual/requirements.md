@@ -75,3 +75,15 @@ heroのパンくずと継続探索linkは44×44px以上。700px境界でも折�
 ### 再監査 Step 8 DS-PAGE-033 Wishlist（2026-10-14）
 
 現在ページのaccent境界はhover/focusでも3:1以上の可読性を保つ。非currentのhover・44px・URL/current・既定カードと保存variantの契約を維持する。
+
+### 購入10画面再監査 Step 1（2026-10-18）
+
+DS-PAGE-006: sort境界・Portalのkeyboard選択、複数size/searchのURL保持、ページャ44pxとcurrent、filterと商品操作を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-1)を参照。fixtureと認証後実routeの判定は分離する。
+
+### 購入10画面再監査 Step 2（2026-10-18）
+
+DS-PAGE-037: 長い店舗情報・商品カード・空状態・sort Portal・850px境界・Clear filtersのURLを既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-2)を参照。fixtureと認証後実routeの判定は分離する。
+
+### 購入10画面再監査 Step 3（2026-10-18）
+
+DS-PAGE-019: 拡大画像Dialogの初期focus/trap/Escape復帰、size/quantity/review/共有、在庫操作制約を既存実装の回帰として確認。要件・設計の追加変更なし。[今回の証跡](../design-system/PROGRESS.md#purchase-ten-step-3)を参照。fixtureと認証後実routeの判定は分離する。

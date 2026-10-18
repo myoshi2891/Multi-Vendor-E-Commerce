@@ -17,3 +17,9 @@
 ## 購入後6画面の共通表示（2026-10-10）
 
 [保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。既存CSS Moduleを役割別purchaseトークンへ接続。購入者scopeに限定し、API/DB/認可とデータ取得境界は変更しない。postpurchase suiteは既存priority serverから本番部品を描画し、トークン注入でcomputed style追従を検証する。
+
+## 購入10画面再監査 Step 10（2026-10-18）
+
+結果ラッパーに`role="region"`・`aria-label="Payment results"`・`tabIndex=-1`を設定。取得開始時に本文内のfocus有無を記録し、pending解除後にactiveElementがbodyの場合だけ結果へfocusする。初回表示では移動しない。CSSのfocus-visibleを結果regionにも適用し、既存purchase-focusを継承する。外部API・Action引数・データ投影・認可は不変。
+
+[保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)／[統合証跡](../design-system/PROGRESS.md#purchase-ten-final)。

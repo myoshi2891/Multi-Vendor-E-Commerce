@@ -20,3 +20,9 @@
 ## 購入後6画面の共通表示（2026-10-10）
 
 [保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。共通purchaseトークンで面・文字・罫線・選択・focus・操作寸法を表示し、主操作はgold/inkとする。既存機能要件・URL・所有者制約は維持する。独立Portalはテーマを明示し、意味色は色だけに依存させない。
+
+## 購入10画面再監査 Step 10（2026-10-18）
+
+ページ変更・再試行・検索による取得で操作元のfocusが失われた場合、完了後に名前付き結果regionへfocusを戻す。成功・空・取得失敗を含む。待機中に利用者が別の操作へfocusを移動した場合は奪わない。結果regionはTab順へ追加せず、purchase-focusの可視枠を持つ。
+
+[保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)／[統合証跡](../design-system/PROGRESS.md#purchase-ten-final)。

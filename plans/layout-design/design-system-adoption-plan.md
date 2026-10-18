@@ -1046,3 +1046,30 @@ DS-BASE-001はstore限定token導入のみ。dashboard/全体基盤・実Clerk/�
 
 - [x] 未完了8最終統合: 今回対象8件を検証済みへ更新。台帳68画面＝検証済み68／保留0／TODO0／実装済み0、部品249。実route39ケース＋051反復12/12、補助24/24、全体Jest3300/3303（3 skipped）、型/lint/harness・仕様/QA同期。[証跡](../../docs/design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。既存共通基盤・部品全scope・SDK全機能の判定は維持。
 - [x] DS-COMP-249 [SellerStoresList](../../src/components/dashboard/seller/seller-stores-list.tsx): 所有店舗ディレクトリ、通常/空/失敗/実retry、3幅・両テーマ・実routeを受け入れ。
+
+### 購入導線優先10画面再監査（2026-10-18）
+
+[保存計画](priority-ten-purchase-reaudit-design-system-plan.md)。既存68画面/249部品の判定・履歴を保持し、今回の回帰/修正/実route受け入れを分離する。
+
+- [x] Step 1 DS-PAGE-006 商品一覧: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 2 DS-PAGE-037 店舗詳細: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 3 DS-PAGE-019 商品詳細: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 4 DS-PAGE-007 カート: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 5 DS-PAGE-008 Checkout: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 6 DS-PAGE-003 注文詳細: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 7 DS-PAGE-009 比較: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 8 DS-PAGE-033 Wishlist: 既存実装のfixture回帰・仕様確認/文書同期。今回の実routeは統合欄で別判定。
+
+- [x] Step 9 DS-PAGE-028 注文一覧: キーボードfocus復帰のTDD修正・fixture検証・仕様同期。今回認証後実routeは保留。
+
+- [x] Step 10 DS-PAGE-030 支払履歴: キーボードfocus復帰のTDD修正・fixture検証・仕様同期。今回認証後実routeは保留。
+
+- [x] 購入10画面のfixture最終統合176/176・公開実route8/8・仕様/進捗同期。追加修正2画面、既存回帰8画面。[証跡](../../docs/design/design-system/PROGRESS.md#purchase-ten-final)。
+- [ ] 今回の実データ/認証後実route/SDK受け入れ。専用DB不在の解除条件は[QA正本](../../docs/testing/QA_HANDOFF.md#ds-purchase-ten-routes)。既存68画面/249部品の台帳判定は維持。

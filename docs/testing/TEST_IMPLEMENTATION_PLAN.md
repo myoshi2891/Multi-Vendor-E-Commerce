@@ -1378,3 +1378,25 @@ RTL8/query4/mobile h1のRed→Green。server/loading/上限validation/queued ref
 ## 未完了8画面（2026-10-17）
 
 ✅ Completed (2026-10-17): Step 1〜8と最終統合。店舗一覧TDD、タグ44pxのbrowser Red→Green、転送6件の回帰・実route39ケース、補助24/24、Clerk待ちあり051反復12/12、全体Jest3300/3303・型/lint/harness・仕様/QA同期。[証跡](../design/design-system/PROGRESS.md#remaining-eight-final-2026-10-17)。即時TODOはQA_HANDOFFのみ。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 1 DS-PAGE-006 商品一覧、既存purchase回帰82/82・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 2 DS-PAGE-037 店舗詳細、既存purchase回帰82/82・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 3 DS-PAGE-019 商品詳細、既存purchase回帰82/82・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 4 DS-PAGE-007 カート、既存purchase回帰82/82・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 5 DS-PAGE-008 Checkout、既存commerce回帰38/38・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 6 DS-PAGE-003 注文詳細、既存commerce回帰38/38・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 7 DS-PAGE-009 比較、既存priority回帰23/23・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 8 DS-PAGE-033 Wishlist、既存priority回帰23/23・関連RTL173/173・仕様同期。全体統計ではない。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 9 DS-PAGE-028 注文一覧、先行focus Red→Green・RTL30/30・新規browser8/8（両画面共有初回版）。最終回帰は保存計画参照。
+
+- ✅ Completed (2026-10-18): 購入10画面再監査 Step 10 DS-PAGE-030 支払履歴、先行focus Red→Green・RTL30/30・新規browser8/8（両画面共有初回版）。最終回帰は保存計画参照。
+
+- ✅ Completed (2026-10-18): 購入10画面最終統合、全体Jest3310/3313（3 skipped）・fixture176/176・公開実route8/8、coverage/dashboard・仕様/QA/進捗同期。今回認証後実routeはQA正本の条件待ち。

@@ -10,3 +10,9 @@
 ## 購入後6画面の共通表示（2026-10-10）
 
 [保存計画](../../../plans/layout-design/priority-six-p2-postpurchase-design-system-plan.md)。Red: supportの固定色が注入したlinkへ追従せず失敗。Green/Refactor: postpurchase --grep payment 4/4（3幅、axe AA、empty/pending/error/retry/paging/focus）；RTL payments-table 10/10。今回の表示変更は補助検証済み。認証後実ルートは保存ログイン状態がなく保留。既存の検証履歴を上書きしない。
+
+## 購入10画面再監査 Step 10（2026-10-18）
+
+先行Red: この画面のbrowser3幅で結果にfocusがなくinactive。RTLではページ変更/初回error再試行の2件失敗。Green: 共有RTL30/30、追加browser両画面8/8（初回版）、focusを奪わない検証を含む。追加の失敗/retry/contrastと全postpurchase回帰は最終統合の証跡を参照。
+
+[保存計画](../../../plans/layout-design/priority-ten-purchase-reaudit-design-system-plan.md)／[統合証跡](../design-system/PROGRESS.md#purchase-ten-final)。
