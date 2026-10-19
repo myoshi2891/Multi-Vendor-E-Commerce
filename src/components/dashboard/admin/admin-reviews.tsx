@@ -244,12 +244,28 @@ export default function AdminReviews({
     const [announcement, setAnnouncement] = useState(""),
         queueRef = useRef<HTMLElement>(null),
         // 更新したカードの位置。refresh で reviews が差し替わったら同じ位置（= 次のカード）へ focus する
-        focusIndex = useRef<number | null>(null);
+        focusIndex = useRef<number | null>(null),
+        announceFrame = useRef<number | null>(null);
 
+    // 同じ文言の再設定は DOM が変わらず読み上げられないので、一度空にして次フレームで入れ直す
     const handleUpdated = (reviewId: string) => {
         focusIndex.current = reviews.findIndex((r) => r.id === reviewId);
-        setAnnouncement("Review updated.");
+        setAnnouncement("");
+        if (announceFrame.current !== null)
+            cancelAnimationFrame(announceFrame.current);
+        announceFrame.current = requestAnimationFrame(() => {
+            announceFrame.current = null;
+            setAnnouncement("Review updated.");
+        });
     };
+
+    useEffect(
+        () => () => {
+            if (announceFrame.current !== null)
+                cancelAnimationFrame(announceFrame.current);
+        },
+        []
+    );
 
     useEffect(() => {
         const index = focusIndex.current;
