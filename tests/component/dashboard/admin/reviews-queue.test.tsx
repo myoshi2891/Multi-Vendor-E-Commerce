@@ -140,6 +140,61 @@ describe("AdminReviews — 状態ごとの操作", () => {
         expect(refresh).toHaveBeenCalledTimes(1);
     });
 
+    it("refresh でカードがキューから外れても成功を伝え、focus を次のカードへ移す", async () => {
+        const user = userEvent.setup();
+        const view = renderQueue([
+            item("r1", "PENDING_REVIEW"),
+            item("r2", "PENDING_REVIEW", { authorName: "Blair Kim" }),
+        ]);
+
+        await user.click(
+            within(
+                screen.getByRole("article", { name: /Avery Stone/ })
+            ).getByRole("button", { name: "Approve" })
+        );
+        expect(await screen.findByText("Review updated.")).toBeInTheDocument();
+
+        // refresh 後のサーバーデータ（承認済みの r1 は既定の絞り込みから外れる）
+        view.rerender(
+            <AdminReviews
+                reviews={[
+                    item("r2", "PENDING_REVIEW", { authorName: "Blair Kim" }),
+                ]}
+                status={null}
+                page={1}
+                totalPages={1}
+                moderateAction={jest.fn()}
+            />
+        );
+
+        expect(screen.getByRole("status")).toHaveTextContent("Review updated.");
+        expect(
+            screen.getByRole("article", { name: /Blair Kim/ })
+        ).toHaveFocus();
+    });
+
+    it("最後の 1 件が外れたら focus をキューへ移す", async () => {
+        const user = userEvent.setup();
+        const view = renderQueue([item("r1", "PENDING_REVIEW")]);
+
+        await user.click(screen.getByRole("button", { name: "Approve" }));
+        expect(await screen.findByText("Review updated.")).toBeInTheDocument();
+        view.rerender(
+            <AdminReviews
+                reviews={[]}
+                status={null}
+                page={1}
+                totalPages={1}
+                moderateAction={jest.fn()}
+            />
+        );
+
+        expect(screen.getByRole("status")).toHaveTextContent("Review updated.");
+        expect(
+            screen.getByRole("region", { name: "Review queue" })
+        ).toHaveFocus();
+    });
+
     it("削除は理由を求め、空なら送らない", async () => {
         const user = userEvent.setup();
         const moderateAction = jest.fn();

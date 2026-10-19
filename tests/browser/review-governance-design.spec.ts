@@ -141,9 +141,10 @@ for (const width of [1440, 768, 390]) {
                 "Invalid moderation transition."
             );
             await approve.click();
-            await expect(pending.getByRole("status")).toHaveText(
-                "Review updated."
-            );
+            // 成功はカードの外の常設 live region に出す（refresh でカードが外れても残る）
+            await expect(
+                page.getByRole("status").filter({ hasText: "Review updated." })
+            ).toBeVisible();
             await expectNoOverflowAndAxe(page);
 
             // 絞り込み: 削除済みは操作なしで理由を出す
