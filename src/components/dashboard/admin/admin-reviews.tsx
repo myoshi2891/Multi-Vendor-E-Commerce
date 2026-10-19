@@ -1,5 +1,5 @@
 "use client";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ReviewStatus } from "@prisma/client";
@@ -36,13 +36,18 @@ const errorMessage = (error: unknown): string => {
     return error.message;
 };
 
-/** レビュー 1 件。状態ごとに遷移表で許された操作だけを出す（design review-governance §3.2） */
+/**
+ * レビュー 1 件。状態ごとに遷移表で許された操作だけを出す（design review-governance §3.2）。
+ * 成功の通知は親が持つ —— refresh でこのカード自体がキューから外れるため
+ */
 function ReviewQueueCard({
     review,
     moderateAction,
+    onUpdated,
 }: Readonly<{
     review: ReviewModerationQueueItem;
     moderateAction: ModerateReviewAction;
+    onUpdated: (reviewId: string) => void;
 }>) {
     const router = useRouter(),
         id = useId(),
@@ -50,25 +55,19 @@ function ReviewQueueCard({
     const [busy, setBusy] = useState(false),
         [confirming, setConfirming] = useState<ModerationAction | null>(null),
         [reason, setReason] = useState(""),
-        [feedback, setFeedback] = useState<{
-            kind: "ok" | "error";
-            text: string;
-        } | null>(null);
+        [error, setError] = useState<string | null>(null);
     const actions = availableModerationActions(review.status);
 
     const run = async (action: ModerationAction) => {
         if (pending.current) return;
         const trimmed = reason.trim();
         if (requiresModerationReason(action) && trimmed === "") {
-            setFeedback({
-                kind: "error",
-                text: "Enter a reason before continuing.",
-            });
+            setError("Enter a reason before continuing.");
             return;
         }
         pending.current = true;
         setBusy(true);
-        setFeedback(null);
+        setError(null);
         try {
             await moderateAction({
                 reviewId: review.id,
@@ -77,12 +76,12 @@ function ReviewQueueCard({
                     ? { reason: trimmed }
                     : {}),
             });
-            setFeedback({ kind: "ok", text: "Review updated." });
             setConfirming(null);
             setReason("");
+            onUpdated(review.id);
             router.refresh();
-        } catch (error: unknown) {
-            setFeedback({ kind: "error", text: errorMessage(error) });
+        } catch (caught: unknown) {
+            setError(errorMessage(caught));
         } finally {
             pending.current = false;
             setBusy(false);
@@ -93,6 +92,8 @@ function ReviewQueueCard({
         <article
             // 同じ商品へのレビューが並ぶので、商品名だけでなく投稿者でも区別する
             aria-label={`Review by ${review.authorName} for ${review.productName}`}
+            // refresh 後の focus 復帰先（Tab 順には入れない）
+            tabIndex={-1}
             className={`${styles.panel} ${styles.controls} space-y-3`}
         >
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -157,7 +158,7 @@ function ReviewQueueCard({
                                     setConfirming(
                                         confirming === action ? null : action
                                     );
-                                    setFeedback(null);
+                                    setError(null);
                                 }}
                             >
                                 {MODERATION_ACTION_LABELS[action]}
@@ -203,14 +204,9 @@ function ReviewQueueCard({
                 </div>
             )}
             {busy && <output className="block text-sm">Saving…</output>}
-            {!busy && feedback?.kind === "ok" && (
-                <output className={`${styles.success} block text-sm`}>
-                    {feedback.text}
-                </output>
-            )}
-            {feedback?.kind === "error" && (
+            {error && (
                 <p role="alert" className={styles.alert}>
-                    {feedback.text}
+                    {error}
                 </p>
             )}
         </article>
@@ -242,6 +238,24 @@ export default function AdminReviews({
         pathname = usePathname(),
         searchParams = useSearchParams();
     const [stableAction] = useState(() => moderateAction);
+    const [announcement, setAnnouncement] = useState(""),
+        queueRef = useRef<HTMLElement>(null),
+        // 更新したカードの位置。refresh で reviews が差し替わったら同じ位置（= 次のカード）へ focus する
+        focusIndex = useRef<number | null>(null);
+
+    const handleUpdated = (reviewId: string) => {
+        focusIndex.current = reviews.findIndex((r) => r.id === reviewId);
+        setAnnouncement("Review updated.");
+    };
+
+    useEffect(() => {
+        const index = focusIndex.current;
+        const queue = queueRef.current;
+        if (index === null || !queue) return;
+        focusIndex.current = null;
+        const cards = queue.querySelectorAll<HTMLElement>("article");
+        (cards[Math.min(index, cards.length - 1)] ?? queue).focus();
+    }, [reviews]);
 
     /** 現在の URL を保ったまま status / page を差し替える。page 1 と既定の status は URL から外す */
     const hrefFor = (next: {
@@ -293,23 +307,33 @@ export default function AdminReviews({
                     ))}
                 </select>
             </div>
-            {reviews.length === 0 ? (
-                <p className={styles.panel}>
-                    {status
-                        ? `No ${REVIEW_STATUS_LABELS[status].toLowerCase()} reviews.`
-                        : "No reviews need attention."}
-                </p>
-            ) : (
-                <div className="grid gap-4">
-                    {reviews.map((review) => (
+            {/* カードの外に常設する。refresh で更新したカードが外れても読み上げを失わない */}
+            <output className={`${styles.success} block text-sm`}>
+                {announcement}
+            </output>
+            <section
+                ref={queueRef}
+                aria-label="Review queue"
+                tabIndex={-1}
+                className="grid gap-4 outline-none"
+            >
+                {reviews.length === 0 ? (
+                    <p className={styles.panel}>
+                        {status
+                            ? `No ${REVIEW_STATUS_LABELS[status].toLowerCase()} reviews.`
+                            : "No reviews need attention."}
+                    </p>
+                ) : (
+                    reviews.map((review) => (
                         <ReviewQueueCard
                             key={review.id}
                             review={review}
                             moderateAction={stableAction}
+                            onUpdated={handleUpdated}
                         />
-                    ))}
-                </div>
-            )}
+                    ))
+                )}
+            </section>
             {totalPages > 1 && (
                 <nav
                     aria-label="Review queue pages"
