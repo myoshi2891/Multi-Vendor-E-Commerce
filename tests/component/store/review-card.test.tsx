@@ -87,6 +87,29 @@ describe("ReviewCard — 通報（plan 092）", () => {
         expect(onReport).not.toHaveBeenCalled();
     });
 
+    it("理由かメモを変更すると、表示中のエラーを消す", async () => {
+        render(<ReviewCard review={makeReview()} onReport={jest.fn()} />);
+        openForm();
+        const submit = screen.getByRole("button", { name: "Submit report" });
+
+        fireEvent.click(submit);
+        expect(await screen.findByRole("alert")).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("Reason"), {
+            target: { value: "OTHER" },
+        });
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+        fireEvent.change(screen.getByLabelText("Reason"), {
+            target: { value: "" },
+        });
+        fireEvent.click(submit);
+        expect(await screen.findByRole("alert")).toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("Details (optional)"), {
+            target: { value: "spam" },
+        });
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
     it("理由とメモを送り、送信中は二重に送れず、成功したらフォームを閉じる", async () => {
         let resolve!: (value: { ok: true; status: "PUBLISHED" }) => void;
         const onReport = jest.fn(
