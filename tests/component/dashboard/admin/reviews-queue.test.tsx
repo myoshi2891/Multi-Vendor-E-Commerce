@@ -213,6 +213,22 @@ describe("AdminReviews — 状態ごとの操作", () => {
         expect(moderateAction).not.toHaveBeenCalled();
     });
 
+    it("理由を入力し直すと、出ていたエラーを消す", async () => {
+        const user = userEvent.setup();
+        renderQueue([item("r1", "FLAGGED")], jest.fn());
+
+        await user.click(screen.getByRole("button", { name: "Remove" }));
+        await user.click(
+            screen.getByRole("button", { name: "Confirm remove" })
+        );
+        expect(await screen.findByRole("alert")).toBeInTheDocument();
+
+        await user.type(screen.getByLabelText(/Reason/), "S");
+
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.getByLabelText(/Reason/)).toHaveValue("S");
+    });
+
     it("理由付きで削除を送り、送信中はボタンをロックする", async () => {
         const user = userEvent.setup();
         let resolve!: (value: { id: string; status: "REMOVED" }) => void;
