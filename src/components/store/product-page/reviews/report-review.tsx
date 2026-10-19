@@ -109,7 +109,10 @@ export default function ReportReview({
                         id={`${id}-reason`}
                         value={reason}
                         disabled={busy}
-                        onChange={(event) => setReason(event.target.value)}
+                        onChange={(event) => {
+                            setReason(event.target.value);
+                            setError(null);
+                        }}
                     >
                         <option value="">Choose a reason</option>
                         {REASONS.map((value) => (
@@ -125,7 +128,10 @@ export default function ReportReview({
                         maxLength={500}
                         value={note}
                         disabled={busy}
-                        onChange={(event) => setNote(event.target.value)}
+                        onChange={(event) => {
+                            setNote(event.target.value);
+                            setError(null);
+                        }}
                     />
                     <div>
                         <button
