@@ -188,7 +188,10 @@ function ReviewQueueCard({
                         maxLength={500}
                         value={reason}
                         disabled={busy}
-                        onChange={(event) => setReason(event.target.value)}
+                        onChange={(event) => {
+                            setReason(event.target.value);
+                            setError(null);
+                        }}
                     />
                     <div>
                         <Button
