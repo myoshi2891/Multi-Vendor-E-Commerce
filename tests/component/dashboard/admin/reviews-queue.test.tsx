@@ -1,6 +1,6 @@
 /** @jest-environment jsdom */
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import AdminReviews from "@/components/dashboard/admin/admin-reviews";
@@ -171,6 +171,49 @@ describe("AdminReviews — 状態ごとの操作", () => {
         expect(
             screen.getByRole("article", { name: /Blair Kim/ })
         ).toHaveFocus();
+    });
+
+    it("連続して成功したら live region を一度空にしてから再設定し、毎回読み上げさせる", async () => {
+        // Arrange: 次フレームの再設定を手動で進める
+        const frames: FrameRequestCallback[] = [];
+        const raf = jest
+            .spyOn(window, "requestAnimationFrame")
+            .mockImplementation((callback) => {
+                frames.push(callback);
+                return frames.length;
+            });
+        const user = userEvent.setup();
+        renderQueue([
+            item("r1", "PENDING_REVIEW"),
+            item("r2", "PENDING_REVIEW", { authorName: "Blair Kim" }),
+        ]);
+        const approve = (name: RegExp) =>
+            user.click(
+                within(screen.getByRole("article", { name })).getByRole(
+                    "button",
+                    { name: "Approve" }
+                )
+            );
+
+        try {
+            // Act & Assert: 1 件目
+            await approve(/Avery Stone/);
+            expect(screen.getByRole("status")).toBeEmptyDOMElement();
+            act(() => frames.shift()?.(0));
+            expect(screen.getByRole("status")).toHaveTextContent(
+                "Review updated."
+            );
+
+            // Act & Assert: 2 件目も同じ文言のまま残さず、空を挟む
+            await approve(/Blair Kim/);
+            expect(screen.getByRole("status")).toBeEmptyDOMElement();
+            act(() => frames.shift()?.(0));
+            expect(screen.getByRole("status")).toHaveTextContent(
+                "Review updated."
+            );
+        } finally {
+            raf.mockRestore();
+        }
     });
 
     it("最後の 1 件が外れたら focus をキューへ移す", async () => {
