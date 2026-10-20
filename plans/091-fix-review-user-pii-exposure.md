@@ -117,12 +117,14 @@
 
 ## Done criteria
 
-- [ ] `bunx tsc --noEmit` exit 0
-- [ ] `bunx jest src/queries/product.test.ts` all pass（新規 2 件を含む）
-- [ ] `grep -n "user: true" src/queries/product.ts` が 0 件
-- [ ] 変更が In scope のファイルに限られる（`git status`）
-- [ ] テスト数の変動を `spec-sync-after-test` で同期した
-- [ ] `plans/README.md` の本プランの行を更新した
+- [x] `bunx tsc --noEmit` exit 0
+- [x] `bunx jest src/queries/product.test.ts` all pass（新規 2 件を含む）
+- [x] `grep -n "user: true" src/queries/product.ts` が 0 件
+- [x] 変更が In scope のファイルに限られる（`git status`）
+- [x] テスト数の変動を `spec-sync-after-test` で同期した（`QA_HANDOFF.md` / `docs/PROGRESS.md` の 2026-10-18 plan 091 節）
+- [x] `plans/README.md` の本プランの行を更新した
+
+> 2026-10-20 再確認: tsc exit 0 / `product.test.ts` 94 passed / `user: true` 0 件。
 
 ## STOP conditions
 
