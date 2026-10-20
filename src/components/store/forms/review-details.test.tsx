@@ -57,6 +57,7 @@ jest.mock('../shared/upload-images', () => {
 });
 
 import ReviewDetails from './review-details';
+import toast from 'react-hot-toast';
 import { VariantInfoType, ReviewWithImageType } from '@/lib/types';
 
 const mockVariantsInfo: VariantInfoType[] = [
@@ -276,7 +277,7 @@ describe('ReviewDetails Component Tests', () => {
 
     it('should submit review successfully', async () => {
         const { upsertReview } = require('@/queries/review');
-        upsertReview.mockResolvedValue({ id: 'mock-review-id' });
+        upsertReview.mockResolvedValue({ id: 'mock-review-id', status: 'PUBLISHED' });
 
         render(
             <ReviewDetails
@@ -322,8 +323,53 @@ describe('ReviewDetails Component Tests', () => {
                 size: 'One Size',
                 color: 'Black',
             });
-            expect(mockSetReviews).toHaveBeenCalled();
+            expect(mockSetReviews).toHaveBeenCalledWith([
+                { id: 'mock-review-id', status: 'PUBLISHED' },
+            ]);
+            expect(toast.success).toHaveBeenCalledWith('Review added successfully.');
         });
+    });
+
+    it('should drop a non-public review from the list and show the moderation message', async () => {
+        // Arrange: 既に公開一覧にある自分のレビューを、事前審査モードで再投稿すると PENDING_REVIEW が返る
+        const { upsertReview } = require('@/queries/review');
+        upsertReview.mockResolvedValue({ id: 'mock-review-id', status: 'PENDING_REVIEW' });
+        const existing = { id: 'mock-review-id' } as ReviewWithImageType;
+        const other = { id: 'other-review-id' } as ReviewWithImageType;
+
+        render(
+            <ReviewDetails
+                productId="test-product"
+                variantsInfo={mockVariantsInfo}
+                reviews={[existing, other]}
+                setReviews={mockSetReviews}
+            />
+        );
+
+        const star = screen.getByTestId('star-wrapper-2');
+        Object.defineProperty(star, 'getBoundingClientRect', {
+            value: () => ({ left: 0, right: 40, top: 0, bottom: 40, width: 40, height: 40 }),
+            configurable: true
+        });
+        fireEvent.click(star, { clientX: 30 });
+        const sizeInput = screen.getAllByPlaceholderText('Select size')[0];
+        fireEvent.focus(sizeInput);
+        fireEvent.mouseDown(screen.getByText('One Size'));
+        fireEvent.change(screen.getByPlaceholderText('Write your review here...'), {
+            target: { value: 'Good product!' },
+        });
+
+        // Act
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: 'Submit Review' }));
+        });
+
+        // Assert: 非公開の返却は積まず、既存の公開コピーだけ取り除く
+        await waitFor(() => {
+            expect(mockSetReviews).toHaveBeenCalledWith([other]);
+            expect(toast.success).toHaveBeenCalledWith('Review submitted and awaiting moderation.');
+        });
+        expect(toast.success).not.toHaveBeenCalledWith('Review added successfully.');
     });
 
     it('should handle submit error and show error log', async () => {
