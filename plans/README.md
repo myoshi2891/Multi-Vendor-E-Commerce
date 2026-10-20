@@ -28,7 +28,7 @@ improve スキルの監査ラウンド（R1〜R14）と、その後の実装ラ�
 | [017](017-spike-recommendation-foundation.md) | **Spike**: ルールベース・レコメンド基盤 v1 設計 | direction | P3 | — | TODO |
 | [020](020-spike-promotion-engine.md) | **Spike**: プロモーション・キャンペーンエンジン設計 | direction | P3 | — | TODO |
 | [022](022-spike-seller-performance-trust.md) | **Spike**: セラーパフォーマンス指標・自動措置設計 | direction | P3 | — | TODO |
-| [092](092-implement-review-governance.md) | レビューの購入検証・モデレーション・通報・店舗評価集計（019 の後続実装） | direction | P3 | 091 | IN PROGRESS（2026-10-18・実装・検証済み・未コミット / リモート DB 適用待ち） |
+| [092](092-implement-review-governance.md) | レビューの購入検証・モデレーション・通報・店舗評価集計（019 の後続実装） | direction | P3 | 091 | IN PROGRESS（2026-10-18・実装・検証・コミット済み / リモート DB 適用待ち） |
 | [085](085-implement-public-endpoint-rate-limit.md) | 公開エンドポイントのレート制限（cookie = アプリ内 / 検索 = Vercel WAF・ADR-009） | security | P3 | 025 | IN PROGRESS（2026-10-07・アプリ側完了 541d4b58〜265f8ee2 / WAF 待ち） |
 | [068](068-implement-category-tree-admin-cutover.md) | カテゴリツリー: admin UI 統合 + Phase C カットオーバー（**不可逆**・013 の後続実装 3/3） | direction | P2 | 067 | IN PROGRESS |
 | [086](086-implement-notification-foundation.md) | 通知基盤（Outbox + sweeper）と店舗単位の発送通知（021 の後続実装・Resend 導入はユーザー承認後） | direction | P3 | 021 | IN PROGRESS（2026-10-07・e83ead3d〜3aa15cf0 / Resend 承認待ち） |

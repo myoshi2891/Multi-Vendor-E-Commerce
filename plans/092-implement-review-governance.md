@@ -239,14 +239,15 @@ Green の形（`$transaction` の中、design §5.2 の順序を守る）:
 
 ## Done criteria
 
-- [ ] `bunx tsc --noEmit` exit 0、`bun run lint` エラー 0
-- [ ] `bun run test` pass（新規テストを含む）
-- [ ] `bun run test:integration` pass。**並行投稿で Product と Store の集計が正しいテスト**と、**非公開レビューが表示と集計の両方から除外されるテスト**がある
-- [ ] `moderateReview` / `reportReview` に IDOR 3 階層のテストがある
-- [ ] Step 1 の Verify（Product 合計が不変、Store 合計 = 全レビュー数）を満たした
-- [ ] `bun run erd:generate` 済みで、`data-model.drawio` がスキーマの変更と同じコミットにある
-- [ ] Step 6 の grep で、公開経路の全ヒットに `publicReviewWhere` がある
-- [ ] `plans/README.md` の本プランの行を更新した
+- [x] `bunx tsc --noEmit` exit 0、`bun run lint` エラー 0
+- [x] `bun run test` pass（新規テストを含む）
+- [x] `bun run test:integration` pass。**並行投稿で Product と Store の集計が正しいテスト**と、**非公開レビューが表示と集計の両方から除外されるテスト**がある
+- [x] `moderateReview` / `reportReview` に IDOR 3 階層のテストがある
+- [x] Step 1 の Verify（Product 合計が不変、Store 合計 = 全レビュー数）を満たした（Step 0 の前提が崩れたため置き換えた検証で確認 — 「実施結果」の Step 0 を参照）
+- [x] `bun run erd:generate` 済みで、`data-model.drawio` がスキーマの変更と同じコミットにある
+- [x] Step 6 の grep で、公開経路の全ヒットに `publicReviewWhere` がある
+- [x] `plans/README.md` の本プランの行を更新した
+- [ ] マイグレーション 3 本（`review_governance` / `review_moderation_reason` / `moderation_policy_updated_at_default`）をリモート DB（Neon）へ適用した（オペレーター作業）
 
 ## STOP conditions
 
@@ -263,7 +264,7 @@ Green の形（`$transaction` の中、design §5.2 の順序を守る）:
 - レビュアーが最も精査すべき点: トランザクション内のロックの順序（Product → Store → Review）、`aggregate` の where の公開集合、backfill の冪等性
 - 同じ店舗の投稿が Store ロックで直列になる。ロック待ちが問題になったら design §5.2 のトレードオフ（非同期再計算）を参照
 
-## 実施結果（2026-10-18・未コミット）
+## 実施結果（2026-10-18・コミット済み / リモート DB 適用待ち）
 
 - **環境**: `.env` は Neon（リモート）を指すため、マイグレーションの作成・適用はローカルの Docker 開発 DB
   （`docker compose up -d db`・`localhost:5432/multivendor_dev`）に環境変数を上書きして行った。
