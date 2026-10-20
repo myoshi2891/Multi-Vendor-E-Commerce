@@ -247,7 +247,7 @@ Green の形（`$transaction` の中、design §5.2 の順序を守る）:
 - [x] `bun run erd:generate` 済みで、`data-model.drawio` がスキーマの変更と同じコミットにある
 - [x] Step 6 の grep で、公開経路の全ヒットに `publicReviewWhere` がある
 - [x] `plans/README.md` の本プランの行を更新した
-- [ ] マイグレーション 3 本（`review_governance` / `review_moderation_reason` / `moderation_policy_updated_at_default`）をリモート DB（Neon）へ適用した（オペレーター作業）
+- [ ] マイグレーション 4 本（`review_governance` / `review_moderation_reason` / `moderation_policy_updated_at_default` / `review_status_created_at_index`）をリモート DB（Neon）へ適用した（オペレーター作業）
 
 ## STOP conditions
 
@@ -269,8 +269,8 @@ Green の形（`$transaction` の中、design §5.2 の順序を守る）:
 - **環境**: `.env` は Neon（リモート）を指すため、マイグレーションの作成・適用はローカルの Docker 開発 DB
   （`docker compose up -d db`・`localhost:5432/multivendor_dev`）に環境変数を上書きして行った。
   **リモート（Neon・本番）への適用は未実施**（オペレーターが `safe-migration` / `migrate deploy` で行う）。
-  対象は `review_governance` / `review_moderation_reason` / `moderation_policy_updated_at_default` の 3 本で、
-  3 本すべての適用を確認してから完了とする。
+  対象は `review_governance` / `review_moderation_reason` / `moderation_policy_updated_at_default` / `review_status_created_at_index` の 4 本で、
+  4 本すべての適用を確認してから完了とする。
 - **Step 0**: CHECK 違反 0 件。`COUNT(Review)=154` に対し `SUM(Product.numReviews)=15`（36 商品が不一致）。
   原因は seeder が集計を更新しないこと（DEFERRED: REVIEW-SEED-AGGREGATES）で、backfill の誤りではない。
   そのため Step 1 の検証は「Product 合計が不変」ではなく、**全商品・全店舗で集計値が実値と一致すること**
