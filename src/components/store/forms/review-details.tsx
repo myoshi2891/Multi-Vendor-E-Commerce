@@ -18,6 +18,7 @@ import { Button } from '../ui/button'
 import { PulseLoader } from 'react-spinners'
 import ImageUploadStore from '../shared/upload-images'
 import { upsertReview } from '@/queries/review'
+import { isPublicReviewStatus } from '@/lib/review-visibility'
 import { v4 } from 'uuid'
 import styles from '../product-page/product.module.css'
 
@@ -220,11 +221,20 @@ export default function ReviewDetails({
                 color: values.color,
             })
 
-            if (response.id) {
-                const rev = reviews.filter((rev) => rev.id !== response.id)
-                setReviews([...rev, response])
+            if (!response.id) {
+                toast.success('Review added successfully.')
+                return
             }
 
+            const rev = reviews.filter((rev) => rev.id !== response.id)
+            // 審査待ち等の非公開レビューは公開一覧に積まない（既存の公開コピーも取り除く）
+            if (!isPublicReviewStatus(response.status)) {
+                setReviews(rev)
+                toast.success('Review submitted and awaiting moderation.')
+                return
+            }
+
+            setReviews([...rev, response])
             toast.success('Review added successfully.')
         } catch (error: unknown) {
             // Handle error submission errors
