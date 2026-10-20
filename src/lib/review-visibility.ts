@@ -27,6 +27,7 @@ export const publicReviewWhere = (
 /**
  * 公開経路で返すレビューの列。`moderationReason` / `moderatedAt` は投稿者本人にだけ見せる列なので含めない
  * （plan 092）。投稿者は表示列だけ（email / role を載せない・plan 091）。
+ * `userId` も内部識別子なので返さない（通報は `id` だけで行える）。
  */
 export const publicReviewSelect = {
     id: true,
@@ -39,7 +40,6 @@ export const publicReviewSelect = {
     likes: true,
     status: true,
     isVerifiedPurchase: true,
-    userId: true,
     productId: true,
     createdAt: true,
     updatedAt: true,

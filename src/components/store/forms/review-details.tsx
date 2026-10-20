@@ -2,8 +2,8 @@
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { AddReviewSchema } from '@/lib/schemas'
 import {
+    PublicReviewType,
     ReviewDetailsType,
-    ReviewWithImageType,
     VariantInfoType,
 } from '@/lib/types'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -171,8 +171,9 @@ export default function ReviewDetails({
     productId: string
     data?: ReviewDetailsType
     variantsInfo: VariantInfoType[]
-    reviews: ReviewWithImageType[]
-    setReviews: Dispatch<SetStateAction<ReviewWithImageType[]>>
+    // 一覧は公開経路の state を共有する。upsert の返却（userId 付き）は部分型としてそのまま積める
+    reviews: PublicReviewType[]
+    setReviews: Dispatch<SetStateAction<PublicReviewType[]>>
 }) {
     // State for selected variant
     const [activeVariant, setActiveVariant] = useState<VariantInfoType>(

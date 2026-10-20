@@ -3,7 +3,7 @@ import {
     RatingStatisticsType,
     ReviewsFilterType,
     ReviewsOrderType,
-    ReviewWithImageType,
+    PublicReviewType,
     VariantInfoType,
 } from '@/lib/types'
 import { FC, useEffect, useState } from 'react'
@@ -23,7 +23,7 @@ interface Props {
     productId: string
     rating: number
     statistics: RatingStatisticsType
-    reviews: ReviewWithImageType[]
+    reviews: PublicReviewType[]
     variantsInfo: VariantInfoType[]
     /** 通報の Server Action。Server Component（商品ページ）から受け取る（plan 092） */
     onReport?: ReportReviewAction
@@ -37,7 +37,7 @@ const ProductReviews: FC<Props> = ({
     variantsInfo,
     onReport,
 }) => {
-    const [data, setData] = useState<ReviewWithImageType[]>(reviews)
+    const [data, setData] = useState<PublicReviewType[]>(reviews)
     const { totalReviews, ratingStatistics } = statistics
     const half = Math.ceil(data.length / 2)
 

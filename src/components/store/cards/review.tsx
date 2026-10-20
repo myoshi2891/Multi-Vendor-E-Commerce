@@ -1,6 +1,6 @@
 'use client'
 import ColorWheel from '@/components/shared/color-wheel'
-import { ReviewWithImageType } from '@/lib/types'
+import { PublicReviewType } from '@/lib/types'
 import type { ReportReviewAction } from '@/lib/review-moderation'
 import ReportReview from '../product-page/reviews/report-review'
 import Image from 'next/image'
@@ -12,7 +12,7 @@ export default function ReviewCard({
     editorial = false,
     onReport,
 }: {
-    review: ReviewWithImageType
+    review: PublicReviewType
     editorial?: boolean
     /** 渡されたときだけ通報の導線を出す（Server Component から Server Action を受け取る・plan 092） */
     onReport?: ReportReviewAction
