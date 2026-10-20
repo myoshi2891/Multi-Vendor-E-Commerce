@@ -2081,6 +2081,9 @@ describe("getProductFilteredReviews", () => {
         // 審査の理由・日時は公開しない（plan 092）
         expect(args.select).not.toHaveProperty("moderationReason");
         expect(args.select).not.toHaveProperty("moderatedAt");
+        // 内部識別子の userId は公開しない。通報に要る id は残す
+        expect(args.select).not.toHaveProperty("userId");
+        expect(args.select.id).toBe(true);
         expect(args.include).toBeUndefined();
     });
 

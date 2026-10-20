@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import ReviewCard from "@/components/store/cards/review";
-import type { ReviewWithImageType } from "@/lib/types";
+import type { PublicReviewType } from "@/lib/types";
 
 // 星とカラーホイールは描画だけの第三者 UI。本テストの関心（バッジと通報）から外す
 jest.mock("react-rating-stars-component", () => () => null);
@@ -17,11 +17,10 @@ beforeEach(() => {
 });
 
 const makeReview = (
-    overrides: Partial<ReviewWithImageType> = {}
-): ReviewWithImageType => ({
+    overrides: Partial<PublicReviewType> = {}
+): PublicReviewType => ({
     id: "review-001",
     productId: "product-001",
-    userId: "author-001",
     variant: "Ivory",
     review: "A thoughtful piece that lasts.",
     rating: 4.5,

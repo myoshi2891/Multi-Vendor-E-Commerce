@@ -24,7 +24,7 @@ import { createMockCategory } from "@/config/test-fixtures";
 import ReviewDetails from "@/components/store/forms/review-details";
 import ReviewCard from "@/components/store/cards/review";
 import { createMockUser } from "@/config/test-fixtures";
-import type { ReviewWithImageType } from "@/lib/types";
+import type { PublicReviewType } from "@/lib/types";
 import ReviewsSort from "@/components/store/product-page/reviews/sort";
 import type { ReviewsOrderType } from "@/lib/types";
 import type { ReviewsFilterType } from "@/lib/types";
@@ -61,7 +61,7 @@ function App({ storeCollection, homeSelection }: { storeCollection: React.ReactN
     const [quantity, setQuantity] = useState(1);
     const galleryImages = [products[0].variants[0].images[0], { ...products[0].variants[0].images[0], id: "image-2" }];
     const [activeImage, setActiveImage] = useState<(typeof galleryImages)[number] | null>(galleryImages[0]);
-    const [reviews, setReviews] = useState<ReviewWithImageType[]>([]);
+    const [reviews, setReviews] = useState<PublicReviewType[]>([]);
     const [reviewSort, setReviewSort] = useState<ReviewsOrderType>();
     const [filters, setFilters] = useState<ReviewsFilterType>({});
     return (
@@ -168,7 +168,7 @@ function App({ storeCollection, homeSelection }: { storeCollection: React.ReactN
                             }}
                         />
                         {new URLSearchParams(location.search).has("review-form") && <>
-                            <ReviewCard editorial review={{ id: "review", productId: "product", userId: "user", createdAt: new Date(), updatedAt: new Date(), rating: 4.5, likes: 0, status: "PUBLISHED", isVerifiedPurchase: true, review: "A thoughtful piece ".repeat(30), variant: "Ivory", size: "M", quantity: "1", color: "ivory", images: [], user: createMockUser({ picture: "/assets/images/default-user.jpg" }) }} />
+                            <ReviewCard editorial review={{ id: "review", productId: "product", createdAt: new Date(), updatedAt: new Date(), rating: 4.5, likes: 0, status: "PUBLISHED", isVerifiedPurchase: true, review: "A thoughtful piece ".repeat(30), variant: "Ivory", size: "M", quantity: "1", color: "ivory", images: [], user: createMockUser({ picture: "/assets/images/default-user.jpg" }) }} />
                             <ReviewDetails productId="product" variantsInfo={[{ ...products[0].variants[0], variantImage: "/assets/brand/star.svg", variantUrl: "/product/considered-piece/ivory", colors: [{ name: "ivory" }] }]} reviews={reviews} setReviews={setReviews} />
                         </>}
                         <ReviewsSort sort={reviewSort} setSort={setReviewSort} />

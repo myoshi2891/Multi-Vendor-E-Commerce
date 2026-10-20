@@ -15,7 +15,7 @@ import type {
     ReportReviewAction,
     ReviewModerationQueueItem,
 } from "@/lib/review-moderation";
-import type { ReviewWithImageType } from "@/lib/types";
+import type { PublicReviewType } from "@/lib/types";
 
 const params = new URLSearchParams(location.search);
 const screen = params.get("screen") ?? "store";
@@ -49,11 +49,10 @@ const moderateAction: ModerateReviewAction = ({ reviewId }) =>
 
 const storeReview = (
     id: string,
-    overrides: Partial<ReviewWithImageType>
-): ReviewWithImageType => ({
+    overrides: Partial<PublicReviewType>
+): PublicReviewType => ({
     id,
     productId: "product",
-    userId: `user-${id}`,
     variant: "Ivory",
     review: LONG.repeat(3),
     rating: 4.5,
