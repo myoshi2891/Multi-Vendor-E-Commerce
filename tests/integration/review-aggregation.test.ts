@@ -24,14 +24,15 @@
  * 関連:
  * - ADR-004: docs/architecture/decisions/004-integration-test-db-strategy.md
  * - plans/034-integration-test-review-aggregation.md
- * - src/queries/review.ts（検証対象。本テストでは 1 行も変更しない）
+ * - src/queries/review.ts（検証対象）
+ * - plans/092-implement-review-governance.md（店舗集計・購入検証・モデレーションのシナリオ 8〜12）
  */
 
 // ----------------------------------------------------------------------------
 // Mocks (must be declared before importing the modules they affect)
 // ----------------------------------------------------------------------------
 
-// upsertReview は currentUser() を直接呼ぶ（auth-guards は経由しない）。
+// auth-guards（requireUser / requireAdmin）は内部で currentUser() を呼ぶ。
 jest.mock("@clerk/nextjs/server", () => ({
     currentUser: jest.fn(),
 }));
@@ -41,16 +42,28 @@ jest.mock("@clerk/nextjs/server", () => ({
 import { cpus } from "os";
 
 import { currentUser } from "@clerk/nextjs/server";
-import type { PrismaClient, Product } from "@prisma/client";
+import {
+    PaymentStatus,
+    ReviewStatus,
+    type PrismaClient,
+    type Product,
+    type ProductVariant,
+    type Size,
+    type Store,
+} from "@prisma/client";
 
 import type { ReviewDetailsType } from "@/lib/types";
-import { upsertReview } from "@/queries/review";
+import { getProductFilteredReviews, getRatingStatistics } from "@/queries/product";
+import { moderateReview, upsertReview } from "@/queries/review";
 
 import { disconnectTestDb, getTestDb } from "./setup/db";
 import { resetDb } from "./setup/reset-db";
 import {
     seedCategoryWithSubcategory,
+    seedCountry,
+    seedOrderWithGroupAndItem,
     seedProductWithVariantAndSize,
+    seedShippingAddress,
     seedStore,
     seedUser,
 } from "./setup/seed";
@@ -426,5 +439,224 @@ describe("upsertReview の評価集計（実 DB）", () => {
         });
         expect(updated.numReviews).toBe(ratings.length);
         expect(updated.rating).toBeCloseTo(expectedAverage, 5);
+    });
+});
+
+// ============================================================================
+// plan 092: 店舗集計・購入検証・モデレーション（実 DB）
+// ============================================================================
+describe("レビュー ガバナンス（実 DB・plan 092）", () => {
+    let store: Store;
+    let productA: Product;
+    let productB: Product;
+    let variantA: ProductVariant;
+    let sizeA: Size;
+
+    /** 呼び出しごとに別の reviewer を払い出す（並行シナリオ用）。 */
+    const handOutReviewers = (): void => {
+        let handedOut = 0;
+        (currentUser as unknown as jest.Mock).mockImplementation(async () => {
+            const id = `gov-reviewer-${handedOut}`;
+            handedOut += 1;
+            return {
+                id,
+                emailAddresses: [{ emailAddress: `${id}@example.test` }],
+                firstName: "Test",
+                lastName: "User",
+                imageUrl: "https://example.test/avatar.png",
+            };
+        });
+    };
+
+    const mockAuthAsAdmin = (): void => {
+        (currentUser as unknown as jest.Mock).mockResolvedValue({
+            id: "gov-admin",
+            emailAddresses: [{ emailAddress: "gov-admin@example.test" }],
+            privateMetadata: { role: "ADMIN" },
+        });
+    };
+
+    beforeAll(async () => {
+        db = await getTestDb();
+    });
+
+    afterAll(async () => {
+        await disconnectTestDb();
+    });
+
+    beforeEach(async () => {
+        await resetDb(db);
+        jest.mocked(currentUser).mockReset();
+
+        const owner = await seedUser(db, { role: "SELLER" });
+        store = await seedStore(db, { userId: owner.id });
+        const { category, subCategory } = await seedCategoryWithSubcategory(db);
+        const seededA = await seedProductWithVariantAndSize(db, {
+            storeId: store.id,
+            categoryId: category.id,
+            subCategoryId: subCategory.id,
+        });
+        const seededB = await seedProductWithVariantAndSize(db, {
+            storeId: store.id,
+            categoryId: category.id,
+            subCategoryId: subCategory.id,
+        });
+        productA = seededA.product;
+        variantA = seededA.variant;
+        sizeA = seededA.size;
+        productB = seededB.product;
+    });
+
+    // ------------------------------------------------------------------------
+    // シナリオ 8: 店舗の評価はレビュー単位の平均（商品平均の平均ではない）
+    // ------------------------------------------------------------------------
+    it("店舗の averageRating / numReviews が全商品の公開レビューから導出される", async () => {
+        mockAuthAsClerkUser("gov-u1");
+        await upsertReview(productA.id, buildReview({ rating: 5 }));
+        mockAuthAsClerkUser("gov-u2");
+        await upsertReview(productA.id, buildReview({ rating: 4 }));
+        mockAuthAsClerkUser("gov-u3");
+        await upsertReview(productB.id, buildReview({ rating: 1.5 }));
+
+        const updated = await db.store.findUniqueOrThrow({ where: { id: store.id } });
+        expect(updated.numReviews).toBe(3);
+        // レビュー単位: (5 + 4 + 1.5) / 3 = 3.5。商品平均の平均なら (4.5 + 1.5) / 2 = 3.0 になる
+        expect(updated.averageRating).toBeCloseTo(3.5, 5);
+    });
+
+    // ------------------------------------------------------------------------
+    // シナリオ 9: 同じ店舗の別商品への同時投稿（Store ロックの競合）
+    // ------------------------------------------------------------------------
+    it("同じ店舗の別商品へ同時投稿してもデッドロックせず、店舗集計が全員ぶんになる", async () => {
+        expect(resolveConnectionLimit()).toBeGreaterThanOrEqual(2);
+        handOutReviewers();
+
+        // 商品ロックは別々、店舗ロックは同じ行。ロック順が Product → Store で全経路一致して
+        // いればデッドロック（40P01）にならない。逆順の経路があるとここで落ちうる。
+        const plan = [
+            { productId: productA.id, rating: 5 },
+            { productId: productB.id, rating: 4 },
+            { productId: productA.id, rating: 3 },
+            { productId: productB.id, rating: 2 },
+        ];
+        let release!: () => void;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let arrived = 0;
+        const arm = async ({ productId, rating }: (typeof plan)[number]): Promise<void> => {
+            arrived += 1;
+            if (arrived === plan.length) release();
+            await gate;
+            await upsertReview(productId, buildReview({ rating }));
+        };
+
+        const settled = await Promise.allSettled(plan.map(arm));
+
+        expect(settled.filter((s) => s.status === "rejected")).toEqual([]);
+        const updatedStore = await db.store.findUniqueOrThrow({ where: { id: store.id } });
+        expect(updatedStore.numReviews).toBe(4);
+        expect(updatedStore.averageRating).toBeCloseTo(3.5, 5);
+        const [a, b] = await Promise.all([
+            db.product.findUniqueOrThrow({ where: { id: productA.id } }),
+            db.product.findUniqueOrThrow({ where: { id: productB.id } }),
+        ]);
+        expect([a.numReviews, b.numReviews]).toEqual([2, 2]);
+        expect(a.rating).toBeCloseTo(4, 5);
+        expect(b.rating).toBeCloseTo(3, 5);
+    });
+
+    // ------------------------------------------------------------------------
+    // シナリオ 10: 購入者バッジ（支払い済み・未取消の明細）
+    // ------------------------------------------------------------------------
+    it("支払い済み注文の購入者は isVerifiedPurchase=true、未払いの注文者は false", async () => {
+        const country = await seedCountry(db);
+        const paidBuyer = await seedUser(db, { id: "gov-paid" });
+        const pendingBuyer = await seedUser(db, { id: "gov-pending" });
+        for (const [buyer, paymentStatus] of [
+            [paidBuyer, PaymentStatus.Paid],
+            [pendingBuyer, PaymentStatus.Pending],
+        ] as const) {
+            const address = await seedShippingAddress(db, {
+                userId: buyer.id,
+                countryId: country.id,
+            });
+            await seedOrderWithGroupAndItem(db, {
+                userId: buyer.id,
+                shippingAddressId: address.id,
+                storeId: store.id,
+                product: productA,
+                variant: variantA,
+                size: sizeA,
+                paymentStatus,
+            });
+        }
+
+        mockAuthAsClerkUser(paidBuyer.id);
+        await upsertReview(productA.id, buildReview({ rating: 5 }));
+        mockAuthAsClerkUser(pendingBuyer.id);
+        await upsertReview(productA.id, buildReview({ rating: 4 }));
+
+        const reviews = await db.review.findMany({
+            where: { productId: productA.id },
+            select: { userId: true, isVerifiedPurchase: true },
+        });
+        expect(Object.fromEntries(reviews.map((r) => [r.userId, r.isVerifiedPurchase]))).toEqual({
+            "gov-paid": true,
+            "gov-pending": false,
+        });
+    });
+
+    // ------------------------------------------------------------------------
+    // シナリオ 11: 削除したレビューが集計と表示の両方から外れる
+    // ------------------------------------------------------------------------
+    it("REMOVED のレビューは商品・店舗の集計と、商品ページの一覧・分布から除外される", async () => {
+        mockAuthAsClerkUser("gov-keep");
+        await upsertReview(productA.id, buildReview({ rating: 5 }));
+        mockAuthAsClerkUser("gov-spam");
+        const spam = await upsertReview(productA.id, buildReview({ rating: 1 }));
+
+        mockAuthAsAdmin();
+        await moderateReview({ reviewId: spam.id, action: "remove", reason: "spam" });
+
+        const [product, updatedStore] = await Promise.all([
+            db.product.findUniqueOrThrow({ where: { id: productA.id } }),
+            db.store.findUniqueOrThrow({ where: { id: store.id } }),
+        ]);
+        expect(product.numReviews).toBe(1);
+        expect(product.rating).toBeCloseTo(5, 5);
+        expect(updatedStore.numReviews).toBe(1);
+        expect(updatedStore.averageRating).toBeCloseTo(5, 5);
+
+        const listed = await getProductFilteredReviews(productA.id, {}, undefined, 1, 10);
+        expect(listed.map((r) => r.id)).not.toContain(spam.id);
+        const stats = await getRatingStatistics(productA.id);
+        expect(stats.totalReviews).toBe(1);
+
+        const removed = await db.review.findUniqueOrThrow({ where: { id: spam.id } });
+        expect(removed.status).toBe(ReviewStatus.REMOVED);
+        expect(removed.moderationReason).toBe("spam");
+    });
+
+    // ------------------------------------------------------------------------
+    // シナリオ 12: DB の CHECK 制約（アプリの検証をすり抜けた値の最終防衛）
+    // ------------------------------------------------------------------------
+    it("範囲外の rating は DB の CHECK 制約で拒否される", async () => {
+        const author = await seedUser(db);
+
+        await expect(
+            db.review.create({
+                data: {
+                    review: "bypass app validation",
+                    rating: 5.5,
+                    variant: "v",
+                    color: "c",
+                    size: "M",
+                    quantity: "1",
+                    userId: author.id,
+                    productId: productA.id,
+                },
+            })
+        ).rejects.toThrow(/Review_rating_range/);
     });
 });

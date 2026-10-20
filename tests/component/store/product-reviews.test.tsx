@@ -17,8 +17,18 @@ jest.mock("@/components/store/cards/rating-statistics", () => () => null);
 jest.mock(
     "@/components/store/cards/review",
     () =>
-        function ReviewCardMock({ review }: { review: { id: string } }) {
-            return <article data-testid="review">{review.id}</article>;
+        function ReviewCardMock({
+            review,
+            onReport,
+        }: {
+            review: { id: string };
+            onReport?: unknown;
+        }) {
+            return (
+                <article data-testid="review" data-reportable={String(Boolean(onReport))}>
+                    {review.id}
+                </article>
+            );
         }
 );
 jest.mock("@/components/store/product-page/reviews/filters", () => () => null);
@@ -101,5 +111,43 @@ describe("ProductReviews pagination", () => {
         expect(
             screen.queryByRole("navigation", { name: "Review pages" })
         ).not.toBeInTheDocument();
+    });
+});
+
+describe("ProductReviews — 通報の受け渡し（plan 092）", () => {
+    beforeEach(() => {
+        mockGetProductFilteredReviews.mockReset();
+        mockGetProductFilteredReviews.mockResolvedValue(makeReviews(["r1", "r2"]));
+    });
+
+    it("onReport を受け取ったら全カードに渡す", () => {
+        render(
+            <ProductReviews
+                productId="p1"
+                rating={4}
+                statistics={statistics}
+                reviews={makeReviews(["r1", "r2"])}
+                variantsInfo={[]}
+                onReport={jest.fn()}
+            />
+        );
+
+        const cards = screen.getAllByTestId("review");
+        expect(cards).toHaveLength(2);
+        for (const card of cards) expect(card).toHaveAttribute("data-reportable", "true");
+    });
+
+    it("onReport が無ければカードにも渡さない", () => {
+        render(
+            <ProductReviews
+                productId="p1"
+                rating={4}
+                statistics={statistics}
+                reviews={makeReviews(["r1"])}
+                variantsInfo={[]}
+            />
+        );
+
+        expect(screen.getByTestId("review")).toHaveAttribute("data-reportable", "false");
     });
 });

@@ -283,6 +283,22 @@
     line-height: 1.8;
     flex-shrink: 0;
 }
+/* モデレーション状態（plan 092・DS-COMP-251） */
+.moderation {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid var(--purchase-line);
+    border-left: 3px solid var(--purchase-warning);
+    background: var(--purchase-warning-surface);
+    color: var(--purchase-ink);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.moderation[data-review-state="REJECTED"],
+.moderation[data-review-state="REMOVED"] {
+    border-left-color: var(--purchase-danger);
+    background: var(--purchase-danger-surface);
+}
 .reviewer {
     display: flex;
     align-items: center;

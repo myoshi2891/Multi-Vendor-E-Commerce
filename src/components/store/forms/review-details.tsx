@@ -2,8 +2,8 @@
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { AddReviewSchema } from '@/lib/schemas'
 import {
+    PublicReviewType,
     ReviewDetailsType,
-    ReviewWithImageType,
     VariantInfoType,
 } from '@/lib/types'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -18,6 +18,7 @@ import { Button } from '../ui/button'
 import { PulseLoader } from 'react-spinners'
 import ImageUploadStore from '../shared/upload-images'
 import { upsertReview } from '@/queries/review'
+import { isPublicReviewStatus } from '@/lib/review-visibility'
 import { v4 } from 'uuid'
 import styles from '../product-page/product.module.css'
 
@@ -171,8 +172,9 @@ export default function ReviewDetails({
     productId: string
     data?: ReviewDetailsType
     variantsInfo: VariantInfoType[]
-    reviews: ReviewWithImageType[]
-    setReviews: Dispatch<SetStateAction<ReviewWithImageType[]>>
+    // 一覧は公開経路の state を共有する。upsert の返却（userId 付き）は部分型としてそのまま積める
+    reviews: PublicReviewType[]
+    setReviews: Dispatch<SetStateAction<PublicReviewType[]>>
 }) {
     // State for selected variant
     const [activeVariant, setActiveVariant] = useState<VariantInfoType>(
@@ -219,11 +221,20 @@ export default function ReviewDetails({
                 color: values.color,
             })
 
-            if (response.id) {
-                const rev = reviews.filter((rev) => rev.id !== response.id)
-                setReviews([...rev, response])
+            if (!response.id) {
+                toast.success('Review added successfully.')
+                return
             }
 
+            const rev = reviews.filter((rev) => rev.id !== response.id)
+            // 審査待ち等の非公開レビューは公開一覧に積まない（既存の公開コピーも取り除く）
+            if (!isPublicReviewStatus(response.status)) {
+                setReviews(rev)
+                toast.success('Review submitted and awaiting moderation.')
+                return
+            }
+
+            setReviews([...rev, response])
             toast.success('Review added successfully.')
         } catch (error: unknown) {
             // Handle error submission errors

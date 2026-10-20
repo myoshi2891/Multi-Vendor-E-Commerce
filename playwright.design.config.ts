@@ -94,6 +94,12 @@ const DESIGN_SUITES = {
         kind: "fixture",
         command: "node tests/fixtures/returns/server.mjs",
     },
+    "review-governance": {
+        testMatch: "review-governance-design.spec.ts",
+        port: 3138,
+        kind: "fixture",
+        command: "node tests/fixtures/review-governance/server.mjs",
+    },
     postpurchase: {
         testMatch: "postpurchase-design.spec.ts",
         port: 3130,

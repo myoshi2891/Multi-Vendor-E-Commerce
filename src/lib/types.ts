@@ -243,10 +243,17 @@ export type CartProductType = {
     isFreeShipping: boolean;
 };
 
-export type ReviewWithImageType = Review & {
+export type ReviewWithImageType = Omit<
+    Review,
+    "moderationReason" | "moderatedAt"
+> & {
     images: ReviewImage[];
-    user: User;
+    // 公開経路は投稿者の表示列だけを返し、審査の理由・日時は返さない（plan 091 / 092）
+    user: Pick<User, "name" | "picture">;
 };
+
+// 公開経路（商品ページ・getProductFilteredReviews）の返却型。内部識別子の userId を載せない
+export type PublicReviewType = Omit<ReviewWithImageType, "userId">;
 
 // Define a local SortOrder type
 export type SortOrder = "asc" | "desc";

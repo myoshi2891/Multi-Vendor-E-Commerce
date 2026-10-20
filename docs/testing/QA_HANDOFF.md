@@ -1,5 +1,21 @@
 # QA & Test Implementation Handoff（次回セッションへの引き継ぎ）
 
+## 2026-10-18 plan 092 レビュー ガバナンスの実装
+
+[plan 092](../../plans/092-implement-review-governance.md)／[設計](../design/review-governance/design.md)／[UI 計画](../../plans/layout-design/review-governance-ui-plan.md)。購入者バッジ（書き込み時スナップショット）、`ModerationPolicy` で切り替えるモデレーション、通報（`ReviewReport`）、商品と店舗の評価集計（Product → Store の行ロック・公開集合のみ）、rating の 3 層検証（Zod・サーバー側 parse・DB CHECK）、admin 審査キュー `/dashboard/admin/reviews`。マイグレーションは 3 本（`review_governance` / `review_moderation_reason` はローカル DB のみ適用、後から追加した `moderation_policy_updated_at_default` はローカル未適用）。Jest +150（345 スイート）、Integration +5（262）、fixture suite `review-governance` 12/12、回帰 `purchase` 82/82・`postpurchase` 35/35。
+
+**レビュー指摘対応（2026-10-18）**: admin 審査キューは digest 付き（本番で伏せられた）例外を既定文言に畳む／通報は `useUser()` で送信前にサインインを判定し、Server Action の `"Unauthenticated."` 文言照合を廃止／`upsertReview` は Product → Store → Review の順で自分のレビュー行を `FOR UPDATE` してから状態を読む（並行通報の FLAGGED 上書き防止）。Jest +2（`reviews-queue.test.tsx` digest +1、`review-card.test.tsx` 未サインイン判定を 2 件へ分割 +1、`review.test.ts` のロック順検証を 3 本へ更新）。追加対応: `upsertReview` は REJECTED からの再投稿で `moderationReason` / `moderatedAt` を消す（前回の却下理由を審査キューに持ち越さない。他の状態では残す）。`review.test.ts` +2。追加対応（通報者の User 同期・理由表示・空状態）: `reportReview` は tx の前に通報者の User 行を作る（`upsertReview` と共通の `ensureDbUser` へ抽出。Webhook 同期漏れで `ReviewReport.reporterId` が FK 違反になるのを防ぐ）／レビュー履歴は却下・削除のときだけ理由を出す（FLAGGED では出さない）／審査キューは状態で絞り込んだ空表示をその状態の文言にする。Jest +4（`review.test.ts` +2、`review-history-card.test.tsx` +1、`reviews-queue.test.tsx` +1）。追加対応（seed の評価集計・ModerationPolicy.updatedAt の DB 既定値）: `seedReviews` は同じ tx の末尾で migration の backfill と同じ SQL で Product → Store の評価集計を再計算する（REVIEW-SEED-AGGREGATES 解消。seed 再実行でずれない）。`ModerationPolicy.updatedAt` に `@default(now())` を追加し、マイグレーション `20261018120000_moderation_policy_updated_at_default`（`SET DEFAULT CURRENT_TIMESTAMP`・ローカル未適用）で raw SQL の INSERT でも値が入るようにした。ERD は差分なし。`review-seeder.test.ts` +1。全体Jest 3471 passed / 3474 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。lcov 不変（seed は収集対象外）。型0。
+
+**レビュー指摘対応（2026-10-19）**: `getRatingStatistics` は 4 と 4.5 のように同じバケットへ寄る評価の件数を上書きせず合算する（従来は後の行で上書きして分布が欠けていた）／`reportReview` は業務エラー（自分のレビュー・非公開・Clerk のメール欠落）を throw せず `{ ok: false, error }` で返し、通報 UI は戻り値の文言を表示、想定外の例外は固定文言にする（本番の Server Action は throw の文言を伏せるため）／plan 092 のロールアウト注記に 3 本目のマイグレーション `moderation_policy_updated_at_default` を追加。Jest +1（`product.test.ts` +1。`review.test.ts` / `review-card.test.tsx` は既存テストを新しい戻り値へ書き換え）。公開レビュー経路（`retrieveProductDetails` / `getProductFilteredReviews`）は `publicReviewSelect` で列を明示し、投稿者本人向けの `moderationReason` / `moderatedAt` を返さない（`ReviewWithImageType` からも除外）／デザイン検証の REMOVED 絞り込みは再読み込み後にテーマを付け直す。全体Jest 3472 passed / 3475 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.84%（11828/13313）／Branches79.64%（7348/9226）／Functions85.64%（2332/2723）／Lines89.41%（10763/12037）。型エラー 0。デザイン検証 `review-governance` 12/12。追加対応（通報フォームのエラー解除）: 通報フォームは理由・メモを変更したら表示中のエラーを消す（入力を直しても古いエラーが残っていた）。`review-card.test.tsx` +1。全体Jest 3473 passed / 3476 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.84%（11830/13315）／Branches79.64%（7348/9226）／Functions85.64%（2332/2723）／Lines89.41%（10765/12039）。型エラー 0。追加対応（審査キューの成功通知）: 成功の通知をカードから `AdminReviews` 常設の live region へ移し、refresh で更新したカードがキューから外れても読み上げを失わないようにした。refresh 後は同じ位置のカード（= 次のカード）、無ければキュー（`section[aria-label="Review queue"]`）へ focus する。`reviews-queue.test.tsx` +2、デザイン検証の成功確認をページ単位の status へ変更。全体Jest 3475 passed / 3478 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.85%（11845/13330）／Branches79.63%（7345/9223）／Functions85.65%（2335/2726）／Lines89.42%（10778/12052）。型エラー 0。デザイン検証 `review-governance` 12/12。追加対応（審査キューの理由入力でエラー解除）: 審査キューの理由欄は入力を変更したら表示中のエラーを消す（理由を入力しても「Enter a reason before continuing.」が残っていた）。`reviews-queue.test.tsx` +1。全体Jest 3476 passed / 3479 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.86%（11846/13331）／Branches79.63%（7345/9223）／Functions85.65%（2335/2726）／Lines89.43%（10779/12053）。型エラー 0。追加対応（審査キューの連続成功の読み上げ）: 成功通知の live region は一度空にしてから次フレームで「Review updated.」を入れ直す（同じ文言の再設定では DOM が変わらず、2 件目以降の成功が読み上げられなかった）。`reviews-queue.test.tsx` +1。全体Jest 3477 passed / 3480 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）。Statements88.85%（11854/13341）／Branches79.62%（7347/9227）／Functions85.67%（2338/2729）／Lines89.42%（10787/12063）。型エラー 0。
+
+**Open issue REVIEW-GOV-ROLLOUT**: マイグレーション `review_governance` / `review_moderation_reason` / `moderation_policy_updated_at_default` / `review_status_created_at_index` の 4 本がリモート DB 未適用。適用はオペレーター作業（`safe-migration` → `migrate deploy`。適用前に `Review_rating_range` の違反 0 件を確認）。admin 審査キューとサインイン済みの通報の実ルート確認は、専用 DB とテスト用 ADMIN が無いため保留（DS-PURCHASE-TEN-ROUTES と同じ環境制約）。seed が集計を更新しない件（REVIEW-SEED-AGGREGATES）は解消済み（下記の追加対応）。
+
+**次着手**: plans/README の soft 順序で spike 022（セラーパフォーマンス。design §5.2 の Store 集計を入力に使う）。
+
+## 2026-10-18 plan 091 レビュー投稿者 PII 露出の修正
+
+[plan 091](../../plans/091-fix-review-user-pii-exposure.md)。spike 019 の Step 1 で発見（019 の STOP 条件により先行対応）。公開経路 `getProductPageData` / `getProductFilteredReviews` が `include: { user: true }` で投稿者の `email` / `role` を返していたため、`select: { name: true, picture: true }` に絞った。`ReviewWithImageType.user` も `Pick<User, "name" | "picture">` に変更。Red→Green で `product.test.ts` に構造検証を +2 件。型0・lint0 errors/既存8 warnings。**次着手**: plan 092 で実装済み（下の節）。
+
 <a id="ds-purchase-ten-routes"></a>
 
 ## 2026-10-18 購入導線10画面再監査
@@ -382,7 +398,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 ## 現在の実装状態サマリ
 
-### テスト統計（Jest/lcov: 2026-10-18購入10画面の全体実測 / Integration: 2026-10-15実測 / E2E件数: 2026-10-17 `--list` / E2Eフルラン: 2026-10-03実測）
+### テスト統計（Jest/lcov: 2026-10-19 plan 092 レビュー指摘対応後の全体実測 / Integration: 2026-10-18実測 / E2E件数: 2026-10-17 `--list` / E2Eフルラン: 2026-10-03実測）
 
 > **記載ルール（2026-07-10 整理）**: このテーブルは**最新値のみ**を保持する。増減の経緯・
 > 機能実装の詳細ナラティブは [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) が
@@ -390,9 +406,9 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 
 | 指標 | 値 |
 |------|-----|
-| Jest テスト総数 (unit/component) | **3310 passed / 3313 total、3 skipped、127 snapshots passed、340 スイート（339 passed／1 skipped、failed 0）**。2026-10-18購入10画面の全体実測（`bun run test -- --runInBand --coverage --silent`）。 |
-| 全体coverage（2026-10-18実測） | Statements88.43%（11530/13038）／Branches79.12%（7159/9048）／Functions85.15%（2278/2675）／Lines88.97%（10488/11787）。全体Jest CLI集計。 |
-| Jest Integration テスト総数 | **257** / **19 スイート**（**2026-10-15 実測: 257/257 pass**・`bun run test:integration`。plan 088 で `returns-rma.test.ts` +19〔IDOR、店舗スコープ、R-1 並行、R-2 冪等、遷移の冪等、在庫の差し引き、適格性、通知〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
+| Jest テスト総数 (unit/component) | **3477 passed / 3480 total、3 skipped、127 snapshots passed、345 スイート（344 passed／1 skipped、failed 0）**。2026-10-19 plan 092 レビュー指摘対応（審査キューの連続成功の読み上げ）後の全体実測（`bunx jest --coverage`）。 |
+| 全体coverage（2026-10-19実測） | Statements88.85%（11854/13341）／Branches79.62%（7347/9227）／Functions85.67%（2338/2729）／Lines89.42%（10787/12063）。全体Jest CLI集計（plan 092 レビュー指摘対応（審査キューの連続成功の読み上げ）後）。 |
+| Jest Integration テスト総数 | **262** / **19 スイート**（**2026-10-18 実測: 262/262 pass**・`bun run test:integration`。plan 092 で `review-aggregation.test.ts` +5〔店舗集計・同店舗の並行投稿・購入者バッジ・REMOVED の除外・CHECK 制約〕）。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Jest スナップショット | **127**（`tests/component/ui/__snapshots__/`・49/49 shadcn/ui プリミティブカバー） |
 | Playwright E2E（全プロジェクト集計） | **47 files・3 ブラウザ計 450 tests**（2026-10-17 `bunx playwright test --list`。plan 088 Step 6 の `returns-rma.spec.ts` +1 file・+1 test/browser）。2026-10-05 にデザイン検証 spec 2 本を `tests/browser/` へ移した後の `--list` でも同値（移動前は 48 files・495 で、そのうち 48 件が二重実行。plan 080）。デザイン検証11 suite（2026-10-06 config確認）は別系統で `DESIGN_SUITE=<suite> bun run test:design`。2026-10-03 のフルラン（使い捨てのクリーン DB・`--retries=2`）: **283 passed / 77 failed / 7 flaky / 41 skipped / 39 did not run / 1.0h**。失敗の大半は Clerk Testing の FAPI 通信失敗（`FAPI request failed after 4 attempts`）に伴う認証フローで、他に既存の OI-13（VRT 3 スペック）・OI-14（`mobile-responsive` の旧ブランド名）を含む。**変更前の HEAD でも VRT 3 スペックは同じ差分で失敗することを確認済み**。plans 073〜076 の対象（`search-filter` 3 ブラウザ・`a11y/browse`・`visual/browse`）はクリーン DB で全 pass。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
 | Playwright Visual | **4 スペック**（cart / checkout / browse / **商品詳細**）・**5 テストとも passed**（chromium 限定）。2026-08-31 実測。増減の経緯・実測履歴は [`COVERAGE_REPORT.md §7 履歴`](./COVERAGE_REPORT.md#7-履歴) |
@@ -400,7 +416,7 @@ lintエラー0／既存警告8、tscエラー0、check:playwright成功、追加
 | 型エラー | **0件**（2026-10-18 `bunx tsc --noEmit`）。lint errors0／既存warnings8。 |
 | Skipped テスト | **3 件**（idempotency suite 3 件 [`prisma/seed/__tests__/idempotency.test.ts` を `SKIP_DB_TESTS` 環境変数で `describe.skip`]）。modal-provider 9 件は 2026-06-14 に un-skip 済み（OI-8 解消）。Playwright a11y spec は別系統で `CLERK_SECRET_KEY` 未設定時に `test.skip` 条件分岐 |
 | Skipped スイート | **1 件**（idempotency suite のみ。modal-provider.test.tsx の file-level skip は OI-8 解消で解除） |
-| テストファイル総数（dashboard） | **426ファイル**／lcov **414エントリ**／マトリクス18/80（23%）。2026-10-18購入10画面の全体coverage/dashboard再生成実測。 |
+| テストファイル総数（dashboard） | **432ファイル**／lcov **420エントリ**／マトリクス18/80（23%）。2026-10-19 全体coverage/dashboard再生成実測。 |
 
 ### 在庫復元の一本化（plan 087）（2026-10-08、未コミット）
 

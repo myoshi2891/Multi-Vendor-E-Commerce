@@ -36,6 +36,11 @@ export const adminDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [
         icon: "coupon",
         link: "/dashboard/admin/coupons",
     },
+    {
+        label: "Reviews",
+        icon: "messages",
+        link: "/dashboard/admin/reviews",
+    },
 ];
 
 export const SellerDashboardSidebarOptions: DashboardSidebarMenuInterface[] = [

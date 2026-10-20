@@ -1,5 +1,9 @@
 # デザインシステム移行 — 進捗ノート
 
+## 2026-10-18 レビュー ガバナンスの UI（plan 092 Step 7・現在地）
+
+DS-PAGE-069（admin 審査キュー・新規）・DS-COMP-250（AdminReviews・新規）・DS-COMP-251（プロフィールの状態表示・新規）を追加し、DS-COMP-072（レビューカード）に購入者バッジと通報を足した。RTL と fixture suite `review-governance` 12/12 で補助検証済み。認証後の実ルートは保留（専用 DB と ADMIN アカウントが要る）。台帳69画面＝検証済み68／保留1、部品251件。[証跡](#レビュー-ガバナンスの-ui2026-10-18plan-092-step-7未コミット)。
+
 ## 2026-10-17 未完了8画面の最終受け入れ
 
 対象8件を検証済みへ更新。台帳68画面＝検証済み68／保留0／TODO0／実装済み0。部品249件（店舗一覧をDS-COMP-249で追加）。これはデザインの今回の受け入れで、共有部品・全業務状態・SDK全機能の完了判定は従来の範囲を維持。[最終証跡](#remaining-eight-final-2026-10-17)。
@@ -174,6 +178,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-PAGE-066 | `/dashboard/seller/stores` | 本体適用（2026-10-17受け入れ） | P3・機能課題別枠 | 検証済み | [src/app/dashboard/seller/stores/page.tsx](<../../../src/app/dashboard/seller/stores/page.tsx>) | 2026-10-17: 今回範囲の受け入れ完了。[最終証跡](#remaining-eight-final-2026-10-17)。以前の記録: 未実施 |
 | DS-PAGE-067 | `/profile/notifications` | 本体適用（2026-10-11実ルート受け入れ） | P2 | 検証済み | [src/app/(store)/profile/notifications/page.tsx](<../../../src/app/(store)/profile/notifications/page.tsx>) | [通知一覧の実施記録](#通知一覧の新設2026-10-07plan-086未コミット)／[残存6画面](#p2残存6画面移行記録)／[今回P2サポート8画面](#p2サポート通知等8画面移行記録)／[保留2件の解消](#p2保留2件の解消2026-10-11)。実Clerk・実Action・専用DBで未読3件の3幅表示、単件/リンク遷移/一括の既読と再読込保持を確認 |
 | DS-PAGE-068 | `/dashboard/seller/stores/[storeUrl]/returns` | 新規（2026-10-15・plan 088 Step 5） | P3 | 検証済み | [src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx](<../../../src/app/dashboard/seller/stores/[storeUrl]/returns/page.tsx>) | 実装済み・fixture 補助検証済み（3幅×light/dark・axe 0）。認証後の実ルートは保留（解除: plan 088 Step 6 の seed と E2E）。2026-10-17: 機能の往復を `tests/e2e/returns-rma.spec.ts`（3 ブラウザ）、表示を実ルート suite `returns-route`（3幅・seller は light/dark・axe AA 0）で受け入れ。[実ルート受け入れ](#返品-rma-の実ルート受け入れ2026-10-17)[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
+| DS-PAGE-069 | `/dashboard/admin/reviews` | 新規（2026-10-18・plan 092 Step 7） | P3 | 保留 | [src/app/dashboard/admin/reviews/page.tsx](<../../../src/app/dashboard/admin/reviews/page.tsx>) | 実装済み・RTL と fixture で補助検証済み（3幅×light/dark・axe 0）。認証後の実ルートは保留（解除: 専用 DB とテスト用 ADMIN で 3 幅・axe・操作を確認）。[証跡](#レビュー-ガバナンスの-ui2026-10-18plan-092-step-7未コミット) |
 
 ## 部品台帳
 
@@ -252,7 +257,7 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-069 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/product-page/reviews/product-reviews.tsx](<../../../src/components/store/product-page/reviews/product-reviews.tsx>) | TODO | 未実施 |
 | DS-COMP-070 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/product-page/reviews/filters.tsx](<../../../src/components/store/product-page/reviews/filters.tsx>) | TODO | 未実施 |
 | DS-COMP-071 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/product-page/reviews/sort.tsx](<../../../src/components/store/product-page/reviews/sort.tsx>) | TODO | 未実施 |
-| DS-COMP-072 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/cards/review.tsx](<../../../src/components/store/cards/review.tsx>) | TODO | 未実施 |
+| DS-COMP-072 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/cards/review.tsx](<../../../src/components/store/cards/review.tsx>) | 実装済み | 2026-10-18: 購入者バッジと通報（`ReportReview`）を追加。RTL と fixture `review-governance`（3幅・axe 0・focus/44px・失敗→再試行・送信中）で補助検証。実ルートは保留。[証跡](#レビュー-ガバナンスの-ui2026-10-18plan-092-step-7未コミット)。以前の記録: 未実施 |
 | DS-COMP-073 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/cards/product-rating.tsx](<../../../src/components/store/cards/product-rating.tsx>) | TODO | 未実施 |
 | DS-COMP-074 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/cards/rating-statistics.tsx](<../../../src/components/store/cards/rating-statistics.tsx>) | TODO | 未実施 |
 | DS-COMP-075 | P2 | 商品詳細・レビューの残存確認（P2） | [src/components/store/forms/review-details.tsx](<../../../src/components/store/forms/review-details.tsx>) | TODO | 未実施 |
@@ -434,6 +439,8 @@ IDは固定する。並べ替えや追加でも既存IDを振り直さない。�
 | DS-COMP-247 | P2 | 返品 RMA（顧客） | [ReturnRequestPanel](../../../src/components/store/order-page/return-request-panel.tsx) | 検証済み | 実装済み・RTL と fixture で補助検証済み。2026-10-16 にフィルタとページ送りを URL（`?status=&page=`）駆動・サーバー側ページングへ変更（fixture `returns` 12/12）。認証後の実ルートは保留（解除: plan 088 Step 6）。2026-10-17: 機能の往復を `tests/e2e/returns-rma.spec.ts`（3 ブラウザ）、表示を実ルート suite `returns-route`（3幅・seller は light/dark・axe AA 0）で受け入れ。[実ルート受け入れ](#返品-rma-の実ルート受け入れ2026-10-17)[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 | DS-COMP-248 | P3 | 返品 RMA（seller） | [SellerReturns](../../../src/components/dashboard/seller/seller-returns.tsx) | 検証済み | 実装済み・RTL と fixture で補助検証済み。認証後の実ルートは保留（解除: plan 088 Step 6）。2026-10-17: 機能の往復を `tests/e2e/returns-rma.spec.ts`（3 ブラウザ）、表示を実ルート suite `returns-route`（3幅・seller は light/dark・axe AA 0）で受け入れ。[実ルート受け入れ](#返品-rma-の実ルート受け入れ2026-10-17)[返品 RMA の UI](#返品-rma-の-ui2026-10-15plan-088-step-5未コミット) |
 | DS-COMP-249 | P3 | 所有店舗ディレクトリ | [SellerStoresList](../../../src/components/dashboard/seller/seller-stores-list.tsx) | 検証済み | 通常/空/失敗/再試行・3幅×light/dark・長文・4状態・focus/44px・axe、認証後実データ。[証跡](#remaining-eight-final-2026-10-17) |
+| DS-COMP-250 | P3 | レビュー審査キュー（admin） | [AdminReviews](../../../src/components/dashboard/admin/admin-reviews.tsx) | 実装済み | 状態ごとの操作（遷移表から導出）・理由必須・送信中ロック・失敗→再試行・絞り込み/ページ送り（URL 駆動）・空（既定は「要対応なし」、状態で絞り込んだときはその状態の文言）。DataTable は remount 問題のため使わない。成功通知はキュー外の常設 live region に出し、refresh 後は次のカード（無ければキュー）へ focus、理由欄を入力し直すと表示中のエラーを消し、連続した成功も毎回読み上げる（live region を一度空にして次フレームで再設定。2026-10-19）。fixture 3幅×light/dark・axe 0。実ルートは保留。[証跡](#レビュー-ガバナンスの-ui2026-10-18plan-092-step-7未コミット) |
+| DS-COMP-251 | P2 | レビュー履歴のモデレーション状態 | [ReviewHistoryCard](../../../src/components/store/profile/reviews/review-history-card.tsx) | 実装済み | 公開以外の 4 状態の文言と、却下・削除の理由（本人のみ）。fixture 3幅・axe 0、`postpurchase` 35/35 で既存表示の回帰なし。実ルートは保留。[証跡](#レビュー-ガバナンスの-ui2026-10-18plan-092-step-7未コミット) |
 
 ## 前セッションの確認結果
 
@@ -1794,6 +1801,16 @@ Red: 独立scope select高さ37pxで6件失敗。Green/Refactor: CouponFormへco
 実ルートは既存専用DBと既存Clerk管理者を読み取り利用し、表示・検索・編集データ取得・メニュー/ダイアログ開閉・Escape focus復帰・44px/境界3:1・theme・overflow・全体axe AAを確認。実保存・削除・archive/restore・型変換・有効化・画像uploadは範囲外で、失敗/retry/pending/successはfixture/RTLで検証。アカウント作成・seed・DB初期化なし。DS-PAGE-046独立オファータグ作成は共有回帰のみ。
 
 最初の実routeは47/48、カテゴリfocus復帰1件失敗。カテゴリ6件の再確認は成功。同名カテゴリ3件の曖昧さを除くためURLで行を特定し、全48件を再実行して成功。本体追加修正なし。Next生成型の更新中のTS6053はサーバー終了・自動include除去後に再確認して成功。製品Redに算入しない。
+
+### レビュー ガバナンスの UI（2026-10-18・plan 092 Step 7・未コミット）
+
+- [計画](../../../plans/layout-design/review-governance-ui-plan.md)／親プラン [092](../../../plans/092-implement-review-governance.md)／設計 [review-governance/design.md](../review-governance/design.md) §1〜§4・§8.5。対象: DS-COMP-072（変更）、DS-PAGE-069・DS-COMP-250・DS-COMP-251（新規）。
+- 実装: 通報 `ReportReview`（`product.module.css` に購入者バッジと通報フォームのスタイルを追加。purchase テーマのトークンのみ）、`AdminReviews`（`SellerPage`・`seller.module.css`・shadcn `Button`。状態バッジは `paymentState` と同じ色の規則で `data-review-state` を追加）、`ReviewHistoryCard` の状態表示（`reviews.module.css`）。操作とラベルは `src/lib/review-moderation.ts` から導く。Client は `src/queries` を新たに import せず、`page.tsx` から Server Action を props で渡す。サイドバーに Reviews。
+- Red: RTL 33 件が未実装（要素なし・モジュール未作成）で失敗することを確認（レビューカード 7・審査キュー/ページ 20・履歴カード 5・ProductReviews の受け渡し 1）。「onReport が無ければ出さない」等の 3 件は空の実装でも通るため回帰ガードとして記録。
+- Green / Refactor: 同じ商品のレビューが並ぶと article の accessible name が重複するため、名前を「投稿者 + 商品」に変更。全体 Jest 3462/3465（345 スイート）、tsc 0、lint 0 errors（既存 warnings 8）。
+- ブラウザー: `DESIGN_BROWSER_CHANNEL=chrome DESIGN_SUITE=review-governance bun run test:design` 12/12（店頭 1440/768/390: バッジ・理由必須・未認証の失敗で入力保持・再送で成功・導線を閉じる、本人の状態表示／admin 1440/768/390 × light/dark: 要対応 2 件・理由必須・失敗→再試行・絞り込みで削除済みの理由・操作なし／送信中ロック 2 件／空状態）。各状態で横スクロールなし・axe AA 違反 0、44px・focus outline。PC/モバイルの画像を目視。初回はバンドル済み Chromium が無く環境エラー（製品の失敗ではない）、インストール済み Chrome で実行。
+- 回帰: `DESIGN_SUITE=purchase` 82/82、`DESIGN_SUITE=postpurchase` 35/35。`bun run check:playwright` pass（suite を `DESIGN_SUITES` に 1 行追加・共通 `startFixtureServer`）。
+- 保留: 認証後の実ルート（`/dashboard/admin/reviews` と、サインイン済みの通報）。専用 DB とテスト用 ADMIN の Clerk アカウントが要る（QA_HANDOFF の DS-PURCHASE-TEN-ROUTES と同じ環境制約）。
 
 ### 返品 RMA の UI（2026-10-15・plan 088 Step 5・未コミット）
 

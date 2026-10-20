@@ -89,9 +89,11 @@ describe("seedReviews", () => {
   const reviewCreateMany = jest.fn();
   const reviewCreate = jest.fn();
   const imageCreateMany = jest.fn();
+  const executeRaw = jest.fn();
   const tx = {
     review: { deleteMany, createMany: reviewCreateMany, create: reviewCreate },
     reviewImage: { createMany: imageCreateMany },
+    $executeRaw: executeRaw,
   };
   const prisma = {
     $transaction: jest.fn(async (fn: (client: typeof tx) => Promise<unknown>) =>
@@ -117,6 +119,26 @@ describe("seedReviews", () => {
     expect(imageCreateMany).toHaveBeenCalledTimes(1);
     expect(reviewCreateMany.mock.calls[0][0].data).toHaveLength(
       SEED_REVIEWS.length
+    );
+  });
+
+  it("レビュー作成後、同じトランザクションで Product → Store の評価集計を再計算する", async () => {
+    // Act
+    await seedReviews(prisma, maps());
+
+    // Assert: 再実行しても集計がずれない（REVIEW-SEED-AGGREGATES）
+    expect(executeRaw).toHaveBeenCalledTimes(2);
+    const sql = executeRaw.mock.calls.map((call) =>
+      (call[0] as TemplateStringsArray).join("?")
+    );
+    expect(sql[0]).toMatch(/UPDATE "Product"/);
+    expect(sql[1]).toMatch(/UPDATE "Store"/);
+    for (const statement of sql) {
+      // 公開集合（PUBLISHED / FLAGGED）だけを数える（migration の backfill と同じ定義）
+      expect(statement).toMatch(/'PUBLISHED', 'FLAGGED'/);
+    }
+    expect(executeRaw.mock.invocationCallOrder[0]).toBeGreaterThan(
+      imageCreateMany.mock.invocationCallOrder[0]
     );
   });
 

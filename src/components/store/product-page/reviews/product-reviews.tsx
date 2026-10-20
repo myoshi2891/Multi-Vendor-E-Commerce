@@ -3,7 +3,7 @@ import {
     RatingStatisticsType,
     ReviewsFilterType,
     ReviewsOrderType,
-    ReviewWithImageType,
+    PublicReviewType,
     VariantInfoType,
 } from '@/lib/types'
 import { FC, useEffect, useState } from 'react'
@@ -11,6 +11,7 @@ import RatingCard from '../../cards/product-rating'
 import RatingStatisticsCard from '../../cards/rating-statistics'
 import { Review } from '@prisma/client'
 import ReviewCard from '../../cards/review'
+import type { ReportReviewAction } from '@/lib/review-moderation'
 import { getProductFilteredReviews } from '@/queries/product'
 import ReviewFilters from './filters'
 import ReviewsSort from './sort'
@@ -22,8 +23,10 @@ interface Props {
     productId: string
     rating: number
     statistics: RatingStatisticsType
-    reviews: ReviewWithImageType[]
+    reviews: PublicReviewType[]
     variantsInfo: VariantInfoType[]
+    /** 通報の Server Action。Server Component（商品ページ）から受け取る（plan 092） */
+    onReport?: ReportReviewAction
 }
 
 const ProductReviews: FC<Props> = ({
@@ -32,8 +35,9 @@ const ProductReviews: FC<Props> = ({
     statistics,
     reviews,
     variantsInfo,
+    onReport,
 }) => {
-    const [data, setData] = useState<ReviewWithImageType[]>(reviews)
+    const [data, setData] = useState<PublicReviewType[]>(reviews)
     const { totalReviews, ratingStatistics } = statistics
     const half = Math.ceil(data.length / 2)
 
@@ -130,6 +134,7 @@ const ProductReviews: FC<Props> = ({
                                                 key={review.id}
                                                 review={review}
                                                 editorial
+                                                onReport={onReport}
                                             />
                                         ))}
                                 </div>
@@ -142,6 +147,7 @@ const ProductReviews: FC<Props> = ({
                                                 key={review.id}
                                                 review={review}
                                                 editorial
+                                                onReport={onReport}
                                             />
                                         ))}
                                 </div>

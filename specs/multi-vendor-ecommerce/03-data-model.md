@@ -44,7 +44,20 @@
 - Coupon: store coupon usable in carts and order groups.
 - PaymentDetails: payment record tied to an order and user
   (`Decimal(12,2)` for amount).
-- Review and ReviewImage: customer reviews for products.
+- Review and ReviewImage: customer reviews for products. Review carries a moderation
+  `status` (`ReviewStatus`: PENDING_REVIEW / PUBLISHED / FLAGGED / REJECTED / REMOVED,
+  default PUBLISHED), a write-time `isVerifiedPurchase` snapshot, and `moderationReason` /
+  `moderatedAt` (plan 092). `rating` is 1–5 in 0.5 steps, enforced by the DB CHECK
+  `Review_rating_range` and by `ReviewRatingSchema`. Only PUBLISHED / FLAGGED reviews are
+  public and counted in `Product.rating` / `numReviews` and `Store.averageRating` /
+  `numReviews` (Store is the review-weighted mean). `likes` is unused (deferred).
+  Design: [`docs/design/review-governance/design.md`](../../docs/design/review-governance/design.md).
+- ReviewReport: one report per (review, reporter) (`@@unique`), with `reason`
+  (`ReviewReportReason`), optional `note`, and `resolvedAt`. Unresolved reports from distinct
+  reporters count toward the FLAGGED threshold.
+- ModerationPolicy: one row per `ModerationSubject` (REVIEW; LISTING reserved for spike 016)
+  with `mode` (NONE / POST / PRE), `requireVerifiedPurchase`, and `flagThreshold`. A missing row
+  falls back to code defaults (POST / false / 3), so behavior changes need no code change.
 - Category, SubCategory, CategorySlugAlias, OfferTag: taxonomy and merchandising labels.
   Category is an N-level tree (plan 066 / ADR-006 Phase A): a self-relation `parentId`
   (`onDelete: Restrict`) plus a materialized `path` (e.g. `electronics/camera`, no trailing
@@ -126,6 +139,11 @@
 - ReturnResolution: REFUND, EXCHANGE (EXCHANGE rejected by Zod in the MVP)
 - ReturnReasonCode: DAMAGED, DEFECTIVE, WRONG_ITEM, NOT_AS_DESCRIBED, SIZE_FIT, CHANGED_MIND, OTHER
 - ReturnItemCondition: RESELLABLE, DAMAGED
+- ReviewStatus: PENDING_REVIEW, PUBLISHED, FLAGGED, REJECTED, REMOVED (Review.status;
+  default PUBLISHED; only PUBLISHED / FLAGGED are public)
+- ReviewReportReason: SPAM, OFFENSIVE, OFF_TOPIC, FAKE, OTHER
+- ModerationSubject: REVIEW, LISTING (LISTING reserved for spike 016)
+- ModerationMode: NONE, POST, PRE (code default POST when no ModerationPolicy row)
 
 ## Money Field Convention
 - All monetary amounts use `Decimal(12,2)` (Prisma `@db.Decimal(12,2)`) for
@@ -185,7 +203,7 @@
   |------|--------|--------------------|------|
   | 1 | System Overview | 6 | 主要エンティティを名前のみで表示する全体鳥瞰図 |
   | 2 | Catalog | 11 | Product 中心の商品カタログドメイン（Category ツリー / CategorySlugAlias / Variant / Color / Size 等） |
-  | 3 | Customer Activity | 4 | Review / ReviewImage / Wishlist の顧客行動ドメイン |
+  | 3 | Customer Activity | 6 | User / Review / ReviewImage / ReviewReport / ModerationPolicy / Wishlist の顧客行動ドメイン（ReviewReport / ModerationPolicy は plan 092） |
   | 4 | Cart | 5 | カート構造（ProductVariant は参照注記のみ、エッジなし） |
   | 5 | Order | 6 | 注文・決済フロー（Order / OrderGroup / OrderItem / PaymentDetails 等） |
   | 6 | Shipping | 6 | 配送ルール・住所（ShippingAddress を中心に ShippingRate / Country 等） |
@@ -195,7 +213,7 @@
   | 10 | Attributes | 7 | カテゴリ別属性（AttributeDefinition / AttributeOption / Product・VariantAttributeValue。plan 069 / ADR-007） |
   | 11 | Notifications | 3 | アプリ内通知と配信状態（User / Notification / NotificationDelivery。plan 086） |
   | 12 | Returns | 6 | 返品 RMA（ReturnRequest / ReturnRequestItem と User / Store / OrderGroup / OrderItem。plan 088） |
-  | 13 | Enums | 17 | 全 enum 定義の参照ページ（エッジなし） |
+  | 13 | Enums | 21 | 全 enum 定義の参照ページ（エッジなし） |
 
 - **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
 - **再生成・調整手順**:

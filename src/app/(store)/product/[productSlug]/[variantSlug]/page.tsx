@@ -7,6 +7,7 @@ import RelatedProducts from '@/components/store/product-page/related-product'
 import ProductReviews from '@/components/store/product-page/reviews/product-reviews'
 import StoreProducts from '@/components/store/product-page/store-products'
 import { getProductPageData, getProducts } from '@/queries/product'
+import { reportReview } from '@/queries/review'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowUpRight } from 'lucide-react'
@@ -138,6 +139,7 @@ export default async function ProductVariantPage({
                             statistics={reviewsStatistics}
                             reviews={reviews}
                             variantsInfo={variantInfo}
+                            onReport={reportReview}
                         />
                     </div>
                     {questions.length > 0 && (
