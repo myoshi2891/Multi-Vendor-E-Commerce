@@ -198,7 +198,7 @@
   |------|--------|--------------------|------|
   | 1 | System Overview | 6 | 主要エンティティを名前のみで表示する全体鳥瞰図 |
   | 2 | Catalog | 11 | Product 中心の商品カタログドメイン（Category ツリー / CategorySlugAlias / Variant / Color / Size 等） |
-  | 3 | Customer Activity | 4 | Review / ReviewImage / Wishlist の顧客行動ドメイン |
+  | 3 | Customer Activity | 6 | User / Review / ReviewImage / ReviewReport / ModerationPolicy / Wishlist の顧客行動ドメイン（ReviewReport / ModerationPolicy は plan 092） |
   | 4 | Cart | 5 | カート構造（ProductVariant は参照注記のみ、エッジなし） |
   | 5 | Order | 6 | 注文・決済フロー（Order / OrderGroup / OrderItem / PaymentDetails 等） |
   | 6 | Shipping | 6 | 配送ルール・住所（ShippingAddress を中心に ShippingRate / Country 等） |
@@ -208,7 +208,7 @@
   | 10 | Attributes | 7 | カテゴリ別属性（AttributeDefinition / AttributeOption / Product・VariantAttributeValue。plan 069 / ADR-007） |
   | 11 | Notifications | 3 | アプリ内通知と配信状態（User / Notification / NotificationDelivery。plan 086） |
   | 12 | Returns | 6 | 返品 RMA（ReturnRequest / ReturnRequestItem と User / Store / OrderGroup / OrderItem。plan 088） |
-  | 13 | Enums | 17 | 全 enum 定義の参照ページ（エッジなし） |
+  | 13 | Enums | 21 | 全 enum 定義の参照ページ（エッジなし） |
 
 - **この図は 100% 自動生成物**。SSOT は **構造** については [`prisma/schema.prisma`](../../prisma/schema.prisma)、**配置・配線（レイアウト調整）** については [`scripts/erd/layout-overrides.json`](../../scripts/erd/layout-overrides.json) です。図ファイル自体を直接手編集してコミットしてはなりません（次回再生成で上書き消失するため）。
 - **再生成・調整手順**:
