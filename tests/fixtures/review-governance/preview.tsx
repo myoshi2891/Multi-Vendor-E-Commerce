@@ -117,14 +117,30 @@ const queueAll =
               queueItem("removed", "REMOVED", {
                   moderationReason: "Contains a link to another shop.",
               }),
+              // 既定の絞り込みで 2 ページ目に回る分
+              queueItem("queued", "PENDING_REVIEW"),
           ];
 // サーバーの絞り込みの代わり。?status= は useRouter().push の遷移で付く
 const queueStatus = (params.get("status") as ReviewStatus | null) ?? null;
-const queueVisible = queueStatus
+const queueFiltered = queueStatus
     ? queueAll.filter((r) => r.status === queueStatus)
     : queueAll.filter(
           (r) => r.status === "PENDING_REVIEW" || r.status === "FLAGGED"
       );
+// サーバーのページ分割の代わり。?page= は Next / Previous page のリンクで付く
+const QUEUE_PAGE_SIZE = 2;
+const queueTotalPages = Math.max(
+    1,
+    Math.ceil(queueFiltered.length / QUEUE_PAGE_SIZE)
+);
+const queuePage = Math.min(
+    Math.max(1, Math.floor(Number(params.get("page")) || 1)),
+    queueTotalPages
+);
+const queueVisible = queueFiltered.slice(
+    (queuePage - 1) * QUEUE_PAGE_SIZE,
+    queuePage * QUEUE_PAGE_SIZE
+);
 
 function App() {
     if (screen === "admin")
@@ -140,8 +156,8 @@ function App() {
                 <AdminReviews
                     reviews={queueVisible}
                     status={queueStatus}
-                    page={1}
-                    totalPages={scenario === "empty" ? 1 : 2}
+                    page={queuePage}
+                    totalPages={queueTotalPages}
                     moderateAction={moderateAction}
                 />
             </SellerShell>
