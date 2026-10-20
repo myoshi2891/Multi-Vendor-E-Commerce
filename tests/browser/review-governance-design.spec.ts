@@ -69,10 +69,10 @@ for (const width of [1440, 768, 390]) {
             fullPage: true,
         });
 
-        // 1 回目はサーバー側で失敗 → メッセージを出し、入力は残る
+        // 1 回目は想定外の例外 → 例外の原文ではなく固定文言を出し、入力は残る
         await submit.click();
         await expect(page.getByRole("alert")).toHaveText(
-            "Failed to report review."
+            "Could not send the report. Please try again."
         );
         await expect(reason).toHaveValue("SPAM");
         await expectNoOverflowAndAxe(page);

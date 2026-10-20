@@ -33,13 +33,11 @@ async function act<T>(value: T, failure: string): Promise<T> {
     return value;
 }
 
-// 本番の reportReview は業務エラーを throw せず { ok: false } で返す
+// ?scenario=fail は reject をそのまま返し、フォームの想定外エラー経路（固定文言）を通す
 const reportAction: ReportReviewAction = () =>
-    act({ ok: true as const, status: "PUBLISHED" as const }, "Failed to report review.").catch(
-        (error: unknown) => ({
-            ok: false as const,
-            error: error instanceof Error ? error.message : "",
-        })
+    act(
+        { ok: true as const, status: "PUBLISHED" as const },
+        "Failed to report review."
     );
 const moderateAction: ModerateReviewAction = ({ reviewId }) =>
     act(
