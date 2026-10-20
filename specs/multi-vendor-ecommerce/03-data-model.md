@@ -139,6 +139,11 @@
 - ReturnResolution: REFUND, EXCHANGE (EXCHANGE rejected by Zod in the MVP)
 - ReturnReasonCode: DAMAGED, DEFECTIVE, WRONG_ITEM, NOT_AS_DESCRIBED, SIZE_FIT, CHANGED_MIND, OTHER
 - ReturnItemCondition: RESELLABLE, DAMAGED
+- ReviewStatus: PENDING_REVIEW, PUBLISHED, FLAGGED, REJECTED, REMOVED (Review.status;
+  default PUBLISHED; only PUBLISHED / FLAGGED are public)
+- ReviewReportReason: SPAM, OFFENSIVE, OFF_TOPIC, FAKE, OTHER
+- ModerationSubject: REVIEW, LISTING (LISTING reserved for spike 016)
+- ModerationMode: NONE, POST, PRE (code default POST when no ModerationPolicy row)
 
 ## Money Field Convention
 - All monetary amounts use `Decimal(12,2)` (Prisma `@db.Decimal(12,2)`) for
